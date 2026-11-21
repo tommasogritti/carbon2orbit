@@ -130,7 +130,7 @@ export class MapScene extends Phaser.Scene {
     const stars = save.done[d.id] && d.kind !== 'card' ? '   ' + '★'.repeat(save.done[d.id]) + '☆'.repeat(3 - save.done[d.id]) : '';
     this.banner.setText(d.title).setFontSize(d.title.length > 30 ? 8.5 : 11);
     this.badge.setTexture(d.kind === 'person' ? (d.portrait !== undefined ? d.portrait + 'peter_chip' : 'n_person') : playable(d) ? 'n_' + d.kind : 'n_locked').setScale(d.kind === 'person' && d.portrait !== undefined ? S * 0.8 : S * 1.25);
-    this.sub.setText(`${d.date.slice(0, 15)}  ·  ${d.place}  ·  ${d.kind === 'person' ? (save.met[d.id] ? 'MET' : 'SOMEONE TO MEET') : (d.parent ? 'SECRET ' : '') + (playable(d) ? KIND_LABEL[d.kind] : 'LOCKED')}${d.kind === 'person' ? '' : stars}`);
+    this.sub.setText(`${d.date.slice(0, 24)}  ·  ${d.place}  ·  ${d.kind === 'person' ? (save.met[d.id] ? 'MET' : 'SOMEONE TO MEET') : (d.parent ? 'SECRET ' : '') + (playable(d) ? KIND_LABEL[d.kind] : 'LOCKED')}${d.kind === 'person' ? '' : stars}`);
     this.ring.setPosition(d.map.x, d.map.y - 0.5);
   }
   update() {
