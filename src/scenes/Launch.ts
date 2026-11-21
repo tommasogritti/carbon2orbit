@@ -142,7 +142,7 @@ export class LaunchScene extends Phaser.Scene {
     if (bad && this.count <= 2.3) { this.missed = true; return this.hold(`Auto-sequencer abort · ${STATIONS[n!.i]} was NO-GO and nobody called it`); }
     if (this.count <= 2 && !s.lit) { L.ignite(s); snd.ignition(); this.say('Ignition · engines at full thrust'); }
     const sc = this.sc;
-    if (sc && !this.scrubbed && this.count <= sc.at && (!sc.lit || s.lit)) { this.scrubbed = true; return this.hold(sc.text, sc.resume); }
+    if (sc && !this.scrubbed && this.count <= sc.at && (!sc.lit || s.lit)) { this.scrubbed = true; this.hold(sc.text, sc.resume); if (!sc.lit) this.prompt.setText('SCRUB'); return; }
     if (this.count > 0) { this.prompt.setText(c <= 10 ? 'T-' + c : ''); this.hint.setText(bad ? 'ENTER · CALL A HOLD' : c <= 10 ? 'ENTER holds the count' : 'Go/no-go poll'); }
     else {
       this.prompt.setText('SPACE · ' + GO_LABEL.liftoff); this.hint.setText('Engines are burning propellant');
@@ -241,7 +241,7 @@ export class LaunchScene extends Phaser.Scene {
     if (wasLit && !s.lit) {
       if (this.ung) { this.say('Burnout'); snd.cutoff(); }
       else if (s.stage === 0) { this.say('MECO · main engine cutoff'); snd.cutoff(); }
-      else if (s.stage === 1 && this.v.suborbital) { this.secoV = s.speed; snd.seco(); this.say(`SECO · ${fmt(s.speed)} m/s at ${km(s.alt)} km · coasting to the release point`); }
+      else if (s.stage === 1 && this.v.suborbital) { this.secoV = s.speed; snd.seco(); this.say(`SECO · ${fmt(s.speed)} m/s at ${km(s.alt)} km · the third stage coasts to the release point`); }
       else if (s.stage === 1) return this.seco();
     }
     if (this.p.afts && !s.fail && s.ev.seco === undefined && s.alt > 1500) this.afts(dt); else if (s.ev.seco !== undefined) this.aftsTxt?.setText('');
@@ -271,7 +271,7 @@ export class LaunchScene extends Phaser.Scene {
     const f = this.s.fail;
     if (f === 'breakup') return this.why === 'maxq' ? 'The vehicle broke up at Max-Q. Throttle down (↓) before dynamic pressure reaches the limit, then throttle back up once it falls.' : this.why === 'rushed' ? 'Recontact at staging. Wait for the thrust to tail off before separating, and for the stages to drift apart before lighting stage 2.' : 'Structural failure from angle of attack in thick air (Q-alpha). Keep the nose on the flight-director cue until you are through Max-Q.';
     if (f === 'heating') return 'The fairing came off while the air was still thick and fast, and the payload overheated. Wait until free molecular heating is below 1,135 W/m².';
-    if (f === 'afts') return 'The autonomous flight termination system ended the flight. The vehicle stayed outside its approved corridor, and on this range no human has to press the button: the rocket decides for itself. Keep the trail between the red lines on the TRAJECTORY plot.';
+    if (f === 'afts') return 'The autonomous flight termination system ended the flight: it shut the engines down. The vehicle had stayed outside its approved corridor, and no range officer had to send a command: the unit on board made the call. Keep the trail between the red lines on the TRAJECTORY plot.';
     if (f === 'norelease') return 'The test article was still attached when the stage fell below the test window. Press Space as the altitude passes through the window on the way down.';
     if (f === 'reentry') return 'Stage 2 fell back into the atmosphere. Light it promptly after separation and keep the nose on the cue: it has to climb while it accelerates.';
     return 'The vehicle fell back to Earth.';
@@ -294,7 +294,7 @@ export class LaunchScene extends Phaser.Scene {
     const stars = ev <= 60 && ea <= 2500 && aoa <= 2 && clean ? 3 : ev <= 200 && ea <= 6000 && aoa <= 6 ? 2 : 1;
     const notes = [ev > 60 ? `cutoff was ${fmt(ev)} m/s off the target speed` : '', ea > 2500 ? `release was ${(ea / 1000).toFixed(1)} km outside the window centre` : '', aoa > 2 ? `the nose was ${aoa.toFixed(1)}° off the velocity vector at release` : '', s.stress >= 0.5 ? `structural load reached ${(s.stress * 100).toFixed(0)}%` : '', this.missed ? 'a NO-GO went uncalled in the count' : ''].filter(Boolean);
     this.say('Test article away · data is flowing');
-    this.time.delayedCall(1500, () => finish(this, this.def, { success: true, stars, egg: stars === 3 && ev <= 25, title: `Mach ${mach.toFixed(0)} at ${(s.alt / 1000).toFixed(0)} km`, text: `SECO at ${fmt(this.secoV)} m/s (target ${fmt(m.vCut!)}). The test article was released at ${(s.alt / 1000).toFixed(1)} km, ${km(s.down)} km downrange, descending at ${Math.abs(Math.atan2(s.vr, s.vt) / DEG).toFixed(1)}° with ${aoa.toFixed(1)}° angle of attack, doing ${fmt(s.speed * 3.6)} km/h. No orbit: that was the point.${this.p.afts ? ` AFTS corridor margin never below ${Math.max(0, Math.round(this.aftsMin * 100))}%.` : ''}${notes.length ? ' For three stars: ' + notes.join('; ') + '.' : ''}` }));
+    this.time.delayedCall(1500, () => finish(this, this.def, { success: true, stars, egg: stars === 3 && ev <= 25, title: 'Test article away', text: `Mach ${mach.toFixed(0)} at ${(s.alt / 1000).toFixed(0)} km (the game’s own test point). SECO at ${fmt(this.secoV)} m/s (target ${fmt(m.vCut!)}). The test article was released at ${(s.alt / 1000).toFixed(1)} km, ${km(s.down)} km downrange, descending at ${Math.abs(Math.atan2(s.vr, s.vt) / DEG).toFixed(1)}° with ${aoa.toFixed(1)}° angle of attack, doing ${fmt(s.speed * 3.6)} km/h. No orbit: that was the point.${this.p.afts ? ` AFTS corridor margin never below ${Math.max(0, Math.round(this.aftsMin * 100))}%.` : ''}${notes.length ? ' For three stars: ' + notes.join('; ') + '.' : ''}` }));
   }
 
   // ---------- drawing ----------
@@ -541,7 +541,6 @@ export class LaunchScene extends Phaser.Scene {
     if (d.i < n) { const b0 = pt(tgt, R + 1), b1 = pt(tgt + 5, R + 7), b2 = pt(tgt - 5, R + 7); g.fillStyle(Math.abs(diff) <= 6 ? P.lgreen : P.yellow).fillTriangle(b0.x, b0.y, b1.x, b1.y, b2.x, b2.y); const c1 = pt(tgt, R - 12); g.lineStyle(0.5, P.lgreen, 0.6).lineBetween(b0.x, b0.y, c1.x, c1.y); }
     const e = pt(d.ang, R - 1); g.lineStyle(1.2, 0xffffff).lineBetween(cx, cy, e.x, e.y);
     d.icon.setRotation(d.ang * DEG);
-    if (d.sail) { const q = pt(d.ang + 180, 9); g.fillStyle(0xdfe9f5, 0.85).fillRect(q.x - 7, q.y - 7, 14, 14); g.lineStyle(0.4, 0x8fa3c8).strokeRect(q.x - 7, q.y - 7, 14, 14).lineBetween(q.x - 7, q.y - 7, q.x + 7, q.y + 7).lineBetween(q.x + 7, q.y - 7, q.x - 7, q.y + 7); }
     const rate = Math.min(1, Math.abs(d.rate) / 60); g.fillStyle(0x000000, 0.5).fillRoundedRect(W - 92, 138, 80, 3.6, 1.8); if (rate > 0.03) g.fillStyle(Math.abs(d.rate) < 14 ? P.lgreen : P.red).fillRoundedRect(W - 92, 138, Math.max(3.6, 80 * rate), 3.6, 1.8);
     k.info.setText(`DEPLOYED ${Math.min(d.i, n)} / ${n}\n` + d.names.map((nm, i) => `${i < d.i ? '✓' : i === d.i ? '▶' : '·'} ${nm}`).join('\n')).setFontSize(n > 5 ? 5 : 6);
   }
@@ -569,6 +568,10 @@ export class LaunchScene extends Phaser.Scene {
     this.time.delayedCall(this.p.hundred ? 5200 : 1900, () => finish(this, this.def, { success: true, stars, egg: this.p.hundred ? stars === 3 : first, title: this.p.hundred ? 'One hundred Electrons' : 'Orbit!', text }));
   }
   fail(text: string) {
+    if (this.s.fail === 'afts') { // thrust termination: the engines are cut and the vehicle falls; nothing blows up
+      this.end(); snd.powerdown(); this.say('AFTS · THRUST TERMINATED'); this.tweens.add({ targets: this.rocket, angle: this.rocket.angle + 140, y: H + 80, duration: 2200, ease: 'Quad.easeIn' });
+      this.time.delayedCall(2300, () => finish(this, this.def, { success: false, title: 'Flight terminated', text })); return;
+    }
     this.end(); snd.boom(); this.cameras.main.shake(350, 0.01); this.rocket.setVisible(false);
     const b = this.add.particles(this.kick ? this.kick.craft.x : this.rocket.x, this.kick ? this.kick.craft.y : this.rocket.y - 30, 'puff', { speed: { min: 20, max: 150 }, lifespan: { min: 500, max: 1100 }, scale: { start: S * 0.9, end: S * 0.1 }, color: [0xffffff, 0xffd27a, 0xff6b2c, 0x3a1a0a], alpha: { start: 1, end: 0 }, blendMode: 'ADD', emitting: false }).setDepth(50); b.explode(60);
     this.time.delayedCall(1000, () => finish(this, this.def, { success: false, title: 'Anomaly', text }));

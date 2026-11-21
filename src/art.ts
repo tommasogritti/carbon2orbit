@@ -542,8 +542,8 @@ export function makeArt(scene: Phaser.Scene) {
     for (let x = 200; x < 320; x += 5) el(c, x + r() * 2, 117 + (x - 200) * 0.012 + r() * 2, 2.6, 1.6, i3(r()), OUT, 0.2); // rock seawall
     // Pad 0A next door: the tall water tower, the ramp and four lightning masts
     rr(c, 30, 95, 52, 4, 0.6, '#b8bcc4', OUT, 0.25); poly(c, [30, 99, 16, 99, 30, 95], '#a8acb4', OUT, 0.25);
-    line(c, 62, 95, 62, 46, '#d7dbe4', 2.2); line(c, 62, 95, 62, 46, 'rgba(0,0,0,.15)', 0.6); el(c, 62, 44, 6.4, 5, lg(c, 56, 0, 68, 0, [0, '#ffffff'], [1, '#aab2c0']), OUT, 0.3); rr(c, 59.6, 48, 4.8, 3, 0.4, '#c2c8d2', OUT, 0.25);
-    for (const x of [34, 46, 74, 84]) { line(c, x, 95, x, 38, '#8b93a7', 0.5); line(c, x, 38, x, 42, '#d8452e', 0.7); }
+    line(c, 62, 95, 62, 14, '#d7dbe4', 2.6); line(c, 62, 95, 62, 14, 'rgba(0,0,0,.15)', 0.7); el(c, 62, 11, 8, 6.2, lg(c, 54, 0, 70, 0, [0, '#ffffff'], [1, '#aab2c0']), OUT, 0.3); rr(c, 59.2, 16, 5.6, 3.4, 0.4, '#c2c8d2', OUT, 0.25); // the 94 m water tower: the tallest thing on the island
+    for (const x of [34, 46, 74, 84]) { line(c, x, 95, x, 30, '#8b93a7', 0.5); line(c, x, 30, x, 34, '#d8452e', 0.7); }
     rr(c, 40, 86, 10, 9, 0.5, '#d7dbe4', OUT, 0.3); text(c, '0A', 45, 90.6, 3.2, '#4a5066', 700);
     // LC-2: concrete apron, flame duct, strongback lowered away, tanks, the integration building inland
     rr(c, 118, 97.6, 84, 3.4, 0.8, lg(c, 0, 97.6, 0, 101, [0, '#d2d6dc'], [1, '#8b93a7']), OUT, 0.25);
@@ -551,7 +551,7 @@ export function makeArt(scene: Phaser.Scene) {
     rr(c, 140, 28, 2.4, 66, 0.3, '#5b6275', OUT, 0.25); rr(c, 146, 28, 2.4, 66, 0.3, '#5b6275', OUT, 0.25);
     for (let y = 30; y < 92; y += 7) { line(c, 141, y, 147.5, y + 7, '#8b93a7', 0.45); line(c, 147.5, y, 141, y + 7, '#8b93a7', 0.45); }
     for (const y of [42, 64]) rr(c, 148.4, y, 7, 1.2, 0.3, '#d8452e', OUT, 0.2);
-    for (const x of [124, 194]) { line(c, x, 14, x, 98, '#8b93a7', 0.6); line(c, x, 14, x, 18, '#d8452e', 0.8); }
+    for (const x of [124, 194]) { line(c, x, 40, x, 98, '#8b93a7', 0.6); line(c, x, 40, x, 44, '#d8452e', 0.8); }
     rr(c, 172, 86, 11, 12, 4, lg(c, 172, 0, 183, 0, [0, '#f2f4f8'], [1, '#9aa3b5']), OUT, 0.3); rr(c, 185, 90, 8, 8, 3, lg(c, 185, 0, 193, 0, [0, '#f2f4f8'], [1, '#9aa3b5']), OUT, 0.3);
     rr(c, 100, 90.6, 13, 7.4, 0.6, '#f4f2ea', OUT, 0.3); text(c, 'LC-2', 106.5, 94.4, 3.4, '#1d3a7a', 700);
     line(c, 280, 99, 280, 84, '#f4f2ea', 0.5); rr(c, 280, 84, 8, 4.6, 0.2, '#f4f2ea', OUT, 0.2); for (let i = 0; i < 3; i++) rr(c, 280, 84.4 + i * 1.5, 8, 0.6, 0, '#c8102e'); rr(c, 280, 84, 3.4, 2.4, 0, '#1d3a7a'); // the Stars and Stripes

@@ -38,13 +38,13 @@ export class FaultFinderScene extends Phaser.Scene {
   create() {
     cam(this); stopLoops(); music.play('space'); this.hum = loop('whine'); this.hum.set(0.12, 0.05);
     img(this, 0, 0, 'bg_review').setOrigin(0);
-    panel(this, 4, 4, 196, 14, 0.9); this.head = T(this, 9, 6.5, 'ANOMALY REVIEW · FLIGHT 13 · STAGE 2 TELEMETRY', '#ffffff', 6.2, '700');
+    panel(this, 4, 4, 196, 14, 0.9); this.head = T(this, 9, 6.5, 'ACCIDENT INVESTIGATION · FLIGHT 13 · TELEMETRY', '#ffffff', 6.2, '700');
     panel(this, W - 116, 4, 112, 14, 0.9); this.dayT = T(this, W - 9, 6.5, '', '#ffe98a', 6.2, '700').setOrigin(1, 0);
     panel(this, 4, 20, W - 8, 116, 0.88);
     for (let i = 0; i < 6; i++) this.labels.push(T(this, 8, Y0 + i * RH + 3, '', '#aab4d4', 4.6, '700'));
     this.g = this.add.graphics();
     this.call = T(this, W / 2, 138.5, '', '#ffe98a', 6.2, '700').setOrigin(0.5, 0).setAlign('center').setShadow(0, 1, '#000000', 3).setWordWrapWidth(300);
-    who(this, { ...this.def, role: this.def.role || 'CEO · leading the review' }, 4, H - 24);
+    who(this, { ...this.def, role: this.def.role || 'CEO · with the investigation board' }, 4, H - 24);
     this.say('← → move through time · ↑ ↓ change channel · SPACE flag the FIRST sign of trouble');
   }
   say(s: string) { this.call.setText(s); }
@@ -92,7 +92,7 @@ export class FaultFinderScene extends Phaser.Scene {
     const ci = this.order[this.cc], ch = CHANNELS[ci], on = this.on[ci];
     if (ch.root && Math.abs(this.ct - on) <= 7) { // found it
       this.marks.push({ c: this.cc, t: on, ok: true }); snd.egg();
-      this.say('There. Two minutes before the end, one connection starts to come and go.\nResistance, then heat, then no power to the pumps. Now prove it on the bench.');
+      this.say('There. Long before the end, one connection starts to come and go.\nResistance, then heat, then no power to the pumps. Now prove it on the bench.');
       this.phase = 3; this.time.delayedCall(AUTO ? 600 : 2600, () => this.benchStart()); return;
     }
     this.wrong++; this.days += 2; snd.deny(); this.cameras.main.shake(100, 0.003);
@@ -105,7 +105,7 @@ export class FaultFinderScene extends Phaser.Scene {
   // ---------- phase 2: make it happen again ----------
   benchStart() {
     this.phase = 2; this.g.clear(); this.labels.forEach((l) => l.setText('')); this.aux.forEach((a) => a.destroy()); this.aux = []; this.botT = 0;
-    this.head.setText('ANOMALY REVIEW · FLIGHT 13 · BENCH TEST');
+    this.head.setText('ACCIDENT INVESTIGATION · FLIGHT 13 · BENCH');
     this.aux.push(T(this, 10, 24, 'TEST', '#aab4d4', 4.6, '700'), T(this, 122, 24, 'SUSPECT HARNESS · SIX CONNECTIONS', '#aab4d4', 4.6, '700'));
     TESTS.forEach(([n, d], i) => this.aux.push(T(this, 14, 34 + i * 17, `${n}`, '#ffffff', i === 3 ? 4.3 : 5, '700'), T(this, 14, 34 + i * 17 + 6.4, `${d} days`, '#8fa3c8', 4)));
     for (let j = 0; j < 6; j++) this.aux.push(T(this, 136 + j * 30, 121, 'J' + (j + 1), '#ffffff', 5.4, '700').setOrigin(0.5, 0));

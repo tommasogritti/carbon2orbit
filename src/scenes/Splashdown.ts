@@ -34,7 +34,7 @@ export class SplashdownScene extends Phaser.Scene {
     this.sea = img(this, 0, H + 40, 'sea').setOrigin(0); this.ship = img(this, W + 60, 0, 'ship').setScale(S * 0.8);
     // the kick stage carries on to orbit with thirty satellites and a gnome
     const ks = this.add.container(BX - 22, BY - 30, [img(this, 0, 0, 'curie').setScale(S * 1.2), img(this, 0.4, -4.6, 'gnome').setScale(S * 0.42)]);
-    const kt = T(this, BX - 30, BY - 36, 'Stage 2, the kick stage,\n30 satellites and one gnome:\nstill going up', '#aab4d4', 4.4, '700').setOrigin(1, 0).setAlign('right');
+    const kt = T(this, BX - 30, BY - 36, 'Stage 2, the kick stage,\nthe satellites and one gnome:\non their way to orbit', '#aab4d4', 4.4, '700').setOrigin(1, 0).setAlign('right');
     this.tweens.add({ targets: [ks, kt], y: '-=60', x: '-=40', alpha: 0, duration: 5200, ease: 'Quad.easeIn', onComplete: () => { ks.destroy(); kt.destroy(); } });
     this.glow = img(this, 0, 14, 'puff').setScale(S * 3.2, S * 4.4).setTint(0xff8a3c).setBlendMode('ADD').setAlpha(0);
     this.plasma = this.add.particles(0, 0, 'puff', { speedY: { min: -150, max: -90 }, speedX: { min: -16, max: 16 }, lifespan: 420, scale: { start: S * 0.7, end: S * 0.1 }, color: [0xffffff, 0xffd27a, 0xff6b2c], alpha: { start: 0.9, end: 0 }, blendMode: 'ADD', frequency: 16, emitting: false });
@@ -49,7 +49,7 @@ export class SplashdownScene extends Phaser.Scene {
     T(this, W - 102, 150, 'ALTITUDE', '#aab4d4', 4.4, '700');
     this.g = this.add.graphics();
     this.prompt = T(this, BX, 26, '', '#ffffff', 8, '700').setOrigin(0.5).setShadow(0, 1, '#000000', 4).setAlign('center');
-    this.call = T(this, BX, H - 10, 'Stage separation · the booster is on its own', '#ffe98a', 6.6, '700').setOrigin(0.5).setShadow(0, 1, '#000000', 3);
+    this.call = T(this, BX, H - 10, 'Over the top of its arc · the booster is falling back', '#ffe98a', 6.6, '700').setOrigin(0.5).setShadow(0, 1, '#000000', 3);
     who(this, { ...this.def, role: this.def.role || 'CEO · in Mission Control' }, 4, 4);
   }
   say(k: string, s: string) { if (this.said[k]) return; this.said[k] = true; this.call.setText(s); }
