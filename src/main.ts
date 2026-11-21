@@ -3,7 +3,7 @@ import '@fontsource/chakra-petch/500.css';
 import '@fontsource/chakra-petch/600.css';
 import '@fontsource/chakra-petch/700.css';
 import './style.css';
-import { W, H, initInput, save, resetSave, closeCard, SCENE_FOR } from './core';
+import { W, H, initInput, save, resetSave, closeCard, SCENE_FOR, PATCHES } from './core';
 import { makeArt, D } from './art';
 import { makeBackdrops } from './backdrops';
 import { recStream, unlock, audioState } from './audio';
@@ -18,6 +18,7 @@ import { SprintScene } from './scenes/Sprint';
 
 class Boot extends Phaser.Scene {
   constructor() { super('Boot'); }
+  preload() { for (const [id, url] of Object.entries(PATCHES)) this.load.image('patch_' + id, url); } // mission patches, where present locally
   create() {
     makeArt(this); makeBackdrops(this);
     const q = new URLSearchParams(location.search);

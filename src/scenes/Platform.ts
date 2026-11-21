@@ -143,6 +143,16 @@ export class PlatformScene extends Phaser.Scene {
     this.plan();
     this.refresh();
   }
+  /** For the controls panel: the keys, plus what this level's own power-ups do. */
+  help() {
+    const has = (c: string) => ((this.p.powerups || []) as [string, number, number][]).some(([code]) => code === c);
+    const mate = CHARACTERS.find((c) => c.id === this.p.buddy);
+    const rows: [string, string][] = [['← →', 'Run'], ['Space', 'Jump: hold for a higher jump. Land on a troublemaker to see it off']];
+    if (has('J')) rows.push(['Space', 'With the jet pack: hold to fly while it lasts']);
+    if (has('B')) rows.push(['Space', 'With the gumboots: press again in mid-air for a second jump (you also run faster)']);
+    const notes = [has('S') ? 'The suit and helmet make you untouchable.' : '', has('H') ? 'The hard hat and hi-vis make you untouchable.' : '', has('C') && mate ? `The bubble with ${mate.name.split(' ')[0]}’s face brings ${mate.name} in to run ahead and clear the way.` : ''].filter(Boolean).join(' ');
+    return { title: this.def.title, rows, note: `Collect all ${this.p.parts.length} parts, then reach the goal. Bubbles are power-ups; the bar shows how long one lasts. ${notes}` };
+  }
   /** Waypoints for the ?auto=1 bot: every pickup in order (via a stepping-stone platform where needed), then the goal. */
   ways: Way[] = [];
   plan() {

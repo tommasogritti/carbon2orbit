@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { W, H, T, just, save, persist, DEV, showCard, srcLinks, watchLink, KIND_LABEL, SCENE_FOR, img, panel, hero } from '../core';
+import { W, H, T, just, save, persist, DEV, showCard, srcLinks, watchLink, patchImg, cardPhoto, KIND_LABEL, SCENE_FOR, img, panel, hero, hotkeys } from '../core';
 import { D, S, MAPW, MAPH, BUST_URL, BUSTS, DIAGRAMS } from '../art';
 import { LEVELS, BONUS, PEOPLE, CHARACTERS, LevelDef } from '../content';
 import { snd, music, stopLoops } from '../audio';
@@ -19,7 +19,7 @@ const parentOf = (b: LevelDef) => LEVELS.find((l) => l.id === b.parent)!;
 export function openLevel(scene: Phaser.Scene, def: LevelDef) {
   const locked = !playable(def);
   const kind = locked ? 'locked' : def.kind;
-  const head = `<div class="kicker"><span class="badge k-${kind}">${locked ? 'COMING ' + def.date.toUpperCase() : KIND_LABEL[def.kind]}</span>${def.date} · ${def.place}</div><h1>${def.title}</h1><p>${def.intro}</p><p class="fact"><b>Did you know?</b> ${def.fact}</p>`;
+  const head = `${patchImg(def.id)}<div class="kicker"><span class="badge k-${kind}">${locked ? 'COMING ' + def.date.toUpperCase() : KIND_LABEL[def.kind]}</span>${def.date} · ${def.place}</div><h1>${def.title}</h1><p>${def.intro}</p><p class="fact"><b>Did you know?</b> ${def.fact}</p>`;
   const back = { label: 'Back to map', fn: () => {}, alt: true };
   if (def.kind === 'person') { // meeting someone: facts and a picture, never invented speech
     const pic = def.photo || (def.portrait !== undefined ? { file: '', page: '', src: BUSTS[def.portrait], caption: def.title + ', as drawn in the game.', credit: 'Likeness from the photo on Rocket Lab’s team page; no freely licensed photo is available.' } : undefined);
@@ -27,12 +27,13 @@ export function openLevel(scene: Phaser.Scene, def: LevelDef) {
     return;
   }
   if (def.kind === 'card' || locked) {
-    showCard(head + srcLinks(def.sources), [{ label: locked ? 'Back to map' : 'Continue', fn: () => { if (!locked) { save.done[def.id] = 3; persist(); scene.scene.restart({ title: false }); } } }], def.photo);
+    showCard(head + srcLinks(def.sources), [{ label: locked ? 'Back to map' : 'Continue', fn: () => { if (!locked) { save.done[def.id] = 3; persist(); scene.scene.restart({ title: false }); } } }], cardPhoto(def));
   } else {
     const lead = CHARACTERS.find((c) => c.id === def.hero); // a level played as someone other than Peter says so up front
     const cast = lead ? `<div class="cast"><img class="toon" src="${BUSTS[lead.pre]}" alt="Cartoon of ${lead.name}"><div><b>In this level you play ${lead.name}</b>, ${lead.role}. ${lead.likeness}<br><span class="src">Drawn likeness; no freely licensed photo is available.</span></div></div>` : '';
     const diagram = def.diagram ? `<figure class="diagram"><img src="${DIAGRAMS[def.diagram.key]}" alt="Labelled diagram"><figcaption>${def.diagram.caption}</figcaption></figure>` : '';
-    showCard(head + cast + diagram + `<p class="how">How to play: ${def.how}</p>` + watchLink(def) + srcLinks(def.sources), [{ label: 'Start', fn: () => scene.scene.start(SCENE_FOR[def.mechanic!], { def }) }, back], def.photo);
+    const skip = { label: 'Skip (dev)', alt: true, fn: () => { save.done[def.id] = save.done[def.id] || 1; save.at = def.id; persist(); scene.scene.restart({ title: false }); } };
+    showCard(head + cast + diagram + `<p class="how">How to play: ${def.how}</p>` + watchLink(def) + srcLinks(def.sources), [{ label: 'Start', fn: () => scene.scene.start(SCENE_FOR[def.mechanic!], { def }) }, back, ...(DEV ? [skip] : [])], cardPhoto(def));
   }
 }
 
@@ -112,7 +113,18 @@ export class MapScene extends Phaser.Scene {
     const eggs = Object.keys(save.eggs).length, total = LEVELS.filter((d) => d.egg).length;
     h(panel(this, 4, 4, 82, 14)); h(T(this, 9, 6.5, 'CARBON TO ORBIT', '#ffffff', 7.5, '700'));
     h(panel(this, W - 196, 4, 154, 14)); h(T(this, W - 47, 7, `EGGS ${eggs}/${total}   SECRETS ${Object.keys(save.unlocks).length}/${BONUS.length}   PEOPLE ${Object.keys(save.met).length}/${PEOPLE.length}`, '#ffe98a', 6)).setOrigin(1, 0);
-    h(T(this, W - 8, H - 17, '←↑↓→ move   ⏎ open', '#aab4d4', 5.5)).setOrigin(1, 0);
+    h(T(this, 9, 21, '←↑↓→ nearest level that way   ⏎ open   N next level   H controls' + (DEV ? '   K skip (dev)' : ''), '#dfe6f7', 5, '700')).setShadow(0, 1, '#000', 3);
+    // the level to play next wears a bouncing tag, and N walks straight to it
+    const nxt = this.nextUp();
+    if (nxt) {
+      const tagN = T(this, nxt.map.x, nxt.map.y - 12, 'NEXT ▼', '#ffe98a', 5.4, '700').setOrigin(0.5, 1).setDepth(5).setShadow(0, 1, '#000', 3);
+      this.tweens.add({ targets: tagN, y: tagN.y - 3, duration: 420, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      const halo = img(this, nxt.map.x, nxt.map.y, 'puff').setScale(S * 1.8).setTint(0xffe98a).setBlendMode('ADD').setDepth(2).setAlpha(0.7);
+      this.tweens.add({ targets: halo, alpha: 0.2, scale: S * 2.5, duration: 800, yoyo: true, repeat: -1 });
+      world.push(tagN, halo);
+    }
+    hotkeys.KeyN = () => { const n = this.nextUp(); if (n && n !== this.cur && !this.moving) this.walkTo(n); };
+    this.events.once('shutdown', () => { hotkeys.KeyN = undefined; });
     cam.ignore(hud);
     this.cameras.add(0, 0, W * D, H * D).setZoom(D).centerOn(W / 2, H / 2).ignore(world);
     this.refresh();
@@ -132,35 +144,62 @@ export class MapScene extends Phaser.Scene {
     this.sub.setText(`${d.date.slice(0, 15)}  ·  ${d.place}  ·  ${d.kind === 'person' ? (save.met[d.id] ? 'MET' : 'SOMEONE TO MEET') : (d.parent ? 'SECRET ' : '') + (d.status === 'flown' ? KIND_LABEL[d.kind] : 'LOCKED')}${d.kind === 'person' ? '' : stars}`);
     this.ring.setPosition(d.map.x, d.map.y - 0.5);
   }
+  /** Developer mode: mark the node under the marker as done without playing it. */
+  devSkip() {
+    const d = this.cur; if (this.moving || !playable(d)) return;
+    save.done[d.id] = save.done[d.id] || (d.kind === 'card' || d.kind === 'person' ? 3 : 1); if (d.kind === 'person') save.met[d.id] = true;
+    persist(); snd.select(); this.scene.restart({ title: false });
+  }
+  /** The first level on the story path that is open and not finished yet. */
+  nextUp() { return LEVELS.find((d, i) => playable(d) && !save.done[d.id] && isOpen(i)); }
+  /**
+   * Which node an arrow press means: the nearest one in that direction, among every node you may stand on.
+   * Close and well-aligned beats far and well-aligned; anything more than about 70° off the arrow is ignored.
+   */
+  pick(dx: number, dy: number): LevelDef | undefined {
+    const l = Math.hypot(dx, dy), ux = dx / l, uy = dy / l, cur = this.cur;
+    const score = (n: LevelDef) => { const vx = n.map.x - cur.map.x, vy = n.map.y - cur.map.y, d = Math.hypot(vx, vy) || 1, c = (vx * ux + vy * uy) / d; return c < 0.34 ? Infinity : d / (c * c); };
+    const best = (list: LevelDef[]) => list.filter((n) => n !== cur).map((n) => ({ n, sc: score(n) })).filter((x) => x.sc < Infinity).sort((p, q) => p.sc - q.sc)[0];
+    const open = best([...LEVELS.filter((_, i) => isOpen(i)), ...branches()]), locked = best(LEVELS.filter((_, i) => !isOpen(i)));
+    if (locked && (!open || locked.sc < open.sc * 0.5)) { // the arrow points at a level that is not open yet: say what opens it
+      const need = this.nextUp(); snd.deny(); this.sub.setText(need === cur ? `“${locked.n.title}” is locked. Play this level first: press Enter` : need ? `“${locked.n.title}” is locked. Play “${need.title}” first: press N to go there` : `“${locked.n.title}” is not open yet`);
+      return undefined;
+    }
+    return open?.n;
+  }
+  /** The trail from one node to another: back to the story path if you are on a branch, along it, then out to a branch. */
+  route(a: LevelDef, b: LevelDef) {
+    const main = (n: LevelDef) => LEVELS.indexOf(n.parent ? parentOf(n) : n), pts: { x: number; y: number }[] = [];
+    const seg = (p: { x: number; y: number }, q: { x: number; y: number }, fwd: boolean) => { for (let k = 0; k <= 12; k++) pts.push(arc(p, q, fwd ? k / 12 : 1 - k / 12)); }; // trails are drawn from p to q
+    if (a.parent) seg(parentOf(a).map, a.map, false);
+    let i = main(a); const j = main(b);
+    while (i < j) { seg(LEVELS[i].map, LEVELS[i + 1].map, true); i++; }
+    while (i > j) { seg(LEVELS[i - 1].map, LEVELS[i].map, false); i--; }
+    if (b.parent) seg(parentOf(b).map, b.map, true);
+    return pts;
+  }
+  walkTo(dest: LevelDef) {
+    const pts = this.route(this.cur, dest), len = [0];
+    for (let k = 1; k < pts.length; k++) len.push(len[k - 1] + Phaser.Math.Distance.Between(pts[k - 1].x, pts[k - 1].y, pts[k].x, pts[k].y));
+    const total = len[len.length - 1] || 1, o = { t: 0 };
+    this.moving = true; snd.move(); this.ring.setVisible(false);
+    this.tweens.add({
+      targets: o, t: 1, duration: Phaser.Math.Clamp(260 + total * 5, 320, 2000), ease: 'Sine.easeInOut',
+      onUpdate: () => {
+        if (this.time.now - this.lastStep > 190) { this.lastStep = this.time.now; snd.step(); }
+        const at = o.t * total; let k = 1; while (k < len.length - 1 && len[k] < at) k++;
+        const f = (at - len[k - 1]) / (len[k] - len[k - 1] || 1), x = pts[k - 1].x + (pts[k].x - pts[k - 1].x) * f, y = pts[k - 1].y + (pts[k].y - pts[k - 1].y) * f;
+        if (Math.abs(x - this.marker.x) > 0.05) this.marker.setFlipX(x < this.marker.x);
+        this.marker.setPosition(x, y - 5).setTexture(this.pre + 'peterw' + (Math.floor(this.time.now / 90) % 6));
+      },
+      onComplete: () => { this.marker.setTexture(this.pre + 'peter0'); this.cur = dest; this.moving = false; save.at = dest.id; persist(); this.ring.setVisible(true); this.refresh(); },
+    });
+  }
   update() {
     this.tag.setPosition(this.marker.x, this.marker.y - 43);
     if (this.moving) return;
-    const cur = this.cur, i = LEVELS.indexOf(cur);
-    // neighbours: previous and next on the main path, any secret branches, or back to the parent from a secret node
-    const next = i >= 0 ? LEVELS[i + 1] : undefined;
-    const around = (i >= 0 ? [LEVELS[i - 1], next, ...branches().filter((b) => b.parent === cur.id)] : [parentOf(cur)]).filter(Boolean) as LevelDef[];
-    const dir = { x: (just('right') ? 1 : 0) - (just('left') ? 1 : 0), y: (just('down') ? 1 : 0) - (just('up') ? 1 : 0) };
-    let to: LevelDef | undefined;
-    if (dir.x || dir.y) {
-      let best = 0.1;
-      for (const n of around) { const dx = n.map.x - cur.map.x, dy = n.map.y - cur.map.y, l = Math.hypot(dx, dy) || 1, sc = (dx * dir.x + dy * dir.y) / l; if (sc > best) { best = sc; to = n; } }
-      if (to && to === next && !isOpen(i + 1)) { to = undefined; snd.deny(); this.sub.setText('Finish this one first!'); }
-    }
-    if (to) {
-      const dest = to;
-      this.moving = true; snd.move(); this.ring.setVisible(false);
-      // trails are drawn from the earlier node (or the parent) to the later one; walk the same curve either way
-      const fwd = dest.parent ? true : cur.parent ? false : LEVELS.indexOf(dest) > i;
-      const a = cur.map, b = dest.map, dist = Phaser.Math.Distance.Between(a.x, a.y, b.x, b.y);
-      this.marker.setFlipX(b.x < a.x);
-      const o = { t: 0 };
-      this.tweens.add({
-        targets: o, t: 1, duration: Math.min(2200, 260 + dist * 7), ease: 'Sine.easeInOut',
-        onUpdate: () => { if (this.time.now - this.lastStep > 190) { this.lastStep = this.time.now; snd.step(); } const p = fwd ? arc(a, b, o.t) : arc(b, a, 1 - o.t); this.marker.setPosition(p.x, p.y - 5).setTexture(this.pre + 'peterw' + (Math.floor(this.time.now / 90) % 6)); },
-        onComplete: () => { this.marker.setTexture(this.pre + 'peter0'); this.cur = dest; this.moving = false; save.at = dest.id; persist(); this.ring.setVisible(true); this.refresh(); },
-      });
-    } else if (just('b') || just('a')) {
-      snd.select(); openLevel(this, this.cur);
-    }
+    const dx = (just('right') ? 1 : 0) - (just('left') ? 1 : 0), dy = (just('down') ? 1 : 0) - (just('up') ? 1 : 0);
+    if (dx || dy) { const to = this.pick(dx, dy); if (to) this.walkTo(to); }
+    else if (just('b') || just('a')) { snd.select(); openLevel(this, this.cur); }
   }
 }

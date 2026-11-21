@@ -4,6 +4,29 @@ import type { LevelDef } from './content';
 import { D, S, UI, BUSTS } from './art';
 import { beep, snd, music, stopLoops, unlock, muted, setMuted } from './audio';
 
+/**
+ * Official mission patches, by level id, when they have been fetched into src/assets/patches/ (see README).
+ * They are Rocket Lab's artwork, so that folder is git-ignored: the game shows a patch where the file exists and
+ * simply goes without where it does not. Nothing here ships in the repository.
+ */
+export const PATCHES: Record<string, string> = Object.fromEntries(
+  Object.entries(import.meta.glob('./assets/patches/*.png', { eager: true, import: 'default', query: '?url' }) as Record<string, string>).map(([p, url]) => [p.split('/').pop()!.replace('.png', ''), url]),
+);
+/**
+ * Official Rocket Lab photos, by level id, when they have been saved into src/assets/official/ as <level id>.jpg
+ * (optionally with a manifest.json giving each one's title and Flickr page). Rocket Lab's Flickr says its images may be
+ * downloaded with credit, but they are all rights reserved, so this folder is git-ignored too: local play only.
+ */
+const officialMeta = (Object.values(import.meta.glob('./assets/official/manifest.json', { eager: true, import: 'default' }))[0] || {}) as Record<string, { title: string; page: string }>;
+export const OFFICIAL: Record<string, NonNullable<LevelDef['photo']>> = Object.fromEntries(
+  Object.entries(import.meta.glob('./assets/official/*.jpg', { eager: true, import: 'default', query: '?url' }) as Record<string, string>).map(([p, src]) => {
+    const id = p.split('/').pop()!.replace('.jpg', '');
+    return [id, { file: '', src, official: true, caption: officialMeta[id]?.title || 'Official Rocket Lab photo', credit: 'Rocket Lab', page: officialMeta[id]?.page || 'https://www.flickr.com/photos/rocketlab/' }];
+  }),
+);
+/** The picture for a level's cards: its freely licensed photo if it has one, else a local official photo if present. */
+export const cardPhoto = (def: LevelDef) => def.photo || OFFICIAL[def.id];
+export const patchImg = (id: string) => (PATCHES[id] ? `<img class="patch" src="${PATCHES[id]}" alt="Mission patch" title="Mission patch © Rocket Lab">` : '');
 export const W = 320;
 export const H = 180;
 export const SCENE_FOR: Record<string, string> = { platform: 'Platform', launch: 'Launch', hotfire: 'Hotfire', 'heli-catch': 'Heli', 'orbit-raise': 'OrbitRaise', sprint: 'Sprint' };
@@ -37,10 +60,30 @@ export function initInput(game: Phaser.Game) {
   const mute = document.getElementById('mute')!;
   mute.textContent = muted() ? '🔇' : '🔊';
   mute.addEventListener('click', () => { unlock(); setMuted(!muted()); mute.blur(); });
+  // Developer mode (?dev=1): K skips. On the map it marks the level under the marker as done; inside a level it ends it at once as a one-star pass.
+  if (DEV) hotkeys.KeyK = () => {
+    const sc = game.scene.getScenes(true)[0] as any;
+    if (!sc) return;
+    if (sc.scene.key === 'Map') sc.devSkip?.();
+    else if (sc.def) { sc.scene.pause(); finish(sc, sc.def, { success: true, stars: 1, title: 'Skipped', text: 'Developer mode: level skipped and marked as done.' }); }
+  };
+  hotkeys.KeyH = () => showHelp(game);
+  const help = document.getElementById('help');
+  help?.addEventListener('click', () => { help.blur(); if (helpOpen) overlayConfirm(); else showHelp(game); });
+  const dev = document.getElementById('dev');
+  if (dev) {
+    dev.textContent = DEV ? 'Developer mode: ON · K skips a level · click to turn off' : 'Developer mode: off';
+    dev.classList.toggle('on', DEV);
+    dev.addEventListener('click', () => {
+      try { if (DEV) localStorage.removeItem('carbon-to-orbit-dev'); else localStorage.setItem('carbon-to-orbit-dev', '1'); } catch { /* private mode */ }
+      const u = new URL(location.href); u.searchParams.delete('dev'); location.href = u.toString(); // reload with the new setting
+    });
+  }
   window.addEventListener('pointerdown', unlock);
   window.addEventListener('keydown', (e) => {
     unlock(); // browsers only allow sound after a key press or tap
     if (e.code === 'KeyM' && !e.repeat) setMuted(!muted());
+    if (e.code === 'KeyH' && !e.repeat && helpOpen) { overlayConfirm(); e.preventDefault(); return; } // H closes the panel it opened
     if (!e.repeat && !overlayOpen() && hotkeys[e.code]) { hotkeys[e.code]!(); e.preventDefault(); return; }
     const k = MAP[e.code];
     if (!k) return;
@@ -76,7 +119,9 @@ export function loadSave(): Save {
 export const save: Save = loadSave();
 export function persist() { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch { /* private mode */ } }
 export function resetSave() { save.done = {}; save.eggs = {}; save.unlocks = {}; save.met = {}; delete save.at; persist(); }
-export const DEV = new URLSearchParams(location.search).has('dev');
+/** Developer mode: every node open, and K skips a level. On with ?dev=1 in the address, or with the switch in the page footer (remembered). */
+const devStored = () => { try { return localStorage.getItem('carbon-to-orbit-dev') === '1'; } catch { return false; } };
+export const DEV = new URLSearchParams(location.search).has('dev') || devStored();
 /**
  * Who is played in a level, and which sprite set to use. Peter Beck is the main character throughout; a level can hand
  * the controls to someone else with `hero`. Peter has a younger set for 1990s levels.
@@ -98,7 +143,9 @@ export interface Btn { label: string; fn: () => void; alt?: boolean }
 export function showCard(html: string, btns: Btn[], photo?: LevelDef['photo']) {
   const o = overlay();
   const fig = photo
-    ? photo.src
+    ? photo.official
+      ? `<figure><img src="${photo.src}" alt="${photo.caption}"><figcaption>${photo.caption}<br>Photo: ${photo.credit}, all rights reserved · <a href="${photo.page}" target="_blank" rel="noopener">source</a></figcaption></figure>`
+      : photo.src
       ? `<figure class="drawn"><img src="${photo.src}" alt="${photo.caption}"><figcaption>${photo.caption}<br>${photo.credit}</figcaption></figure>`
       : `<figure><img src="assets/photos/${photo.file}" alt="${photo.caption}"><figcaption>${photo.caption}<br>Photo: ${photo.credit} · <a href="${photo.page}" target="_blank" rel="noopener">source</a></figcaption></figure>`
     : '';
@@ -114,6 +161,34 @@ export function showCard(html: string, btns: Btn[], photo?: LevelDef['photo']) {
   confirmFn = () => { closeCard(); btns[0].fn(); };
   o.hidden = false;
 }
+// ---------- the controls panel: H, or the ? button, at any moment ----------
+/**
+ * What the keys do, per scene. A scene whose controls depend on the level (or the phase) defines `help()` instead and
+ * returns the same shape; every new mechanic must provide one or the other.
+ */
+export interface Help { title: string; rows: [keys: string, does: string][]; note?: string }
+export const CONTROLS: Record<string, Help> = {
+  Map: { title: 'World map', rows: [['← ↑ ↓ →', 'Walk to the nearest level in that direction'], ['Enter', 'Open the level, card or person you are standing on'], ['N', 'Walk straight to the next level to play']], note: 'Greyed-out levels open once every earlier level on the story path is finished.' },
+  Platform: { title: 'Platform level', rows: [['← →', 'Run'], ['Space', 'Jump: hold for a higher jump. Land on a troublemaker to see it off'], ['Space (jet pack)', 'Hold to fly while the jet pack lasts'], ['Space (gumboots)', 'Press again in mid-air for a second jump']], note: 'Collect every part, then reach the goal. Bubbles are power-ups; the timer bar shows how long one lasts.' },
+  Hotfire: { title: 'Engine hot-fire', rows: [['Space', 'Hold to spin the electric pumps up; release to let pressure fall']], note: 'Keep the needle in the green band until the qualification bar is full, before the battery runs flat.' },
+  Heli: { title: 'Helicopter catch', rows: [['← ↑ ↓ →', 'Fly the helicopter']], note: 'Put the hook at the bottom of your cable on the line trailing above the parachute. You get three passes.' },
+  OrbitRaise: { title: 'Orbit raising', rows: [['Space', 'Fire the engine: press as the spacecraft sweeps through the green perigee zone']], note: 'Better timing gives a bigger push. Reach the Moon before the propellant runs out.' },
+  Sprint: { title: 'Rocket bike sprint', rows: [['Space', 'Hold to open the peroxide valve'], ['← →', 'Tap to keep the balance needle centred']], note: 'The faster you go, the more it wobbles. Stay upright to the flag.' },
+};
+let helpOpen = false;
+const kbd = (s: string) => s.replace(/(←|→|↑|↓|Space|Enter|\b[A-Z]\b)/g, '<kbd>$1</kbd>');
+/** Pause whatever is running and show its controls. */
+export function showHelp(game: Phaser.Game) {
+  if (overlayOpen()) return;
+  const sc = game.scene.getScenes(true)[0] as any;
+  const h: Help | undefined = sc && (sc.help?.() || CONTROLS[sc.scene.key]);
+  if (!h) return;
+  const rows: [string, string][] = [...h.rows, ['H', 'Show or hide this panel'], ['M', 'Sound on or off'], ...(DEV ? [['K', 'Developer mode: skip this level'] as [string, string]] : [])];
+  sc.scene.pause(); helpOpen = true; snd.select();
+  showCard(`<div class="kicker">CONTROLS · GAME PAUSED</div><h1>${h.title}</h1><table class="keys">${rows.map(([k, t]) => `<tr><td>${kbd(k)}</td><td>${t}</td></tr>`).join('')}</table>${h.note ? `<p class="how">${h.note}</p>` : ''}<p class="src">Arrows also work as W A S D, Space as Z, Enter as X.</p>`,
+    [{ label: 'Back to the game', fn: () => { helpOpen = false; sc.scene.resume(); } }]);
+}
+
 export const KIND_LABEL: Record<string, string> = { platform: 'PLATFORM', launch: 'LAUNCH CONTROL', minigame: 'MINI-GAME', card: 'STORY CARD', person: 'PERSON' };
 /** A link out to a video on its own site. The footage is never copied into the game. */
 export const watchLink = (def: LevelDef) => (def.watch ? `<p class="watch"><a href="${def.watch.url}" target="_blank" rel="noopener">▶ Watch</a> ${def.watch.label}</p>` : '');
@@ -147,7 +222,7 @@ export function finish(scene: Phaser.Scene, def: LevelDef, r: { success: boolean
   const egg = def.egg ? (save.eggs[def.id] ? `<p class="fact"><b>Easter egg found:</b> ${def.egg}</p>` : `<p class="src">There is an easter egg hidden in this level…</p>`) : '';
   const bonus = def.unlocks ? byId(def.unlocks) : undefined;
   const secret = !bonus ? '' : save.unlocks[bonus.id] ? `<p class="fact unlock"><b>${fresh ? 'Secret unlocked' : 'Secret found'}:</b> “${bonus.title}” is now on the map, branching off this node.</p>` : `<p class="src">A blueprint is hidden somewhere in this level. You will need a power-up to reach it.</p>`;
-  const html = `<div class="kicker">${def.title.toUpperCase()} · ${r.success ? 'MISSION SUCCESS' : 'ANOMALY'}</div><h1>${r.title}</h1>${stars}<p>${r.text}</p>${r.success ? `<p class="fact"><b>What really happened:</b> ${def.after}</p>` : ''}${r.success ? watchLink(def) : ''}${egg}${r.success ? secret : ''}`;
+  const html = `${r.success ? patchImg(def.id) : ''}<div class="kicker">${def.title.toUpperCase()} · ${r.success ? 'MISSION SUCCESS' : 'ANOMALY'}</div><h1>${r.title}</h1>${stars}<p>${r.text}</p>${r.success ? `<p class="fact"><b>What really happened:</b> ${def.after}</p>` : ''}${r.success ? watchLink(def) : ''}${egg}${r.success ? secret : ''}`;
   const back = () => scene.scene.start('Map', { title: false }); // without data Phaser reuses the boot data and the title card comes back
   const retry = () => scene.scene.start(scene.scene.key, { def });
   showCard(html, r.success ? [{ label: 'Back to map', fn: back }, { label: 'Play again', fn: retry, alt: true }] : [{ label: 'Try again', fn: retry }, { label: 'Back to map', fn: back, alt: true }]);

@@ -19,7 +19,7 @@ export interface LevelDef {
   role?: string; // who the player's character is at this point in the story, shown on the name plate
   after: string; // "what really happened" on the result card
   egg?: string; // easter egg text, revealed when found
-  photo?: { file: string; caption: string; credit: string; page: string; src?: string };
+  photo?: { file: string; caption: string; credit: string; page: string; src?: string; official?: boolean };
   diagram?: { key: string; caption: string }; // a labelled drawing (art.ts DIAGRAMS) shown on the intro card
   watch?: { url: string; label: string }; // a video on its own site: linked, never copied
   portrait?: string; // people: character prefix of a drawn portrait, used when there is no freely licensed photo

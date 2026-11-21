@@ -30,7 +30,7 @@ export class LaunchScene extends Phaser.Scene {
   clouds: { o: Phaser.GameObjects.Image; alt: number }[] = []; streaks: Phaser.GameObjects.Rectangle[] = [];
   rocket!: Phaser.GameObjects.Container; s1!: Phaser.GameObjects.Image; s2?: Phaser.GameObjects.Image; flame!: Emitter; flame2!: Emitter; smoke!: Emitter;
   g!: Phaser.GameObjects.Graphics; clockT!: Txt; tele!: Txt; call!: Txt; prompt!: Txt; hint!: Txt; warpT!: Txt; dialT!: Txt; plotT!: Txt[]; lab: Txt[] = []; val: Txt[] = []; poll: Txt[] = []; tl: Txt[] = [];
-  rumble!: Loop; sea!: Loop;
+  rumble!: Loop; sea!: Loop; patch?: Phaser.GameObjects.Image;
   ended = false; count = 12; pollT = 0; holdT = 0; resume = ''; nogo?: { i: number; at: number; shown: boolean; done: boolean }; missed = false; scrubbed = true; lastC = 99;
   warp = 1; trail: { d: number; a: number }[] = []; trailT = 0; said: Record<string, boolean> = {}; alarmT = 0; why = ''; sawQ = 0; seco0?: L.Orbit; margin = 0; stageDelay = 0;
   // sounding rocket
@@ -73,6 +73,13 @@ export class LaunchScene extends Phaser.Scene {
     if (two) { this.s1 = img(this, 0, 0, 'electron_s1').setOrigin(0.5, 1); this.s2 = img(this, 0, -58, 'electron_s2').setOrigin(0.5, 1); }
     else this.s1 = img(this, 0, 0, 'atea').setOrigin(0.5, 1);
     this.rocket = this.add.container(RX, 136, [this.flame, this.flame2, this.s1, ...(this.s2 ? [this.s2] : [])]);
+    // the mission patch, where the file is present: a decal on the fairing and a badge on the console
+    const pk = 'patch_' + this.def.id; this.patch = undefined;
+    if (this.textures.exists(pk)) {
+      const src = this.textures.get(pk).getSourceImage(), ratio = src.height / src.width;
+      if (two) { this.patch = this.add.image(0, -71.4, pk).setDisplaySize(4.6, 4.6 * ratio); this.rocket.add(this.patch); }
+      this.add.image(W - 15, 88, pk).setDisplaySize(20, 20 * ratio).setDepth(19);
+    }
     // ---- consoles ----
     panel(this, 4, 4, 86, 44);
     this.clockT = T(this, 9, 6, 'T-00:12', '#ffe98a', 10, '700');
@@ -84,7 +91,7 @@ export class LaunchScene extends Phaser.Scene {
     panel(this, W - 100, 4, 96, 72);
     T(this, W - 9, 6.5, (this.p.payload as string).toUpperCase(), '#aab4d4', 5.4, '700').setOrigin(1, 0);
     for (let i = 0; i < 5; i++) { this.lab.push(T(this, W - 96, 16.5 + i * 11.4, '', '#aab4d4', 4.6, '700')); this.val.push(T(this, W - 8, 16.5 + i * 11.4, '', '#ffffff', 4.8, '700').setOrigin(1, 0)); }
-    if (this.p.hundred) T(this, W - 9, 81, 'ELECTRON LAUNCH #100', '#ffe98a', 6.5, '700').setOrigin(1, 0).setShadow(0, 1, '#000', 2);
+    if (this.p.hundred) T(this, this.textures.exists('patch_' + this.def.id) ? W - 28 : W - 9, 84, 'ELECTRON LAUNCH #100', '#ffe98a', 6.5, '700').setOrigin(1, 0).setShadow(0, 1, '#000', 2);
     panel(this, W - 100, 100, 96, 76);
     T(this, W - 96, 102, 'TRAJECTORY', '#aab4d4', 4.6, '700');
     this.plotT = [T(this, W - 8, 102, '', '#8fa3c8', 4.2).setOrigin(1, 0), T(this, W - 8, 170.5, '', '#8fa3c8', 4.2).setOrigin(1, 0), T(this, W - 92, 0, '100 km', '#7fd0ff', 4).setVisible(false)];
@@ -102,6 +109,12 @@ export class LaunchScene extends Phaser.Scene {
     this.say(this.ung ? 'Aim the rail against the wind' : 'Terminal count');
   }
   say(s: string) { this.call.setText(s); }
+  /** For the controls panel: launch control changes with the vehicle and the phase. */
+  help() {
+    if (this.ung) return { title: 'Launch control · sounding rocket', rows: [['↑ ↓', 'Set the rail elevation (before the count ends)'], ['Space', 'Start the count; at burnout, release the dart'], ['Enter', 'Hold the count if the wind takes the prediction out of limits']] as [string, string][], note: 'The rocket is unguided. Get the predicted apogee over the 100 km line and the impact inside the green zone before you commit.' };
+    if (this.kick) return { title: 'Launch control · kick stage', rows: [['Space', 'Hold to burn Curie. Centre the burn on apogee, release when perigee meets apogee'], ['Enter', 'Deploy the payload']] as [string, string][], note: 'Miss the apogee pass and you wait one orbit for the next.' };
+    return { title: 'Launch control', rows: [['Enter', 'In the count: call a hold when a station goes NO-GO'], ['Space', 'At T-0: release the hold-downs'], ['← →', 'Pitch: keep the white needle on the green cue'], ['↑ ↓', 'Throttle: ease off to stay under the dynamic-pressure limit through Max-Q'], ['Space', 'Command the next event when prompted: separation, stage-2 ignition, fairing, battery hot-swap'], ['Enter', 'SECO, when predicted apogee reaches the target']] as [string, string][], note: 'Flying off the cue in thick air builds Q-alpha load. The fairing is safe to drop once heating is below 1,135 W/m².' };
+  }
   alarm(dt: number) { this.alarmT -= dt; if (this.alarmT <= 0) { this.alarmT = 0.42; snd.alarm(); } }
 
   update(_t: number, dms: number) {
@@ -176,7 +189,7 @@ export class LaunchScene extends Phaser.Scene {
     const rushed = e.endsWith('!'), k = e.replace('!', '');
     if (k === 'sep') { this.stageDelay = s.t - s.ev.meco; this.separate(); snd.stage(); music.intensity(2); this.say(rushed ? 'Separation too early: recontact!' : 'Stage separation confirmed'); if (rushed) { this.why = 'rushed'; this.cameras.main.shake(200, 0.008); } }
     else if (k === 'ses') { snd.ignition(); this.say(rushed ? 'Ignition too close to stage 1!' : 'Stage 2 ignition · Rutherford vacuum'); if (rushed) this.why = 'rushed'; }
-    else if (k === 'fairing') { this.s2!.setTexture('electron_s2bare'); this.fairings(); snd.fairing(); this.say(s.fmh > L.FMH_LIMIT ? 'Fairing off early: payload is heating!' : 'Fairing jettison confirmed'); }
+    else if (k === 'fairing') { this.patch?.destroy(); this.patch = undefined; this.s2!.setTexture('electron_s2bare'); this.fairings(); snd.fairing(); this.say(s.fmh > L.FMH_LIMIT ? 'Fairing off early: payload is heating!' : 'Fairing jettison confirmed'); }
     else if (k === 'swap') {
       snd.click(); this.say('Battery hot-swap · two packs away');
       for (const d of [-1, 1]) { const b = this.add.rectangle(this.rocket.x, this.rocket.y, 2.4, 3.4, P.yellow).setStrokeStyle(0.3, 0x0b0c12); this.tweens.add({ targets: b, x: b.x - 30 + d * 8, y: H + 10, angle: 300 * d, duration: 1400, onComplete: () => b.destroy() }); }
@@ -363,7 +376,7 @@ export class LaunchScene extends Phaser.Scene {
     const w = this.rocket.getWorldTransformMatrix();
     const old = img(this, w.tx, w.ty, 'electron_s1').setOrigin(0.5, 1).setRotation(this.rocket.rotation);
     this.rocket.remove(this.s1, true);
-    this.s2!.setTexture('electron_s2free').setOrigin(0.5, 0.5).setPosition(0, 0);
+    this.s2!.setTexture('electron_s2free').setOrigin(0.5, 0.5).setPosition(0, 0); this.patch?.setPosition(0, -3.4);
     this.tweens.add({ targets: this.rocket, scale: 1.5, duration: 900 });
     this.tweens.add({ targets: old, y: H + 70, x: old.x - 30, angle: old.angle + 35, duration: 2200, ease: 'Quad.easeIn', onComplete: () => old.destroy() });
   }

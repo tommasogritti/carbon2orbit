@@ -35,7 +35,7 @@ footer { position: fixed; bottom: 0; left: 0; right: 0; height: 22px; line-heigh
 .cast img.toon { background: linear-gradient(180deg, #3f7fd0, #16305f); object-fit: contain; }
 #mute { position: absolute; top: 8px; right: 8px; z-index: 6; width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: rgba(11,14,24,.75); color: #fff; font-size: 17px; cursor: pointer; }
 .card .fact.unlock { border-left-color: #7fd0ff; } .card .fact.unlock b { color: #7fd0ff; }
-#pick { position: absolute; top: 8px; right: 54px; z-index: 6; width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: rgba(11,14,24,.75); color: #fff; font-size: 17px; cursor: pointer; }
+#help { position: absolute; top: 8px; right: 54px; z-index: 6; width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: rgba(11,14,24,.75); color: #fff; font-size: 18px; font-weight: 700; cursor: pointer; }
 .k-person { background: #c9a8ff; }
 .card figure.drawn img { background: linear-gradient(180deg, #3f7fd0, #16305f); object-fit: contain; }
 .card img.inline { width: 64px; height: 84px; object-fit: cover; object-position: top; border-radius: 6px; float: left; margin: 8px 10px 4px 0; }
@@ -51,3 +51,14 @@ footer { position: fixed; bottom: 0; left: 0; right: 0; height: 22px; line-heigh
 .card .watch { font-size: 13.5px; margin: 8px 0; }
 .card .watch a { display: inline-block; background: #27407a; color: #fff; font-weight: 700; text-decoration: none; padding: 3px 10px; border-radius: 999px; margin-right: 8px; }
 .card .watch a:hover { background: #3f7fd0; }
+
+.card img.patch { float: right; width: 108px; height: auto; margin: 0 0 8px 14px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
+
+#dev { margin-left: 10px; font: inherit; font-size: 11px; color: #7f8aa3; background: none; border: 1px solid rgba(255,255,255,.18); border-radius: 999px; padding: 0 8px; height: 17px; line-height: 15px; cursor: pointer; }
+#dev:hover { color: #fff; border-color: rgba(255,255,255,.5); }
+#dev.on { color: #0b0e18; background: #ffe98a; border-color: #ffe98a; font-weight: 700; }
+
+.card table.keys { border-collapse: collapse; margin: 6px 0 10px; width: 100%; }
+.card table.keys td { padding: 5px 8px 5px 0; vertical-align: top; font-size: 14.5px; line-height: 1.4; border-bottom: 1px solid rgba(255,255,255,.07); }
+.card table.keys td:first-child { white-space: nowrap; width: 1%; padding-right: 16px; color: #cfd6ea; }
+.card kbd { display: inline-block; min-width: 22px; text-align: center; font: 700 13px/20px inherit; font-family: inherit; color: #0b0e18; background: #ffe98a; border-radius: 5px; padding: 0 6px; margin-right: 2px; box-shadow: 0 2px 0 #a8862a; }
