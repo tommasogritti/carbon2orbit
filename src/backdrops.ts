@@ -389,7 +389,41 @@ function stennisMid(c: C2, scene: Phaser.Scene) {
   void scene;
 }
 
+// ------------------------------------------------------------------ Go Find the Launch Site, about 2015: the far end of the Māhia Peninsula before there was a road
+/** Far layer: a big sky, the Pacific to the horizon on every side but one, and nothing on it. */
+function rideFar(c: C2) {
+  const W = 520, r = rng(71);
+  c.fillStyle = lg(c, 0, 0, 0, 104, [0, '#3a86d6'], [0.7, '#a6d2f2'], [1, '#e6f2fb']); c.fillRect(0, 0, W, 104);
+  for (const [x, y, w, k] of [[40, 22, 120, 2], [210, 40, 80, 5], [330, 18, 130, 8]]) { c.save(); c.translate(x, y); cloud(c, w, w * 0.24, k, '#d0e0f0'); c.restore(); }
+  c.fillStyle = lg(c, 0, 100, 0, 180, [0, '#9fd0ee'], [0.06, '#2f7fd0'], [1, '#143c78']); c.fillRect(0, 100, W, 80);
+  for (let i = 0; i < 190; i++) { const x = r() * W, y = 104 + r() * 74; line(c, x, y, x + 3 + r() * 9, y, `rgba(220,240,255,${0.1 + r() * 0.26})`, 0.4); }
+  poly(c, [0, 101, 0, 82, 40, 76, 84, 86, 120, 101], lg(c, 0, 76, 0, 101, [0, '#7fa8b8'], [1, '#6a96aa'])); // the mainland, falling behind
+  for (const [gx, gy, k] of [[150, 52, 1], [164, 58, 0.8], [300, 46, 0.9], [420, 60, 0.7]] as number[][]) { c.beginPath(); c.moveTo(gx - 5 * k, gy); c.quadraticCurveTo(gx - 2 * k, gy - 3 * k, gx, gy); c.quadraticCurveTo(gx + 2 * k, gy - 3 * k, gx + 5 * k, gy); c.strokeStyle = '#f4f2ea'; c.lineWidth = 0.7; c.stroke(); }
+  c.beginPath(); c.moveTo(440, 101); c.quadraticCurveTo(462, 88, 488, 90); c.lineTo(510, 94); c.lineTo(518, 101); c.closePath(); c.fillStyle = '#6f9f7a'; c.fill(); // Portland Island off the tip
+  for (const x of [250, 380]) { poly(c, [x, 108, x + 9, 108, x + 7.6, 110.4, x + 1.4, 110.4], '#e8e6df', OUT, 0.25); line(c, x + 4.5, 108, x + 4.5, 103, '#3a3f4f', 0.35); } // fishing boats, a long way out
+}
+/** Middle layer, transparent above the hills: farm country getting emptier, then the last headland. */
+function rideMid(c: C2) {
+  const W = 760, r = rng(83);
+  const ridge = (x: number) => 112 + 12 * Math.sin(x * 0.011 + 1) + 6 * Math.sin(x * 0.033) - (x > 600 ? (x - 600) * 0.05 : 0);
+  c.beginPath(); c.moveTo(0, 180); for (let x = 0; x <= W; x += 4) c.lineTo(x, ridge(x)); c.lineTo(W, 180); c.closePath(); c.fillStyle = lg(c, 0, 96, 0, 180, [0, '#8acb72'], [0.5, '#62a85c'], [1, '#4a8a4c']); c.fill();
+  for (let i = 0; i < 120; i++) { const x = r() * W, y = ridge(x) + 4 + r() * 40; el(c, x, y, 2 + r() * 4, 1 + r() * 1.4, 'rgba(40,110,60,.22)'); }
+  const post = (x: number) => { const y = ridge(x); line(c, x, y + 1, x, y - 4, '#d9cfb4', 0.6); };
+  for (let x = 20; x < 420; x += 7) { post(x); if (x + 7 < 420) line(c, x, ridge(x) - 3, x + 7, ridge(x + 7) - 3, '#d9cfb4', 0.3); }
+  // the last buildings: a woolshed and yards, a water tank, a ute parked where the track gives out
+  { const x = 60, y = ridge(72) + 3; rr(c, x, y - 10, 26, 10, 0.3, '#b8452e', OUT, 0.3); poly(c, [x - 2, y - 10, x + 13, y - 16, x + 28, y - 10], '#8f8a80', OUT, 0.3); rr(c, x + 30, y - 5, 16, 5, 0, undefined, '#d9cfb4', 0.5); rr(c, x + 34, y - 5, 0.6, 5, 0, '#d9cfb4'); rr(c, x + 40, y - 5, 0.6, 5, 0, '#d9cfb4'); }
+  { const x = 118, y = ridge(x) + 2; rr(c, x, y - 7, 8, 7, 1, '#aab2c0', OUT, 0.3); for (let k = 1; k < 4; k++) line(c, x, y - k * 1.8, x + 8, y - k * 1.8, 'rgba(0,0,0,.2)', 0.25); }
+  { const x = 150, y = ridge(x) + 4; rr(c, x, y - 4, 13, 3.4, 0.6, '#f4f2ea', OUT, 0.3); rr(c, x + 7, y - 6.6, 5, 3, 0.5, '#bfe3ff', OUT, 0.25); el(c, x + 2.6, y - 0.4, 1.4, 1.4, '#15171f'); el(c, x + 10.4, y - 0.4, 1.4, 1.4, '#15171f'); text(c, 'END OF ROAD', x + 6, y - 11, 2.6, 'rgba(255,255,255,.8)', 700); }
+  for (const [sx, dy] of [[220, 8], [232, 14], [246, 6], [300, 12], [318, 7], [372, 10], [455, 9], [470, 15]] as number[][]) { const y = ridge(sx) + dy; el(c, sx, y, 2, 1.3, '#f4f2ea'); el(c, sx + 1.8, y - 0.4, 0.8, 0.7, '#2f2f38'); }
+  for (const x of [280, 396, 520]) { const y = ridge(x) + 2; line(c, x, y, x + 0.6, y - 11, '#6b5238', 1); for (let i = 0; i < 9; i++) { const a = -1.57 + (i - 4) * 0.36; line(c, x + 0.6, y - 11, x + 0.6 + Math.cos(a) * 5, y - 11 + Math.sin(a) * 5, '#2f7a47', 0.7); } } // cabbage trees
+  // the headland: pale papa cliffs dropping into the sea, and not a building on it
+  poly(c, [690, ridge(690), 760, ridge(760), 760, 180, 700, 180], lg(c, 0, 90, 0, 180, [0, '#e2d6b4'], [1, '#9a8a66']));
+  for (let i = 0; i < 12; i++) line(c, 706 + r() * 50, 100 + r() * 70, 708 + r() * 50, 106 + r() * 70, 'rgba(90,70,40,.3)', 0.4);
+}
+
 export function makeBackdrops(scene: Phaser.Scene) {
+  tex(scene, 'bg_ride_far', 520, 180, rideFar);
+  tex(scene, 'bg_ride_mid', 760, 180, rideMid);
   tex(scene, 'bg_stennis_far', 520, 180, stennisFar);
   tex(scene, 'bg_stennis_mid', 760, 180, (c) => stennisMid(c, scene));
   tex(scene, 'bg_listing', 760, 180, (c) => listing(c, scene));
@@ -575,6 +609,26 @@ export function makeBackdrops(scene: Phaser.Scene) {
   });
   bubble('pw_F', (c) => { rr(c, 5.2, 3.2, 7.6, 1.6, 0.7, '#f2d14a', OUT, 0.3); c.beginPath(); c.moveTo(5.4, 4.8); c.lineTo(12.6, 4.8); c.quadraticCurveTo(13, 9.6, 11.4, 12.4); c.lineTo(6.6, 12.4); c.quadraticCurveTo(5, 9.6, 5.4, 4.8); c.closePath(); c.fillStyle = 'rgba(190,232,255,.55)'; c.fill(); c.strokeStyle = 'rgba(235,248,255,.95)'; c.lineWidth = 0.4; c.stroke(); rr(c, 6.4, 12.8, 5.2, 2.2, 0.8, '#3f7fd0', OUT, 0.3); });
   bubble('pw_M', (c) => { for (const [x, col] of [[5, '#bfe3ff'], [9.8, '#c8f0c0']] as [number, string][]) { rr(c, x, 4, 3.2, 7.4, 1.5, col, OUT, 0.3); rr(c, x, 5.6, 3.2, 0.9, 0, '#1d3a7a'); poly(c, [x + 0.5, 11.4, x + 2.7, 11.4, x + 1.6, 14.8], '#7fd0ff'); } });
+
+  // ---- Go Find the Launch Site: a trail bike and what is in its way
+  for (const [key, knob] of [['dirtbike', false], ['dirtbike_k', true]] as [string, boolean][]) tex(scene, key, 34, 26, (c) => {
+    for (const x of [7, 27]) { el(c, x, 20, 5, 5, '#15171f', OUT, 0.3); el(c, x, 20, 3, 3, undefined, '#8b93a7', 0.4); el(c, x, 20, 0.9, 0.9, '#cfd5df'); if (knob) for (let i = 0; i < 10; i++) rr(c, x + Math.cos(i * 0.628) * 5.4 - 0.7, 20 + Math.sin(i * 0.628) * 5.4 - 0.7, 1.4, 1.4, 0.2, '#f28c28'); }
+    line(c, 7, 20, 14, 13, '#5b6275', 1.1); line(c, 14, 13, 23, 12, '#d8452e', 1.6); line(c, 23, 12, 27, 20, '#8b93a7', 1.1); line(c, 14, 13, 17, 19, '#5b6275', 1); line(c, 17, 19, 7, 20, '#5b6275', 0.9); line(c, 23, 12, 24, 8.4, '#8b93a7', 0.9); line(c, 22.6, 8, 26, 8.6, '#15171f', 1);
+    rr(c, 13, 14, 7, 4.4, 1, '#3a3f4f', OUT, 0.3); rr(c, 12, 10.6, 9, 2.4, 1, '#15171f', OUT, 0.25); poly(c, [3, 15, 9, 13.6, 9, 15.6], '#d8452e', OUT, 0.25); line(c, 16, 17.4, 9, 18.6, '#8b93a7', 0.7);
+    // the rider: helmet and goggles, so it is the jacket and the name plate that say who it is
+    line(c, 15.6, 11, 13.4, 16.6, '#263f6b', 2.4); line(c, 13.4, 16.6, 16.4, 19, '#263f6b', 2); rr(c, 15, 18.4, 3.4, 1.6, 0.6, '#23262f', OUT, 0.25);
+    c.beginPath(); c.moveTo(13.6, 11.4); c.quadraticCurveTo(14, 4.8, 18.4, 4.4); c.lineTo(20.4, 5.4); c.lineTo(18.4, 11.6); c.closePath(); c.fillStyle = lg(c, 13, 0, 21, 0, [0, '#3f7fd0'], [1, '#1d3a7a']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.35; c.stroke();
+    line(c, 18.6, 6.4, 23.6, 8.6, '#3f7fd0', 1.6); el(c, 24, 8.8, 0.9, 0.9, '#23262f');
+    el(c, 19.4, 2.8, 2.9, 2.8, lg(c, 16, 0, 22, 0, [0, '#ffffff'], [1, '#c2c8d2']), OUT, 0.35); rr(c, 19.6, 2.2, 2.6, 1.4, 0.5, 'rgba(120,200,255,.85)', OUT, 0.25); poly(c, [21.6, 3.6, 23.4, 4.2, 21.4, 4.8], '#f4f6fa', OUT, 0.2); rr(c, 17, 1.2, 4.6, 0.7, 0.3, '#d8452e');
+  });
+  tex(scene, 'stump', 14, 10, (c) => { rr(c, 2, 2.4, 10, 7.6, 1.2, lg(c, 2, 0, 12, 0, [0, '#8a6238'], [1, '#5b3d22']), OUT, 0.35); el(c, 7, 2.6, 5, 1.6, '#c9a66b', OUT, 0.3); el(c, 7, 2.6, 2.8, 0.8, undefined, '#8a6238', 0.3); line(c, 4.4, 5, 4.8, 9, 'rgba(0,0,0,.25)', 0.3); line(c, 9, 4.6, 9.4, 9, 'rgba(0,0,0,.25)', 0.3); poly(c, [1, 10, 2.4, 7, 3, 10], '#5b3d22'); poly(c, [13, 10, 11.6, 7.4, 11, 10], '#5b3d22'); });
+  tex(scene, 'rideflag', 12, 20, (c) => { line(c, 2.4, 20, 2.4, 1.4, '#f4f2ea', 0.8); poly(c, [2.8, 1.6, 11, 4, 2.8, 6.8], '#ffe98a', OUT, 0.3); el(c, 2.4, 1.2, 0.8, 0.8, '#d8452e'); });
+  tex(scene, 'surveyflag', 40, 46, (c) => { // a surveyor's tripod and a stake at the edge of the land
+    el(c, 20, 44.6, 16, 1.4, 'rgba(0,0,0,.22)'); line(c, 14, 44, 20, 22, '#f2d14a', 1); line(c, 26, 44, 20, 22, '#f2d14a', 1); line(c, 20, 44, 20, 22, '#f2d14a', 1); rr(c, 16.6, 16.6, 6.8, 5.6, 1, '#23262f', OUT, 0.3); rr(c, 22.6, 18, 3.4, 2.6, 0.6, '#8b93a7', OUT, 0.25); el(c, 26.4, 19.3, 0.9, 1.2, '#bfe3ff');
+    line(c, 33, 44, 33, 6, '#f4f2ea', 0.9); poly(c, [33.4, 6.4, 40, 9.6, 33.4, 13], '#d8452e', OUT, 0.3); rr(c, 2, 36, 9, 8, 0.5, '#f4f2ea', OUT, 0.3); text(c, 'X', 6.5, 40.2, 5, '#d8452e', 700);
+  });
+  tex(scene, 'container', 18, 12, (c) => { c.fillStyle = rg(c, 9, 6, 1, 9, [0, 'rgba(255,230,120,.5)'], [1, 'rgba(255,230,120,0)']); c.fillRect(0, 0, 18, 12); rr(c, 1.4, 2.6, 15.2, 7.6, 0.4, '#30508a', OUT, 0.35); for (let x = 3; x < 16; x += 1.6) line(c, x, 3, x, 9.8, 'rgba(0,0,0,.22)', 0.25); rr(c, 10.6, 4, 4.6, 5.4, 0.2, '#27407a', OUT, 0.25); rr(c, 3, 4.4, 3.2, 2.2, 0.2, '#bfe3ff', OUT, 0.2); line(c, 12.9, 4, 12.9, 9.4, OUT, 0.25); });
+  bubble('pw_K', (c) => { el(c, 9, 9, 5, 5, '#15171f', OUT, 0.3); el(c, 9, 9, 2.4, 2.4, undefined, '#8b93a7', 0.4); for (let i = 0; i < 10; i++) rr(c, 9 + Math.cos(i * 0.628) * 5.6 - 0.8, 9 + Math.sin(i * 0.628) * 5.6 - 0.8, 1.6, 1.6, 0.2, '#f28c28'); });
   bubble('pw_C', (c) => { c.drawImage(scene.textures.get('peter_chip').getSourceImage() as HTMLCanvasElement, 2.4, 2.4, 13.2, 13.2); });
   tex(scene, 'secret', 18, 18, (c) => { // a rolled blueprint, glowing
     c.fillStyle = rg(c, 9, 9, 1, 9, [0, 'rgba(255,220,120,.9)'], [1, 'rgba(255,220,120,0)']); c.fillRect(0, 0, 18, 18);

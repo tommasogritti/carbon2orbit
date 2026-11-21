@@ -4,7 +4,7 @@ export type Kind = 'platform' | 'launch' | 'minigame' | 'card' | 'person';
 export interface LevelDef {
   id: string;
   kind: Kind;
-  mechanic?: 'platform' | 'launch' | 'hotfire' | 'heli-catch' | 'orbit-raise' | 'sprint' | 'fault-finder' | 'splashdown' | 'cruise' | 'countdown-race';
+  mechanic?: 'platform' | 'launch' | 'hotfire' | 'heli-catch' | 'orbit-raise' | 'sprint' | 'fault-finder' | 'splashdown' | 'cruise' | 'countdown-race' | 'ride' | 'orbit-ops' | 'dual-count' | 'arc-lab';
   parent?: string; // bonus nodes only: the map node they branch from
   unlocks?: string; // platform levels: the bonus node opened by finding this level's hidden blueprint
   status: 'flown' | 'in-progress' | 'announced';
@@ -85,6 +85,24 @@ export const LEVELS: LevelDef[] = [
     after: 'Rutherford became the first electric-pump-fed engine to power an orbital-class rocket. The second-stage engine finished firing tests by March 2016, and Electron completed flight qualification that December.',
     egg: 'A perfect burn. You never left the green band for more than a blink.',
     sources: [WP + 'Rocket_Lab_Electron', WP + 'Rocket_Lab'],
+  },
+  {
+    id: 'find-the-launch-site', kind: 'minigame', mechanic: 'ride', status: 'flown', hero: 'shaun', role: 'Engineer · site hunting', unlocks: 'first-hundred',
+    title: 'Go Find the Launch Site', date: 'about 2015', place: 'Māhia Peninsula', map: { x: 226, y: 224 },
+    intro: 'Rocket Lab has a rocket on the drawing board and nowhere to launch it. One contender, in the South Island, already has power and roads. The job of finding something better goes to a young engineer on a team of fewer than fifteen, Shaun D’Mello: “Pete just told me to go find the launch site,” he recalled years later. A map, some trajectory analysis, helicopter rides and long road trips lead to the far end of the Māhia Peninsula, where there is open ocean to the north, the south and the east, and no road at all. The last leg, from the top of the farm to where a pad might go, is 45 minutes by dirt bike. This level is his.',
+    how: 'You play Shaun D’Mello, on a trail bike. → throttle, ← brake, Space hops. In the air, ← → tip the bike so both wheels meet the slope: land it on its nose or its tail and you are off. Hop the stumps and the gullies. Sheep will not move for a bike at speed, so slow to a crawl or hop them. Mud drags unless you carry speed into it. Ride through all five survey flags and reach the stake where the land ends. Three stars for a clean run inside 50 seconds. One bubble holds knobbly tyres, which ignore mud and bite for a higher hop, and a blueprint hangs just too high for an ordinary one.',
+    fact: 'What he was looking for was empty sea. A rocket drops its stages, and if it fails itself, downrange, so every direction that is clear of land and people is another set of orbits a pad can reach. In D’Mello’s words, they “ran the trajectories and determined there is no better place in all of New Zealand or the majority of the planet”.',
+    after: 'Rocket Lab’s account is that once the site was chosen it went from permits to construction in two to three weeks, and that early operations ran from shipping containers. In November 2015 the company named Māhia as its main launch site, and Launch Complex 1 opened there in September 2016. Shaun D’Mello, who joined in 2014, ran the launch control team for Electron’s first flight in 2017 and is now Vice President, Neutron. (The ride itself, its sheep and its gullies are the game’s own picture of those 45 minutes.)',
+    egg: 'A shipping container, the first mission control at Māhia. From the same account: Rocket Lab’s mission tracker was built with room for only two digits, and before launch 100 someone had to go back in and add a third.',
+    sources: [RL + 'updates/trust-me-its-gonna-take-off-inside-electrons-first-100-launches/', RL + 'about/team/', WP + 'Rocket_Lab_Launch_Complex_1'],
+    params: {
+      theme: 'farm', par: 50, flagWord: 'SURVEY',
+      terrain: [[0, 130], [150, 130], [330, 112], [470, 134], [620, 120], [760, 100], [860, 126], [1000, 132], [1120, 112], [1180, 112], [1300, 130], [1460, 138], [1640, 116], [1760, 96], [1880, 120], [2020, 134], [2160, 118], [2220, 118], [2380, 134], [2560, 126], [2700, 92], [2840, 116], [3000, 128], [3200, 110], [3400, 110]],
+      gaps: [[1182, 1226], [2222, 2268]],
+      zones: [['mob', 400, 26], ['block', 700, 14], ['bog', 880, 90], ['mob', 1500, 26], ['block', 1690, 14], ['bog', 1900, 100], ['bog', 2400, 110], ['mob', 2900, 26]],
+      flags: [[250, 'North: open ocean'], [1040, 'East: open ocean'], [1700, 'South: open ocean'], [2600, 'No road. Bring one'], [3250, 'Room for a pad']],
+      egg: [2245, 26], secret: [2545, 49], powerups: [['K', 2340, 24]],
+    },
   },
   {
     id: 'lc-1', kind: 'platform', mechanic: 'platform', status: 'flown', role: 'Founder and CEO · 2016', unlocks: 'kaitorete',
@@ -359,6 +377,14 @@ export const BONUS: LevelDef[] = [
     after: '',
     sources: [RL + 'updates/hungry-hippo-arrives/', 'https://www.vaspace.org/news-article/hungry-hippo-arrives-at-wallops-major-milestone-to-first-neutron-launch', RL + 'launch/neutron/'],
   },
+  {
+    id: 'first-hundred', kind: 'card', status: 'flown', parent: 'find-the-launch-site',
+    title: 'Inside the first hundred', date: '2017–2026', place: 'Māhia and Auckland', map: { x: 250, y: 206 },
+    intro: 'Some of the people Rocket Lab’s own account of its first hundred launches puts in the room. Sandy Tirtey was Electron’s first launch director and directed its first seven launches. Jane McNicoll, in mission management since 2019, worked on roughly ninety of the hundred. Max Prescott joined vehicle integration in January 2018, in time for the first flight to reach orbit. And Murielle Baker, a former Radio New Zealand journalist, is the voice many fans know from the launch webcasts.',
+    fact: 'The same account says that after the thirteenth flight was lost in 2020, Sir Peter Beck recorded a personal video apology to the customers whose satellites had been aboard.',
+    after: '',
+    sources: [RL + 'updates/trust-me-its-gonna-take-off-inside-electrons-first-100-launches/'],
+  },
 ];
 /**
  * The cast. Peter Beck is the main character of the whole game. Other people take the lead for a level that is theirs
@@ -368,6 +394,7 @@ export interface Character { id: string; pre: string; name: string; role: string
 export const CHARACTERS: Character[] = [
   { id: 'peter', pre: '', name: 'Peter Beck', role: 'Founder and CEO', since: 1995, likeness: 'A tall mop of tight dark curls, a broad face, black top and jeans.' },
   { id: 'adam', pre: 'a', name: 'Adam Spice', role: 'Chief Financial Officer', since: 2018, likeness: 'Shaved head, long face with a heavy jaw, pale brows, navy blazer over an open-collar shirt.' },
+  { id: 'shaun', pre: 's', name: 'Shaun D’Mello', role: 'Vice President, Neutron', since: 2014, likeness: 'Short dark hair, close at the sides and brushed up on top; clean-shaven; a rounded face with dark brows; blazer over an open-neck white shirt.' },
 ];
 
 /** People you can meet: small nodes off the main path. Facts only, no invented quotes. */

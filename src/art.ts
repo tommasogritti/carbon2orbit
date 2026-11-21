@@ -148,36 +148,44 @@ function peter(c: C2, leg: number, air = false, young = false, fit: Fit = '', ad
   arm(8.4, -a * 0.9 + (air ? 2.2 : 0), false);
 }
 /** Head-and-shoulders portrait, 48 x 54 units. Adult proportions: eyes a little above the middle, long lower face, heavy jaw. */
-function bust(c: C2, young = false, adam = false) {
-  const dk = hairCols(young)[0], hy = young ? 1.12 : 1.05, jaw = young ? 1 : 0, nw = young ? 12.5 : adam ? 17.4 : 15.2;
+// Shaun D'Mello (from the captioned black-and-white portrait on Rocket Lab's team page): short dark hair, cropped close at the
+// sides and brushed up and back on top; clean-shaven; no glasses; a rounded-oval face with full cheeks and dark brows; a
+// blazer over an open-neck white shirt. Colours cannot be read from that photo and are the game's choice.
+function bust(c: C2, young = false, adam = false, shaun = false) {
+  const dk = hairCols(young)[0], hy = young ? 1.12 : 1.05, jaw = young ? 1 : 0, nw = young ? 12.5 : adam ? 17.4 : shaun ? 16 : 15.2;
   const onFace = (x: number, y: number) => y > 12.6 && Math.abs(x - 24) < 11.4; // keeps a squarish, high hairline with the corners exposed
-  if (!adam) el(c, 24, 18.5, 16.5, 17, dk);
+  if (!adam && !shaun) el(c, 24, 18.5, 16.5, 17, dk);
   // shoulders, neck, collar
   c.beginPath(); c.moveTo(0, 54); c.quadraticCurveTo(3, 46.8, 15, 45.4); c.lineTo(33, 45.4); c.quadraticCurveTo(45, 46.8, 48, 54); c.closePath();
-  c.fillStyle = young ? '#cfd5df' : adam ? lg(c, 0, 0, 48, 0, [0, '#2a3a62'], [0.5, '#1c2740'], [1, '#111a2e']) : lg(c, 0, 0, 48, 0, [0, '#26272f'], [0.5, '#17181e'], [1, '#0c0d11']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.5; c.stroke();
+  c.fillStyle = young ? '#cfd5df' : shaun ? lg(c, 0, 0, 48, 0, [0, '#5a6072'], [0.5, '#3f4454'], [1, '#2a2e3a']) : adam ? lg(c, 0, 0, 48, 0, [0, '#2a3a62'], [0.5, '#1c2740'], [1, '#111a2e']) : lg(c, 0, 0, 48, 0, [0, '#26272f'], [0.5, '#17181e'], [1, '#0c0d11']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.5; c.stroke();
   if (young) { rr(c, 11, 50, 26, 6, 1, '#2b4f8a', OUT, 0.4); line(c, 14.5, 50, 16.5, 45.6, '#2b4f8a', 3); line(c, 33.5, 50, 31.5, 45.6, '#2b4f8a', 3); }
   rr(c, 24 - nw / 2, 35, nw, 13, 3, lg(c, 0, 38, 0, 48, [0, '#c08a6e'], [1, '#e0aa8b']));
-  if (adam) { poly(c, [17, 44.8, 31, 44.8, 24, 54], '#cfe0f2'); poly(c, [16.4, 44.4, 24, 49.4, 19, 52.2], '#dfeaf6', OUT, 0.35); poly(c, [31.6, 44.4, 24, 49.4, 29, 52.2], '#dfeaf6', OUT, 0.35); line(c, 14.4, 45.6, 21.6, 54, '#0f1626', 0.8); line(c, 33.6, 45.6, 26.4, 54, '#0f1626', 0.8); }
+  if (adam || shaun) { poly(c, [17, 44.8, 31, 44.8, 24, 54], '#cfe0f2'); poly(c, [16.4, 44.4, 24, 49.4, 19, 52.2], '#dfeaf6', OUT, 0.35); poly(c, [31.6, 44.4, 24, 49.4, 29, 52.2], '#dfeaf6', OUT, 0.35); line(c, 14.4, 45.6, 21.6, 54, '#0f1626', 0.8); line(c, 33.6, 45.6, 26.4, 54, '#0f1626', 0.8); }
   else if (!young) { poly(c, [14.6, 44.6, 24, 50.6, 13.4, 50], '#2c2d37', OUT, 0.35); poly(c, [33.4, 44.6, 24, 50.6, 34.6, 50], '#2c2d37', OUT, 0.35); line(c, 24, 50.6, 24, 54, '#3a3b47', 0.5); }
   else { c.beginPath(); c.arc(24, 44.6, 6.6, 0.15, Math.PI - 0.15); c.strokeStyle = '#aab2c0'; c.lineWidth = 1; c.stroke(); }
   // side hair first, so the cheeks sit in front of it; ears mostly hidden
-  if (!adam) curls(c, 24, 20.5, 10.5, 16, 0.95, hy, 430, 1.7, 23, young, 0.86, 2.14, (_x, y) => y > 21);
-  if (adam) { el(c, 12.4, 26, 1.5, 3.3, '#dba283', OUT, 0.45); el(c, 35.6, 26, 1.5, 3.3, '#dba283', OUT, 0.45); } // small, flat ears
+  if (!adam && !shaun) curls(c, 24, 20.5, 10.5, 16, 0.95, hy, 430, 1.7, 23, young, 0.86, 2.14, (_x, y) => y > 21);
+  if (adam || shaun) { el(c, 12.4, 26, 1.5, 3.3, '#dba283', OUT, 0.45); el(c, 35.6, 26, 1.5, 3.3, '#dba283', OUT, 0.45); } // small, flat ears
   else { el(c, 11.6, 26.4, 1.5, 3, '#d39a7b'); el(c, 36.4, 26.4, 1.5, 3, '#d39a7b'); }
   // broad face, wide short jaw
-  const jx = (adam ? 14.2 : 12.6) + jaw, cy = adam ? 43 : 42, sx = adam ? 13 : 11.6; // Adam: a long, tall oval with a heavy jaw
-  const dome = adam ? 0.5 : 7.5; // a shaved head shows the whole cranium
+  const jx = (adam ? 14.2 : shaun ? 13.4 : 12.6) + jaw, cy = adam ? 43 : shaun ? 41.4 : 42, sx = adam ? 13 : shaun ? 12.2 : 11.6; // Adam: a long, tall oval with a heavy jaw; Shaun: rounder, fuller cheeks
+  const dome = adam ? 0.5 : shaun ? 4 : 7.5; // a shaved head shows the whole cranium
   c.beginPath(); c.moveTo(sx, 21); c.bezierCurveTo(sx, dome, 48 - sx, dome, 48 - sx, 21); c.bezierCurveTo(48 - sx + 0.2, 27, 48 - jx + 1.5, 32.4, 48 - jx, 36.8); c.bezierCurveTo(48 - jx - 1.8, 40, 29.6, cy, 24, cy); c.bezierCurveTo(18.4, cy, jx + 1.8, 40, jx, 36.8); c.bezierCurveTo(jx - 1.5, 32.4, sx - 0.2, 27, sx, 21); c.closePath();
   c.fillStyle = rg(c, 21.5, 22, 2, 25, [0, '#f6cfb3'], [0.65, '#ecb999'], [1, '#d49b7c']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.5; c.stroke();
   const blush = young ? 0.3 : adam ? 0.08 : 0.2;
+  if (shaun) for (const x of [17.2, 30.8]) { c.fillStyle = rg(c, x, 32.6, 0, 5.4, [0, 'rgba(246,207,179,.5)'], [1, 'rgba(246,207,179,0)']); c.fillRect(x - 6, 27, 12, 12); } // full cheeks
   c.fillStyle = rg(c, 16.6, 30.6, 0, 4.6, [0, `rgba(222,110,95,${blush})`], [1, 'rgba(222,110,95,0)']); c.fillRect(11, 25, 12, 12);
   c.fillStyle = rg(c, 31.4, 30.6, 0, 4.6, [0, `rgba(222,110,95,${blush})`], [1, 'rgba(222,110,95,0)']); c.fillRect(25, 25, 12, 12);
   // top hair: tallest on top, fine tight ringlets, dark chocolate brown
-  if (!adam) { curls(c, 24, 20.5, 10.5, 16, 0.95, hy, 430, 1.7, 23, young, 0.86, 2.14, (x, y) => y <= 21 && !onFace(x, y)); curls(c, 24, 20.5, 16, 17.6, 0.95, 1.05, 46, 1.15, 31, young, 0.95, 2.05); } // stray ringlets break up the outline
+  if (shaun) { // short and dark: close at the sides, a little longer on top and brushed up and back
+    c.beginPath(); c.moveTo(12, 22.4); c.bezierCurveTo(10.8, 10.6, 16, 5, 25, 4.6); c.bezierCurveTo(33.4, 5, 37.4, 10.6, 36, 22.4); c.lineTo(34.8, 17.4); c.bezierCurveTo(33, 12.4, 28, 11.6, 23, 12.4); c.bezierCurveTo(18.6, 13, 14.4, 13.4, 13.2, 17.4); c.closePath();
+    c.fillStyle = lg(c, 12, 2, 36, 14, [0, '#2a211a'], [0.6, '#17120d'], [1, '#0e0b08']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.45; c.stroke();
+    for (let i = 0; i < 9; i++) { c.beginPath(); c.moveTo(15 + i * 2.3, 12.2 - Math.sin(i * 0.4) * 0.6); c.quadraticCurveTo(17 + i * 2.2, 8, 20.5 + i * 1.7, 5.8); c.strokeStyle = 'rgba(120,100,84,.35)'; c.lineWidth = 0.35; c.stroke(); }
+  } else if (!adam) { curls(c, 24, 20.5, 10.5, 16, 0.95, hy, 430, 1.7, 23, young, 0.86, 2.14, (x, y) => y <= 21 && !onFace(x, y)); curls(c, 24, 20.5, 16, 17.6, 0.95, 1.05, 46, 1.15, 31, young, 0.95, 2.05); } // stray ringlets break up the outline
   else { el(c, 19.6, 11.6, 5.4, 2.6, 'rgba(255,255,255,.28)'); c.fillStyle = rg(c, 24, 14, 4, 16, [0, 'rgba(120,95,80,0)'], [1, 'rgba(120,95,80,.16)']); c.fillRect(11, 6, 26, 12); line(c, 18.4, 15.6, 29.6, 15.4, 'rgba(170,112,90,.35)', 0.35); line(c, 19.4, 17.4, 28.6, 17.2, 'rgba(170,112,90,.28)', 0.3); }
   // eyes: small, narrow, grey-blue, a little hooded
   for (const ex of [18.9, 29.1]) {
-    el(c, ex, 23.1, 2.35, young ? 1.3 : adam ? 0.85 : 1.1, '#fbfbf8'); el(c, ex + 0.1, 23.15, 1.05, 1.05, adam ? '#6b747c' : '#7f97aa', adam ? '#3f464c' : '#4a6072', 0.28); el(c, ex + 0.1, 23.15, 0.48, 0.5, '#0e0e12');
+    el(c, ex, 23.1, 2.35, young ? 1.3 : adam ? 0.85 : 1.1, '#fbfbf8'); el(c, ex + 0.1, 23.15, 1.05, 1.05, shaun ? '#4a3524' : adam ? '#6b747c' : '#7f97aa', shaun ? '#2a1c12' : adam ? '#3f464c' : '#4a6072', 0.28); el(c, ex + 0.1, 23.15, 0.48, 0.5, '#0e0e12');
     c.beginPath(); c.moveTo(ex - 2.6, 23.1); c.quadraticCurveTo(ex, 21.3, ex + 2.6, 22.9); c.strokeStyle = '#2e2016'; c.lineWidth = 0.7; c.stroke();
     c.beginPath(); c.moveTo(ex - 2.8, 22.0); c.quadraticCurveTo(ex, 20.7, ex + 2.9, 22.1); c.strokeStyle = 'rgba(175,115,92,.7)'; c.lineWidth = 0.4; c.stroke();
     c.beginPath(); c.moveTo(ex - 2.1, 24.3); c.quadraticCurveTo(ex, 25, ex + 2.2, 24.2); c.strokeStyle = 'rgba(175,115,92,.55)'; c.lineWidth = 0.35; c.stroke();
@@ -185,12 +193,14 @@ function bust(c: C2, young = false, adam = false) {
   }
   if (adam) { line(c, 15.6, 20.6, 21.8, 21.3, '#a08c78', 0.8); line(c, 26.2, 21.3, 32.4, 20.6, '#a08c78', 0.8); // pale brows set low over deep-set eyes
     line(c, 23.2, 19.6, 23.4, 21.2, 'rgba(150,95,78,.5)', 0.35); line(c, 24.8, 19.6, 24.6, 21.2, 'rgba(150,95,78,.5)', 0.35); }
+  else if (shaun) { line(c, 15.6, 20.3, 21.8, 20.0, '#1c1510', 1.15); line(c, 26.2, 20.0, 32.4, 20.3, '#1c1510', 1.15); }
   else { line(c, 15.8, 20.5, 21.6, 20.2, '#6a5038', 0.8); line(c, 26.4, 20.2, 32.2, 20.5, '#6a5038', 0.8); }
   // nose
   c.beginPath(); c.moveTo(25, 23.2); c.quadraticCurveTo(26.9, 28.8, 26.5, 29.9); c.quadraticCurveTo(24.4, 31.6, 21.7, 30.1); c.strokeStyle = 'rgba(180,115,92,.85)'; c.lineWidth = 0.55; c.stroke();
   el(c, 22.5, 30.3, 0.6, 0.35, 'rgba(150,85,70,.6)'); el(c, 25.7, 30.3, 0.6, 0.35, 'rgba(150,85,70,.6)');
   // closed, thin-lipped smile, a touch higher on one side
-  if (adam) { c.beginPath(); c.moveTo(20.2, 34.8); c.quadraticCurveTo(24, 35.0, 27.8, 34.8); c.strokeStyle = '#8a4338'; c.lineWidth = 0.75; c.stroke(); } // straight, closed mouth
+  if (shaun) { c.beginPath(); c.moveTo(19.6, 34.4); c.quadraticCurveTo(24, 36.6, 28.4, 34.4); c.strokeStyle = '#8a4338'; c.lineWidth = 0.75; c.stroke(); line(c, 19.1, 33.9, 19.6, 34.7, 'rgba(150,90,75,.6)', 0.35); line(c, 28.9, 33.9, 28.4, 34.7, 'rgba(150,90,75,.6)', 0.35); } // a slight, closed, even smile
+  else if (adam) { c.beginPath(); c.moveTo(20.2, 34.8); c.quadraticCurveTo(24, 35.0, 27.8, 34.8); c.strokeStyle = '#8a4338'; c.lineWidth = 0.75; c.stroke(); } // straight, closed mouth
   else {
     c.beginPath(); c.moveTo(19.4, 34.7); c.quadraticCurveTo(24.2, 36.9, 28.8, 34.1); c.strokeStyle = '#8a4338'; c.lineWidth = 0.75; c.stroke();
     line(c, 18.9, 34.1, 19.4, 35, 'rgba(150,90,75,.7)', 0.35); line(c, 29.3, 33.5, 28.9, 34.4, 'rgba(150,90,75,.7)', 0.35);
@@ -350,6 +360,10 @@ export function makeArt(scene: Phaser.Scene) {
     });
     BUSTS[pre] = (scene.textures.get(pre + 'peter_bust').getSourceImage() as HTMLCanvasElement).toDataURL();
   }
+  // Shaun D'Mello leads a riding level, so he needs a portrait and a chip; on the bike he is in a helmet
+  tex(scene, 'speter_bust', 48, 54, (c) => bust(c, false, false, true));
+  tex(scene, 'speter_chip', 30, 30, (c) => { c.save(); el(c, 15, 15, 13.4, 13.4); c.clip(); c.fillStyle = lg(c, 0, 0, 0, 30, [0, '#3f7fd0'], [1, '#16305f']); c.fillRect(0, 0, 30, 30); c.translate(15 - 24 * 0.6, 0.6); c.scale(0.6, 0.6); bust(c, false, false, true); c.restore(); el(c, 15, 15, 13.4, 13.4, undefined, '#ffffff', 1.1); el(c, 15, 15, 14.2, 14.2, undefined, '#0b0c12', 0.5); });
+  BUSTS.s = (scene.textures.get('speter_bust').getSourceImage() as HTMLCanvasElement).toDataURL();
   // a small figure for people you can meet on the map
   tex(scene, 'n_person', 18, 18, (c) => { el(c, 9, 15.6, 6, 1.5, 'rgba(0,0,0,.35)'); el(c, 9, 8.6, 7, 7, lg(c, 0, 2, 0, 16, [0, '#d7b8ff'], [1, '#7a4fd0']), '#0b0c12', 0.7); el(c, 9, 6.6, 2.4, 2.4, '#1c1240'); c.beginPath(); c.arc(9, 14, 4.6, Math.PI, 0); c.fillStyle = '#1c1240'; c.fill(); el(c, 7, 4.6, 2.6, 1.2, 'rgba(255,255,255,.3)'); });
   BUST_URL = (scene.textures.get('peter_bust').getSourceImage() as HTMLCanvasElement).toDataURL();
