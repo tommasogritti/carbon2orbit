@@ -4,7 +4,7 @@ export type Kind = 'platform' | 'launch' | 'minigame' | 'card' | 'person';
 export interface LevelDef {
   id: string;
   kind: Kind;
-  mechanic?: 'platform' | 'launch' | 'hotfire' | 'heli-catch' | 'orbit-raise' | 'sprint';
+  mechanic?: 'platform' | 'launch' | 'hotfire' | 'heli-catch' | 'orbit-raise' | 'sprint' | 'fault-finder' | 'splashdown' | 'cruise' | 'countdown-race';
   parent?: string; // bonus nodes only: the map node they branch from
   unlocks?: string; // platform levels: the bonus node opened by finding this level's hidden blueprint
   status: 'flown' | 'in-progress' | 'announced';
@@ -29,6 +29,7 @@ export interface LevelDef {
 
 const WP = 'https://en.wikipedia.org/wiki/';
 const C = 'https://commons.wikimedia.org/wiki/File:';
+const RL = 'https://rocketlabcorp.com/';
 
 export const LEVELS: LevelDef[] = [
   {
@@ -127,6 +128,22 @@ export const LEVELS: LevelDef[] = [
     photo: { file: 'humanity_star.jpg', caption: 'The Humanity Star flaring across the night sky, 2018.', credit: 'cafuego, CC BY-SA 2.0', page: C + 'Humanity_Star_(39753474634).jpg' },
     sources: [WP + 'Rocket_Lab_Electron', WP + 'Humanity_Star'],
     params: { vehicle: 'electron', site: 'mahia', goal: { orbit: true, orbit_km: 500, inject_km: 300 }, twist: 'kick-stage', payload: 'Humanity Star', kickPayload: 'Two Lemur-2 CubeSats', scrub: true },
+  },
+  {
+    id: 'its-business-time', kind: 'launch', mechanic: 'launch', status: 'flown',
+    title: 'It’s Business Time', date: '2018-11-11', place: 'LC-1, Māhia', map: { x: 284, y: 262 },
+    intro: 'Flight three, and the first with paying customers aboard: six satellites and a drag-sail experiment, for Spire, Fleet Space, GeoOptics and a student CubeSat programme in Irvine, California. It should have flown in April. A first-stage motor controller behaved oddly in a wet dress rehearsal, did it again on the pad in June, and the launch window was given up. Now it is November, and one small kick stage has to hand out every satellite in turn.',
+    how: 'The first count will not go to plan. After that, fly it as before: Enter holds the count, ← → on the flight-director cue, ↑ ↓ throttle through Max-Q, Space for each sequence event, Enter for SECO at 500 km apogee, hold Space to circularise with Curie at apogee, Enter when the orbit is round. New here, the DEPLOY SEQUENCE: ← → turn the kick stage until the white dispenser line sits on the green marker, let the body rate settle, then Space releases the next satellite. Every release kicks the stage, so steady it again. A release off the line risks recontact and costs a star.',
+    fact: 'Stage two left the stack in a 210 × 500 km orbit inclined 85°; the Curie kick stage circularised it at 500 km before letting anything go. The mission name is widely reported to be a nod to “Business Time” by the New Zealand comedy duo Flight of the Conchords.',
+    after: 'Electron lifted off at 16:50 NZDT on 11 November 2018 and delivered all seven payloads: two Lemur-2s for Spire, two Proxima CubeSats for Fleet Space, a CICERO for GeoOptics, IRVINE01 from the Irvine CubeSat STEM Program, and NABEO, a drag-sail demonstrator built by High Performance Space Structure Systems, which stayed on the kick stage. Five weeks later Electron flew again, for NASA: “This One’s For Pickering”. (The order of the releases in the game is its own; the real one was not published.)',
+    egg: 'Six for six, every release on its line. One of the six was IRVINE01, from the Irvine CubeSat STEM Program in California: a students’ satellite on Rocket Lab’s first commercial flight.',
+    sources: [RL + 'missions/launches/its-business-time/', RL + 'updates/rocket-lab-reaches-orbit-again-deploys-more-satellites/', 'https://spaceflightnow.com/2018/06/27/rocket-labs-first-commercial-launch-scrubbed-again/', 'https://www.geekwire.com/2018/rocket-lab-electron-rocket-sends-satellites-into-orbit-from-new-zealand/'],
+    params: {
+      vehicle: 'electron', site: 'mahia', goal: { orbit: true, orbit_km: 500, inject_km: 210 }, twist: 'kick-stage', payload: 'Six satellites + NABEO',
+      scrub: { at: 5.5, text: 'HOLD · 27 June 2018 · a stage-1 motor controller is misbehaving · stand down', resume: '11 November 2018 · new attempt · T-8' },
+      deploy: ['Lemur-2 · Spire', 'Lemur-2 · Spire', 'CICERO · GeoOptics', 'Proxima · Fleet Space', 'Proxima · Fleet Space', 'IRVINE01 · Irvine STEM'],
+      sail: 'NABEO drag-sail demonstrator · it stays on the kick stage', sailNote: 'NABEO, the drag-sail demonstrator, stayed bolted to the kick stage.',
+    },
   },
   {
     id: 'going-public', kind: 'platform', mechanic: 'platform', status: 'flown', hero: 'adam', role: 'Chief Financial Officer · 2021',

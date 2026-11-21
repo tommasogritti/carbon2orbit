@@ -26,6 +26,7 @@ export interface Vehicle {
   rail?: number; // m
   battery?: [number, number]; // stage 2: seconds of full-throttle pumping in the first packs, and in the pack that stays
   battMass?: number; // the two packs dropped at hot-swap
+  suborbital?: boolean; // HASTE: stage 2 cuts off on a speed, coasts, and releases a test article on the way down
 }
 
 export const VEHICLES: Record<string, Vehicle> = {
@@ -46,12 +47,16 @@ export const VEHICLES: Record<string, Vehicle> = {
     battery: [245, 200], battMass: 40,
   },
 };
+// HASTE (Hypersonic Accelerator Suborbital Test Electron): the same two stages under a heavier load, flown on a
+// suborbital arc. The payload figure covers the modified kick stage and the test article; it is a game value
+// inside the published "up to 700 kg".
+VEHICLES.haste = { ...VEHICLES.electron, stages: VEHICLES.electron.stages.slice(0, 2), payload: 560, suborbital: true };
 
 export interface Sim {
   v: Vehicle; t: number; x: number; y: number; vx: number; vy: number;
   r: number; alt: number; vr: number; vt: number; speed: number; down: number; // derived
   stage: number; prop: number; m: number; lit: boolean; held: boolean; throttle: number; pitch: number; prograde: boolean;
-  fairing: boolean; batt: number; swapped: boolean; starved: boolean; dart: boolean;
+  fairing: boolean; batt: number; swapped: boolean; starved: boolean; dart: boolean; released: boolean;
   q: number; alpha: number; stress: number; g: number; fmh: number; heat: number; wind: number;
   maxQ: number; apogee: number; ev: Record<string, number>; fail?: string;
 }
@@ -70,7 +75,7 @@ export function newSim(v: Vehicle, elev = 90 * DEG): Sim {
   const s: Sim = {
     v, t: 0, x: 0, y: RE, vx: 0, vy: 0, r: RE, alt: 0, vr: 0, vt: 0, speed: 0, down: 0,
     stage: 0, prop: v.stages[0].prop, m, lit: false, held: true, throttle: 1, pitch: elev, prograde: false,
-    fairing: v.fairing > 0, batt: 1, swapped: false, starved: false, dart: false,
+    fairing: v.fairing > 0, batt: 1, swapped: false, starved: false, dart: false, released: false,
     q: 0, alpha: 0, stress: 0, g: 0, fmh: 0, heat: 0, wind: 0, maxQ: 0, apogee: 0, ev: {},
   };
   return s;
@@ -119,7 +124,7 @@ function step1(s: Sim, h: number) {
   s.stress += (over * 1.6 + overA * 0.25) * h;
   if (s.stress >= 1 && !s.fail) s.fail = 'breakup';
   // a payload with no fairing in thick, fast air cooks
-  if (!s.fairing && v.fairing > 0 && s.fmh > FMH_LIMIT) { s.heat += ((s.fmh / FMH_LIMIT - 1) * h) / 20; if (s.heat >= 1 && !s.fail) s.fail = 'heating'; }
+  if (!s.fairing && v.fairing > 0 && s.fmh > FMH_LIMIT && !(v.suborbital && s.ev.seco !== undefined)) { s.heat += ((s.fmh / FMH_LIMIT - 1) * h) / 20; if (s.heat >= 1 && !s.fail) s.fail = 'heating'; }
   if (s.alt > s.apogee) s.apogee = s.alt;
 }
 
@@ -142,7 +147,7 @@ export function nextGo(s: Sim): string | undefined {
   if (v.unguided) return !s.lit && !s.dart ? 'dart' : undefined;
   if (s.stage === 0) return s.lit ? undefined : 'sep';
   if (s.stage === 1) {
-    if (!s.lit) return s.ev.seco === undefined ? 'ses' : undefined;
+    if (!s.lit) return s.ev.seco === undefined ? 'ses' : !v.suborbital || s.released ? undefined : s.fairing ? 'fairing' : 'release';
     return s.fairing ? 'fairing' : !s.swapped ? 'swap' : undefined;
   }
 }
@@ -159,6 +164,7 @@ export function go(s: Sim): string | undefined {
     s.m -= v.stages[0].dry + s.prop; s.stage = 1; s.prop = v.stages[1].prop; s.batt = 1; s.ev.sep = s.t;
   } else if (e === 'ses') { rushed = s.t - s.ev.sep < GAP; s.lit = true; s.ev.ses = s.t; }
   else if (e === 'fairing') { s.fairing = false; s.m -= v.fairing; s.ev.fairing = s.t; }
+  else if (e === 'release') { s.released = true; s.ev.release = s.t; }
   else if (e === 'swap') { s.swapped = true; s.batt = 1; s.starved = false; s.m -= v.battMass || 0; s.ev.swap = s.t; }
   if (rushed) s.stress = Math.min(0.99, s.stress + 0.3);
   return e + (rushed ? '!' : '');
@@ -190,8 +196,9 @@ export const vCirc = (alt: number) => Math.sqrt(MU / (RE + alt));
 
 // ---------- guidance ----------
 /** Stage 2 puts the stack into hp × ha: cut off level at hp with apogee at ha; the kick stage circularises there. */
-export interface Mission { hp: number; ha: number }
-export const vInject = (m: Mission) => { const rp = RE + m.hp, ra = RE + m.ha; return Math.sqrt(MU * (2 / rp - 2 / (rp + ra))); };
+/** Suborbital missions instead cut off level at hp on a speed (vCut) and release the test article at relAlt on the way down. */
+export interface Mission { hp: number; ha: number; vCut?: number; relAlt?: number }
+export const vInject = (m: Mission) => { if (m.vCut) return m.vCut; const rp = RE + m.hp, ra = RE + m.ha; return Math.sqrt(MU * (2 / rp - 2 / (rp + ra))); };
 
 /** Closed-loop stage-2 steering: the pitch that arrives level at the injection altitude when the burn ends. */
 export function guide(s: Sim, m: Mission): number {
@@ -217,7 +224,7 @@ function refPitch(ref: Ref, alt: number) {
  * for more angle of attack than the Q-alpha limit allows. Stage 2: closed-loop guidance.
  */
 export function cue(s: Sim, m: Mission, ref?: Ref, kick = ref ? ref.kick : 5 * DEG): number {
-  if (s.stage >= 1) return guide(s, m);
+  if (s.stage >= 1) return s.ev.seco !== undefined ? Math.atan2(s.vr, s.vt) : guide(s, m); // after cutoff: hold the nose on the velocity vector
   if (s.alt < 150) return Math.PI / 2;
   const prog = Math.PI / 2 - kick * clamp((s.alt - 150) / 1350, 0, 1);
   const gam = Math.atan2(s.vr, s.vt);
@@ -241,19 +248,23 @@ export function botEvent(s: Sim, m: Mission): 'go' | 'cut' | undefined {
   if (s.stage === 1 && s.lit) {
     if (s.fairing && s.fmh < FMH_LIMIT * 0.95) return 'go';
     if (!s.fairing && !s.swapped && s.batt < 0.04) return 'go';
-    if (orbit(s).ap >= m.ha) return 'cut';
+    if (m.vCut ? s.vt >= m.vCut : orbit(s).ap >= m.ha) return 'cut';
+  }
+  if (s.stage === 1 && !s.lit && s.ev.seco !== undefined && s.v.suborbital && !s.released) {
+    if (s.fairing) return s.fmh < FMH_LIMIT * 0.95 ? 'go' : undefined;
+    if (s.vr < 0 && s.alt <= (m.relAlt ?? 90e3)) return 'go';
   }
 }
 function flyRef(v: Vehicle, m: Mission, kick: number): Ref {
   const s = newSim(v); ignite(s); release(s);
   const pts: RefPt[] = [], dt = 0.05; let n = 0;
-  while (s.t < 900 && !s.fail && s.ev.seco === undefined) {
+  while (s.t < 1500 && !s.fail && (v.suborbital ? !s.released : s.ev.seco === undefined)) {
     const e = botEvent(s, m); if (e === 'go') go(s); else if (e === 'cut') cutoff(s);
     pilot(s, m, dt, undefined, kick); step(s, dt);
     if (n++ % 20 === 0) pts.push({ t: s.t, alt: s.alt, down: s.down, pitch: s.pitch, speed: s.speed });
   }
   const o = orbit(s);
-  return { kick, pts, ev: { ...s.ev }, margin: s.prop / v.stages[1].prop, maxQ: s.maxQ, ap: o.ap, pe: o.pe, ok: !s.fail && s.prop > 0 && o.pe > m.hp - 40e3 };
+  return { kick, pts, ev: { ...s.ev }, margin: s.prop / v.stages[1].prop, maxQ: s.maxQ, ap: o.ap, pe: o.pe, ok: v.suborbital ? !s.fail && s.released && s.prop > 0 : !s.fail && s.prop > 0 && o.pe > m.hp - 40e3 };
 }
 /** The nominal flight for this mission: the pitch kick that leaves the most stage-2 propellant. */
 export function reference(v: Vehicle, m: Mission): Ref {
@@ -276,3 +287,13 @@ export function ballistic(v: Vehicle, elev: number, wind: number, late = 0.15): 
   }
   return { apogee: s.apogee, range: s.down, pts, burnout: s.ev.meco };
 }
+
+/** Altitude of the reference flight at a given distance downrange: the centre line of the range-safety corridor. */
+export function refAlt(ref: Ref, down: number): number {
+  const p = ref.pts; let i = 1;
+  while (i < p.length - 1 && p[i].down < down) i++;
+  const a = p[i - 1], b = p[i], f = clamp((down - a.down) / (b.down - a.down || 1), 0, 1);
+  return a.alt + (b.alt - a.alt) * f;
+}
+/** Half-width of the corridor an autonomous flight termination system would enforce here (a game value). */
+export const corridor = (alt: number) => 3500 + 0.16 * Math.max(0, alt);

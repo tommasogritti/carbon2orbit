@@ -16,7 +16,13 @@ type Txt = Phaser.GameObjects.Text;
 const refs = new Map<string, L.Ref>();
 const STATIONS = ['PROP', 'AVIONICS', 'GNC', 'RANGE', 'WEATHER'];
 const NOGO = ['LOX temperature out of limits', 'telemetry dropout', 'IMU alignment not converged', 'vessel in the hazard area', 'upper-level winds out of limits'];
-const GO_LABEL: Record<string, string> = { liftoff: 'LIFT-OFF · RELEASE HOLD-DOWNS', sep: 'STAGE SEPARATION', ses: 'STAGE 2 IGNITION', fairing: 'FAIRING JETTISON', swap: 'BATTERY HOT-SWAP', dart: 'RELEASE THE DART' };
+const GO_LABEL: Record<string, string> = { liftoff: 'LIFT-OFF · RELEASE HOLD-DOWNS', sep: 'STAGE SEPARATION', ses: 'STAGE 2 IGNITION', fairing: 'FAIRING JETTISON', swap: 'BATTERY HOT-SWAP', dart: 'RELEASE THE DART', release: 'RELEASE THE TEST ARTICLE' };
+/** A scripted stand-down on the first count: `at` is the count it happens at, `lit` whether the engines are already running. */
+interface Scrub { at: number; lit?: boolean; text: string; resume: string }
+const STILL_TESTING: Scrub = { at: 1.2, lit: true, text: 'ABORT at T-2 · LOX too warm · scrubbed for the day', resume: '21 January 2018 · new attempt · T-8' }; // 12 December 2017: the real attempt was scrubbed, and flew 40 days later
+/** Directions (degrees from prograde) the kick stage points for each release, so no two satellites leave the same way. */
+const DEPLOY_DIR = [0, 180, 70, 250, 130, 310, 30, 210];
+const fmt = (n: number) => Math.round(n).toLocaleString('en-NZ');
 const TIMELINE: [string, string, number][] = [['maxq', 'MAX-Q', -1], ['meco', 'MECO', 1], ['fairing', 'FAIRING', -1], ['swap', 'HOT-SWAP', 1], ['seco', 'SECO', -1]];
 
 /**
@@ -37,18 +43,21 @@ export class LaunchScene extends Phaser.Scene {
   nose = 15; mach = 0; noseMax = 15; // nose-tip temperature (°C) and Mach number, for the sounding rocket's readouts
   elev = 82; windBase = 0; armed = false; pred?: L.Ballistic; predT = 0; zone: [number, number] = [35, 65];
   kick?: { g: Phaser.GameObjects.Graphics; craft: Phaser.GameObjects.Image; info: Txt; tip: Txt; passes: number; lastTAp: number; burning: boolean; botDone: boolean; done: boolean; burned: boolean };
+  kickT: Txt[] = []; sc?: Scrub; aftsT = 0; aftsTxt?: Txt; secoV = 0; tlKeys: [string, string, number][] = [];
+  dep?: { i: number; ang: number; rate: number; since: number; rushed: number; names: string[]; icon: Phaser.GameObjects.Image; g: Phaser.GameObjects.Graphics; sail?: boolean; end: number };
   constructor() { super('Launch'); }
   init(d: { def: LevelDef }) {
     this.def = d.def; this.p = d.def.params; this.v = L.VEHICLES[this.p.vehicle]; this.ung = !!this.v.unguided;
     this.ended = false; this.kick = undefined; this.streaks = []; this.clouds = []; this.lab = []; this.val = []; this.poll = []; this.tl = [];
-    this.count = 12; this.pollT = 0; this.holdT = 0; this.missed = false; this.scrubbed = !this.p.scrub; this.lastC = 99; this.warp = 1; this.trail = []; this.trailT = 0; this.said = {}; this.alarmT = 0; this.why = ''; this.sawQ = 0; this.seco0 = undefined; this.stageDelay = 0;
+    this.count = 12; this.pollT = 0; this.holdT = 0; this.missed = false; this.scrubbed = !this.p.scrub; this.lastC = 99; this.warp = 1; this.trail = []; this.trailT = 0; this.said = {}; this.alarmT = 0; this.why = ''; this.sawQ = 0; this.seco0 = undefined; this.stageDelay = 0; this.aftsT = 0; this.aftsTxt = undefined; this.secoV = 0; this.dep = undefined;
+    this.sc = this.p.scrub === true ? STILL_TESTING : this.p.scrub;
     this.nogo = !this.ung && !this.p.scrub && Math.random() < 0.6 ? { i: Math.floor(Math.random() * STATIONS.length), at: 3.6 + Math.random() * 3, shown: false, done: false } : undefined;
     if (this.ung) {
       this.nose = 15; this.mach = 0; this.noseMax = 15; this.elev = 80; this.armed = false; this.count = 5; this.windBase = (Math.random() * 2 - 1) * 3; this.pred = undefined; this.predT = 0; this.zone = this.p.goal.zone_km || [35, 65];
       this.s = L.newSim(this.v, this.elev * DEG);
     } else {
-      this.m = { hp: (this.p.goal.inject_km || 250) * 1000, ha: (this.p.goal.orbit_km || 500) * 1000 };
-      const key = this.p.vehicle + this.m.hp + '/' + this.m.ha;
+      this.m = { hp: (this.p.goal.inject_km || 250) * 1000, ha: (this.p.goal.orbit_km || 500) * 1000, vCut: this.p.goal.v_ms, relAlt: this.p.goal.release_km ? this.p.goal.release_km * 1000 : undefined };
+      const key = this.p.vehicle + this.m.hp + '/' + this.m.ha + '/' + (this.m.vCut || 0);
       if (!refs.has(key)) refs.set(key, L.reference(this.v, this.m));
       this.ref = refs.get(key)!; this.s = L.newSim(this.v);
     }
@@ -57,14 +66,14 @@ export class LaunchScene extends Phaser.Scene {
     cam(this);
     stopLoops(); music.play('launch', 0);
     this.rumble = loop('rumble'); this.sea = loop('sea'); this.sea.set(0.8);
-    const night = !!this.p.night, two = !this.ung;
-    img(this, 0, 0, night ? 'sky_night' : 'sky_day').setOrigin(0);
+    const night = !!this.p.night, dusk = !!this.p.dusk, two = !this.ung;
+    img(this, 0, 0, night ? 'sky_night' : dusk ? 'sky_dusk' : 'sky_day').setOrigin(0);
     this.dark = this.add.rectangle(0, 0, W, H, 0x04050c, 0).setOrigin(0);
     this.stars = img(this, 0, 0, 'stars').setOrigin(0).setAlpha(0);
     this.earth = img(this, W / 2, H + 20, 'earthlimb').setOrigin(0.5, 0).setVisible(false);
-    [[1.2, 40, 1], [2.2, 250, 2], [3.6, 120, 3], [5.5, 280, 1], [7.5, 60, 2], [10, 200, 3]].forEach(([alt, x, k]) => this.clouds.push({ o: img(this, x, -50, 'cloud' + k).setAlpha(night ? 0.35 : 0.95), alt }));
-    this.ground = img(this, RX + 6, 136, this.p.site === 'island' ? 'site_island' : 'site_mahia').setOrigin(0.5, 100 / 150);
-    if (night) this.ground.setTint(0x7088c8);
+    [[1.2, 40, 1], [2.2, 250, 2], [3.6, 120, 3], [5.5, 280, 1], [7.5, 60, 2], [10, 200, 3]].forEach(([alt, x, k]) => this.clouds.push({ o: img(this, x, -50, 'cloud' + k).setAlpha(night ? 0.35 : dusk ? 0.8 : 0.95).setTint(dusk ? 0xffc8b0 : 0xffffff), alt }));
+    this.ground = img(this, RX + 6, 136, 'site_' + this.p.site).setOrigin(0.5, 100 / 150);
+    if (night) this.ground.setTint(0x7088c8); else if (dusk) this.ground.setTint(0xd9b4c0);
     const rnd = new Phaser.Math.RandomDataGenerator([this.def.id]);
     for (let i = 0; i < 16; i++) this.streaks.push(this.add.rectangle(rnd.between(0, W), rnd.between(0, H), 0.4, 7, 0xffffff, 0.4));
     this.smoke = this.add.particles(RX, 135, 'puff', { speedX: { min: -70, max: 70 }, speedY: { min: -14, max: 4 }, lifespan: 1500, scale: { start: S * 0.6, end: S * 2.6 }, alpha: { start: 0.75, end: 0 }, tint: night ? 0xaab4d4 : 0xf4f2ea, frequency: 22, emitting: false });
@@ -90,8 +99,10 @@ export class LaunchScene extends Phaser.Scene {
     this.plotT = [T(this, W - 8, 102, '', '#8fa3c8', 4.2).setOrigin(1, 0), T(this, W - 8, 170.5, '', '#8fa3c8', 4.2).setOrigin(1, 0), T(this, W - 92, 0, '100 km', '#7fd0ff', 4).setVisible(false)];
     if (!this.ung) {
       panel(this, 94, 4, 122, 19);
-      const tEnd = this.ref!.ev.seco * 1.04;
-      for (const [k, name, side] of TIMELINE) { const x = 98 + (this.ref!.ev[k] / tEnd) * 114; this.tl.push(T(this, k === 'seco' ? 214 : x, side < 0 ? 5.2 : 15.6, name, '#8fa3c8', 4.2, '700').setOrigin(k === 'seco' ? 1 : 0.5, 0)); }
+      const tEnd = this.tEnd();
+      this.tlKeys = [...TIMELINE, ...(this.v.suborbital ? [['release', 'RELEASE', 1] as [string, string, number]] : [])].filter(([k]) => this.ref!.ev[k] !== undefined);
+      this.tlKeys.forEach(([k, name, side], i) => { const x = 98 + (this.ref!.ev[k] / tEnd) * 114, last = i === this.tlKeys.length - 1; this.tl.push(T(this, last ? 214 : x, side < 0 ? 5.2 : 15.6, name, '#8fa3c8', 4.2, '700').setOrigin(last ? 1 : 0.5, 0)); });
+      if (this.p.afts) this.aftsTxt = T(this, W - 50, 102, '', '#7cc56b', 4.2, '700').setOrigin(0.5, 0);
       STATIONS.forEach((n, i) => this.poll.push(T(this, 106 + i * 24.5, 27.5, n, '#0b0e18', 4.2, '700').setOrigin(0.5).setDepth(21)));
     }
     this.g = this.add.graphics().setDepth(20);
@@ -102,6 +113,7 @@ export class LaunchScene extends Phaser.Scene {
     this.say(this.ung ? 'Aim the rail against the wind' : 'Terminal count');
   }
   say(s: string) { this.call.setText(s); }
+  tEnd() { return (this.ref!.ev.release ?? this.ref!.ev.seco) * 1.04; }
   alarm(dt: number) { this.alarmT -= dt; if (this.alarmT <= 0) { this.alarmT = 0.42; snd.alarm(); } }
 
   update(_t: number, dms: number) {
@@ -129,7 +141,8 @@ export class LaunchScene extends Phaser.Scene {
     if (just('b') || (AUTO && bad && this.count < n!.at - 0.6)) return this.hold(bad ? `Hold called · ${STATIONS[n!.i]} is working it` : s.lit ? 'Abort after ignition · engines safed' : 'Hold called · all stations were GO');
     if (bad && this.count <= 2.3) { this.missed = true; return this.hold(`Auto-sequencer abort · ${STATIONS[n!.i]} was NO-GO and nobody called it`); }
     if (this.count <= 2 && !s.lit) { L.ignite(s); snd.ignition(); this.say('Ignition · engines at full thrust'); }
-    if (s.lit && !this.scrubbed && this.count <= 1.2) { this.scrubbed = true; return this.hold('ABORT at T-2 · LOX too warm · scrubbed for the day', '21 January 2018 · new attempt · T-8'); } // 12 December 2017: the real attempt was scrubbed, and flew 40 days later
+    const sc = this.sc;
+    if (sc && !this.scrubbed && this.count <= sc.at && (!sc.lit || s.lit)) { this.scrubbed = true; return this.hold(sc.text, sc.resume); }
     if (this.count > 0) { this.prompt.setText(c <= 10 ? 'T-' + c : ''); this.hint.setText(bad ? 'ENTER · CALL A HOLD' : c <= 10 ? 'ENTER holds the count' : 'Go/no-go poll'); }
     else {
       this.prompt.setText('SPACE · ' + GO_LABEL.liftoff); this.hint.setText('Engines are burning propellant');
@@ -165,6 +178,7 @@ export class LaunchScene extends Phaser.Scene {
     const s = this.s;
     if (this.ung) return s.dart ? 12 : s.lit ? 2 : 1.5;
     if (s.stage === 0) return !s.lit ? 1.5 : s.t < 5 ? 2 : 5;
+    if (this.v.suborbital && s.ev.seco !== undefined) { const above = s.alt - this.m.relAlt!; return s.vr < 0 && above < 5e3 ? 1 : s.vr < 0 && above < 16e3 ? 3 : 8; } // coast to the release point
     if (!s.lit || s.starved) return 1.5;
     if (L.vInject(this.m) - s.vt < 260) return 1; // the last seconds before SECO play in real time
     if (s.t - s.ev.ses < 2) return 2;
@@ -180,6 +194,8 @@ export class LaunchScene extends Phaser.Scene {
     else if (k === 'swap') {
       snd.click(); this.say('Battery hot-swap · two packs away');
       for (const d of [-1, 1]) { const b = this.add.rectangle(this.rocket.x, this.rocket.y, 2.4, 3.4, P.yellow).setStrokeStyle(0.3, 0x0b0c12); this.tweens.add({ targets: b, x: b.x - 30 + d * 8, y: H + 10, angle: 300 * d, duration: 1400, onComplete: () => b.destroy() }); }
+    } else if (k === 'release') {
+      snd.stage(); this.say('Test article released'); const b = this.add.rectangle(this.rocket.x, this.rocket.y - 6, 2, 7, 0xe8e6df).setStrokeStyle(0.3, 0x0b0c12).setRotation(this.rocket.rotation); this.tweens.add({ targets: b, x: b.x + 60, y: b.y + 26, duration: 1500, onComplete: () => b.destroy() });
     } else if (k === 'dart') { snd.stage(); this.say('Dart away · coasting to apogee'); const b = this.add.rectangle(this.rocket.x, this.rocket.y, 2.2, 9, 0xd8dbe6).setStrokeStyle(0.3, 0x0b0c12).setRotation(this.rocket.rotation); this.tweens.add({ targets: b, y: H + 20, x: b.x - 16, angle: 200, duration: 1600, onComplete: () => b.destroy() }); }
   }
   doCut() {
@@ -219,13 +235,16 @@ export class LaunchScene extends Phaser.Scene {
       if (s.q > v.qLimit) { this.why = 'maxq'; this.say('DYNAMIC PRESSURE OVER LIMIT · THROTTLE DOWN'); this.alarm(dt); }
       else if (qa > v.qaLimit) { this.why = 'qalpha'; this.say('Q-ALPHA OVER LIMIT · NOSE ON THE CUE'); this.alarm(dt); }
       else if (this.call.text.includes('OVER LIMIT')) this.say('Loads nominal');
+      else if (this.call.text.includes('CORRIDOR') && this.aftsT <= 0) this.say('Back inside the corridor');
       if (s.q > this.sawQ) this.sawQ = s.q; else if (s.q < this.sawQ * 0.93 && this.sawQ > v.qLimit * 0.5) once('maxq', 'Max-Q passed · throttle up');
     }
     if (wasLit && !s.lit) {
       if (this.ung) { this.say('Burnout'); snd.cutoff(); }
       else if (s.stage === 0) { this.say('MECO · main engine cutoff'); snd.cutoff(); }
+      else if (s.stage === 1 && this.v.suborbital) { this.secoV = s.speed; snd.seco(); this.say(`SECO · ${fmt(s.speed)} m/s at ${km(s.alt)} km · coasting to the release point`); }
       else if (s.stage === 1) return this.seco();
     }
+    if (this.p.afts && !s.fail && s.ev.seco === undefined && s.alt > 1500) this.afts(dt);
     if (!wasStarved && s.starved) { this.say('BATTERIES FLAT · PUMPS STOPPED · HOT-SWAP!'); snd.powerdown(); }
     if (s.starved) this.alarm(dt);
     // prompts: what Space and Enter would do now
@@ -234,13 +253,16 @@ export class LaunchScene extends Phaser.Scene {
     if (next === 'sep') { pr = 'SPACE · ' + GO_LABEL.sep; hi = s.t - s.ev.meco < L.GAP ? 'wait for thrust tail-off…' : 'clear to separate'; }
     else if (next === 'ses') { pr = 'SPACE · ' + GO_LABEL.ses; hi = s.t - s.ev.sep < L.GAP ? 'let the stages drift apart…' : 'every second coasting costs velocity'; }
     else if (next === 'dart') { pr = 'SPACE · ' + GO_LABEL.dart; hi = 'the spent booster is all drag now'; }
+    else if (next === 'release') { const r = this.m.relAlt! / 1000; pr = 'SPACE · ' + GO_LABEL.release; hi = s.vr >= 0 || s.alt / 1000 > r + 16 ? `← → keep the nose on the velocity vector\nrelease window ${r + 2.5}–${r - 2.5} km, on the way down` : `ALT ${(s.alt / 1000).toFixed(1)} km · window ${r + 2.5}–${r - 2.5} km\nangle of attack ${(Math.abs(s.alpha) / DEG).toFixed(1)}°`; }
     else if (next === 'fairing' && s.fmh < L.FMH_LIMIT * 4) { pr = 'SPACE · ' + GO_LABEL.fairing; hi = s.fmh > L.FMH_LIMIT ? `heating ${s.fmh.toFixed(0)} W/m² · wait for 1,135` : 'heating below 1,135 W/m²: clear to jettison'; }
     else if ((next === 'swap' && s.batt < 0.12) || s.starved) { pr = 'SPACE · ' + GO_LABEL.swap; hi = `battery ${(s.batt * 100).toFixed(0)}%`; }
-    if (s.stage === 1 && s.lit && !s.starved && L.vInject(this.m) - s.vt < 260) { const o = L.orbit(s); pr = 'ENTER · SECO'; hi = `apogee ${o.bound ? km(o.ap) : '∞'} km · target ${km(this.m.ha)} km${s.throttle > 0.9 ? '\n↓ throttle down for a finer cut' : ''}`; }
+    if (s.stage === 1 && s.lit && !s.starved && L.vInject(this.m) - s.vt < 260) { const o = L.orbit(s); pr = 'ENTER · SECO'; hi = (this.m.vCut ? `speed ${fmt(s.vt)} m/s · target ${fmt(this.m.vCut)} m/s` : `apogee ${o.bound ? km(o.ap) : '∞'} km · target ${km(this.m.ha)} km`) + (s.throttle > 0.9 ? '\n↓ throttle down for a finer cut' : ''); }
     this.prompt.setText(pr); this.hint.setText(hi);
     // endings
     if (this.p.twist === 'scripted-no-orbit' && s.stage === 1 && s.alt >= 224e3) return this.telemetryLoss();
     if (this.ung && s.t > 5 && s.vr <= 0) return this.apogee();
+    if (this.v.suborbital && s.released) return this.testResult();
+    if (this.v.suborbital && !s.fail && s.ev.seco !== undefined && s.vr < 0 && s.alt < this.m.relAlt! - 14e3) s.fail = 'norelease';
     if (!s.fail && s.stage === 1 && s.alt < 55e3 && s.vr < 0) s.fail = 'reentry';
     if (s.fail) return this.fail(this.failText());
     this.render(dt);
@@ -249,8 +271,29 @@ export class LaunchScene extends Phaser.Scene {
     const f = this.s.fail;
     if (f === 'breakup') return this.why === 'maxq' ? 'The vehicle broke up at Max-Q. Throttle down (↓) before dynamic pressure reaches the limit, then throttle back up once it falls.' : this.why === 'rushed' ? 'Recontact at staging. Wait for the thrust to tail off before separating, and for the stages to drift apart before lighting stage 2.' : 'Structural failure from angle of attack in thick air (Q-alpha). Keep the nose on the flight-director cue until you are through Max-Q.';
     if (f === 'heating') return 'The fairing came off while the air was still thick and fast, and the payload overheated. Wait until free molecular heating is below 1,135 W/m².';
+    if (f === 'afts') return 'The autonomous flight termination system ended the flight. The vehicle stayed outside its approved corridor, and on this range no human has to press the button: the rocket decides for itself. Keep the trail between the red lines on the TRAJECTORY plot.';
+    if (f === 'norelease') return 'The test article was still attached when the stage fell below the test window. Press Space as the altitude passes through the window on the way down.';
     if (f === 'reentry') return 'Stage 2 fell back into the atmosphere. Light it promptly after separation and keep the nose on the cue: it has to climb while it accelerates.';
     return 'The vehicle fell back to Earth.';
+  }
+
+  /** Wallops flights carry an autonomous flight termination system: leave the corridor for long and it ends the flight. */
+  afts(dt: number) {
+    const s = this.s, centre = L.refAlt(this.ref!, s.down), tol = L.corridor(centre), dev = s.alt - centre, used = Math.abs(dev) / tol;
+    if (used > 1) { this.aftsT += dt; this.say(`AFTS · OUTSIDE THE CORRIDOR · ${dev > 0 ? 'TOO HIGH: PITCH OVER' : 'TOO LOW: PITCH UP'}`); this.alarm(dt); if (this.aftsT > 3.5) s.fail = 'afts'; }
+    else this.aftsT = Math.max(0, this.aftsT - dt * 0.5);
+    this.aftsTxt?.setText(used > 1 ? `AFTS · TERMINATE IN ${Math.max(0, 3.5 - this.aftsT).toFixed(1)} s` : `AFTS ARMED · MARGIN ${Math.round((1 - used) * 100)}%`).setColor(used > 1 ? '#ff6a50' : used > 0.7 ? '#ffe98a' : '#7cc56b');
+  }
+  /** Suborbital test flight: scored on the conditions the test article was given, not on an orbit. */
+  testResult() {
+    const s = this.s, m = this.m; this.end();
+    const ev = Math.abs(this.secoV - m.vCut!), ea = Math.abs(s.alt - m.relAlt!), aoa = Math.abs(s.alpha) / DEG, mach = s.speed / 295;
+    const clean = s.stress < 0.5 && s.heat < 0.2 && !this.missed;
+    if (ev > 500 || ea > 12e3) return this.fail(`The test article left the stage at ${(s.alt / 1000).toFixed(1)} km after a cutoff ${fmt(ev)} m/s off the target speed: outside any useful test condition. Cut off on the speed target, then release inside the altitude window.`);
+    const stars = ev <= 60 && ea <= 2500 && aoa <= 2 && clean ? 3 : ev <= 200 && ea <= 6000 && aoa <= 6 ? 2 : 1;
+    const notes = [ev > 60 ? `cutoff was ${fmt(ev)} m/s off the target speed` : '', ea > 2500 ? `release was ${(ea / 1000).toFixed(1)} km outside the window centre` : '', aoa > 2 ? `the nose was ${aoa.toFixed(1)}° off the velocity vector at release` : '', s.stress >= 0.5 ? `structural load reached ${(s.stress * 100).toFixed(0)}%` : '', this.missed ? 'a NO-GO went uncalled in the count' : ''].filter(Boolean);
+    this.say('Test article away · data is flowing');
+    this.time.delayedCall(1500, () => finish(this, this.def, { success: true, stars, egg: stars === 3 && ev <= 25, title: `Mach ${mach.toFixed(0)} at ${(s.alt / 1000).toFixed(0)} km`, text: `SECO at ${fmt(this.secoV)} m/s (target ${fmt(m.vCut!)}). The test article was released at ${(s.alt / 1000).toFixed(1)} km, ${km(s.down)} km downrange, descending at ${Math.abs(Math.atan2(s.vr, s.vt) / DEG).toFixed(1)}° with ${aoa.toFixed(1)}° angle of attack, doing ${fmt(s.speed * 3.6)} km/h. No orbit: that was the point.${notes.length ? ' For three stars: ' + notes.join('; ') + '.' : ''}` }));
   }
 
   // ---------- drawing ----------
@@ -297,8 +340,8 @@ export class LaunchScene extends Phaser.Scene {
     // telemetry
     this.clockT.setText(s.held ? (this.ung && !this.armed ? 'HOLD' : 'T-' + clock(Math.max(0, this.count))) : 'T+' + clock(s.t));
     this.warpT.setText(s.held || this.warp < 1.2 ? '' : `×${this.warp.toFixed(this.warp < 3 ? 1 : 0)}`);
-    const o = up ? L.orbit(s) : undefined;
-    this.tele.setText(`ALT   ${a.toFixed(a < 10 ? 1 : 0)} km\nVEL   ${Math.round(s.speed * 3.6).toLocaleString('en-NZ')} km/h\n` + (o ? `AP ${o.bound ? km(o.ap) : '∞'} · PE ${o.pe < 0 ? '—' : km(o.pe)} km` : this.ung ? (s.held && this.pred ? `PREDICT ${km(this.pred.apogee)} km up, ${km(this.pred.range)} out` : `MACH ${this.mach.toFixed(1)} · APOGEE ${km(s.apogee)} km`) : `DOWNRANGE ${km(s.down)} km`));
+    const o = up && !this.v.suborbital ? L.orbit(s) : undefined;
+    this.tele.setText(`ALT   ${a.toFixed(a < 10 ? 1 : 0)} km\nVEL   ${Math.round(s.speed * 3.6).toLocaleString('en-NZ')} km/h\n` + (up && this.v.suborbital ? `MACH ${(s.speed / 295).toFixed(1)} · FPA ${(Math.atan2(s.vr, s.vt) / DEG).toFixed(1)}°` : o ? `AP ${o.bound ? km(o.ap) : '∞'} · PE ${o.pe < 0 ? '—' : km(o.pe)} km` : this.ung ? (s.held && this.pred ? `PREDICT ${km(this.pred.apogee)} km up, ${km(this.pred.range)} out` : `MACH ${this.mach.toFixed(1)} · APOGEE ${km(s.apogee)} km`) : `DOWNRANGE ${km(s.down)} km`));
     const g = this.g; g.clear();
     // gauges
     this.rows().forEach((r, i) => {
@@ -310,10 +353,10 @@ export class LaunchScene extends Phaser.Scene {
     this.dial(g); this.plot(g);
     if (!this.ung) {
       // mission timeline, as on the webcast
-      const tEnd = this.ref!.ev.seco * 1.04, X = (t: number) => 98 + clamp(t / tEnd, 0, 1) * 114;
+      const tEnd = this.tEnd(), X = (t: number) => 98 + clamp(t / tEnd, 0, 1) * 114;
       g.lineStyle(0.5, 0x8fa3c8, 0.7).lineBetween(98, 13.5, 212, 13.5);
       if (!s.held) g.lineStyle(1, 0xffe98a).lineBetween(98, 13.5, X(s.t), 13.5);
-      TIMELINE.forEach(([key], i) => { const done = s.ev[key] !== undefined && (key !== 'maxq' || this.said.maxq); g.fillStyle(done ? P.lgreen : 0x8fa3c8).fillCircle(X(this.ref!.ev[key]), 13.5, 1.3); this.tl[i].setColor(done ? '#7cc56b' : '#8fa3c8'); });
+      this.tlKeys.forEach(([key], i) => { const done = s.ev[key] !== undefined && (key !== 'maxq' || this.said.maxq); g.fillStyle(done ? P.lgreen : 0x8fa3c8).fillCircle(X(this.ref!.ev[key]), 13.5, 1.3); this.tl[i].setColor(done ? '#7cc56b' : '#8fa3c8'); });
       g.fillStyle(0xffffff).fillTriangle(X(s.t) - 1.6, 10.2, X(s.t) + 1.6, 10.2, X(s.t), 12.6);
       // go/no-go poll
       this.poll.forEach((t, i) => {
@@ -345,7 +388,7 @@ export class LaunchScene extends Phaser.Scene {
   /** Altitude against downrange: the planned profile, and where the vehicle has actually been. */
   plot(g: Phaser.GameObjects.Graphics) {
     const s = this.s, x0 = W - 94, y0 = 169, w = 84, h = 56;
-    const up = s.stage >= 1, xm = this.ung ? 130e3 : up ? this.ref!.pts[this.ref!.pts.length - 1].down * 1.05 : 260e3, ym = this.ung ? 140e3 : up ? Math.max(360e3, this.m.hp * 1.35) : 125e3;
+    const up = s.stage >= 1, xm = this.ung ? 130e3 : up ? this.ref!.pts[this.ref!.pts.length - 1].down * 1.05 : 260e3, ym = this.ung ? 140e3 : up ? (this.v.suborbital ? this.m.hp * 1.5 : Math.max(360e3, this.m.hp * 1.35)) : 125e3;
     const X = (d: number) => x0 + clamp(d / xm, 0, 1) * w, Y = (a: number) => y0 - clamp(a / ym, 0, 1) * h;
     g.lineStyle(0.4, 0x8fa3c8, 0.6).lineBetween(x0, y0, x0 + w, y0).lineBetween(x0, y0, x0, y0 - h);
     this.plotT[0].setText(`alt ${km(ym)} km`); this.plotT[1].setText(`downrange ${km(xm)} km`);
@@ -355,7 +398,11 @@ export class LaunchScene extends Phaser.Scene {
       g.fillStyle(P.lgreen, 0.8).fillRect(X(this.zone[0] * 1000), y0 - 1, X(this.zone[1] * 1000) - X(this.zone[0] * 1000), 2.4);
       g.lineStyle(0.4, 0x7fd0ff, 0.8).lineBetween(x0, Y(100e3), x0 + w, Y(100e3)); this.plotT[2].setVisible(true).setY(Y(100e3) - 5.4);
       if (this.pred) line(this.pred.pts, s.held ? (ok ? P.lgreen : P.red) : 0x8fa3c8, s.held ? 1 : 0.6, 0.6);
-    } else line(this.ref!.pts, 0x8fa3c8, 0.7, 0.5);
+    } else {
+      line(this.ref!.pts, 0x8fa3c8, 0.7, 0.5);
+      if (this.p.afts && s.ev.seco === undefined) for (const sg of [-1, 1]) line(this.ref!.pts.map((p) => ({ down: p.down, alt: p.alt + sg * L.corridor(p.alt) })), P.red, 0.75, 0.4); // the corridor the AFTS enforces
+      if (this.v.suborbital && up) { const r = this.m.relAlt!, xa = X(this.ref!.pts.find((p) => p.t >= this.ref!.ev.seco)!.down); g.fillStyle(P.lgreen, 0.55).fillRect(xa, Y(r + 2500), x0 + w - xa, Math.max(1.2, Y(r - 2500) - Y(r + 2500))); }
+    }
     if (this.trail.length > 1) line(this.trail.map((p) => ({ down: p.d, alt: p.a })), 0xffe98a, 1, 0.8);
     if (!s.held) g.fillStyle(0xffffff).fillCircle(X(s.down), Y(s.alt), 1.3);
   }
@@ -410,14 +457,14 @@ export class LaunchScene extends Phaser.Scene {
     this.add.rectangle(0, 0, W, H, 0x04050c, 0.94).setOrigin(0).setDepth(40);
     img(this, 0, 0, 'stars').setOrigin(0).setDepth(40).setAlpha(0.8);
     img(this, 176, 98, 'earth').setDepth(41).setDisplaySize(60, 60);
-    T(this, 176, 8, 'KICK STAGE · CIRCULARISE', '#ffe98a', 10, '700').setOrigin(0.5).setDepth(42);
-    T(this, 176, 21, 'Kick stage separation confirmed · Curie holds prograde', '#aab4d4', 5.6).setOrigin(0.5).setDepth(42);
+    this.kickT = [T(this, 176, 8, 'KICK STAGE · CIRCULARISE', '#ffe98a', 10, '700').setOrigin(0.5).setDepth(42), T(this, 176, 21, 'Kick stage separation confirmed · Curie holds prograde', '#aab4d4', 5.6).setOrigin(0.5).setDepth(42)];
     panel(this, 4, 78, 96, 70).setDepth(42);
     this.kick = { g: this.add.graphics().setDepth(41), craft: img(this, 0, 0, 'curie').setDepth(43), info: T(this, 9, 81, '', '#ffffff', 6).setDepth(43), tip: T(this, 176, H - 12, '', '#ffffff', 7, '700').setOrigin(0.5).setDepth(43).setAlign('center'), passes: 1, lastTAp: 1e9, burning: false, botDone: false, done: false, burned: false };
   }
   kickUpdate(dt: number) {
     const k = this.kick!, s = this.s, v = this.v; if (k.done) return;
     let o = L.orbit(s);
+    if (this.dep) { L.step(s, dt * 20); o = L.orbit(s); this.kickPicture(o); return this.deployUpdate(dt, o); }
     const st = v.stages[2], need = L.vCirc(o.ap) - Math.sqrt(L.MU * (2 / (L.RE + o.ap) - 1 / o.a)), burn = need / (st.thrustVac / s.m);
     let want = held('a');
     if (AUTO) { if (!k.botDone && !k.burning && o.tAp <= burn / 2) k.burning = true; if (k.burning && (o.pe >= Math.min(o.ap - 2e3, this.m.ha) || s.prop <= 0)) { k.burning = false; k.botDone = true; } want = k.burning; }
@@ -428,8 +475,16 @@ export class LaunchScene extends Phaser.Scene {
     if (k.lastTAp < 60 && o.tAp > o.period / 2) k.passes++;
     k.lastTAp = o.tAp;
     this.rumble.set(s.lit ? 0.22 : 0, 0.12);
+    this.kickPicture(o);
+    const ha = this.m.ha, good = Math.max(Math.abs(o.ap - ha), Math.abs(o.pe - ha)) <= 15e3;
+    k.info.setText(`APOGEE   ${km(o.ap)} km\nPERIGEE  ${km(o.pe)} km\nTARGET   ${km(ha)} km circular\n\nTIME TO AP  ${clock(o.tAp)}\nBURN NEEDED ${need > 0.5 ? need.toFixed(0) + ' m/s · ' + burn.toFixed(0) + ' s' : 'none'}\nCURIE PROP  ${((s.prop / st.prop) * 100).toFixed(0)}%\nAPOGEE PASS ${k.passes}`);
+    k.tip.setText(s.prop <= 0 ? 'Curie is empty · ENTER deploys the payload' : good ? 'Circular. ENTER deploys the payload' : s.lit ? 'Release SPACE when perigee meets apogee' : `Hold SPACE to burn Curie. Centre the burn on apogee: start at T-${clock(burn / 2)}`).setColor(good ? '#7cc56b' : '#ffffff');
+    if (s.alt < 100e3) { k.done = true; return this.fail(`The transfer orbit dipped back into the atmosphere at perigee (${km(o.pe)} km) before Curie could raise it.`); }
+    if ((just('b') || (AUTO && k.botDone)) && !s.lit) { if (this.p.deploy) return this.deployStart(); k.done = true; this.end(); this.result(o, k.passes); }
+  }
+  kickPicture(o: L.Orbit) {
     // picture: altitudes are exaggerated so the ellipse reads
-    const cx = 176, cy = 98, RD = (alt: number) => 30 + (alt / 1000) * 0.055, g = k.g; g.clear();
+    const k = this.kick!, s = this.s, cx = 176, cy = 98, RD = (alt: number) => 30 + (alt / 1000) * 0.055, g = k.g; g.clear();
     const th = Math.atan2(s.x, s.y), w = th - o.nu, rd = RD(s.alt), px = cx + Math.sin(th) * rd, py = cy - Math.cos(th) * rd;
     g.lineStyle(0.5, P.lgreen, 0.55).strokeCircle(cx, cy, RD(this.m.ha));
     g.lineStyle(0.7, 0xffe98a, 0.95).beginPath();
@@ -439,11 +494,54 @@ export class LaunchScene extends Phaser.Scene {
     g.fillStyle(0xffe98a).fillCircle(apx, apy, 1.6);
     k.craft.setPosition(px, py).setRotation(th + Math.PI / 2);
     if (s.lit) g.fillStyle(0xffb347, 0.9).fillCircle(px - Math.cos(th) * 3, py - Math.sin(th) * 3, 1.6 + Math.random());
-    const ha = this.m.ha, good = Math.max(Math.abs(o.ap - ha), Math.abs(o.pe - ha)) <= 15e3;
-    k.info.setText(`APOGEE   ${km(o.ap)} km\nPERIGEE  ${km(o.pe)} km\nTARGET   ${km(ha)} km circular\n\nTIME TO AP  ${clock(o.tAp)}\nBURN NEEDED ${need > 0.5 ? need.toFixed(0) + ' m/s · ' + burn.toFixed(0) + ' s' : 'none'}\nCURIE PROP  ${((s.prop / st.prop) * 100).toFixed(0)}%\nAPOGEE PASS ${k.passes}`);
-    k.tip.setText(s.prop <= 0 ? 'Curie is empty · ENTER deploys the payload' : good ? 'Circular. ENTER deploys the payload' : s.lit ? 'Release SPACE when perigee meets apogee' : `Hold SPACE to burn Curie. Centre the burn on apogee: start at T-${clock(burn / 2)}`).setColor(good ? '#7cc56b' : '#ffffff');
-    if (s.alt < 100e3) { k.done = true; return this.fail(`The transfer orbit dipped back into the atmosphere at perigee (${km(o.pe)} km) before Curie could raise it.`); }
-    if ((just('b') || (AUTO && k.botDone)) && !s.lit) { k.done = true; this.end(); this.result(o, k.passes); }
+  }
+  /**
+   * Several customers on one kick stage: point the dispenser along the commanded direction (← →), let the body rates
+   * settle, then release (Space). Each spring pushes the stage the other way, so it has to be steadied again.
+   */
+  deployStart() {
+    const k = this.kick!;
+    panel(this, W - 100, 40, 96, 112).setDepth(42);
+    T(this, W - 52, 43, 'DEPLOY SEQUENCE', '#aab4d4', 5, '700').setOrigin(0.5, 0).setDepth(43); T(this, W - 92, 132, 'BODY RATE', '#aab4d4', 4.2, '700').setDepth(43);
+    this.kickT[0].setText('KICK STAGE · DEPLOY'); this.kickT[1].setText('One customer at a time, each in its own direction'); this.call.setDepth(45).setY(H - 23).setFontSize(6.5);
+    this.dep = { i: 0, ang: -40, rate: 0, since: 0, rushed: 0, names: this.p.deploy as string[], icon: img(this, W - 52, 96, 'curie').setScale(S * 2.6).setDepth(44), g: this.add.graphics().setDepth(43), end: 0 };
+    k.tip.setText(''); snd.select();
+  }
+  deployUpdate(dt: number, o: L.Orbit) {
+    const k = this.kick!, d = this.dep!, g = d.g.clear(), cx = W - 52, cy = 96, R = 30, n = d.names.length;
+    const tgt = DEPLOY_DIR[d.i % DEPLOY_DIR.length], diff = Phaser.Math.Angle.WrapDegrees(tgt - d.ang);
+    d.since += dt;
+    if (d.i < n) {
+      const ready = Math.abs(diff) <= 6 && Math.abs(d.rate) < 14 && d.since >= 1;
+      const inp = AUTO ? (Math.abs(diff) > 2.5 ? Math.sign(diff) * Math.min(1, Math.abs(diff) / 25 + 0.25) : 0) : (held('right') ? 1 : 0) - (held('left') ? 1 : 0);
+      d.rate += (inp * 110 - d.rate) * Math.min(1, dt * (inp ? 5 : 2.2)); d.ang += d.rate * dt;
+      if (just('a') || (AUTO && ready && Math.abs(diff) < 3.5 && Math.abs(d.rate) < 9)) {
+        if (d.since < 1) snd.deny();
+        else {
+          if (!ready) { d.rushed++; snd.alarm(); this.cameras.main.shake(140, 0.004); } else snd.fairing();
+          const a = (d.ang - 90) * DEG, sat = this.add.rectangle(cx + Math.cos(a) * 9, cy + Math.sin(a) * 9, 3.2, 2.2, [0x7fd0ff, 0xffe98a, 0x7cc56b, 0xff9a7a][d.i % 4]).setStrokeStyle(0.3, 0x0b0c12).setDepth(44).setRotation(a);
+          this.tweens.add({ targets: sat, x: cx + Math.cos(a) * 44, y: cy + Math.sin(a) * 44, alpha: 0, angle: sat.angle + 90, duration: 2600, onComplete: () => sat.destroy() });
+          this.say(ready ? `${d.names[d.i]} · separation confirmed` : `${d.names[d.i]} away, off the commanded line: recontact risk`);
+          d.i++; d.since = 0; d.rate += (d.i % 2 ? -1 : 1) * (55 + Math.random() * 35); // the spring pushes back on the stage
+        }
+      }
+      k.tip.setText(ready ? 'SPACE · RELEASE' : d.since < 1 ? 'Let the last one drift clear…' : Math.abs(diff) > 6 ? '← → point the dispenser at the green marker' : 'Steady… let the rates settle').setColor(ready ? '#7cc56b' : '#ffffff');
+    } else {
+      d.end += dt; d.rate *= 1 - Math.min(1, dt * 3); d.ang += d.rate * dt;
+      if (this.p.sail && !d.sail && d.end > 0.7) { d.sail = true; snd.click(); this.say(this.p.sail as string); }
+      k.tip.setText('');
+      if (d.end > (this.p.sail ? 2.6 : 1.1)) { k.done = true; this.end(); return this.result(o, k.passes); }
+    }
+    // the stage, its dispenser axis (white) and the commanded release direction (green)
+    const pt = (deg: number, r: number) => ({ x: cx + Math.cos((deg - 90) * DEG) * r, y: cy + Math.sin((deg - 90) * DEG) * r });
+    g.lineStyle(0.5, 0x8fa3c8, 0.7).strokeCircle(cx, cy, R);
+    for (let a = 0; a < 360; a += 30) { const p0 = pt(a, R), p1 = pt(a, R - (a % 90 ? 2 : 4)); g.lineStyle(0.4, 0x8fa3c8, 0.8).lineBetween(p0.x, p0.y, p1.x, p1.y); }
+    if (d.i < n) { const b0 = pt(tgt, R + 1), b1 = pt(tgt + 5, R + 7), b2 = pt(tgt - 5, R + 7); g.fillStyle(Math.abs(diff) <= 6 ? P.lgreen : P.yellow).fillTriangle(b0.x, b0.y, b1.x, b1.y, b2.x, b2.y); const c1 = pt(tgt, R - 12); g.lineStyle(0.5, P.lgreen, 0.6).lineBetween(b0.x, b0.y, c1.x, c1.y); }
+    const e = pt(d.ang, R - 1); g.lineStyle(1.2, 0xffffff).lineBetween(cx, cy, e.x, e.y);
+    d.icon.setRotation(d.ang * DEG);
+    if (d.sail) { const q = pt(d.ang + 180, 9); g.fillStyle(0xdfe9f5, 0.85).fillRect(q.x - 7, q.y - 7, 14, 14); g.lineStyle(0.4, 0x8fa3c8).strokeRect(q.x - 7, q.y - 7, 14, 14).lineBetween(q.x - 7, q.y - 7, q.x + 7, q.y + 7).lineBetween(q.x + 7, q.y - 7, q.x - 7, q.y + 7); }
+    const rate = Math.min(1, Math.abs(d.rate) / 60); g.fillStyle(0x000000, 0.5).fillRoundedRect(W - 92, 138, 80, 3.6, 1.8); if (rate > 0.03) g.fillStyle(Math.abs(d.rate) < 14 ? P.lgreen : P.red).fillRoundedRect(W - 92, 138, Math.max(3.6, 80 * rate), 3.6, 1.8);
+    k.info.setText(`DEPLOYED ${Math.min(d.i, n)} / ${n}\n` + d.names.map((nm, i) => `${i < d.i ? '✓' : i === d.i ? '▶' : '·'} ${nm}`).join('\n')).setFontSize(n > 5 ? 5 : 6);
   }
   /** Score the orbit the payload was left in. */
   result(o: L.Orbit, passes: number) {
@@ -451,9 +549,10 @@ export class LaunchScene extends Phaser.Scene {
     if (o.pe < 150e3) return this.fail(`Perigee ${km(o.pe)} km is inside the atmosphere: the payload will re-enter within days. ${kicked ? 'Burn Curie at apogee until perigee comes up to meet it.' : ''}`);
     const err = Math.max(Math.abs(o.ap - ha), kicked ? Math.abs(o.pe - ha) : 0) / 1000;
     const clean = s.stress < 0.5 && s.heat < 0.2 && !this.missed;
-    const stars = err <= 15 && clean ? 3 : err <= 50 ? 2 : 1, first = passes === 1 && err <= 15;
-    const notes = [err > 15 ? `orbit is ${err.toFixed(0)} km off target` : '', s.stress >= 0.5 ? `structural load reached ${(s.stress * 100).toFixed(0)}%` : '', s.heat >= 0.2 ? 'the payload took heating after an early fairing jettison' : '', this.missed ? 'a NO-GO went uncalled in the count' : ''].filter(Boolean);
-    const text = `SECO left a ${km(this.seco0!.ap)} × ${km(this.seco0!.pe)} km transfer orbit with ${(this.margin * 100).toFixed(1)}% of stage-2 propellant in hand. ${kicked ? `Curie circularised it to ${km(o.ap)} × ${km(o.pe)} km on apogee pass ${passes}; target ${km(ha)} km. ` : ''}${this.p.kickPayload || this.p.payload} deployed.${notes.length ? ' For three stars: ' + notes.join('; ') + '.' : ''}`;
+    const d = this.dep, rushed = d ? d.rushed : 0;
+    const stars = err <= 15 && clean && !rushed ? 3 : err <= 50 ? 2 : 1, first = passes === 1 && err <= 15 && !rushed;
+    const notes = [err > 15 ? `orbit is ${err.toFixed(0)} km off target` : '', s.stress >= 0.5 ? `structural load reached ${(s.stress * 100).toFixed(0)}%` : '', s.heat >= 0.2 ? 'the payload took heating after an early fairing jettison' : '', this.missed ? 'a NO-GO went uncalled in the count' : '', rushed ? `${rushed} release${rushed > 1 ? 's were' : ' was'} made off the commanded line or before the stage had steadied` : ''].filter(Boolean);
+    const text = `SECO left a ${km(this.seco0!.ap)} × ${km(this.seco0!.pe)} km transfer orbit with ${(this.margin * 100).toFixed(1)}% of stage-2 propellant in hand. ${kicked ? `Curie circularised it to ${km(o.ap)} × ${km(o.pe)} km on apogee pass ${passes}; target ${km(ha)} km. ` : ''}${d ? `All ${d.names.length} payloads released one at a time, each in its own direction` : (this.p.kickPayload || this.p.payload) + ' deployed'}.${this.p.sail ? ' ' + this.p.sailNote : ''}${notes.length ? ' For three stars: ' + notes.join('; ') + '.' : ''}`;
     const k = this.kick;
     if (k) {
       T(this, 176, 32, this.p.hundred ? 'PAYLOAD DEPLOYED · 100 LAUNCHES!' : 'PAYLOAD DEPLOYED', '#7cc56b', 9, '700').setOrigin(0.5).setDepth(44); k.tip.setText('');
