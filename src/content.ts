@@ -25,6 +25,8 @@ export interface LevelDef {
   portrait?: string; // people: character prefix of a drawn portrait, used when there is no freely licensed photo
   sources: string[];
   params?: any;
+  /** Set by the engine while a level in several acts is being played (see `then` in core.finish): the worst stars so far, and whether the egg has been earned. */
+  _stars?: number; _egg?: boolean;
 }
 
 const WP = 'https://en.wikipedia.org/wiki/';
@@ -270,6 +272,35 @@ export const LEVELS: LevelDef[] = [
     egg: 'On the number. Leidos’s chief executive, Tom Bell, said afterwards that the MACH-TB team had put this first demonstration together in 49 days (as reported by The Defense Post).',
     sources: [RL + 'missions/launches/scouts-arrow/', RL + 'launch/haste/', RL + 'updates/rocket-lab-debuts-haste-rocket-with-first-successful-suborbital-launch-from-virginia/', RL + 'updates/rocket-lab-introduces-suborbital-testbed-rocket-selected-for-hypersonic-test-flights/', RL + 'missions/launches/prometheus-run/', 'https://thedefensepost.com/2023/06/20/us-hypersonic-test-bed-leidos/', 'https://www.c4isrnet.com/battlefield-tech/space/2023/06/20/rocket-lab-launch-supports-pentagons-hypersonic-testing-push/'],
     params: { vehicle: 'haste', site: 'wallops', night: true, afts: true, goal: { inject_km: 140, v_ms: 6000, release_km: 90 }, payload: 'Test article · undisclosed' },
+  },
+  {
+    id: 'paschens-law', kind: 'launch', mechanic: 'launch', status: 'flown',
+    title: 'Paschen’s Law', date: '2023-09-19', place: 'LC-1, Māhia', map: { x: 312, y: 284 },
+    intro: 'Twenty orbital missions in a row have worked. On 19 September 2023 Electron’s 41st flight, “We Will Never Desert You”, carries a radar satellite for Capella Space. Lift-off, Max-Q and stage separation go as they always do. Then the second stage lights, and seconds later it has no power at all. This level has three acts: fly flight 41 to the moment it is lost, find out in the laboratory why, and fly the return to flight.',
+    how: 'Act one. Fly it as you always do: Enter holds the count, ← → on the cue, ↑ ↓ through Max-Q, Space for stage separation and stage-2 ignition. What happens next is history, not your flying.',
+    fact: 'The numbers from Rocket Lab’s account: 151 seconds into the flight the second stage’s high voltage “anomalously fell sharply”, and in less than a second the stage had lost all power. It ended a run of 20 successful orbital missions in a row, and 37 Electron successes in all.',
+    after: '“We Will Never Desert You” was lost on 19 September 2023, after lifting off at 06:55 UTC. In October the FAA confirmed that Rocket Lab’s launch licence remained active, the company published its findings on 8 November, and on 15 December 2023 “The Moon God Awakens” put QPS-SAR-5, TSUKUYOMI-I, into orbit for the Japanese company iQPS: 87 days from failure to flight. (The curve in the laboratory has the shape Paschen found, but its numbers, and the orbit flown in act three, are the game’s own.)',
+    egg: 'Not one wasted sweep. Friedrich Paschen published his law in 1889. The mission that proved the fix was named for Tsukuyomi, the Japanese god of the Moon.',
+    sources: [RL + 'updates/rocket-lab-sets-next-electron-launch-window-provides-update-on-anomaly-review/', RL + 'updates/rocket-lab-receives-federal-aviation-administration-authorization-to-resume-launches/', RL + 'missions/launches/we-will-never-desert-you/', RL + 'missions/launches/the-moon-god-awakes/', WP + 'Paschen%27s_law'],
+    params: {
+      vehicle: 'electron', site: 'mahia', dusk: true, goal: { orbit: true, orbit_km: 500 }, twist: 'scripted-loss', payload: 'Acadia · Capella Space',
+      then: {
+        mechanic: 'arc-lab',
+        intro: 'Seven weeks later Rocket Lab publishes what its review found. An electrical arc formed inside the power supply that feeds the Rutherford motor controllers, and shorted the battery packs. An arc should not have been able to form there. Why it could is a piece of nineteenth-century physics, Paschen’s Law: a gas resists a spark well at ordinary pressure and well in a vacuum, and worst somewhere in between.',
+        how: 'Act two. The plot shows the voltage at which the gas in a gap breaks down (the curve) against pressure, and the voltage on the harness (the blue line). ← → choose a condition, Space switches it on or off, ↑ ↓ change the pressure by hand, and Enter runs an ascent sweep from sea level to vacuum. Work down the list: make it arc, show that each of the three conditions is needed, then show that the fix holds. The fewer sweeps, the more stars.',
+        params: {
+          heading: 'ANOMALY REVIEW · FLIGHT 41 · HIGH-VOLTAGE LOOM', dc: 200, ripple: 60, vmin: [330, 230],
+          switches: [['ripple', 'AC RIPPLE from the motor controllers', 'the AC ripple'], ['gas', 'HELIUM + NITROGEN in the interstage', 'the helium and nitrogen'], ['fault', 'INSULATION FAULT in the HV loom', 'the insulation fault'], ['fix', 'SEALED BATTERY FRAME holds its pressure', '']],
+          botPlan: [['ripple', 'gas', 'fault'], ['gas', 'fault'], ['ripple', 'fault'], ['ripple', 'gas'], ['ripple', 'gas', 'fault', 'fix']],
+          then: {
+            mechanic: 'launch',
+            intro: 'Rocket Lab’s findings, as it published them: an AC ripple from the motor controllers riding on the DC supply; a small concentration of helium and nitrogen in the interstage; and “an imperceptible fault in the insulation of the high voltage loom”. Its fixes: tests with more margin and flight-like voltage waveforms, and a battery frame modified to hold its pressure through the climb. On 15 December 2023 Electron is back on the pad, with a radar satellite for iQPS.',
+            how: 'Act three: “The Moon God Awakens”. The whole procedure, start to finish: call the count, fly the cue, throttle through Max-Q, command each event, Enter for SECO at 575 km apogee, then hold Space to circularise with Curie at apogee and Enter to deploy.',
+            params: { vehicle: 'electron', site: 'mahia', goal: { orbit: true, orbit_km: 575 }, twist: 'kick-stage', payload: 'QPS-SAR-5 · TSUKUYOMI-I' },
+          },
+        },
+      },
+    },
   },
   {
     id: 'beginning-of-the-swarm', kind: 'launch', mechanic: 'launch', status: 'flown',

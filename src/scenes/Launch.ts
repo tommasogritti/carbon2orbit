@@ -264,6 +264,7 @@ export class LaunchScene extends Phaser.Scene {
     this.prompt.setText(pr); this.hint.setText(hi);
     // endings
     if (this.p.twist === 'scripted-no-orbit' && s.stage === 1 && s.alt >= 224e3) return this.telemetryLoss();
+    if (this.p.twist === 'scripted-loss' && s.stage === 1 && s.ev.ses !== undefined && s.t - s.ev.ses > 1.4) return this.powerLoss();
     if (this.ung && s.t > 5 && s.vr <= 0) return this.apogee();
     if (this.v.suborbital && s.released) return this.testResult();
     if (this.v.suborbital && !s.fail && s.ev.seco !== undefined && s.vr < 0 && s.alt < this.m.relAlt! - 14e3) s.fail = 'norelease';
@@ -447,6 +448,14 @@ export class LaunchScene extends Phaser.Scene {
     });
     const clean = this.s.stress < 0.5 && !this.missed && this.s.heat < 0.2;
     this.time.delayedCall(3800, () => finish(this, this.def, { success: true, stars: clean ? 3 : 2, title: 'It was a test', text: 'You flew it well. The rocket was healthy and on course when the ground lost its data link, and range safety had to end the flight. Level complete: this one is history, not a mistake.' }));
+  }
+  /** Flight 41: seconds after stage 2 lights, its high voltage collapses and the stage loses all power. History, not a mistake: the level goes on. */
+  powerLoss() {
+    const s = this.s; this.end(); snd.powerdown(); this.say('HIGH VOLTAGE LOST · STAGE 2 HAS NO POWER');
+    this.prompt.setText('T+' + clock(s.t) + ' · ANOMALY').setColor('#ff6a50'); this.cameras.main.flash(160, 255, 255, 255);
+    this.tweens.add({ targets: this.rocket, angle: this.rocket.angle + 30, y: this.rocket.y + 30, duration: 2600, ease: 'Sine.easeIn' });
+    const clean = s.stress < 0.5 && !this.missed;
+    this.time.delayedCall(2800, () => finish(this, this.def, { success: true, stars: clean ? 3 : 2, title: 'Stage 2: total loss of power', text: 'Lift-off, Max-Q and stage separation all went by the book. Then, about 151 seconds into the flight, the high voltage feeding the second stage’s motor controllers fell away, and in under a second the stage was dead. Nothing you did caused it.' }));
   }
   seco() {
     const s = this.s, o = L.orbit(s); this.seco0 = o; this.margin = s.prop / this.v.stages[1].prop;

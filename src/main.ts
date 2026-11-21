@@ -22,6 +22,7 @@ import { CountdownRaceScene } from './scenes/CountdownRace';
 import { RideScene } from './scenes/Ride';
 import { OrbitOpsScene } from './scenes/OrbitOps';
 import { DualCountScene } from './scenes/DualCount';
+import { ArcLabScene } from './scenes/ArcLab';
 
 class Boot extends Phaser.Scene {
   constructor() { super('Boot'); }
@@ -40,7 +41,7 @@ Promise.all(['500', '600', '700'].map((w) => document.fonts.load(`${w} 16px "Cha
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     render: { antialias: true, roundPixels: false },
     physics: { default: 'arcade', arcade: { gravity: { x: 0, y: 620 } } },
-    scene: [Boot, MapScene, PlatformScene, LaunchScene, HotfireScene, HeliScene, OrbitRaiseScene, SprintScene, FaultFinderScene, SplashdownScene, CruiseScene, CountdownRaceScene, RideScene, OrbitOpsScene, DualCountScene],
+    scene: [Boot, MapScene, PlatformScene, LaunchScene, HotfireScene, HeliScene, OrbitRaiseScene, SprintScene, FaultFinderScene, SplashdownScene, CruiseScene, CountdownRaceScene, RideScene, OrbitOpsScene, DualCountScene, ArcLabScene],
   });
   initInput(game);
   // Dev-only gameplay recorder: ?rec=<name> captures the canvas; the clip is saved by the dev server when the level ends.

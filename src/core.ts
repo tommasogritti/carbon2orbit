@@ -6,7 +6,7 @@ import { beep, snd, music, stopLoops, unlock, muted, setMuted } from './audio';
 
 export const W = 320;
 export const H = 180;
-export const SCENE_FOR: Record<string, string> = { platform: 'Platform', launch: 'Launch', hotfire: 'Hotfire', 'heli-catch': 'Heli', 'orbit-raise': 'OrbitRaise', sprint: 'Sprint', 'fault-finder': 'FaultFinder', splashdown: 'Splashdown', cruise: 'Cruise', 'countdown-race': 'CountdownRace', ride: 'Ride', 'orbit-ops': 'OrbitOps', 'dual-count': 'DualCount' };
+export const SCENE_FOR: Record<string, string> = { platform: 'Platform', launch: 'Launch', hotfire: 'Hotfire', 'heli-catch': 'Heli', 'orbit-raise': 'OrbitRaise', sprint: 'Sprint', 'fault-finder': 'FaultFinder', splashdown: 'Splashdown', cruise: 'Cruise', 'countdown-race': 'CountdownRace', ride: 'Ride', 'orbit-ops': 'OrbitOps', 'dual-count': 'DualCount', 'arc-lab': 'ArcLab' };
 export const FONT = UI;
 
 export const plain = (s: string) => s;
@@ -137,6 +137,18 @@ export function who(s: Phaser.Scene, def: LevelDef, x: number, y: number, young 
 
 /** Shared end-of-level flow: save, show the result card, return to the map. */
 export function finish(scene: Phaser.Scene, def: LevelDef, r: { success: boolean; stars?: number; title: string; text: string; egg?: boolean; secret?: boolean }) {
+  // A level can be told in several acts: `params.then` names the next mechanic and its params. A successful act hands
+  // over to the next one with a short card in between; stars are the worst of the acts, and nothing is saved until the last.
+  const nxt = def.params?.then as { mechanic: string; params: any; intro?: string; how?: string } | undefined;
+  if (r.success && nxt) {
+    stopLoops(); music.stop(0.3);
+    const d2: LevelDef = { ...def, mechanic: nxt.mechanic as LevelDef['mechanic'], how: nxt.how || def.how, params: nxt.params, _stars: Math.min(def._stars ?? 3, r.stars || 1), _egg: def._egg || !!r.egg };
+    const go = () => scene.scene.start(SCENE_FOR[nxt.mechanic], { def: d2 });
+    (window as any).__g2o.act = { id: def.id, title: r.title, stars: r.stars };
+    if (new URLSearchParams(location.search).has('auto')) return void scene.time.delayedCall(300, go);
+    return showCard(`<div class="kicker">${def.title.toUpperCase()} · NEXT ACT</div><h1>${r.title}</h1><p>${r.text}</p>${nxt.intro ? `<p class="fact">${nxt.intro}</p>` : ''}${nxt.how ? `<p class="how">How to play: ${nxt.how}</p>` : ''}`, [{ label: 'Continue', fn: go }]);
+  }
+  if (r.success && def._stars !== undefined) r = { ...r, stars: Math.min(def._stars, r.stars || 1), egg: r.egg || def._egg };
   stopLoops(); music.stop(0.3); if (r.success) snd.win(); else snd.lose();
   if (r.success) { save.done[def.id] = Math.max(save.done[def.id] || 0, r.stars || 1); }
   if (r.egg && def.egg) save.eggs[def.id] = true;
