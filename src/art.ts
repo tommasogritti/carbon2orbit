@@ -302,7 +302,7 @@ function drawMap(c: C2, w: number, h: number) {
   for (let i = 0; i < 16; i++) { const [x, y] = us(-112 + (r() - 0.5) * 10, 34 + i * 0.9); poly(c, [x - 2, y + 1.4, x, y - 2, x + 2, y + 1.4], '#8f8660'); poly(c, [x - 0.8, y - 0.7, x, y - 2, x + 0.8, y - 0.7], '#f4f6f8'); }
   text(c, 'UNITED STATES', 700, 245, 7, 'rgba(60,50,25,.6)', 700);
   pin(c, ...us(-118.2, 33.8), 'Long Beach HQ', -3, 'right', '#eaf6ff'); pin(c, ...us(-89.6, 30.4), 'Stennis', 0, 'center', '#eaf6ff');
-  pin(c, ...us(-74, 40.7), 'New York', 4, 'left', '#eaf6ff'); pin(c, ...us(-75.45, 37.9), 'Wallops · LC-2, LC-3', 4, 'left', '#eaf6ff');
+  pin(c, ...us(-74, 40.7), 'New York', -3, 'right', '#eaf6ff'); pin(c, ...us(-75.45, 37.9), 'Wallops · LC-2, LC-3', 4, 'left', '#eaf6ff');
   // ocean dressing
   c.save(); c.translate(400, 300); c.rotate(-0.08); text(c, 'P A C I F I C   O C E A N', 0, 0, 8, 'rgba(180,215,255,.4)', 600); c.restore();
   text(c, '(not to scale)', 400, 312, 3.6, 'rgba(180,215,255,.35)', 500);

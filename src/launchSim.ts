@@ -296,4 +296,4 @@ export function refAlt(ref: Ref, down: number): number {
   return a.alt + (b.alt - a.alt) * f;
 }
 /** Half-width of the corridor an autonomous flight termination system would enforce here (a game value). */
-export const corridor = (alt: number) => 3500 + 0.16 * Math.max(0, alt);
+export const corridor = (alt: number) => 3000 + 0.13 * Math.max(0, alt);
