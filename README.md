@@ -18,13 +18,15 @@ Then open the URL Vite prints. Arrow keys walk the world map, Enter opens a node
 | Kind | Draft levels |
 | --- | --- |
 | Platform | The Rocket Bike, Road to Māhia, Rosie the Robot (conveyors), RKLB rings the bell (played as Adam Spice, with Peter as a running-mate power-up), Archimedes and the tank (in progress: playable up to where the story has got to) |
-| Launch control | Ātea-1, It's a Test, Still Testing, It's Business Time (multi-payload deploy sequence), Virginia Is For Launch Lovers (Wallops, at dusk, inside the AFTS corridor), Scout's Arrow (HASTE: suborbital, no orbit), The Mountain God Rises |
-| Mini-game | Rutherford hot-fire, Pics Or It Didn't Happen (fault finder), Return To Sender (splashdown), There And Back Again (helicopter catch), CAPSTONE to the Moon, ESCAPADE (thruster piloting to the Mars gate), VICTUS HAZE (countdown race) |
+| Launch control | Ātea-1, It's a Test, Still Testing, It's Business Time (multi-payload deploy sequence), Virginia Is For Launch Lovers (Wallops, at dusk, inside the AFTS corridor), Scout's Arrow (HASTE: suborbital, no orbit), Paschen's Law (three acts: the lost flight 41, the arc in the lab, the return to flight), Beginning Of The Swarm (a four-burn kick-stage flight plan), The Mountain God Rises |
+| Mini-game | Rutherford hot-fire, Go Find the Launch Site (a dirt-bike ride, played as Shaun D'Mello), Pics Or It Didn't Happen (fault finder), Return To Sender (splashdown), There And Back Again (helicopter catch), CAPSTONE to the Moon, Two Hemispheres (two launch consoles at once), Outback Delivery (ground-track orbit operations for Varda's capsule), ESCAPADE (thruster piloting to the Mars gate), VICTUS HAZE (countdown race) |
 | Story card | Rocket Lab is founded, Sir Peter, Neutron (locked teaser) |
 | People to meet on the map | Mark Rocket and Sir Stephen Tindall, Ky Michaelson, Sir Michael Fay, Dava Newman, Gabe Newell, Adam Spice, Rob Lillis |
-| Secret (find the hidden blueprint) | Princes Street Sprint (bonus mini-game), Kaitorete Spit, Photon, The Hungry Hippo (bonus cards) |
+| Secret (find the hidden blueprint) | Princes Street Sprint (bonus mini-game), Kaitorete Spit, Inside the first hundred, Photon, The Hungry Hippo (bonus cards) |
 
-Peter Beck is the main character throughout; a level can hand the lead to someone else (Adam Spice has the Nasdaq listing).
+Reusable mechanics, each driven by a level's `params` and documented in the spec (§10): `platform`, `launch`, `ride` (side-on riding), `orbit-ops` (ground-track map), `dual-count` (two consoles), `arc-lab` (an experiment with switches), plus the one-off mini-games. A level can chain several of them as acts (`params.then`).
+
+Peter Beck is the main character throughout; a level can hand the lead to someone else (Adam Spice has the Nasdaq listing, Shaun D'Mello the search for a launch site).
 
 Controls: arrows or WASD to move, Space (A) to jump / burn, Enter (B) to confirm, M to mute. Launch control: ← → pitch (keep the white needle on the green cue), ↑ ↓ throttle, Space commands the next event (lift-off, separation, stage-2 ignition, fairing, hot-swap), Enter holds the count or commands SECO; then hold Space to burn the kick stage at apogee and Enter to deploy. Ātea-1 is unguided: ↑ ↓ aim the rail, Space starts the count and releases the dart. With several payloads aboard, ← → point the kick stage at the green marker and Space releases each one. From Wallops, stay inside the red AFTS corridor. HASTE has no orbit: Enter cuts off on speed, then Space releases the test article in the altitude window. Each mini-game says how it is played on its intro card. Sound and music are synthesised in code (`src/audio.ts`) and start after your first key press. A touch pad appears on phones.
 

@@ -162,6 +162,7 @@ Rules:
 - `kind` must agree with the mechanic: `platform` ↔ `platform`, `launch` ↔ `launch`, `minigame` ↔ any other mechanic. CI fails otherwise.
 - `status: announced` → the map shows a locked node. Selecting it opens a teaser card with the intro and sources. The level can't be played and never blocks the path. `status: in-progress` (changed 21 Nov 2026) is for a chapter that is still unfolding: it is playable up to where the story has got to, its intro card carries a "story still unfolding" badge, and its result card says what is still to come. Nothing that has not happened is played (Neutron's flight, ESCAPADE's arrival).
 - Validation errors must be human-readable and include the file path and the field.
+- **Levels in several acts** (added 21 Nov 2026): `params.then: { mechanic, params, intro?, how? }` hands over to another mechanic when the first one ends in success, with a short card in between; `then` can nest. Stars are the worst of the acts, the egg counts if any act earns it, and nothing is saved until the last act. `kind` follows the first act. Used by Paschen's Law (launch → arc-lab → launch).
 
 ### 5.3 Event card — `content/cards/<id>/card.yaml`
 
@@ -306,6 +307,8 @@ Other people from the story appear in three ways:
 - **Running mate (power-up).** A platform level can set `buddy: <character id>` and place a `C` bubble showing that person's face. Picking it up brings them in for about 11 seconds: they run a few steps ahead, copy the player's stride, and see off any enemy they reach. In Adam's level the running mate is Peter. Use this for people who belong in a chapter but do not carry it.
 - **Someone to meet** (below).
 
+A second guest lead was added on 21 Nov 2026: **Shaun D'Mello** leads "Go Find the Launch Site", the chapter Rocket Lab's own account gives him. Because that level is ridden, not walked, he has a portrait and a chip but no walking sprite set: on the bike he is in a helmet, and the name plate says who it is. His portrait was drawn from the captioned black-and-white photo on Rocket Lab's team page, so its colours are the game's choice and need checking against a colour photo.
+
 Characters live in a `CHARACTERS` list: id, texture prefix, name, role, the year they joined, likeness notes. Every character who can be controlled gets a full sprite set (walk, jump, every power-up outfit), a portrait and a chip, drawn to the §7.0 standard. So far: Peter Beck (plus his 1990s variant) and Adam Spice (shaved head, long face, navy blazer, open-collar shirt).
 
 **Meeting people.** People stand beside the main path as small nodes with a violet trail, placed where and when they enter the story, and appear once you reach the node they branch from. Stepping onto one opens a **person card**: who they are and what they did, with a freely licensed photo where one exists (A5) or the game's drawn portrait where none does. Cards state facts with sources and never put words in anyone's mouth (X2a). The map counts `PEOPLE n/m`. So far: Mark Rocket and Sir Stephen Tindall (Auckland, 2006–07), Ky "Rocketman" Michaelson (Minnesota, 2006), Sir Michael Fay (Great Mercury Island, 2009), Dava Newman (Auckland, 2016), Gabe Newell (beside Return To Sender, 2020; text only), Adam Spice (beside the Nasdaq node, next to his own level), Rob Lillis (beside ESCAPADE; text only). None of the nine levels added on 21 Nov 2026 has a guest lead or a running mate: none of those chapters has one person the public record puts at the centre of it other than Peter Beck, and the launch webcast hosts and recovery crews are not named in sources we could cite.
@@ -384,6 +387,7 @@ Each row is a node on the world map. Every date must be checked against a source
 | 2 | founded | Rocket Lab is founded | 2006-06 | card · Draft | Auckland | the US "rocket pilgrimage", Ky "Rocketman" Michaelson, Mark Rocket, Stephen Tindall |
 | 3 | atea-1 | Ātea-1 | 2009-11-30 | **launch** (unguided: aim the rail) · Draft | Great Mercury Island | Manu Karere; first private company in the Southern Hemisphere to reach space |
 | 4 | rutherford | Rutherford hot-fire | 2013–2016 | **mini-game** `hotfire` · Draft | Auckland | electric pumps, 3D-printed engine, battery hot-swap |
+| 4a | find-the-launch-site | Go Find the Launch Site | about 2015 | **mini-game** `ride`, played as Shaun D'Mello · Draft | Māhia | the engineer told to "go find the launch site"; open ocean to the north, south and east; 45 minutes by dirt bike with no road. Side-on riding over the farm: sheep, stumps, mud, gullies, five survey flags. Power-up: knobbly tyres. Egg: the shipping-container mission control. Secret: Inside the first hundred (card) |
 | 5 | lc-1 | Road to Māhia | 2016-09-26 | **platform** · Draft | Māhia | pad hardware. Backdrop strip: Wairoa and its relocated lighthouse → Onenui Station (woolshed, sheep, cattle) → the gravel road with a LOX tank on a low-loader → the building site (crane, containers, tracking dish) → the range (hangar, masts, strongback); behind it Mokotahi, a dolphin, Portland Island. Enemies: red tape, rams, gulls. Egg: gnome Chompski |
 | 6 | its-a-test | It's a Test | 2017-05-25 | **launch** (scripted telemetry loss at 224 km) · Draft | LC-1 | first Electron flight; unticked "forward error correction" box on the loss screen |
 | 7 | still-testing | Still Testing | 2018-01-21 | **launch** + kick stage · Draft | LC-1 | first orbit; scripted T-2 abort (Dec 2017 attempt); Humanity Star and a Dove in the transfer orbit; the secret kick stage circularises two Lemur-2s |
@@ -396,14 +400,18 @@ Each row is a node on the world map. Every date must be checked against a source
 | 14 | capstone | CAPSTONE to the Moon | 2022-06-28 | **mini-game** `orbit-raise` · Draft | the Moon | Lunar Photon, HyperCurie perigee burns, TLI on 4 July |
 | 15 | lc-2 | Virginia Is For Launch Lovers | 2023-01-24 | **launch** + kick stage · Draft | Wallops | first Electron from LC-2 (three HawkEye 360 satellites, 550 km, 40.5°); new site backdrop (barrier island, Pad 0A's water tower next door, plovers) at dusk; new to play: the autonomous flight termination corridor; the December 2022 upper-level-winds scrub |
 | 16 | haste | Scout's Arrow | 2023-06-18 | **launch** (suborbital) · Draft | Wallops | first HASTE flight (Leidos, MACH-TB), at night; no orbit: SECO on a speed, coast over the top, release the test article in an altitude window with the nose on the velocity vector. Targets are game values: the real profile was never published |
+| 16a | paschens-law | Paschen's Law | 2023-09-19 | **launch** → `arc-lab` → **launch**, three acts · Draft | LC-1 | flight 41 loses second-stage high voltage at T+151 s (scripted); in the lab, show that AC ripple, helium and nitrogen, and an insulation fault are all needed for the arc, and that a sealed battery frame stops it; then fly "The Moon God Awakens" (15 Dec 2023) |
+| 16b | beginning-of-the-swarm | Beginning Of The Swarm | 2024-04-23 | **launch** + kick-stage flight plan · Draft | LC-1 | NEONSAT-1 to 520 km, NASA's solar sail to 1,000 km, then a retrograde de-orbit burn: four Curie ignitions |
 | 17 | sir-peter | Sir Peter | 2024-06-03 | card · Draft | Wellington | KNZM in the King's Birthday Honours, invested 5 Sept 2024; 50th launch "No Time Toulouse" in June |
+| 17a | two-hemispheres | Two Hemispheres | 2024-11-24 | **mini-game** `dual-count` · Draft | mid-Pacific | "HASTE A La Vista" from LC-2 and "Ice AIS Baby" from LC-1, 21 h 55 min apart: two consoles of timed calls, one pair of hands |
+| 17b | outback-delivery | Outback Delivery | 2025-02-27 | **mini-game** `orbit-ops` · Draft | Australia (a corner of it now on the map) | Varda's W-2 capsule on a Rocket Lab Pioneer: lower perigee to 300 km, raise apogee to 900, de-orbit so the predicted landing sits on Koonibba, release at 470 km |
 | 18 | escapade | ESCAPADE | 2025-11-13 | **mini-game** `cruise` · Draft | Mars | twin Rocket Lab-built spacecraft, launched on New Glenn; thruster piloting with no drag round the L2 kidney bean, then the powered Earth flyby (Blue 7 Nov 2026, Gold 9 Nov) and out through the Mars gate. Arrival (September 2027) is not played |
 | 19 | victus-haze | VICTUS HAZE | 2026-06-19 | **mini-game** `countdown-race` · Draft | Māhia | launch 16 h 42 min after the Notice to Launch; ten jobs with dependencies, two crews, the pad from dawn to a night lift-off |
 | 20 | the-mountain-god-rises | The Mountain God Rises | 2026-11-14 | **launch** + kick stage · Draft | LC-1 | 100th Electron, for iQPS; confetti |
 | 21 | archimedes | Archimedes and the tank | 2024–2026 | **platform**, status `in-progress` (playable) · Draft | Stennis → Middle River → Wallops | Archimedes hot fire; Jan 2026 tank rupture in a hydrostatic trial; Oct 2026 voids in a tank dome, with a replacement forward dome being made; LC-3 open. New to play: test positions that fire on a cycle. Enemies: falling ice, blue crabs, voids. Power-ups: cryo kit, methane-and-oxygen pack. Egg: Archimedes' bath. Secret: Hungry Hippo card |
 | 22 | neutron | Neutron: first flight | no earlier than 2027 | launch, status `announced` (locked) · Draft | LC-3, Wallops | Hungry Hippo fairing, nine Archimedes, barge "Return On Investment" |
 
-The draft therefore has every row playable except the locked Neutron teaser: 5 platform levels (one led by Adam Spice), 7 launch levels, 7 mini-games and 2 cards, plus 4 secret nodes (Princes Street Sprint, Kaitorete Spit, Photon, the Hungry Hippo) and 7 people to meet.
+The draft therefore has every row playable except the locked Neutron teaser: 5 platform levels (one led by Adam Spice), 9 launch levels (one of them in three acts), 10 mini-games (one led by Shaun D'Mello) and 2 cards, plus 5 secret nodes (Princes Street Sprint, Kaitorete Spit, Inside the first hundred, Photon, the Hungry Hippo) and 7 people to meet. Rows numbered with a letter were added on 21 Nov 2026 at the owner's request, after the original list was complete.
 
 Dates in the table are UTC dates; where the local date differs (Pics Or It Didn't Happen was the morning of 5 July at Māhia; Scout's Arrow was the evening of 17 June at Wallops) the level text says so.
 
@@ -539,6 +547,10 @@ Stars: three for a final orbit within 15 km of target with structural load under
 
 **Suborbital test flights (HASTE)**: vehicle `haste` is Electron's two stages under a heavier load. Stage 2 flies level at `inject_km` and the player commands SECO on speed (`v_ms`), not on apogee. The stack then coasts over the top with the cue on the velocity vector, and Space releases the test article as the altitude falls through `release_km` ± 2.5 km. Scored on cutoff speed (60 m/s for three stars), release altitude and angle of attack (2°). After cutoff the heating rule no longer applies: the article is built for it.
 
+**Kick-stage flight plan** (`plan`): a list of steps flown in order after SECO: `{ do: 'circ', alt }` (prograde burn at apogee until perigee meets it), `{ do: 'raise', alt }` (prograde burn until the apogee reads `alt`), `{ do: 'lower', alt }` (the stage turns round and burns retrograde until the perigee reads `alt`), `{ do: 'deploy', name, mass }`. Space burns, Enter confirms a step once the engine is off. Each deployment is scored against the last circular orbit asked for. Three stars need every payload within 15 km and the last `lower` reached.
+
+**Scripted loss** (`twist: 'scripted-loss'`): about 1.4 s after stage-2 ignition the stage loses all power. It counts as a success (three stars for a clean ascent) and is meant to be followed by another act.
+
 **Sounding rockets (Ātea-1)** are unguided, so they are aimed, not flown. The flight shows Mach number and an estimated nose-tip temperature (Beck: about Mach 5 and about 900 °C). The player sets the **rail elevation** while the wind shifts; the rocket weathercocks into the relative wind as it leaves the rail. A live prediction draws the arc. Clear the apogee line and land the impact in the range-safety zone, start the count (Enter holds it if a gust takes the prediction out of limits), and release the **dart** at burnout: the spent booster is all drag.
 
 **On screen:** mission clock with time-compression factor, altitude and speed (km/h, as on the webcast), apogee and perigee, a webcast-style timeline (MAX-Q, MECO, FAIRING, HOT-SWAP, SECO), gauges for throttle, propellant, dynamic pressure, Q-alpha, heating, battery, g-load and structural load, the flight director, and an altitude-against-downrange plot with the planned profile.
@@ -563,6 +575,57 @@ Newtonian piloting on one screen: Earth with inverse-square gravity, four thrust
 ### 10.8 `countdown-race` (mini-game, built 21 Nov 2026)
 A scheduling race in compressed time (2.4 s per hour). Ten jobs with dependencies, two crews; ↑ ↓ choose, Space assigns a ready job to a free crew. The clock starts at the Notice to Launch. Pass inside 24 hours; three stars for 16 h 42 min or less. The jobs and their durations are game values: the only published split is about four hours to finalise trajectories, update flight software and co-ordinate ground stations.
 
+### 10.9 `ride` (reusable, built 21 Nov 2026)
+A side-on ride over rolling ground (scene `Ride`). → throttle, ← brake, Space hops; in the air ← → tip the vehicle, and it must land within about 49° of the slope. Everything is level data:
+```ts
+{
+  theme: "farm" | string;                 // THEMES in Ride.ts: backdrop strips, ground colours, vehicle sprite, hazard art and messages, power-ups, goal, texts
+  terrain: [x: number, y: number][];      // control points in world units; the ground is smooth between them; the last x is the length
+  gaps?: [x0: number, x1: number][];      // breaks in the ground: fall in and you go back to the last safe spot
+  zones: [kind: "mob" | "block" | "bog", x: number, width: number][];   // mob: pass below walking pace or hop it; block: hop it; bog: drags
+  flags: [x: number, name: string][];     // ride through all of them to finish
+  egg?: [x, height]; secret?: [x, height]; powerups?: [code, x, height][];   // floating pickups, measured up from the ground (or from the lip of a gap)
+  par: number; flagWord?: string;         // seconds for three stars (with no spills); what the HUD calls the flags
+}
+```
+A theme's power-ups can change the vehicle sprite, ignore bogs and scale the hop (`farm`: knobbly tyres, hop × 1.3, which is what the blueprint needs). The bot holds the throttle, hops obstacles and gap lips, and levels the bike in the air. Could carry other levels: the coast road to Māhia with the first Electron on a truck (a `truck` theme), the helicopter crew's drive to the recovery ship, a Neutron transporter crawling to LC-3, the rocket bike again.
+
+### 10.10 `orbit-ops` (reusable, built 21 Nov 2026)
+Spacecraft operations on a ground-track map (scene `OrbitOps`): a world map, the track ahead, burns that belong at marked points on the orbit, a live predicted landing point, a release.
+```ts
+{
+  theme: "varda" | string;                // map texture, craft and capsule sprites, step labels, texts
+  orbit: { alt_km: number; inc_deg: number }; thrust: number;   // starting circular orbit; acceleration in m/s²
+  target: { name: string; lat: number; lon: number };
+  steps: { do: "lower" | "raise" | "deorbit" | "release"; alt?: number }[];
+}
+```
+The model is a point mass in its orbital plane (leapfrog integration, exponential atmosphere below 120 km) mapped to latitude and longitude with a rotating Earth. On start the scene flies the plan once on paper to learn where the first burn must go for the landing to reach the target's latitude; after the orbit is shaped it fast-forwards to the pass that crosses the target. Three stars for landing within 70 km, releasing within 20 km of the planned altitude and making every burn at its marker. Could carry: W-1's long wait and Utah landing, Photon's own missions, a HASTE splash zone, a deorbiting kick stage.
+
+### 10.11 `dual-count` (reusable, built 21 Nov 2026)
+Two consoles at once (scene `DualCount`). Calls come up on each side with a timer; ← answers the left console's GO, → the right's, ↓ calls a hold on a NO-GO. A missed GO slips that side by 20 minutes; a missed or wrongly answered NO-GO counts as three.
+```ts
+{
+  theme: "twopads" | string; length: number;                    // seconds of play
+  sides: { name, label, mission, site, tz, day: [rise, set], liftoff }[];   // exactly two; site is a launch-site texture; liftoff in play seconds
+  calls: [at: number, side: 0 | 1, kind: "go" | "nogo", text: string][];
+  clock: [playSeconds: number, hoursUTC: number][];             // key frames for the clock the play time stands for
+  dates: string[]; gap_h: number;                               // labels for each UTC day; the real gap between the two events
+}
+```
+Three stars for no misses; fail if the slips push the gap past 24 hours. Could carry: a launch and a booster recovery running together, Electron and Neutron campaigns in the same week, mission control handing over between Auckland and Long Beach.
+
+### 10.12 `arc-lab` (reusable, built 21 Nov 2026)
+An experiment with switches (scene `ArcLab`): a breakdown curve against pressure, a voltage line, conditions to switch on and off, and ascent sweeps from sea level to vacuum. The task list is generated: make it arc, show that each condition is needed (one sweep with each switched off), then show that the fix holds.
+```ts
+{
+  heading: string; dc: number; ripple: number; vmin: [air: number, tracerGas: number];   // game volts
+  switches: [key: "ripple" | "gas" | "fault" | "fix", name: string, what: string][];
+  botPlan: string[][];                    // which switches are on for each of the bot's sweeps
+}
+```
+Three stars for doing it in at most one sweep more than the list needs. The curve has Paschen's shape (high at both ends, a minimum between); the numbers are not Rocket Lab's. Could carry other "find the combination" investigations if the plot and switch meanings are made part of the theme.
+
 ### 10.4 `sprint` (secret mini-game)
 Side view of a night street. Hold to open the peroxide valve (about four seconds of propellant); the bike's wobble grows with speed and is corrected with left and right; cross the flag upright. A rival car accelerates alongside. Unlocked by the blueprint in The Rocket Bike.
 
@@ -571,7 +634,7 @@ Side view of a night street. Hold to open the peroxide valve (about four seconds
 ### Draft (done, 21 Nov 2026)
 A playable vertical slice exists at the repo root: Vite + TypeScript + Phaser 3, the world map, the `platform`, `launch`, `hotfire`, `heli-catch` and `orbit-raise` mechanics, 13 map nodes (§9; 22 after the second pass described below), DOM story cards with photos and sources, `localStorage` save, stars and easter eggs, keyboard and touch pad, synthesised sound effects and music. Shortcuts taken, to be paid back in M0–M2: content lives in `src/content.ts` rather than YAML + zod; all art is drawn in code with the Canvas 2D API (`src/art.ts`) at 4 px per unit rather than shipped as image files from the art kit (good enough to set the style; contributors will want PNG or SVG sources); the character is one hand-drawn sprite, not the paper-doll compositor; no ESLint, Vitest, Playwright, Docker or CI yet. Test hooks: `?level=<id>` jumps to a level, `?auto=1` flies it with a bot, `?dev=1` opens the whole map, `?fast=N` (with `auto`) steps the game N times per tick and keeps running in a background tab.
 
-**Second pass (21 Nov 2026):** the nine planned rows of §9 that were not yet playable were built: It's Business Time, Rosie the Robot, Pics Or It Didn't Happen, Return To Sender, Virginia Is For Launch Lovers, Scout's Arrow, ESCAPADE, VICTUS HAZE and Archimedes and the tank, with four new mini-game mechanics (`fault-finder`, `splashdown`, `cruise`, `countdown-race`), two new platform themes (`factory`, `stennis`), a second launch site (Wallops), suborbital flight in the launch model, two secret cards and two more people to meet (Gabe Newell, Rob Lillis). Every playable level finishes with three stars under its bot. No photos were added for the new levels: finding freely licensed ones (NASA's Wallops launch photos are a likely source) is still to do.
+**Second pass (21 Nov 2026):** the nine planned rows of §9 that were not yet playable were built: It's Business Time, Rosie the Robot, Pics Or It Didn't Happen, Return To Sender, Virginia Is For Launch Lovers, Scout's Arrow, ESCAPADE, VICTUS HAZE and Archimedes and the tank, with four new mini-game mechanics (`fault-finder`, `splashdown`, `cruise`, `countdown-race`), two new platform themes (`factory`, `stennis`), a second launch site (Wallops), suborbital flight in the launch model, two secret cards and two more people to meet (Gabe Newell, Rob Lillis). Every playable level finishes with three stars under its bot. **Third pass (same day, at the owner's request):** five more levels (Go Find the Launch Site, Paschen's Law, Beginning Of The Swarm, Two Hemispheres, Outback Delivery) and, following the instruction to add new kinds of play where a story calls for one, four reusable mechanics documented in §10.9 to §10.12 (`ride`, `orbit-ops`, `dual-count`, `arc-lab`), a kick-stage flight plan in launch control, and levels in several acts (§5.2). No photos were added for the new levels: finding freely licensed ones (NASA's Wallops launch photos are a likely source) is still to do.
 
 ### M0 — Skeleton
 - Vite + TS + Phaser project, ESLint, Prettier, Vitest, Playwright set up.
