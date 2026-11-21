@@ -9,11 +9,13 @@ const TS = 16;
 const AUTO = new URLSearchParams(location.search).has('auto');
 interface Way { x: number; top: number; x0: number; x1: number }
 interface Foe { o: Phaser.Physics.Arcade.Image; kind: string; x0: number; x1: number; dir: number; speed: number; alive: boolean; t: number; baseY: number; vx?: number; charging?: boolean; extra?: Phaser.GameObjects.Image }
-const SPEED: Record<string, number> = { scooter: 85, drawerbot: 22, ram: 28, redtape: 44, gull: 55, bear: 24, sander: 64, roll: 30, dust: 46 };
+const SPEED: Record<string, number> = { scooter: 85, drawerbot: 22, ram: 28, redtape: 44, gull: 55, bear: 24, sander: 64, roll: 30, dust: 46, crab: 72, void: 40 };
 /** Behaviour groups: flyers skim overhead on a wave, chargers rush you when you are in front of them, droppers hang from the ceiling, rollers spin. */
-const FLY = new Set(['gull', 'dust']), CHARGE: Record<string, number> = { ram: 105 }, DROP = new Set(['sparks', 'candles', 'offcuts']), ROLL = new Set(['redtape', 'roll']), SLOW = new Set(['drawerbot', 'redtape', 'bear', 'roll']);
+const FLY = new Set(['gull', 'dust', 'void']), CHARGE: Record<string, number> = { ram: 105 }, DROP = new Set(['sparks', 'candles', 'offcuts', 'ice']), ROLL = new Set(['redtape', 'roll']), SLOW = new Set(['drawerbot', 'redtape', 'bear', 'roll']);
 const BELT = 48; // conveyor speed, px/s
-const HURT: Record<string, string> = { scooter: 'Run over by your own scooter!', drawerbot: 'Chomped by a DishDrawer!', ram: 'Rammed!', gull: 'Pecked!', redtape: 'Tangled in red tape!', bear: 'Mauled by a bear market!', sander: 'Sanded!', roll: 'Bowled over by a roll of carbon fibre!', dust: 'A faceful of carbon dust!' };
+/** A test position fires on a cycle: FIRE[0] seconds of flame, quiet until FIRE[1], warning lights until the period FIRE[2] is up. */
+const FIRE = [1.0, 2.8, 3.6];
+const HURT: Record<string, string> = { scooter: 'Run over by your own scooter!', drawerbot: 'Chomped by a DishDrawer!', ram: 'Rammed!', gull: 'Pecked!', redtape: 'Tangled in red tape!', bear: 'Mauled by a bear market!', sander: 'Sanded!', roll: 'Bowled over by a roll of carbon fibre!', dust: 'A faceful of carbon dust!', crab: 'Pinched by a blue crab!', void: 'Caught in a void!' };
 const POWER: Record<string, { name: string; secs: number; tip: string }> = {
   J: { name: 'JET PACK', secs: 7, tip: 'Jet pack! Hold SPACE to fly' },
   S: { name: 'SUIT + HELMET', secs: 7, tip: 'Suited up: nothing can touch you' },
@@ -21,6 +23,8 @@ const POWER: Record<string, { name: string; secs: number; tip: string }> = {
   B: { name: 'GUMBOOTS', secs: 9, tip: 'Gumboots! Faster, and SPACE again in mid-air' },
   C: { name: 'RUNNING MATE', secs: 11, tip: 'joins you and clears the way' }, // a companion: see `buddy`
   T: { name: 'CLEAN-ROOM SUIT', secs: 7, tip: 'Suited up: dust and offcuts cannot touch you' },
+  F: { name: 'CRYO KIT', secs: 7, tip: 'Face shield, apron, gauntlets: nothing can touch you' },
+  M: { name: 'METHANE + OXYGEN', secs: 7, tip: 'Methane and oxygen! Hold SPACE to fly on a blue flame' },
   L: { name: 'CARBON LIGHT', secs: 10, tip: 'Light as carbon fibre: jump far higher, fall slowly' },
 };
 /** What changes from one platform setting to the next. */
@@ -28,14 +32,15 @@ const THEMES: Record<string, { music: string; amb: 'hiss' | 'sea'; layers: [stri
   workshop: { music: 'workshop', amb: 'hiss', layers: [['bg_workshop', 760]], tiles: 'workshop', goal: 'bike', egg: 'waterrocket', young: true, pit: 'Mind the service pit!', drop: ['welder', 'spark', 'Welding sparks!'], title: 'Rocket bike: assembled', text: (t) => `All five parts in ${t} s. The bike screams off down Princes Street on hydrogen peroxide.` },
   mahia: { music: 'mahia', amb: 'sea', layers: [['bg_mahia_far', 520], ['bg_mahia_mid', 760]], tiles: 'mahia', goal: 'pad_empty', egg: 'gnome', pit: 'Splash!', drop: ['welder', 'spark', 'Sparks!'], title: 'Pad hardware delivered', text: (t) => `Everything reached the tip of the peninsula in ${t} s. Launch Complex 1 can open.` },
   factory: { music: 'factory', amb: 'hiss', layers: [['bg_factory', 760]], tiles: 'factory', goal: 'rosie', egg: 'engine100', pit: 'Into the cable trench!', drop: ['trimmer', 'offcut', 'Hit by a carbon offcut!'], title: 'Rosie is running', text: (t) => `Everything loaded onto Rosie’s bed in ${t} s. She marks, cuts, drills, mills and sands it: a rocket’s worth of carbon composite in 12 hours, where the hand work took more than 400.` },
+  stennis: { music: 'delta', amb: 'sea', layers: [['bg_stennis_far', 520], ['bg_stennis_mid', 760]], tiles: 'stennis', goal: 'lc3', egg: 'eureka', pit: 'Splash!', drop: ['cryoline', 'icicle', 'Hit by falling ice!'], title: 'Everything but the rocket', text: (t) => `Delivered to Wallops in ${t} s. The engine runs, the pad is open and the new dome is under inspection. What is left is the part nobody can hurry: assemble the tank, fill it, chill it, and only then name a date.` },
   listing: { music: 'heli', amb: 'hiss', layers: [['bg_listing', 760]], tiles: 'workshop', goal: 'bell', egg: 'blender', pit: 'Fell into a funding gap!', drop: ['tickerbox', 'candle', 'Hit by a red candle!'], title: 'RKLB is trading', text: (t) => `The whole listing delivered in ${t} s. Peter Beck rings the opening bell by video link, and VACQ becomes RKLB.` },
 };
-const BOP: Record<string, string> = { scooter: 'Scooter: kill switch hit', drawerbot: 'Drawer shut', ram: 'Ram sent packing', gull: 'Shoo!', redtape: 'Red tape cut', bear: 'Bear squeezed', sander: 'Sander unplugged', roll: 'Roll stopped', dust: 'Dust cleared' };
+const BOP: Record<string, string> = { scooter: 'Scooter: kill switch hit', drawerbot: 'Drawer shut', ram: 'Ram sent packing', gull: 'Shoo!', redtape: 'Red tape cut', bear: 'Bear squeezed', sander: 'Sander unplugged', roll: 'Roll stopped', dust: 'Dust cleared', crab: 'Crab back in the bay', void: 'Void closed up' };
 export class PlatformScene extends Phaser.Scene {
   def!: LevelDef; p: any; me!: Phaser.Physics.Arcade.Sprite; solids!: Phaser.Physics.Arcade.StaticGroup;
-  amb?: Loop; jet?: Loop; power: Fit | 'C' = ''; buddy?: Phaser.GameObjects.Image; buddyPre = ''; powerT = 0; powerMax = 1; dbl = false; secret = false; pwHud!: Phaser.GameObjects.Graphics; pwIcon!: Phaser.GameObjects.Image; pwText!: Phaser.GameObjects.Text; jetFx?: Phaser.GameObjects.Particles.ParticleEmitter; wasDown = true; inv = 0; bopped = 0; belts: { x0: number; x1: number; y: number; dir: number; o: Phaser.GameObjects.TileSprite }[] = []; foes: Foe[] = []; droppers: { x: number; t: number; gy: number; live: Phaser.Physics.Arcade.Image[] }[] = []; pre = ''; got = 0; egg = false; hud!: Phaser.GameObjects.Text; msg!: Phaser.GameObjects.Text; safe = { x: 24, y: 100 }; done = false; stun = 0; t0 = 0; falls = 0;
+  amb?: Loop; jet?: Loop; power: Fit | 'C' = ''; buddy?: Phaser.GameObjects.Image; buddyPre = ''; powerT = 0; powerMax = 1; dbl = false; secret = false; pwHud!: Phaser.GameObjects.Graphics; pwIcon!: Phaser.GameObjects.Image; pwText!: Phaser.GameObjects.Text; jetFx?: Phaser.GameObjects.Particles.ParticleEmitter; wasDown = true; inv = 0; bopped = 0; belts: { x0: number; x1: number; y: number; dir: number; o: Phaser.GameObjects.TileSprite }[] = []; fires: { x: number; t: number; fx: Phaser.GameObjects.Particles.ParticleEmitter; lamp: Phaser.GameObjects.Arc; on: boolean }[] = []; roar?: Loop; jetFxM?: Phaser.GameObjects.Particles.ParticleEmitter; foes: Foe[] = []; droppers: { x: number; t: number; gy: number; live: Phaser.Physics.Arcade.Image[] }[] = []; pre = ''; got = 0; egg = false; hud!: Phaser.GameObjects.Text; msg!: Phaser.GameObjects.Text; safe = { x: 24, y: 100 }; done = false; stun = 0; t0 = 0; falls = 0;
   constructor() { super('Platform'); }
-  init(d: { def: LevelDef }) { this.def = d.def; this.p = d.def.params; this.got = 0; this.egg = false; this.done = false; this.stun = 0; this.falls = 0; this.safe = { x: 24, y: 100 }; this.sheepList = []; this.foes = []; this.droppers = []; this.belts = []; this.inv = 0; this.bopped = 0; this.hits = []; this.botWait = 0; this.power = ''; this.powerT = 0; this.dbl = false; this.secret = false; this.buddy = undefined; }
+  init(d: { def: LevelDef }) { this.def = d.def; this.p = d.def.params; this.got = 0; this.egg = false; this.done = false; this.stun = 0; this.falls = 0; this.safe = { x: 24, y: 100 }; this.sheepList = []; this.foes = []; this.droppers = []; this.belts = []; this.fires = []; this.inv = 0; this.bopped = 0; this.hits = []; this.botWait = 0; this.power = ''; this.powerT = 0; this.dbl = false; this.secret = false; this.buddy = undefined; }
   create() {
     const p = this.p, LW = p.width * TS, th = p.theme as string;
     const TH = THEMES[th], tl = TH.tiles;
@@ -58,6 +63,14 @@ export class PlatformScene extends Phaser.Scene {
       (this.solids.create((x + i) * TS + 8, row * TS + 3, 'p_' + tl) as Phaser.Physics.Arcade.Image).setScale(S).refreshBody();
     // conveyors: a moving strip laid over ground or platform tiles; standing on one carries you along
     for (const [x0, x1, row, dir] of (p.belts || []) as number[][]) this.belts.push({ x0: x0 * TS, x1: (x1 + 1) * TS, y: row * TS, dir, o: this.add.tileSprite(x0 * TS, row * TS, (x1 - x0 + 1) * TS * D, 5 * D, 'belt').setOrigin(0).setScale(S).setDepth(1).setFlipX(dir < 0) });
+    // test positions: an engine over the trench that fires on a cycle. Cross between firings.
+    (p.fires || []).forEach((tx: number, i: number) => {
+      const x = tx * TS + 8, gy = ((p.ground as number[][]).find(([a, b]) => tx >= a && tx <= b)?.[2] ?? 9) * TS;
+      img(this, x, gy, 'firestand').setOrigin(0.5, 1).setDepth(1);
+      const fx = this.add.particles(x, gy - 54, 'puff', { speedY: { min: 150, max: 230 }, speedX: { min: -9, max: 9 }, lifespan: { min: 200, max: 290 }, scale: { start: S * 0.75, end: S * 0.25 }, color: [0xffffff, 0xcfe9ff, 0x7fb4ff, 0x3f6fd0], alpha: { start: 1, end: 0 }, blendMode: 'ADD', frequency: 8, quantity: 2, emitting: false }).setDepth(3);
+      this.fires.push({ x, t: i * 1.3, fx, lamp: this.add.circle(x - 9.4, gy - 48.6, 1.2, 0x7cc56b).setDepth(2), on: false });
+    });
+    if (this.fires.length) this.roar = loop('rumble');
     const groundRow = (tx: number) => (p.ground as number[][]).find(([a, b]) => tx >= a && tx <= b)?.[2] ?? 9;
     const board = (x: number, y: number, a: string, b?: string, strike = false) => {
       img(this, x, y, 'sign').setOrigin(0.5, 1).setDepth(1);
@@ -148,6 +161,7 @@ export class PlatformScene extends Phaser.Scene {
     this.msg = fix(T(this, W / 2, 34, '', '#ffe98a', 10, '700')).setOrigin(0.5).setDepth(11).setShadow(0, 1, '#000000', 3);
     who(this, this.def, W - 104, 4, !!TH.young, fix);
     this.pwHud = fix(this.add.graphics()).setDepth(10); this.pwIcon = fix(img(this, 13, 30, 'pw_J')).setScale(S * 0.9).setDepth(11).setVisible(false); this.pwText = fix(T(this, 23, 22.6, '', '#bfe9ff', 5.6, '700')).setDepth(11);
+    this.jetFxM = this.add.particles(0, 0, 'puff', { speedY: { min: 60, max: 110 }, speedX: { min: -8, max: 8 }, lifespan: 260, scale: { start: S * 0.3, end: S * 0.05 }, color: [0xffffff, 0xbfe3ff, 0x4d9be8], alpha: { start: 1, end: 0 }, blendMode: 'ADD', frequency: 14, emitting: false }).setDepth(4);
     this.jet = loop('hiss');
     this.plan();
     this.refresh();
@@ -211,6 +225,8 @@ export class PlatformScene extends Phaser.Scene {
       // never jump up into a gull, and never walk under a falling spark; give up waiting on a gull after a while
       const gull = jump && this.foes.some((f) => { const k = (f.o.x - x) * d; return f.alive && FLY.has(f.kind) && k > -18 && k < (f.dir * d < 0 ? 150 : 104); }); // wait until it is behind, or well ahead and flying away
       const spark = this.droppers.find((dr) => { const k = (dr.x - x) * d; return k > 2 && k < (jump ? 92 : 40) && (dr.live.length > 0 || dr.t > 0.75); });
+      const fire = this.fires.find((f) => { const k = (f.x - x) * d, ph = f.t % FIRE[2]; return k > 13 && k < 48 && !(ph > FIRE[0] + 0.05 && ph < FIRE[2] - 0.8); }); // only start across with time to clear it
+      if (fire) return { dir: (fire.x - x) * d < 20 ? -d : 0, jump: false };
       if ((gull && this.botWait < 8) || spark) { dir = spark && (spark.x - x) * d < 14 ? -d : 0; jump = false; this.botWait += this.game.loop.delta / 1000; } else if (!gull) this.botWait = 0;
     }
     return { dir, jump: jump && b.blocked.down };
@@ -239,7 +255,7 @@ export class PlatformScene extends Phaser.Scene {
   }
   powerStep(dt: number, b: Phaser.Physics.Arcade.Body) {
     const g = this.pwHud; g.clear();
-    if (!this.power) { this.jetFx!.emitting = false; this.jet?.set(0); return; }
+    if (!this.power) { this.jetFx!.emitting = false; this.jetFxM!.emitting = false; this.jet?.set(0); return; }
     this.powerT -= dt;
     if (this.buddy) { // the running mate keeps a few steps ahead, copies your stride, and sees off whatever he reaches
       const bd = this.buddy, ahead = this.me.x + (this.me.flipX ? -26 : 26), moving = Math.abs(b.velocity.x) > 5;
@@ -250,11 +266,12 @@ export class PlatformScene extends Phaser.Scene {
     const flying = (this.power === 'J' || this.power === 'M') && (held('a') || held('up')) && !b.blocked.down;
     if (this.power === 'L' && b.velocity.y > 62) this.me.setVelocityY(62); // carbon fibre: next to no weight, so a slow fall
     if (flying) this.me.setVelocityY(this.me.y < 30 ? Math.max(b.velocity.y, 0) : Math.max(b.velocity.y - 1500 * dt, -135)); // stays under the roof
-    this.jetFx!.emitting = flying; this.jetFx!.setPosition(this.me.x - (this.me.flipX ? -3 : 3), this.me.y + 9); this.jet?.set(flying ? 1 : 0);
+    const fx = this.power === 'M' ? this.jetFxM! : this.jetFx!; // methane burns blue
+    fx.emitting = flying; fx.setPosition(this.me.x - (this.me.flipX ? -3 : 3), this.me.y + 9); this.jet?.set(flying ? 1 : 0);
     if (this.power === 'B' && !b.blocked.down && Math.random() < 0.2) this.burst(this.me.x, this.me.y + 14, 0xd9cfb4);
     g.fillStyle(0x0b0e18, 0.8).fillRoundedRect(4, 20, 96, 20, 3); g.lineStyle(0.5, 0x9fe6ff, 0.6).strokeRoundedRect(4, 20, 96, 20, 3);
     g.fillStyle(0x000000, 0.5).fillRoundedRect(23, 31.5, 72, 4, 2); const w = 72 * Math.max(0, this.powerT / this.powerMax); if (w > 1) g.fillStyle(this.powerT < 2 ? 0xff7a5c : 0x7fd0ff).fillRoundedRect(23, 31.5, Math.max(4, w), 4, 2);
-    if (this.powerT <= 0) { this.power = ''; this.buddy?.destroy(); this.buddy = undefined; this.pwIcon.setVisible(false); this.pwText.setText(''); g.clear(); snd.powerEnd(); this.say('Power-up worn off'); this.jetFx!.emitting = false; this.jet?.set(0); }
+    if (this.powerT <= 0) { this.power = ''; this.buddy?.destroy(); this.buddy = undefined; this.pwIcon.setVisible(false); this.pwText.setText(''); g.clear(); snd.powerEnd(); this.say('Power-up worn off'); this.jetFx!.emitting = false; this.jetFxM!.emitting = false; this.jet?.set(0); }
   }
   /** Enemies. Jumping on one from above sees it off; touching it any other way costs a retry from the last safe spot. */
   spawn(kind: string, a: number, b: number, gy: number) {
@@ -301,6 +318,15 @@ export class PlatformScene extends Phaser.Scene {
       else if (f.kind === 'bear') f.o.y = f.baseY - Math.abs(Math.sin(f.t * 6)) * 1.2;
       else if (f.kind === 'ram') f.o.y = f.baseY - (f.charging ? Math.abs(Math.sin(f.t * 14)) * 1.5 : 0);
     }
+    let roar = 0;
+    for (const f of this.fires) { // hot-fire cycle: flame, quiet, warning lights
+      f.t += dt; const ph = f.t % FIRE[2], on = ph < FIRE[0], warn = ph > FIRE[1];
+      if (on && !f.on && Math.abs(f.x - this.me.x) < 150) snd.ignition();
+      f.on = on; f.fx.emitting = on; f.lamp.setFillStyle(on ? 0xff5a3c : warn ? (Math.floor(f.t * 8) % 2 ? 0xffe98a : 0x5b4410) : 0x7cc56b);
+      if (warn && Math.abs(f.x - this.me.x) < 110 && Math.floor(ph * 5) !== Math.floor((ph - dt) * 5)) snd.tick();
+      if (on) { roar = Math.max(roar, 1 - Math.abs(f.x - this.me.x) / 170); if (Math.abs(f.x - this.me.x) < 11 && this.me.y > 60 && this.inv <= 0 && !this.done && !this.tough()) this.respawn('Caught in the hot fire!'); }
+    }
+    this.roar?.set(Math.max(0, roar), 0.6);
     for (const d of this.droppers) { // welding arms shed a spark every second and a half
       d.t += dt;
       if (d.t > 1.5) {

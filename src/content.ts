@@ -294,12 +294,32 @@ export const LEVELS: LevelDef[] = [
     params: { vehicle: 'electron', site: 'mahia', goal: { orbit: true, orbit_km: 575 }, twist: 'kick-stage', payload: 'QPS-SAR-19', hundred: true },
   },
   {
+    id: 'archimedes', kind: 'platform', mechanic: 'platform', status: 'in-progress', role: 'Founder and CEO · 2026', unlocks: 'hungry-hippo',
+    title: 'Archimedes and the tank', date: '2024–2026', place: 'Stennis, Mississippi → Middle River, Maryland → Wallops, Virginia', map: { x: 728, y: 308 },
+    intro: 'Neutron is not one project but several, spread along the American seaboard. The engine, Archimedes, burns methane and liquid oxygen and is fired on a stand at NASA’s Stennis Space Center in Mississippi. The carbon structures are laid up in Middle River, Maryland, by a ninety-tonne machine. The pad, Launch Complex 3, is on Wallops Island in Virginia. Between 2024 and 2026 all three have to come good, and one of them does not go to plan: in January 2026 a first-stage tank ruptures in a pressure test, and in October voids turn up in a tank dome. Carry what Neutron needs from one end of the story to the other.',
+    how: 'Arrows to run, Space to jump. Collect the five things and reach Launch Complex 3. New here: the test positions. An engine over the trench fires on a cycle: green lamp, then flashing amber, then a second of blue flame. Cross while it is quiet. Wait out the ice falling from the cryogenic lines, jump on the blue crabs, and keep your head out of the drifting voids. Power-ups float in bubbles: the cryo kit (face shield, apron, gauntlets) makes you untouchable, and the methane-and-oxygen pack lets you fly on a blue flame (hold Space). A hidden blueprint unlocks a secret on the map.',
+    fact: 'Archimedes is an oxidiser-rich staged-combustion engine making 733 kN (165,000 lbf). Rocket Lab announced its first hot fire at Stennis in August 2024 and said the engine reached 102% power. Nine of them will lift Neutron’s first stage.',
+    after: 'The story so far. Launch Complex 3 opened on 28 August 2025. On 21 January 2026 Rocket Lab said a Stage 1 tank had ruptured overnight in a hydrostatic pressure trial during qualification testing, reported no significant damage, and said the next tank was already in production. In October 2026 it reported that a manufacturing process issue had left voids in parts of a composite propellant tank dome; the process was refined and a replacement forward dome built. Still to come: inspect that dome, assemble the tank, and put it through hydrostatic and cryogenic tests. First flight is no earlier than 2027, and this level will grow with it.',
+    egg: 'Eureka! Rocket Lab names its engines after scientists: Rutherford, Curie, and for Neutron, Archimedes, the Greek who is said to have understood buoyancy while sitting in his bath.',
+    sources: [RL + 'updates/rocket-lab-completes-successful-first-hot-fire-of-archimedes-engine-for-neutron-rocket/', 'https://www.nasa.gov/centers/stennis/news/releases/2022/NASA-Stennis-Space-Center-Rocket-Lab-Cut-Ribbon-on-New-Tenant-Agreement', RL + 'updates/rocket-lab-begins-installation-of-large-carbon-composite-rocket-building-machine/', RL + 'updates/rocket-lab-neutron-test-update/', 'https://www.sec.gov/Archives/edgar/data/1819994/000181999426000074/rklb-20260930.htm', RL + 'updates/rocket-lab-opens-launch-complex-3-a-critical-milestone-on-the-path-to-neutrons-first-launch/', 'https://www.nasa.gov/stennis/engineering-and-test-directorate/test-support-infrastructure'],
+    params: {
+      theme: 'stennis', width: 84,
+      ground: [[0, 16, 9], [19, 34, 9], [37, 54, 9], [57, 83, 9]],
+      plats: [[4, 7, 3], [20, 7, 3], [23, 5, 3], [29, 7, 3], [37, 7, 3], [63, 7, 3]],
+      parts: [[5, 6, 'Archimedes engine'], [30, 6, 'Hot-fire data: 102% power'], [38, 6, 'Carbon fibre for the big machine'], [52, 8, 'Replacement forward dome'], [64, 6, 'Keys to Launch Complex 3']],
+      hazards: [], sheep: [], egg: [24, 4], goal: 80, fires: [9, 14],
+      enemies: [['ice', 33, 33], ['crab', 46, 49], ['void', 58, 61], ['crab', 72, 77]],
+      powerups: [['F', 7, 8], ['M', 58, 6]], secret: [56, 3],
+      signs: [],
+    },
+  },
+  {
     id: 'neutron', kind: 'launch', mechanic: 'launch', status: 'announced',
-    title: 'Neutron: first flight', date: '2027 (expected)', place: 'LC-3, Wallops Island, Virginia', map: { x: 802, y: 270 },
-    intro: 'The medium-lift rocket: 13 tonnes to orbit, a carbon-composite first stage 7 m wide, nine methane-fuelled Archimedes engines, and a “Hungry Hippo” fairing that stays attached, opens its jaws to let the second stage out, and flies home with the booster. The landing platform is a 120 m barge named Return On Investment.',
-    fact: 'In October 2026 Rocket Lab said small voids had been found in the composite layers of the first-stage forward dome. Rocket Lab said the process had been corrected, and first flight moved to 2027.',
+    title: 'Neutron: first flight', date: 'no earlier than 2027', place: 'LC-3, Wallops Island, Virginia', map: { x: 802, y: 270 },
+    intro: 'The medium-lift rocket: 43 m tall, 13 tonnes to low Earth orbit, a carbon-composite first stage 7 m across on nine methane-fuelled Archimedes engines, and a “Hungry Hippo” fairing that stays attached, opens its jaws to let the second stage out, and flies home with the booster. The landing platform is a 122 m barge named Return On Investment. It has not flown yet, and this game will not pretend otherwise.',
+    fact: 'In October 2026 Rocket Lab reported that a manufacturing process issue had left voids in parts of a composite propellant tank dome for the first stage. It refined the process and built a replacement forward dome; the tank still has to be assembled and tested. First flight is now no earlier than 2027.',
     after: '',
-    sources: [WP + 'Rocket_Lab_Neutron', 'https://www.sec.gov/Archives/edgar/data/0001819994/000181999426000067/rklb-10142026ex991.htm'],
+    sources: [RL + 'launch/neutron/', 'https://www.sec.gov/Archives/edgar/data/1819994/000181999426000074/rklb-20260930.htm', 'https://www.sec.gov/Archives/edgar/data/1819994/000181999426000073/rklb-11092026ex991.htm', WP + 'Rocket_Lab_Neutron'],
   },
 ];
 
@@ -330,6 +350,14 @@ export const BONUS: LevelDef[] = [
     fact: 'Nobody outside the company knew until Rocket Lab revealed it on 3 September 2020. First Light’s job was to prove the power, thermal and attitude-control systems for long stays in orbit. Two years later a Lunar Photon sent CAPSTONE toward the Moon.',
     after: '',
     sources: ['https://spacenews.com/rocket-lab-unveils-photon-smallsat-bus/', RL + 'updates/media-release-rocket-lab-launches-first-in-house-designed-and-built-photon-satellite/', WP + 'Rocket_Lab_Photon'],
+  },
+  {
+    id: 'hungry-hippo', kind: 'card', status: 'flown', parent: 'archimedes',
+    title: 'The Hungry Hippo arrives', date: '2026-01', place: 'Wallops Island, Virginia', map: { x: 846, y: 286 },
+    intro: 'Most rockets throw their fairings away. Neutron keeps its own: two halves stay hinged to the first stage, open like a pair of jaws to let the second stage and its payload out, then close again for the ride back to Earth. Rocket Lab calls it the Hungry Hippo. In January 2026 the fairing arrived at Wallops Island, where Neutron is assembled next to its pad.',
+    fact: 'Neutron’s first stage is meant to land at sea on a platform 122 m (400 ft) long. Its name is Return On Investment.',
+    after: '',
+    sources: [RL + 'updates/hungry-hippo-arrives/', RL + 'launch/neutron/'],
   },
 ];
 /**

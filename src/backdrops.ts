@@ -331,7 +331,67 @@ function factory(c: C2) {
   for (let i = 0; i < 30; i++) el(c, 650 + r() * 108, 139 + r() * 4, 0.5 + r() * 0.6, 0.3, 'rgba(20,20,26,.35)'); // a little black dust
 }
 
+// ------------------------------------------------------------------ Archimedes and the tank, 2024–2026: Mississippi, Maryland, Virginia
+/** Far layer: Gulf-coast sky, the pine line, the Stennis canal with a LOX barge, then Chesapeake water and the Atlantic. */
+function stennisFar(c: C2) {
+  const W = 520, r = rng(33);
+  c.fillStyle = lg(c, 0, 0, 0, 122, [0, '#3f8fd8'], [0.6, '#9fd0f0'], [1, '#f2ecd2']); c.fillRect(0, 0, W, 122);
+  c.fillStyle = rg(c, 90, 30, 2, 70, [0, 'rgba(255,250,220,.95)'], [0.14, 'rgba(255,245,200,.5)'], [1, 'rgba(255,245,200,0)']); c.fillRect(0, 0, 220, 120); el(c, 90, 30, 6.4, 6.4, '#fffbe6');
+  for (const [x, y, w, k] of [[150, 30, 90, 3], [270, 52, 70, 5], [380, 26, 110, 7], [30, 62, 60, 9]]) { c.save(); c.translate(x, y); cloud(c, w, w * 0.3, k, '#d2e2f0'); c.restore(); } // towering afternoon cumulus
+  c.fillStyle = lg(c, 0, 110, 0, 180, [0, '#7fb7c9'], [0.1, '#3f7f9a'], [1, '#1f4f66']); c.fillRect(0, 110, W, 70);
+  for (let i = 0; i < 150; i++) { const x = r() * W, y = 114 + r() * 62; line(c, x, y, x + 3 + r() * 8, y, `rgba(220,240,245,${0.1 + r() * 0.22})`, 0.4); }
+  // the pine line behind Stennis, thinning out as the road goes north and east
+  for (let x = 0; x < 250; x += 3.2) { const hgt = 10 + r() * 9, y = 112; poly(c, [x, y, x + 1.6, y - hgt, x + 3.2, y], x % 2 > 1 ? '#2f6b4a' : '#3a7a55'); }
+  rr(c, 0, 110, 250, 3, 0, '#2a5a40');
+  // a LOX barge and its tug on the canal
+  rr(c, 118, 118, 46, 6, 1, '#3a4a66', OUT, 0.3); rr(c, 122, 111, 38, 7, 3.4, lg(c, 0, 111, 0, 118, [0, '#ffffff'], [1, '#aab2c0']), OUT, 0.3); text(c, 'LOX', 141, 114.8, 3.2, '#4a5066', 700);
+  rr(c, 168, 119, 14, 5, 1, '#c8102e', OUT, 0.3); rr(c, 171, 114, 6, 5, 0.5, '#f4f2ea', OUT, 0.25); line(c, 164, 121, 168, 121, '#15171f', 0.4);
+  // Chesapeake: low shore, a skipjack under sail, a channel marker
+  poly(c, [250, 112, 300, 107, 356, 110, 400, 112, 400, 115, 250, 115], '#6f9a72');
+  poly(c, [322, 122, 346, 122, 342, 126, 325, 126], '#f4f2ea', OUT, 0.3); line(c, 333, 122, 333, 104, '#5b3d22', 0.5); poly(c, [333.6, 105, 333.6, 120, 345, 120], '#f4f2ea', OUT, 0.25); poly(c, [332.4, 108, 332.4, 120, 325, 120], '#e8e6df', OUT, 0.25);
+  line(c, 372, 124, 372, 114, '#2f7a47', 0.7); poly(c, [370, 114, 374, 114, 372, 110], '#2f7a47');
+  // open Atlantic off Virginia
+  for (const [gx, gy] of [[440, 60], [452, 66], [470, 58]] as number[][]) { c.beginPath(); c.moveTo(gx - 4, gy); c.quadraticCurveTo(gx - 1.6, gy - 2.4, gx, gy); c.quadraticCurveTo(gx + 1.6, gy - 2.4, gx + 4, gy); c.strokeStyle = '#f4f2ea'; c.lineWidth = 0.6; c.stroke(); }
+}
+/** Middle layer, transparent above the ground: the test complex at Stennis, the composites works at Middle River, the test yard, Wallops. */
+function stennisMid(c: C2, scene: Phaser.Scene) {
+  const W = 760, r = rng(47);
+  c.fillStyle = lg(c, 0, 118, 0, 144, [0, '#7fb56a'], [1, '#4f8a4c']); c.fillRect(0, 122, 420, 22); c.fillStyle = lg(c, 0, 118, 0, 144, [0, '#dccf9c'], [1, '#b9ab78']); c.fillRect(560, 122, 200, 22); c.fillStyle = lg(c, 420, 0, 560, 0, [0, '#5f9a56'], [1, '#cfc28c']); c.fillRect(420, 122, 140, 22);
+  for (let i = 0; i < 70; i++) el(c, r() * 560, 124 + r() * 18, 2 + r() * 3, 0.8 + r(), 'rgba(40,100,55,.25)');
+  const sign = (x: number, y: number, w: number, a: string, b?: string, bg = '#f4f2ea', fg = '#15171f') => { line(c, x + 4, y + 9, x + 4, 138, '#5b6275', 0.8); line(c, x + w - 4, y + 9, x + w - 4, 138, '#5b6275', 0.8); rr(c, x, y, w, b ? 13 : 9, 1, bg, OUT, 0.35); text(c, a, x + w / 2, y + 4.6, 3.6, fg, 700); if (b) text(c, b, x + w / 2, y + 9.6, 2.8, fg, 600); };
+  const pine = (x: number, hgt: number) => { line(c, x, 138, x, 138 - hgt, '#5b3d22', 1); for (let k = 0; k < 4; k++) poly(c, [x - 5 + k, 138 - hgt * (0.3 + k * 0.17), x, 138 - hgt * (0.62 + k * 0.17), x + 5 - k, 138 - hgt * (0.3 + k * 0.17)], k % 2 ? '#2f6b4a' : '#3a7a55'); };
+  // ---- A. Stennis: the gate, the A-3 stand, tanks, the canal
+  for (const [x, hgt] of [[6, 30], [16, 38], [40, 26]] as number[][]) pine(x, hgt);
+  sign(22, 104, 64, 'ARCHIMEDES TEST COMPLEX', 'at NASA Stennis · Mississippi', '#1f5a34', '#fff');
+  { const x = 104; for (const dx of [0, 34]) rr(c, x + dx, 30, 3, 108, 0.3, '#8b93a7', OUT, 0.3); for (let y = 34; y < 132; y += 12) { line(c, x + 1.5, y, x + 35.5, y + 12, '#aab2c0', 0.6); line(c, x + 35.5, y, x + 1.5, y + 12, '#aab2c0', 0.6); line(c, x, y, x + 37, y, '#8b93a7', 0.7); } rr(c, x - 4, 26, 45, 5, 0.6, '#5b6275', OUT, 0.3); rr(c, x + 10, 14, 17, 12, 0.6, '#d7dbe4', OUT, 0.3); text(c, 'A-3', x + 18.5, 20.4, 5, '#30508a', 700); line(c, x + 18.5, 14, x + 18.5, 4, '#8b93a7', 0.5); el(c, x + 18.5, 4, 0.9, 0.9, '#d8452e'); }
+  el(c, 166, 116, 14, 14, lg(c, 152, 0, 180, 0, [0, '#ffffff'], [1, '#9aa3b5']), OUT, 0.35); for (const dx of [-8, 0, 8]) line(c, 166 + dx, 128, 166 + dx, 138, '#5b6275', 0.9); text(c, 'LOX', 166, 116, 4.4, '#4a5066', 700);
+  rr(c, 186, 110, 30, 20, 9, lg(c, 0, 110, 0, 130, [0, '#f4f6fa'], [1, '#9aa3b5']), OUT, 0.35); for (const dx of [192, 210]) rr(c, dx, 130, 2.4, 8, 0.3, '#5b6275'); text(c, 'METHANE', 201, 120.4, 3.2, '#2f7a47', 700);
+  line(c, 228, 138, 228, 96, '#8b93a7', 1.1); poly(c, [226.4, 96, 229.6, 96, 228, 86], '#7fd0ff'); el(c, 228, 90, 1.6, 3, 'rgba(160,220,255,.7)'); // a flare stack: methane burns blue
+  c.fillStyle = 'rgba(63,127,154,.9)'; c.fillRect(238, 132, 54, 12); for (let x = 240; x < 290; x += 7) line(c, x, 136 + (x % 3), x + 4, 136 + (x % 3), 'rgba(220,240,245,.5)', 0.4); rr(c, 236, 129, 2.4, 14, 0.3, '#8f8a80'); rr(c, 290, 129, 2.4, 14, 0.3, '#8f8a80'); text(c, 'CANAL · 7.5 MILES', 265, 127, 2.8, 'rgba(255,255,255,.75)', 700);
+  // ---- B. Middle River, Maryland: the Space Structures Complex and the fibre-placement machine
+  sign(300, 100, 62, 'MIDDLE RIVER · MARYLAND', 'Space Structures Complex');
+  rr(c, 368, 70, 108, 68, 0.6, '#e9edf2', OUT, 0.4); poly(c, [364, 70, 422, 56, 480, 70], '#b3bdcb', OUT, 0.35); rr(c, 380, 82, 84, 56, 0.4, '#1b2236', OUT, 0.3);
+  c.save(); c.beginPath(); c.rect(380, 82, 84, 56); c.clip();
+  rr(c, 388, 104, 68, 26, 13, lg(c, 0, 104, 0, 130, [0, '#3a3c48'], [0.4, '#14151b'], [1, '#050506']), OUT, 0.4); for (let x = 392; x < 452; x += 5) line(c, x, 105, x + 3, 129, 'rgba(140,148,170,.25)', 0.4); // a seven-metre tank section on the mandrel
+  for (const x of [384, 456]) rr(c, x, 86, 4, 52, 0.4, '#f2d14a', OUT, 0.3); rr(c, 382, 86, 80, 5, 0.6, '#f2d14a', OUT, 0.3); rr(c, 414, 91, 14, 9, 1, '#f4f6fa', OUT, 0.3); poly(c, [418, 100, 424, 100, 422.6, 105, 419.4, 105], '#8b93a7', OUT, 0.25); // the AFP head laying tape
+  c.restore();
+  text(c, '90 TONNES · 12 m TALL', 422, 74.6, 3, '#4a5066', 700); text(c, '100 m OF CARBON FIBRE A MINUTE', 422, 78.6, 2.5, '#4a5066', 700);
+  // ---- C. the test yard: January's tank, and October's replacement dome under inspection
+  { const x = 492; rr(c, x, 96, 34, 42, 8, lg(c, 0, 96, 0, 138, [0, '#30323d'], [1, '#0a0a0d']), OUT, 0.4); c.beginPath(); c.moveTo(x + 20, 100); c.lineTo(x + 16, 112); c.lineTo(x + 22, 120); c.lineTo(x + 17, 134); c.strokeStyle = '#7fd0ff'; c.lineWidth = 1; c.stroke(); el(c, x + 24, 140, 20, 2.4, 'rgba(127,208,255,.55)'); for (let k = 0; k < 4; k++) el(c, x + 20 + k * 4, 126 + k * 3, 0.9, 1.4, 'rgba(127,208,255,.8)');
+    sign(x - 2, 78, 40, 'HYDROSTATIC TEST', 'January 2026', '#c8102e', '#fff'); }
+  { const x = 548; c.beginPath(); c.moveTo(x, 132); c.quadraticCurveTo(x + 22, 96, x + 44, 132); c.closePath(); c.fillStyle = lg(c, 0, 100, 0, 132, [0, '#3a3c48'], [1, '#101116']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.4; c.stroke(); rr(c, x - 2, 132, 48, 3, 0.4, '#8b93a7', OUT, 0.3); for (const dx of [4, 38]) rr(c, x + dx, 135, 2.4, 6, 0.2, '#5b6275');
+    line(c, x + 52, 138, x + 52, 100, '#f2d14a', 1.2); line(c, x + 52, 100, x + 30, 106, '#f2d14a', 1); rr(c, x + 26, 105, 6, 4, 0.6, '#f4f6fa', OUT, 0.25); c.fillStyle = 'rgba(124,240,138,.35)'; c.beginPath(); c.moveTo(x + 29, 109); c.lineTo(x + 22, 122); c.lineTo(x + 34, 122); c.closePath(); c.fill();
+    sign(x + 2, 80, 44, 'NEW FORWARD DOME', 'inspection', '#1f5a34', '#fff'); }
+  // ---- D. Wallops Island: dunes, the assembly building, and a fairing that never lets go
+  for (let i = 0; i < 26; i++) el(c, 606 + r() * 150, 126 + r() * 14, 2 + r() * 4, 0.8 + r(), i % 3 ? 'rgba(95,130,70,.5)' : 'rgba(150,160,90,.45)');
+  rr(c, 604, 84, 52, 54, 0.6, '#e9edf2', OUT, 0.4); rr(c, 604, 80, 52, 5, 0.4, '#30508a', OUT, 0.3); rr(c, 612, 94, 36, 44, 0.3, '#1b2236', OUT, 0.3); text(c, 'ASSEMBLY & INTEGRATION', 630, 89.6, 2.4, '#30508a', 700);
+  { const x = 630; for (const sg of [-1, 1]) { c.save(); c.translate(x, 137); c.rotate(sg * 0.2); c.beginPath(); c.moveTo(0, 0); c.lineTo(sg * 7, 0); c.lineTo(sg * 7, -20); c.quadraticCurveTo(sg * 6, -34, 0, -40); c.closePath(); c.fillStyle = lg(c, -7, 0, 7, 0, [0, '#101116'], [0.5, '#4a4c5a'], [1, '#101116']); c.fill(); c.strokeStyle = 'rgba(200,210,230,.5)'; c.lineWidth = 0.35; c.stroke(); c.restore(); } sign(x - 23, 60, 46, 'HUNGRY HIPPO', 'arrived January 2026'); } // the fairing that never lets go, in the assembly building door
+  void scene;
+}
+
 export function makeBackdrops(scene: Phaser.Scene) {
+  tex(scene, 'bg_stennis_far', 520, 180, stennisFar);
+  tex(scene, 'bg_stennis_mid', 760, 180, (c) => stennisMid(c, scene));
   tex(scene, 'bg_listing', 760, 180, (c) => listing(c, scene));
   tex(scene, 'bg_factory', 760, 180, factory);
   tex(scene, 'bg_workshop', 760, 180, workshop);
@@ -471,6 +531,50 @@ export function makeBackdrops(scene: Phaser.Scene) {
   });
   bubble('pw_T', (c) => { rr(c, 5.2, 5, 7.6, 9, 1.6, '#f4f6fa', OUT, 0.3); line(c, 9, 5.2, 9, 14, '#9aa3b5', 0.35); rr(c, 4.2, 5.4, 2, 5.6, 0.8, '#f4f6fa', OUT, 0.25); rr(c, 11.8, 5.4, 2, 5.6, 0.8, '#f4f6fa', OUT, 0.25); rr(c, 9.8, 6.6, 2, 1.4, 0.2, '#4d9be8'); rr(c, 6.6, 2.6, 4.8, 2, 0.6, 'rgba(190,230,255,.7)', '#4d9be8', 0.3); });
   bubble('pw_L', (c) => { c.save(); c.beginPath(); c.roundRect(4.6, 4, 8.8, 10, 1.6); c.clip(); c.fillStyle = '#1b1c23'; c.fillRect(4, 3, 10, 12); for (let i = -4; i < 8; i++) { line(c, 4 + i * 1.6, 14.4, 9 + i * 1.6, 3.6, 'rgba(130,138,160,.7)', 0.4); line(c, 4 + i * 1.6, 3.6, 9 + i * 1.6, 14.4, 'rgba(70,74,90,.7)', 0.4); } c.restore(); rr(c, 4.6, 4, 8.8, 10, 1.6, undefined, '#2fd0c0', 0.5); poly(c, [9, 1.4, 11, 4, 7, 4], '#2fd0c0'); });
+
+  // ---- Archimedes and the tank
+  tex(scene, 't_stennis', 16, 16, (c) => {
+    c.fillStyle = lg(c, 0, 0, 0, 16, [0, '#c9ccd2'], [0.2, '#aeb2ba'], [1, '#8a8f99']); c.fillRect(0, 0, 16, 16); c.fillStyle = '#e4e6ea'; c.fillRect(0, 0, 16, 0.8);
+    line(c, 0, 8, 16, 8, 'rgba(0,0,0,.14)', 0.4); line(c, 9, 0.8, 9, 8, 'rgba(0,0,0,.14)', 0.4); line(c, 4, 8, 4, 16, 'rgba(0,0,0,.14)', 0.4);
+    const r = rng(27); for (let i = 0; i < 10; i++) el(c, r() * 16, 2 + r() * 14, 0.4, 0.3, 'rgba(60,64,72,.3)'); for (let i = 0; i < 3; i++) { const x = 2 + r() * 12; line(c, x, 0.8, x - 0.6, -0.4, '#6fa85a', 0.4); line(c, x, 0.8, x + 0.7, -0.2, '#6fa85a', 0.4); }
+  });
+  tex(scene, 't_stennis_fill', 16, 16, (c) => { c.fillStyle = '#7d828c'; c.fillRect(0, 0, 16, 16); line(c, 0, 8, 16, 8, 'rgba(0,0,0,.16)', 0.4); line(c, 6, 0, 6, 8, 'rgba(0,0,0,.16)', 0.4); line(c, 12, 8, 12, 16, 'rgba(0,0,0,.16)', 0.4); });
+  tex(scene, 'p_stennis', 16, 6, (c) => { c.fillStyle = lg(c, 0, 0, 0, 5, [0, '#aab2c0'], [1, '#4a5066']); c.fillRect(0, 0, 16, 4.4); for (let x = 0.6; x < 16; x += 2) rr(c, x, 1.2, 1, 2.2, 0.2, 'rgba(10,12,20,.5)'); c.fillStyle = '#f2d14a'; c.fillRect(0, 0, 16, 0.8); c.fillStyle = '#2a2e3c'; c.fillRect(0, 4.4, 16, 1.4); });
+  tex(scene, 'firestand', 34, 96, (c) => { // a test position: an Archimedes held nozzle-down over the flame trench
+    for (const x of [1, 29]) rr(c, x, 0, 4, 96, 0.4, lg(c, x, 0, x + 4, 0, [0, '#aab2c0'], [1, '#5b6275']), OUT, 0.3); rr(c, 0, 4, 34, 5, 0.6, '#5b6275', OUT, 0.3); for (let x = 2; x < 32; x += 6) poly(c, [x, 4, x + 3, 4, x + 1.5, 6.4, x - 1.5, 6.4], '#f2d14a');
+    for (let y = 12; y < 60; y += 12) { line(c, 3, y, 31, y + 12, 'rgba(140,150,170,.5)', 0.5); line(c, 31, y, 3, y + 12, 'rgba(140,150,170,.5)', 0.5); }
+    rr(c, 11, 9, 12, 6, 1, '#3a3f4f', OUT, 0.3); rr(c, 9, 15, 16, 10, 2, lg(c, 9, 0, 25, 0, [0, '#8b93a7'], [0.4, '#e4e8ee'], [1, '#5b6275']), OUT, 0.35); for (const x of [7, 24]) rr(c, x, 17, 3, 7, 1, '#4a5066', OUT, 0.25); line(c, 8.4, 24, 13, 28, '#b8c0cc', 0.9); line(c, 25.6, 24, 21, 28, '#b8c0cc', 0.9);
+    c.beginPath(); c.moveTo(13.6, 25); c.lineTo(20.4, 25); c.bezierCurveTo(21.4, 31, 25, 36, 27, 42); c.lineTo(7, 42); c.bezierCurveTo(9, 36, 12.6, 31, 13.6, 25); c.closePath(); c.fillStyle = lg(c, 7, 0, 27, 0, [0, '#3a3c48'], [0.3, '#9aa3b5'], [0.6, '#5b6275'], [1, '#23262f']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.35; c.stroke();
+    rr(c, 4.6, 46, 6, 3, 0.4, '#07090f', '#8b93a7', 0.3);
+  });
+  tex(scene, 'crab', 22, 13, (c) => { // a Chesapeake blue crab, going sideways and not pleased
+    for (const sg of [-1, 1]) { for (let k = 0; k < 3; k++) { line(c, 11 + sg * 4, 8.6, 11 + sg * (7 + k * 1.2), 11.4 + (k % 2), '#3f6fa8', 0.7); } line(c, 11 + sg * 5, 6.4, 11 + sg * 9, 3.4, '#3f7fd0', 1); el(c, 11 + sg * 9.4, 2.6, 1.9, 1.4, '#d8452e', OUT, 0.25); line(c, 11 + sg * 8.4, 2.6, 11 + sg * 10.6, 2.6, OUT, 0.3); }
+    el(c, 11, 7.4, 6.4, 3.6, lg(c, 0, 4, 0, 11, [0, '#5f8fc8'], [1, '#2f5f98']), OUT, 0.35); poly(c, [4.6, 7.4, 2.4, 6.6, 4.8, 6.4], '#3f6fa8', OUT, 0.2); poly(c, [17.4, 7.4, 19.6, 6.6, 17.2, 6.4], '#3f6fa8', OUT, 0.2);
+    for (const x of [9.2, 12.8]) { line(c, x, 5, x, 3.2, OUT, 0.4); el(c, x, 3, 0.7, 0.7, '#fff', OUT, 0.2); el(c, x, 3, 0.3, 0.3, '#111'); } line(c, 8.4, 4.6, 10, 5.2, OUT, 0.4); line(c, 13.6, 4.6, 12, 5.2, OUT, 0.4);
+  });
+  for (const f of [0, 1]) tex(scene, 'void' + f, 22, 14, (c) => { // a void: a gap where the layers of a composite should have bonded
+    const w = f ? 8.2 : 7.4, hgt = f ? 4.6 : 5.2; el(c, 11, 7, w, hgt, 'rgba(190,225,255,.18)', 'rgba(220,240,255,.9)', 0.5); el(c, 11, 7, w - 1.6, hgt - 1.4, undefined, 'rgba(160,200,240,.5)', 0.3);
+    c.beginPath(); c.arc(8.4, 5.2, 2, 3.4, 4.9); c.strokeStyle = '#fff'; c.lineWidth = 0.6; c.stroke(); for (let x = 1; x < 22; x += 3) line(c, x, 1 + (f ? 0.4 : 0), x + 1.6, 1 + (f ? 0.4 : 0), 'rgba(20,20,26,.5)', 0.5); for (let x = 2; x < 22; x += 3) line(c, x, 13 - (f ? 0.4 : 0), x + 1.6, 13 - (f ? 0.4 : 0), 'rgba(20,20,26,.5)', 0.5);
+    el(c, 12.6, 7, 0.9, 1, '#15171f'); el(c, 15.4, 7, 0.9, 1, '#15171f');
+  });
+  tex(scene, 'cryoline', 22, 30, (c) => { rr(c, 0, 2, 22, 5, 2.4, lg(c, 0, 2, 0, 7, [0, '#ffffff'], [1, '#aab2c0']), OUT, 0.3); for (let x = 2; x < 22; x += 5) rr(c, x, 1.4, 1.2, 6.2, 0.3, '#8b93a7'); rr(c, 8, 7, 6, 4, 0.6, '#5b6275', OUT, 0.3); for (const [x, hgt] of [[9, 5], [11, 8], [13, 4]] as number[][]) poly(c, [x - 0.9, 11, x + 0.9, 11, x, 11 + hgt], 'rgba(200,235,255,.9)', 'rgba(255,255,255,.9)', 0.2); c.fillStyle = 'rgba(255,255,255,.35)'; c.fillRect(1, 7, 20, 1.2); });
+  tex(scene, 'icicle', 5, 9, (c) => { poly(c, [0.6, 0.4, 4.4, 0.4, 2.5, 8.6], lg(c, 0, 0, 5, 0, [0, '#ffffff'], [1, '#9fd6f5']), 'rgba(255,255,255,.9)', 0.25); line(c, 2, 1.4, 2.4, 5.6, 'rgba(255,255,255,.9)', 0.35); });
+  tex(scene, 'eureka', 16, 13, (c) => { // a bath, overflowing
+    c.fillStyle = rg(c, 8, 7, 1, 8, [0, 'rgba(255,230,120,.5)'], [1, 'rgba(255,230,120,0)']); c.fillRect(0, 0, 16, 13);
+    rr(c, 1.6, 5.4, 12.8, 5.2, 2.4, lg(c, 0, 5, 0, 11, [0, '#ffffff'], [1, '#c2c8d2']), OUT, 0.35); rr(c, 1, 4.6, 14, 1.4, 0.7, '#f4f6fa', OUT, 0.3); for (const x of [3.4, 12.6]) rr(c, x - 0.8, 10.4, 1.6, 1.8, 0.4, '#c9a66b', OUT, 0.25);
+    rr(c, 2.4, 3.8, 11.2, 1.2, 0.6, '#7fd0ff'); for (const [x, y] of [[1.4, 7], [14.8, 8.2], [0.8, 9.6]] as number[][]) el(c, x, y, 0.6, 0.9, '#7fd0ff'); el(c, 8.6, 2.8, 1.6, 1.3, '#f2d14a', OUT, 0.25); el(c, 9.8, 1.8, 1, 0.9, '#f2d14a', OUT, 0.25); poly(c, [10.6, 1.8, 11.8, 2.1, 10.6, 2.4], '#f28c28');
+  });
+  tex(scene, 'lc3', 78, 86, (c) => { // Launch Complex 3: open, plumbed, and still waiting for its rocket
+    el(c, 39, 84.4, 36, 1.6, 'rgba(0,0,0,.22)');
+    rr(c, 4, 68, 70, 16, 1, lg(c, 0, 68, 0, 84, [0, '#d2d6dc'], [1, '#8b93a7']), OUT, 0.4); rr(c, 26, 62, 26, 8, 1, lg(c, 0, 62, 0, 70, [0, '#8b93a7'], [1, '#4a5066']), OUT, 0.35); rr(c, 31, 72, 16, 12, 0.6, '#15171f'); for (let x = 8; x < 72; x += 7) poly(c, [x, 68, x + 3.5, 68, x + 1.75, 70.4, x - 1.75, 70.4], '#f2d14a');
+    for (const x of [8, 70]) { line(c, x, 68, x, 6, '#8b93a7', 0.8); line(c, x, 6, x, 11, '#d8452e', 1); line(c, x - 3, 30, x + 3, 30, '#8b93a7', 0.4); }
+    rr(c, 56, 48, 11, 20, 5, lg(c, 56, 0, 67, 0, [0, '#ffffff'], [1, '#9aa3b5']), OUT, 0.3); text(c, 'LOX', 61.5, 58, 2.8, '#4a5066', 700); rr(c, 12, 52, 11, 16, 5, lg(c, 12, 0, 23, 0, [0, '#ffffff'], [1, '#9aa3b5']), OUT, 0.3); text(c, 'CH₄', 17.5, 60, 2.8, '#2f7a47', 700);
+    for (const x of [28, 36, 44]) line(c, x + 3, 62, x + 3, 58, '#5b6275', 1.2); // hold-downs, empty
+    rr(c, 18, 22, 42, 20, 1.2, '#f4f2ea', OUT, 0.4); rr(c, 19.4, 23.4, 39.2, 17.2, 0.8, '#1d3a7a'); text(c, 'LAUNCH COMPLEX 3', 39, 28, 3.6, '#fff', 700); text(c, 'opened 28 August 2025', 39, 32.6, 2.6, '#bfd3f5', 600); text(c, 'NEUTRON: NO EARLIER THAN 2027', 39, 37.4, 2.3, '#ffe98a', 700);
+    line(c, 24, 42, 24, 62, '#5b6275', 0.9); line(c, 54, 42, 54, 62, '#5b6275', 0.9);
+  });
+  bubble('pw_F', (c) => { rr(c, 5.2, 3.2, 7.6, 1.6, 0.7, '#f2d14a', OUT, 0.3); c.beginPath(); c.moveTo(5.4, 4.8); c.lineTo(12.6, 4.8); c.quadraticCurveTo(13, 9.6, 11.4, 12.4); c.lineTo(6.6, 12.4); c.quadraticCurveTo(5, 9.6, 5.4, 4.8); c.closePath(); c.fillStyle = 'rgba(190,232,255,.55)'; c.fill(); c.strokeStyle = 'rgba(235,248,255,.95)'; c.lineWidth = 0.4; c.stroke(); rr(c, 6.4, 12.8, 5.2, 2.2, 0.8, '#3f7fd0', OUT, 0.3); });
+  bubble('pw_M', (c) => { for (const [x, col] of [[5, '#bfe3ff'], [9.8, '#c8f0c0']] as [number, string][]) { rr(c, x, 4, 3.2, 7.4, 1.5, col, OUT, 0.3); rr(c, x, 5.6, 3.2, 0.9, 0, '#1d3a7a'); poly(c, [x + 0.5, 11.4, x + 2.7, 11.4, x + 1.6, 14.8], '#7fd0ff'); } });
   bubble('pw_C', (c) => { c.drawImage(scene.textures.get('peter_chip').getSourceImage() as HTMLCanvasElement, 2.4, 2.4, 13.2, 13.2); });
   tex(scene, 'secret', 18, 18, (c) => { // a rolled blueprint, glowing
     c.fillStyle = rg(c, 9, 9, 1, 9, [0, 'rgba(255,220,120,.9)'], [1, 'rgba(255,220,120,0)']); c.fillRect(0, 0, 18, 18);

@@ -5,7 +5,8 @@ import { LEVELS, BONUS, PEOPLE, CHARACTERS, LevelDef } from '../content';
 import { snd, music, stopLoops } from '../audio';
 
 const ZOOM = 2.5; // the map is shown wider than gameplay scenes so the geography reads at a glance
-const playable = (d: LevelDef) => d.status === 'flown';
+/** Only announced things are locked. A chapter that is still unfolding (in-progress) can be played up to where the story has got to. */
+const playable = (d: LevelDef) => d.status !== 'announced';
 /** A node is open when every earlier flown node is done (Super Mario World style linear path). */
 export const isOpen = (i: number) => DEV || LEVELS.slice(0, i).every((d) => !playable(d) || save.done[d.id]);
 /** Secret nodes appear once their blueprint has been found. */
@@ -19,7 +20,7 @@ const parentOf = (b: LevelDef) => LEVELS.find((l) => l.id === b.parent)!;
 export function openLevel(scene: Phaser.Scene, def: LevelDef) {
   const locked = !playable(def);
   const kind = locked ? 'locked' : def.kind;
-  const head = `<div class="kicker"><span class="badge k-${kind}">${locked ? 'COMING ' + def.date.toUpperCase() : KIND_LABEL[def.kind]}</span>${def.date} · ${def.place}</div><h1>${def.title}</h1><p>${def.intro}</p><p class="fact"><b>Did you know?</b> ${def.fact}</p>`;
+  const head = `<div class="kicker"><span class="badge k-${kind}">${locked ? 'COMING ' + def.date.toUpperCase() : KIND_LABEL[def.kind]}</span>${def.status === 'in-progress' ? '<span class="badge k-locked">STORY STILL UNFOLDING</span>' : ''}${def.date} · ${def.place}</div><h1>${def.title}</h1><p>${def.intro}</p><p class="fact"><b>Did you know?</b> ${def.fact}</p>`;
   const back = { label: 'Back to map', fn: () => {}, alt: true };
   if (def.kind === 'person') { // meeting someone: facts and a picture, never invented speech
     const pic = def.photo || (def.portrait !== undefined ? { file: '', page: '', src: BUSTS[def.portrait], caption: def.title + ', as drawn in the game.', credit: 'Likeness from the photo on Rocket Lab’s team page; no freely licensed photo is available.' } : undefined);
@@ -128,8 +129,8 @@ export class MapScene extends Phaser.Scene {
     const d = this.cur;
     const stars = save.done[d.id] && d.kind !== 'card' ? '   ' + '★'.repeat(save.done[d.id]) + '☆'.repeat(3 - save.done[d.id]) : '';
     this.banner.setText(d.title).setFontSize(d.title.length > 30 ? 8.5 : 11);
-    this.badge.setTexture(d.kind === 'person' ? (d.portrait !== undefined ? d.portrait + 'peter_chip' : 'n_person') : d.status === 'flown' ? 'n_' + d.kind : 'n_locked').setScale(d.kind === 'person' && d.portrait !== undefined ? S * 0.8 : S * 1.25);
-    this.sub.setText(`${d.date.slice(0, 15)}  ·  ${d.place}  ·  ${d.kind === 'person' ? (save.met[d.id] ? 'MET' : 'SOMEONE TO MEET') : (d.parent ? 'SECRET ' : '') + (d.status === 'flown' ? KIND_LABEL[d.kind] : 'LOCKED')}${d.kind === 'person' ? '' : stars}`);
+    this.badge.setTexture(d.kind === 'person' ? (d.portrait !== undefined ? d.portrait + 'peter_chip' : 'n_person') : playable(d) ? 'n_' + d.kind : 'n_locked').setScale(d.kind === 'person' && d.portrait !== undefined ? S * 0.8 : S * 1.25);
+    this.sub.setText(`${d.date.slice(0, 15)}  ·  ${d.place}  ·  ${d.kind === 'person' ? (save.met[d.id] ? 'MET' : 'SOMEONE TO MEET') : (d.parent ? 'SECRET ' : '') + (playable(d) ? KIND_LABEL[d.kind] : 'LOCKED')}${d.kind === 'person' ? '' : stars}`);
     this.ring.setPosition(d.map.x, d.map.y - 0.5);
   }
   update() {
