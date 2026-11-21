@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Carbon to Orbit — an unofficial Rocket Lab fan game</title>
+  </head>
+  <body>
+    <div id="stage">
+      <div id="game"></div>
+      <div id="overlay" hidden></div>
+      <button id="mute" title="Sound on/off (M)" aria-label="Sound on or off">🔊</button>
+      <div id="touch" hidden>
+        <div class="tgroup"><button data-k="left">◀</button><button data-k="right">▶</button><button data-k="up">▲</button><button data-k="down">▼</button></div>
+        <div class="tgroup"><button data-k="b">B</button><button data-k="a">A</button></div>
+      </div>
+    </div>
+    <footer>Fan project, not affiliated with Rocket Lab. Code MIT · content CC BY-SA 4.0 · photo credits on each card.</footer>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
