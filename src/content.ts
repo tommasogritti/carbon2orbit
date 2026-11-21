@@ -177,6 +177,16 @@ export const LEVELS: LevelDef[] = [
     sources: [RL + 'updates/rocket-lab-mission-fails-to-reach-orbit/', RL + 'updates/rocket-lab-to-resume-electron-launches-in-august/', 'https://spaceflightnow.com/2020/07/04/rocket-lab-satellite-launch-fails-before-reaching-orbit/', 'https://spaceflightnow.com/2020/07/31/rocket-lab-identifies-faulty-electrical-connector-as-cause-of-launch-failure/', RL + 'missions/launches/i-cant-believe-its-not-optical/'],
   },
   {
+    id: 'return-to-sender', kind: 'minigame', mechanic: 'splashdown', status: 'flown',
+    title: 'Return To Sender', date: '2020-11-20', place: 'Pacific Ocean, downrange of Māhia', map: { x: 300, y: 318 },
+    intro: 'Electron was never meant to come back: Peter Beck had said Rocket Lab would not do reusable rockets, and that he would eat his hat if it did. By 2020 the company is trying anyway. On the sixteenth flight, while stage two carries thirty satellites on towards orbit, the first stage turns itself around at the edge of space and attempts what no Electron has done before: to come down through re-entry, which the team calls “the wall”, under two parachutes, and be lifted out of the Pacific in one piece.',
+    how: 'The booster starts nose-first, almost 80 km up, where there is no air. ← → fire the cold-gas thrusters: a puff starts it turning, and only a puff the other way stops it. Get the engines pointing down (white needle in the green wedge) before 55 km, then hold it there while the air shakes it. Fly the wall sideways and the stage breaks up. Then the parachutes: Space opens the drogue once the speed is under Mach 2, and Space again opens the main chute once the drogue has slowed the stage below 110 m/s. Too early tears a chute off; too late, and the sea arrives first.',
+    fact: 'Rocket Lab’s numbers for the real descent: separation about 80 km up, a 180° flip on reaction-control thrusters, a peak of 2,350 m/s with the air around the engines hotter than 2,400 °C, a drogue parachute below Mach 2, and into the water at 9 m/s. Space and back in 13 minutes.',
+    after: 'Electron lifted off at 3:20 pm New Zealand time on 20 November 2020 and delivered all thirty satellites. The first stage came down under its main parachute, a little slower than planned, was lifted out of the ocean by a recovery ship and went back to the factory to be taken apart: the first Electron booster ever recovered. Eighteen months later a helicopter would try to catch one in mid-air.',
+    egg: 'Engines-first, gas to spare, a gentle landing. Riding on the kick stage that day was Gnome Chompski: 150 mm of 3D-printed titanium, made by Wētā Workshop for Valve’s Gabe Newell, who gave a dollar to the children’s intensive care unit at Starship hospital for every person who watched the launch. Chompski stayed bolted to the kick stage and burned up with it.',
+    sources: [RL + 'updates/rocket-lab-launches-16th-mission-completes-booster-recovery/', RL + 'updates/how-to-bring-a-rocket-back-from-space/', 'https://spaceflightnow.com/2020/11/20/rocket-lab-recovers-booster-after-launch-with-30-small-satellites/'],
+  },
+  {
     id: 'going-public', kind: 'platform', mechanic: 'platform', status: 'flown', hero: 'adam', role: 'Chief Financial Officer · 2021',
     title: 'RKLB rings the bell', date: '2021-08-25', place: 'Long Beach, California', map: { x: 607, y: 274 },
     intro: 'In March 2021 Rocket Lab announces two things at once: a merger with the SPAC Vector Acquisition Corporation, and Neutron, the bigger reusable rocket Beck had said he would never build. Going public is a paper chase, and paper is the finance chief’s department. Pandemic travel limits mean nobody is going to Times Square: on listing day the Nasdaq opening bell will be rung by video link. This level belongs to Adam Spice: carry the listing across the Long Beach headquarters and have everything at the bell before the market opens.',
@@ -348,6 +358,14 @@ export const PEOPLE: LevelDef[] = [
     after: '',
     photo: { file: 'beck_newman_2016.jpg', caption: 'Dava Newman with Peter Beck at Rocket Lab, July 2016.', credit: 'US Embassy New Zealand, CC BY 2.0', page: C + 'Dr_Dava_Newman,_NASA_Deputy_Administrator_visit_to_New_Zealand,_July_11-18,_2016_(27619573814).jpg' },
     sources: [WP + 'Dava_Newman', WP + 'Rocket_Lab'],
+  },
+  {
+    id: 'gabe-newell', kind: 'person', status: 'flown', parent: 'return-to-sender',
+    title: 'Gabe Newell', date: '2020-11', place: 'Aotearoa New Zealand', map: { x: 328, y: 338 },
+    intro: 'A co-founder of Valve, the games company behind Half-Life and Steam. In November 2020 he puts an unusual passenger on “Return To Sender”: Gnome Chompski, a garden gnome from Valve’s games, remade by Wētā Workshop as a 150 mm figure in 3D-printed titanium. It flies as a mass simulator bolted to the kick stage, and burns up with it at the end of the mission.',
+    fact: 'He pledged one dollar to the paediatric intensive care unit at Starship Children’s Hospital for every person who watched the launch webcast. PC Gamer reported the total as NZ$286,092.',
+    after: '',
+    sources: [RL + 'updates/rocket-lab-launches-16th-mission-completes-booster-recovery/', 'https://www.pcgamer.com/gnome-chompski-is-now-one-with-the-cosmos-and-gabe-newell-donated-dollar200k-to-a-childrens-hospital/'],
   },
   {
     id: 'adam-spice', kind: 'person', status: 'flown', parent: 'going-public', portrait: 'a',
