@@ -23,6 +23,13 @@ export class SplashdownScene extends Phaser.Scene {
   clouds: Phaser.GameObjects.Image[] = []; g!: Phaser.GameObjects.Graphics; tele!: Phaser.GameObjects.Text; call!: Phaser.GameObjects.Text; prompt!: Phaser.GameObjects.Text; puff!: Phaser.GameObjects.Particles.ParticleEmitter; plasma!: Phaser.GameObjects.Particles.ParticleEmitter;
   wind!: Loop; hiss!: Loop; said: Record<string, boolean> = {};
   constructor() { super('Splashdown'); }
+  /** The controls panel (H or the ? button): what the keys do right now, in this level and this phase. Shape agreed with core's showHelp. */
+  help(): { title: string; rows: [keys: string, does: string][]; note?: string } {
+    const rows: [string, string][] = [['← →', 'Fire the cold-gas thrusters. A puff starts the stage turning; only a puff the other way stops it.']];
+    if (this.chute === 0) rows.push(['Space', 'Open the drogue parachute, once the speed is under Mach 2.']);
+    else if (this.chute === 1) rows.push(['Space', `Open the main parachute, once the drogue has slowed the stage below ${MAIN_V} m/s.`]);
+    return { title: 'Splashdown', rows, note: this.chute === 2 ? 'Both parachutes are out: nothing left to command.' : 'Keep the engines pointing down (white needle in the green wedge) through the wall of air.' };
+  }
   init(d: { def: LevelDef }) { this.def = d.def; this.h = 78e3; this.v = 2150; this.th = 180; this.om = Phaser.Math.Between(0, 1) ? 5 : -5; this.gas = 1; this.dmg = 0; this.chute = 0; this.ripped = false; this.t = 0; this.ended = false; this.clouds = []; this.said = {}; this.lateFlip = false; }
   create() {
     cam(this); stopLoops(); music.play('heli'); this.wind = loop('rumble'); this.hiss = loop('hiss');

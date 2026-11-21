@@ -40,6 +40,12 @@ export class RideScene extends Phaser.Scene {
   bike!: Phaser.GameObjects.Image; zones: Zone[] = []; flags: { x: number; name: string; o: Phaser.GameObjects.Image; got: boolean }[] = []; items: { x: number; y: number; kind: string; o: Phaser.GameObjects.Image }[] = [];
   hud!: Phaser.GameObjects.Text; msg!: Phaser.GameObjects.Text; pwT!: Phaser.GameObjects.Text; dust!: Phaser.GameObjects.Particles.ParticleEmitter; eng!: Loop; hits: string[] = [];
   constructor() { super('Ride'); }
+  /** The controls panel (H or the ? button): what the keys do right now, in this level and this phase. Shape agreed with core's showHelp. */
+  help(): { title: string; rows: [keys: string, does: string][]; note?: string } {
+    const TH = this.th, rows: [string, string][] = [['→', 'Throttle.'], ['←', 'Brake.'], ['Space or ↑', 'Hop.'], ['← → in the air', 'Tip the vehicle so that both wheels meet the slope.']];
+    for (const [code] of (this.p.powerups || []) as [string, number, number][]) if (TH.pw[code]) rows.push(['Pick-up', `${TH.pw[code].tip}. Lasts ${TH.pw[code].secs} seconds.`]);
+    return { title: 'Riding', rows, note: `Ride through every ${(this.p.flagWord || 'flag').toLowerCase()} flag to finish. Three stars for no spills inside ${this.p.par} seconds.` };
+  }
   init(d: { def: LevelDef }) { this.def = d.def; this.p = d.def.params; this.th = THEMES[this.p.theme]; this.pts = this.p.terrain; this.len = this.pts[this.pts.length - 1][0]; this.x = 30; this.v = 0; this.air = false; this.t = 0; this.crashes = 0; this.got = 0; this.egg = false; this.secret = false; this.done = false; this.stun = 0; this.safe = 30; this.zones = []; this.flags = []; this.items = []; this.hits = []; this.power = ''; this.powerT = 0; this.rot = 0; }
   /** Height of the ground at x: smooth through the control points, and bottomless inside a gap. */
   ground(x: number): number {

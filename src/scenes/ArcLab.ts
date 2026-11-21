@@ -21,6 +21,11 @@ export class ArcLabScene extends Phaser.Scene {
   def!: LevelDef; p: any; sw: Sw[] = []; sel = 0; lp = XL; sweep = -1; arced = false; sweeps = 0; wasted = 0; tasks: { text: string; done: boolean }[] = []; ended = false; arcT = 0; botT = 0; botI = 0; fixOpen = false;
   g!: Phaser.GameObjects.Graphics; list!: Phaser.GameObjects.Text; call!: Phaser.GameObjects.Text; swT: Phaser.GameObjects.Text[] = []; read!: Phaser.GameObjects.Text; hum!: Loop;
   constructor() { super('ArcLab'); }
+  /** The controls panel (H or the ? button): what the keys do right now, in this level and this phase. Shape agreed with core's showHelp. */
+  help(): { title: string; rows: [keys: string, does: string][]; note?: string } {
+    if (this.sweep >= 0) return { title: 'The laboratory', rows: [], note: 'An ascent sweep is running: no keys until it ends.' };
+    return { title: 'The laboratory', rows: [['← →', 'Choose a condition.'], ['Space', 'Switch the chosen condition on or off.'], ['↑ ↓', 'Change the pressure by hand.'], ['Enter', 'Run an ascent sweep, from sea level to vacuum.']], note: 'Work down the list on the left. The fewer sweeps, the more stars.' };
+  }
   init(d: { def: LevelDef }) {
     this.def = d.def; this.p = d.def.params; this.sel = 0; this.lp = XL; this.sweep = -1; this.arced = false; this.sweeps = 0; this.wasted = 0; this.ended = false; this.arcT = 0; this.botT = 0; this.botI = 0; this.fixOpen = false; this.swT = [];
     this.sw = (this.p.switches as [string, string, string][]).map(([key, name, what]) => ({ key, name, what, on: false }));

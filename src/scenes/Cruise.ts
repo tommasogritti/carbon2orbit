@@ -22,6 +22,10 @@ export class CruiseScene extends Phaser.Scene {
   def!: LevelDef; x = 0; y = 0; vx = 0; vy = 0; fuel = 1; next = 0; t = 0; ended = false; peri = 999; burned = 0; inKey = false; flew = false; started = false; path: { x: number; y: number; a: number }[] = [];
   blue!: Phaser.GameObjects.Image; gold!: Phaser.GameObjects.Image; g!: Phaser.GameObjects.Graphics; hud!: Phaser.GameObjects.Text; call!: Phaser.GameObjects.Text; tip!: Phaser.GameObjects.Text; puff!: Phaser.GameObjects.Particles.ParticleEmitter; flame!: Phaser.GameObjects.Particles.ParticleEmitter; hiss!: Loop; rumble!: Loop;
   constructor() { super('Cruise'); }
+  /** The controls panel (H or the ? button): what the keys do right now, in this level and this phase. Shape agreed with core's showHelp. */
+  help(): { title: string; rows: [keys: string, does: string][]; note?: string } {
+    return { title: 'Cruise', rows: [['← ↑ ↓ →', 'Fire a thruster: a push in that direction. It stays until you cancel it with a push the other way.'], ['Space (hold)', 'Fire the main engine along the direction of travel. Use it at the lowest point of the Earth flyby.']], note: this.started ? 'Fly the gates in order, pass under Earth through the green band, and leave through the Mars gate.' : 'The clock starts with your first key press.' };
+  }
   init(d: { def: LevelDef }) { this.def = d.def; this.x = 124; this.y = 82; this.vx = 38; this.vy = -31; this.fuel = 1; this.next = 0; this.t = 0; this.ended = false; this.peri = 999; this.burned = 0; this.inKey = false; this.flew = false; this.path = []; this.started = AUTO; }
   create() {
     cam(this); stopLoops(); music.play('space'); this.hiss = loop('hiss'); this.rumble = loop('rumble');

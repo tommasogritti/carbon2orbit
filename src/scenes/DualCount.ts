@@ -24,6 +24,11 @@ export class DualCountScene extends Phaser.Scene {
   def!: LevelDef; p: any; th!: (typeof THEMES)[string]; sides: Side[] = []; calls: Call[] = []; t = 0; misses = 0; slip = [0, 0]; ended = false; flew = [false, false]; botT = [0, 0]; clean = true;
   g!: Phaser.GameObjects.Graphics; clockT!: Phaser.GameObjects.Text; callT: Phaser.GameObjects.Text[] = []; nextT: Phaser.GameObjects.Text[] = []; localT: Phaser.GameObjects.Text[] = []; sky: Phaser.GameObjects.Rectangle[] = []; ground: Phaser.GameObjects.Image[] = []; rocket: Phaser.GameObjects.Image[] = []; flame: Phaser.GameObjects.Particles.ParticleEmitter[] = []; rumble!: Loop; msg!: Phaser.GameObjects.Text;
   constructor() { super('DualCount'); }
+  /** The controls panel (H or the ? button): what the keys do right now, in this level and this phase. Shape agreed with core's showHelp. */
+  help(): { title: string; rows: [keys: string, does: string][]; note?: string } {
+    const [a, b] = this.sides;
+    return { title: 'Two counts', rows: [['←', `Answer a green GO on the left console (${a.label}).`], ['→', `Answer a green GO on the right console (${b.label}).`], ['↓', 'Call a hold: the answer to a red NO-GO on either console.']], note: `A missed GO slips that count by ${SLIP} minutes. Saying go to a NO-GO, or letting it time out, costs ${SLIP * 3}.` };
+  }
   init(d: { def: LevelDef }) { this.def = d.def; this.p = d.def.params; this.th = THEMES[this.p.theme]; this.sides = this.p.sides; this.calls = (this.p.calls as [number, 0 | 1, Kind, string][]).map(([at, side, kind, text]) => ({ at, side, kind, text })); this.t = 0; this.misses = 0; this.slip = [0, 0]; this.ended = false; this.flew = [false, false]; this.callT = []; this.nextT = []; this.localT = []; this.sky = []; this.ground = []; this.rocket = []; this.flame = []; this.botT = [0, 0]; this.clean = true; }
   /** The clock the play time stands for, in hours UTC (may run past 24), from the level's key frames. */
   utc(t: number) { const k = this.p.clock as number[][]; let i = 1; while (i < k.length - 1 && k[i][0] < t) i++; const a = k[i - 1], b = k[i], f = Phaser.Math.Clamp((t - a[0]) / (b[0] - a[0] || 1), 0, 1); return a[1] + (b[1] - a[1]) * f; }

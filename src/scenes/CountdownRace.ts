@@ -37,6 +37,10 @@ export class CountdownRaceScene extends Phaser.Scene {
   g!: Phaser.GameObjects.Graphics; rows: Phaser.GameObjects.Text[] = []; clockT!: Phaser.GameObjects.Text; crewT: Phaser.GameObjects.Text[] = []; call!: Phaser.GameObjects.Text;
   sky!: Phaser.GameObjects.Rectangle; stars!: Phaser.GameObjects.Image; site!: Phaser.GameObjects.Image; rocket!: Phaser.GameObjects.Image; flame!: Phaser.GameObjects.Particles.ParticleEmitter; vent!: Phaser.GameObjects.Particles.ParticleEmitter; hum!: Loop;
   constructor() { super('CountdownRace'); }
+  /** The controls panel (H or the ? button): what the keys do right now, in this level and this phase. Shape agreed with core's showHelp. */
+  help(): { title: string; rows: [keys: string, does: string][]; note?: string } {
+    return { title: 'Countdown race', rows: [['↑ ↓', 'Choose a job on the list.'], ['Space or Enter', 'Give the chosen job to a free crew.']], note: 'A job can start only when the jobs it waits for are finished and a crew is free.' };
+  }
   init(d: { def: LevelDef }) { this.def = d.def; this.t = 0; this.done = {}; this.work = [{ id: '', left: 0 }, { id: '', left: 0 }]; this.cur = 0; this.ended = false; this.idle = 0; this.rows = []; this.crewT = []; this.botT = 0; }
   create() {
     cam(this); stopLoops(); music.play('launch', 1); this.hum = loop('sea'); this.hum.set(0.5);

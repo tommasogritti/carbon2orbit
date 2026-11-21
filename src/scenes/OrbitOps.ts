@@ -54,6 +54,15 @@ export class OrbitOpsScene extends Phaser.Scene {
   def!: LevelDef; p: any; th!: (typeof THEMES)[string]; o!: Orb; cap?: Orb; steps: Step[] = []; si = 0; inc = 97.5; node = 0; U1 = 0; uT = 0; ended = false; used = 0; relAlt = 0; lit = false; phasing = 0; lastVr = 0; trail: number[][] = []; pred?: { lat: number; lon: number; miss: number; along: number }; predT = 0; botBurn = false; missed = 0;
   g!: Phaser.GameObjects.Graphics; craft!: Phaser.GameObjects.Image; info!: Phaser.GameObjects.Text; list!: Phaser.GameObjects.Text; call!: Phaser.GameObjects.Text; rumble!: Loop;
   constructor() { super('OrbitOps'); }
+  /** The controls panel (H or the ? button): what the keys do right now, in this level and this phase. Shape agreed with core's showHelp. */
+  help(): { title: string; rows: [keys: string, does: string][]; note?: string } {
+    const step = this.steps[Math.min(this.si, this.steps.length - 1)];
+    if (this.cap) return { title: 'Orbit operations', rows: [], note: 'The capsule has been released: nothing left to command.' };
+    if (this.phasing > 0) return { title: 'Orbit operations', rows: [], note: 'Waiting for the pass that crosses the target: no keys until it arrives.' };
+    if (step.do === 'release') return { title: 'Orbit operations · release', rows: [['Space or Enter', `Release the capsule as the altitude falls through ${step.alt} km.`]] };
+    const what = step.do === 'lower' ? `until the perigee reads ${step.alt} km` : step.do === 'raise' ? `until the apogee reads ${step.alt} km` : 'until the landing cross reaches the target';
+    return { title: `Orbit operations · ${this.th.label(step)}`, rows: [['Space (hold)', `Burn ${what}. The spacecraft points itself.`]], note: 'Start each burn at the ring on the track. The step moves on by itself when the engine is off and the number is met.' };
+  }
   lat(u: number) { return Math.asin(Math.sin(this.inc * DEG) * Math.sin(u * DEG)) / DEG; }
   lon(u: number, t: number) { return this.node + Math.atan2(Math.cos(this.inc * DEG) * Math.sin(u * DEG), Math.cos(u * DEG)) / DEG - WE * t; }
   /** Where a state comes down if nothing more is done to it, or undefined if it stays in orbit. */

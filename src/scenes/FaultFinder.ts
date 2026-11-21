@@ -29,6 +29,13 @@ export class FaultFinderScene extends Phaser.Scene {
   order: number[] = []; on: number[] = []; marks: { c: number; t: number; ok: boolean }[] = []; ct = -20; cc = 0; days = 3; wrong = 0; phase: 1 | 2 | 3 = 1; ended = false; hum!: Loop;
   bad = 0; test = 0; running = -1; prog = 0; ran: number[] = []; joint = 0; shown = false; botT = 0;
   constructor() { super('FaultFinder'); }
+  /** The controls panel (H or the ? button): what the keys do right now, in this level and this phase. Shape agreed with core's showHelp. */
+  help(): { title: string; rows: [keys: string, does: string][]; note?: string } {
+    if (this.phase === 1) return { title: 'Fault finder · the telemetry trace', rows: [['← →', 'Move the cursor through time.'], ['↑ ↓', 'Change channel.'], ['Space', 'Flag the point under the cursor as the first sign of trouble.']], note: 'A wrong flag costs two days.' };
+    const rows: [string, string][] = [['↑ ↓', 'Choose a test.'], ['Space', 'Run the chosen test on the suspect harness. Every test costs days.']];
+    if (this.shown) rows.push(['← →', 'Select a connection.'], ['Enter', 'Tag the selected connection as the root cause.']);
+    return { title: 'Fault finder · the bench', rows, note: this.shown ? undefined : 'Once a test makes one connection give itself away, ← → select it and Enter tags it.' };
+  }
   init(d: { def: LevelDef }) {
     this.def = d.def; this.labels = []; this.aux = []; this.marks = []; this.days = 3; this.wrong = 0; this.phase = 1; this.ended = false; this.cc = 0; this.ct = -20;
     this.order = Phaser.Utils.Array.Shuffle([0, 1, 2, 3, 4, 5]); // the rows come up in a different order every time
