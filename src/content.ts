@@ -295,6 +295,31 @@ export const LEVELS: LevelDef[] = [
     sources: [WP + 'Peter_Beck', WP + 'List_of_Electron_launches'],
   },
   {
+    id: 'two-hemispheres', kind: 'minigame', mechanic: 'dual-count', status: 'flown',
+    title: 'Two Hemispheres', date: '2024-11-24', place: 'LC-2, Wallops and LC-1, Māhia', map: { x: 480, y: 236 },
+    intro: 'Rocket Lab has two launch sites on opposite sides of the world and, in November 2024, a rocket standing on each. At Wallops a HASTE suborbital mission, “HASTE A La Vista”, is counting down to one o’clock in the morning. At Māhia, where it is already the following evening, an Electron with five satellites for the French company Kinéis is a day from flight. One company, one pair of hands, two counts.',
+    how: 'Two consoles. Calls come up on each with a timer. Answer a green GO with that console’s key: ← for LC-2 on the left, → for LC-1 on the right. Answer a red NO-GO with ↓, to call a hold: saying go to a NO-GO, or letting it time out, costs a full recycle. Every missed call slips that pad’s count by 20 minutes. The NEXT line under each console shows what is coming. Get both rockets away inside 24 hours to pass; three stars for answering every call in time.',
+    fact: 'The real gap was 21 hours 55 minutes. “HASTE A La Vista” left Launch Complex 2 at 06:00 UTC on 24 November 2024, and “Ice AIS Baby” left Launch Complex 1 at 03:55 UTC on the 25th. Rocket Lab called it a company record for turnaround between launches, from two pads in two hemispheres.',
+    after: '“Ice AIS Baby” lifted off at 4:55 pm NZDT on 25 November 2024 and put five satellites into a 643 km orbit for Kinéis: the third of five dedicated launches for the French company, Electron’s 56th launch overall and its fourteenth of that year. “HASTE A La Vista” was Rocket Lab’s second HASTE mission, flown under the MACH-TB hypersonic test programme. (The individual calls and holds in this level are the game’s own, and the day between the launches is compressed.)',
+    egg: 'Every call, on time. With this launch Kinéis had fifteen satellites in orbit.',
+    sources: [RL + 'updates/rocket-lab-successfully-launches-two-missions-in-less-than-24-hours/', RL + 'missions/launches/haste-a-la-vista/'],
+    params: {
+      theme: 'twopads', length: 58, gap_h: 21 + 55 / 60, dates: ['24 NOV 2024', '25 NOV 2024'],
+      clock: [[0, 5.0], [10, 6.0], [17, 6.4], [32, 26.7], [42.5, 27.9167], [58, 28.9]],
+      sides: [
+        { name: 'LC-2 · WALLOPS', label: 'LC-2', mission: 'HASTE A La Vista · suborbital', site: 'wallops', tz: -5, day: [6.9, 16.8], liftoff: 10 },
+        { name: 'LC-1 · MĀHIA', label: 'LC-1', mission: 'Ice AIS Baby · five satellites', site: 'mahia', tz: 13, day: [5.8, 20.3], liftoff: 42.5 },
+      ],
+      calls: [
+        [1.5, 0, 'go', 'Propellant load complete?'], [3.0, 1, 'go', 'Roll Electron out to the pad'], [4.6, 0, 'go', 'Range clear for launch?'], [6.0, 1, 'go', 'Raise Electron to vertical'], [6.9, 0, 'nogo', 'Vessel in the hazard area'], [8.7, 0, 'go', 'Go for terminal count'], [9.4, 1, 'go', 'Pad checks complete?'],
+        [11.6, 0, 'go', 'Stage separation · confirm'], [12.4, 1, 'nogo', 'Ground valve reading warm'], [13.5, 0, 'go', 'Stage 2 ignition · confirm'], [14.9, 0, 'go', 'Fairing jettison · confirm'], [15.6, 1, 'go', 'Resume pad checks'], [17.2, 0, 'go', 'Payload released · call it'],
+        [19.5, 0, 'go', 'Safe the pad'], [21, 1, 'go', 'Five Kinéis satellites aboard?'], [23, 0, 'go', 'Hand the range back'], [25, 1, 'go', 'Team rested and on console?'], [27.5, 0, 'go', 'Flight data to the customer'], [29.5, 1, 'go', 'Weather brief: go?'],
+        [32, 1, 'go', 'Load propellants'], [33.4, 0, 'go', 'Stand the LC-2 team down'], [35, 1, 'nogo', 'Gusts over the limit'], [37.4, 1, 'go', 'Range clear for launch?'], [39, 0, 'go', 'Close out the LC-2 record'], [40.6, 1, 'go', 'Go for terminal count'],
+        [44, 1, 'go', 'Stage separation · confirm'], [45.6, 1, 'go', 'Fairing jettison · confirm'], [47.4, 1, 'go', 'Kick stage ignition · confirm'], [49.5, 1, 'go', 'Deploy Kinéis 1'], [50.9, 1, 'go', 'Deploy Kinéis 2'], [52.3, 1, 'go', 'Deploy Kinéis 3'], [53.7, 1, 'go', 'Deploy Kinéis 4'], [55.1, 1, 'go', 'Deploy Kinéis 5'],
+      ],
+    },
+  },
+  {
     id: 'outback-delivery', kind: 'minigame', mechanic: 'orbit-ops', status: 'flown',
     title: 'Outback Delivery', date: '2025-02-27', place: 'Low Earth orbit → Koonibba, South Australia', map: { x: 44, y: 262 },
     intro: 'Varda Space Industries makes things in orbit that are hard to make on the ground, starting with pharmaceutical crystals, and needs a way to bring them home. Its capsule rides on a Rocket Lab spacecraft, Pioneer, which supplies the power, communications, propulsion and pointing, and at the end of the mission has one last job: to put a 120 kg capsule on a path that ends at a chosen spot on Earth. The first capsule, in 2024, came down in Utah. The second, in February 2025, is aimed at the Koonibba Test Range in South Australia, and you are flying Pioneer.',
