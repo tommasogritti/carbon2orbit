@@ -272,6 +272,20 @@ export const LEVELS: LevelDef[] = [
     params: { vehicle: 'haste', site: 'wallops', night: true, afts: true, goal: { inject_km: 140, v_ms: 6000, release_km: 90 }, payload: 'Test article · undisclosed' },
   },
   {
+    id: 'beginning-of-the-swarm', kind: 'launch', mechanic: 'launch', status: 'flown',
+    title: 'Beginning Of The Swarm', date: '2024-04-23', place: 'LC-1, Māhia', map: { x: 310, y: 240 },
+    intro: 'One rocket, two customers, and they want to be 480 kilometres apart. NEONSAT-1, an Earth-observation satellite from Korea’s KAIST and the first of a planned constellation of eleven, is going to 520 km. NASA’s Advanced Composite Solar Sail System, a spacecraft about the size of a toaster with a sail to unfurl, needs to be far higher, at 1,000 km, where there is almost no air left to drag on it. So the kick stage has its busiest day yet: Curie will be lit four times.',
+    how: 'Fly the ascent as before: Enter holds the count, ← → on the cue, ↑ ↓ through Max-Q, Space for each event, Enter for SECO at 520 km apogee. Then the kick stage follows the FLIGHT PLAN listed on the left. Hold Space to burn; Enter confirms each step once the engine is off. Circularise at 520 km and release NEONSAT-1. Burn again until the apogee reads 1,000 km, coast up to it, circularise there, and release the solar sail. Last, the de-orbit burn: Curie turns round and fires against the direction of travel to pull the perigee down, so the empty stage comes home sooner. Three stars for both payloads within 15 km of their orbits and the stage brought down.',
+    fact: 'Rocket Lab’s plan for the day listed four Curie ignitions: one to circularise for NEONSAT-1, one to raise the apogee to 1,000 km, a third to circularise there, and a fourth for the de-orbit burn. It wrote the mission name with its initials alongside, B.T.S, and left it at that.',
+    after: 'Electron lifted off at 10:32 am NZST on 24 April 2024 (22:32 UTC on the 23rd), its 47th launch. Rocket Lab reported NEONSAT-1 delivered to a 520 km circular orbit and the solar sail to 1,000 km, followed by a final engine light for the de-orbit manoeuvre. Space.com timed the first deployment about 50 minutes after lift-off and the second 55 minutes after that. (How low the de-orbit burn took the stage was not published: the 500 km in this level is a game value, and so are the payload masses.)',
+    egg: 'On the numbers, twice. NASA’s solar-sail spacecraft was, in Rocket Lab’s words, about the size of a toaster, and its sail about the size of a small apartment: roughly 30 feet a side.',
+    sources: [RL + 'updates/rocket-lab-successfully-deploys-satellites-500km-apart-to-separate-orbits-for-kaist-and-nasa/', RL + 'updates/rocket-lab-prepares-to-launch-mission-for-kaist-and-nasa-to-deploy-satellites-to-two-separate-orbits/', 'https://www.space.com/rocket-lab-nasa-solar-sail-tech-launch-april-2024'],
+    params: {
+      vehicle: 'electron', site: 'mahia', goal: { orbit: true, orbit_km: 520, inject_km: 250 }, twist: 'kick-stage', payload: 'NEONSAT-1 + NASA solar sail',
+      plan: [{ do: 'circ', alt: 520 }, { do: 'deploy', name: 'NEONSAT-1', mass: 110 }, { do: 'raise', alt: 1000 }, { do: 'circ', alt: 1000 }, { do: 'deploy', name: 'ACS3 solar sail', mass: 50 }, { do: 'lower', alt: 500 }],
+    },
+  },
+  {
     id: 'sir-peter', kind: 'card', status: 'flown',
     title: 'Sir Peter', date: '2024-06-03', place: 'Aotearoa New Zealand', map: { x: 187, y: 300 },
     intro: 'In the 2024 King’s Birthday Honours, the apprentice toolmaker from Invercargill is made a Knight Companion of the New Zealand Order of Merit, for services to the aerospace industry, business and education. He is invested on 5 September 2024. In the month of the honours list Electron flies its 50th mission, “No Time Toulouse”.',

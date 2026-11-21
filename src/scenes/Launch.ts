@@ -23,6 +23,9 @@ const STILL_TESTING: Scrub = { at: 1.2, lit: true, text: 'ABORT at T-2 · LOX to
 /** Directions (degrees from prograde) the kick stage points for each release, so no two satellites leave the same way. */
 const DEPLOY_DIR = [0, 180, 70, 250, 130, 310, 30, 210];
 const fmt = (n: number) => Math.round(n).toLocaleString('en-NZ');
+/** One step of a kick-stage flight plan: burn to circularise at apogee, raise apogee, lower perigee, or let a payload go. */
+interface PlanStep { do: 'circ' | 'raise' | 'lower' | 'deploy'; alt?: number; name?: string; mass?: number }
+const STEP_LABEL = (st: PlanStep) => st.do === 'circ' ? `CIRCULARISE AT ${fmt(st.alt!)} km` : st.do === 'raise' ? `RAISE APOGEE TO ${fmt(st.alt!)} km` : st.do === 'lower' ? `DE-ORBIT BURN · PERIGEE ${fmt(st.alt!)} km` : `DEPLOY ${st.name!.toUpperCase()}`;
 const TIMELINE: [string, string, number][] = [['maxq', 'MAX-Q', -1], ['meco', 'MECO', 1], ['fairing', 'FAIRING', -1], ['swap', 'HOT-SWAP', 1], ['seco', 'SECO', -1]];
 
 /**
@@ -43,13 +46,14 @@ export class LaunchScene extends Phaser.Scene {
   nose = 15; mach = 0; noseMax = 15; // nose-tip temperature (°C) and Mach number, for the sounding rocket's readouts
   elev = 82; windBase = 0; armed = false; pred?: L.Ballistic; predT = 0; zone: [number, number] = [35, 65];
   kick?: { g: Phaser.GameObjects.Graphics; craft: Phaser.GameObjects.Image; info: Txt; tip: Txt; passes: number; lastTAp: number; burning: boolean; botDone: boolean; done: boolean; burned: boolean };
-  kickT: Txt[] = []; sc?: Scrub; aftsT = 0; aftsMin = 1; aftsTxt?: Txt; secoV = 0; tlKeys: [string, string, number][] = [];
+  kickT: Txt[] = []; sc?: Scrub; aftsT = 0; aftsMin = 1; kr = [30, 0.055]; kRings: number[] = []; pi = 0; planLog: { name: string; ap: number; pe: number; err: number }[] = []; planBot = { burning: false, t: 0 }; aftsTxt?: Txt; secoV = 0; tlKeys: [string, string, number][] = [];
   dep?: { i: number; ang: number; rate: number; since: number; rushed: number; names: string[]; icon: Phaser.GameObjects.Image; g: Phaser.GameObjects.Graphics; sail?: boolean; end: number };
   constructor() { super('Launch'); }
   init(d: { def: LevelDef }) {
     this.def = d.def; this.p = d.def.params; this.v = L.VEHICLES[this.p.vehicle]; this.ung = !!this.v.unguided;
     this.ended = false; this.kick = undefined; this.streaks = []; this.clouds = []; this.lab = []; this.val = []; this.poll = []; this.tl = [];
-    this.count = 12; this.pollT = 0; this.holdT = 0; this.missed = false; this.scrubbed = !this.p.scrub; this.lastC = 99; this.warp = 1; this.trail = []; this.trailT = 0; this.said = {}; this.alarmT = 0; this.why = ''; this.sawQ = 0; this.seco0 = undefined; this.stageDelay = 0; this.aftsT = 0; this.aftsMin = 1; this.aftsTxt = undefined; this.secoV = 0; this.dep = undefined;
+    this.count = 12; this.pollT = 0; this.holdT = 0; this.missed = false; this.scrubbed = !this.p.scrub; this.lastC = 99; this.warp = 1; this.trail = []; this.trailT = 0; this.said = {}; this.alarmT = 0; this.why = ''; this.sawQ = 0; this.seco0 = undefined; this.stageDelay = 0; this.aftsT = 0; this.aftsMin = 1; this.aftsTxt = undefined; this.pi = 0; this.planLog = []; this.planBot = { burning: false, t: 0 };
+    const plan = this.p.plan as PlanStep[] | undefined; this.kRings = plan ? [...new Set(plan.filter((q) => q.do === 'circ').map((q) => q.alt! * 1000))] : []; this.kr = plan ? [25, 0.042] : [30, 0.055]; this.secoV = 0; this.dep = undefined;
     this.sc = this.p.scrub === true ? STILL_TESTING : this.p.scrub;
     this.nogo = !this.ung && !this.p.scrub && Math.random() < 0.6 ? { i: Math.floor(Math.random() * STATIONS.length), at: 3.6 + Math.random() * 3, shown: false, done: false } : undefined;
     if (this.ung) {
@@ -458,13 +462,15 @@ export class LaunchScene extends Phaser.Scene {
     this.flame2.emitting = false; music.play('space'); this.say(''); this.g.clear();
     this.add.rectangle(0, 0, W, H, 0x04050c, 0.94).setOrigin(0).setDepth(40);
     img(this, 0, 0, 'stars').setOrigin(0).setDepth(40).setAlpha(0.8);
-    img(this, 176, 98, 'earth').setDepth(41).setDisplaySize(60, 60);
+    img(this, 176, 98, 'earth').setDepth(41).setDisplaySize(this.kr[0] * 2, this.kr[0] * 2);
     this.kickT = [T(this, 176, 8, 'KICK STAGE · CIRCULARISE', '#ffe98a', 10, '700').setOrigin(0.5).setDepth(42), T(this, 176, 21, 'Kick stage separation confirmed · Curie holds prograde', '#aab4d4', 5.6).setOrigin(0.5).setDepth(42)];
-    panel(this, 4, 78, 96, 70).setDepth(42);
+    if (!this.p.plan) panel(this, 4, 78, 96, 70).setDepth(42);
+    if (this.p.plan) { this.kickT[0].setText('KICK STAGE · FLIGHT PLAN'); this.kickT[1].setText('SPACE burns Curie · ENTER confirms each step'); panel(this, 4, 74, 118, 78).setDepth(42); }
     this.kick = { g: this.add.graphics().setDepth(41), craft: img(this, 0, 0, 'curie').setDepth(43), info: T(this, 9, 81, '', '#ffffff', 6).setDepth(43), tip: T(this, 176, H - 12, '', '#ffffff', 7, '700').setOrigin(0.5).setDepth(43).setAlign('center'), passes: 1, lastTAp: 1e9, burning: false, botDone: false, done: false, burned: false };
   }
   kickUpdate(dt: number) {
     const k = this.kick!, s = this.s, v = this.v; if (k.done) return;
+    if (this.p.plan) return this.planUpdate(dt);
     let o = L.orbit(s);
     if (this.dep) { L.step(s, dt * 20); o = L.orbit(s); this.kickPicture(o); return this.deployUpdate(dt, o); }
     const st = v.stages[2], need = L.vCirc(o.ap) - Math.sqrt(L.MU * (2 / (L.RE + o.ap) - 1 / o.a)), burn = need / (st.thrustVac / s.m);
@@ -484,11 +490,64 @@ export class LaunchScene extends Phaser.Scene {
     if (s.alt < 100e3) { k.done = true; return this.fail(`The transfer orbit dipped back into the atmosphere at perigee (${km(o.pe)} km) before Curie could raise it.`); }
     if ((just('b') || (AUTO && k.botDone)) && !s.lit) { if (this.p.deploy) return this.deployStart(); k.done = true; this.end(); this.result(o, k.passes); }
   }
+  /**
+   * A kick stage with more than one job: the level's `plan` is a list of burns and deployments, done in order.
+   * Hold Space to burn (the stage points itself along the velocity vector, or against it for a de-orbit burn);
+   * Enter confirms the step once the engine is off.
+   */
+  planUpdate(dt: number) {
+    const k = this.kick!, s = this.s, st = this.v.stages[2], plan = this.p.plan as PlanStep[], step = plan[this.pi], bot = this.planBot;
+    let o = L.orbit(s);
+    const alt = (step.alt || 0) * 1000, acc = st.thrustVac / s.m;
+    s.retro = step.do === 'lower';
+    const need = step.do === 'circ' ? L.vCirc(o.ap) - Math.sqrt(L.MU * (2 / (L.RE + o.ap) - 1 / o.a)) : 0, burn = need / acc;
+    const met = step.do === 'circ' ? Math.max(Math.abs(o.ap - alt), Math.abs(o.pe - alt)) <= 20e3 : step.do === 'raise' ? Math.abs(o.ap - alt) <= 25e3 : step.do === 'lower' ? o.pe <= alt + 2e3 : true;
+    let want = held('a') && step.do !== 'deploy', confirm = just('b');
+    if (AUTO) { // the autopilot centres each circularisation on apogee and stops the others on the number
+      bot.t += dt;
+      if (step.do === 'deploy') confirm = bot.t > 0.7;
+      else {
+        if (!bot.burning && !met && (step.do !== 'circ' || o.tAp <= burn / 2)) bot.burning = true;
+        if (bot.burning && (s.prop <= 0 || (step.do === 'circ' ? o.pe >= Math.min(o.ap - 2e3, alt) : step.do === 'raise' ? o.ap >= alt : o.pe <= alt))) bot.burning = false;
+        want = bot.burning; confirm = !bot.burning && !s.lit && (met || s.prop <= 0) && bot.t > 0.6;
+      }
+    }
+    if (want && s.prop > 0) { if (!s.lit) { s.lit = true; snd.burn(1); } } else if (s.lit) { L.cutoff(s); snd.cutoff(); }
+    const near = step.do !== 'circ' || o.tAp < 220 || o.tAp > o.period - 60;
+    L.step(s, dt * (step.do === 'deploy' ? 6 : s.lit || near ? 20 : 400));
+    o = L.orbit(s); this.rumble.set(s.lit ? 0.22 : 0, 0.12);
+    this.kickPicture(o);
+    if (s.lit) { const th = Math.atan2(s.x, s.y), sg = s.retro ? -1 : 1; k.g.fillStyle(0xffb347, 0.9).fillCircle(k.craft.x - Math.cos(th) * 3 * sg, k.craft.y - Math.sin(th) * 3 * sg, 1.6 + Math.random()); }
+    k.info.setFontSize(4.5).setText(plan.map((q, i) => `${i < this.pi ? '✓' : i === this.pi ? '▶' : '·'} ${STEP_LABEL(q)}`).join('\n') + `\n\nAP ${km(o.ap)} · PE ${km(o.pe)} km\nCURIE PROP ${((s.prop / st.prop) * 100).toFixed(0)}%${step.do === 'circ' ? ` · AP IN ${clock(o.tAp)}` : ''}`);
+    const tip = s.prop <= 0 && step.do !== 'deploy' ? 'Curie is empty · ENTER moves on' : step.do === 'deploy' ? `ENTER · release ${step.name}` : met && !s.lit ? 'On the numbers · ENTER confirms' : step.do === 'circ' ? (s.lit ? 'Release SPACE when perigee meets apogee' : `Hold SPACE to burn at apogee: start at T-${clock(burn / 2)}`) : step.do === 'raise' ? `Hold SPACE: burn until apogee reads ${fmt(step.alt!)} km` : `Hold SPACE: Curie is pointing backwards. Burn until perigee reads ${fmt(step.alt!)} km`;
+    k.tip.setText(tip).setColor(met && !s.lit ? '#7cc56b' : '#ffffff');
+    if (s.alt < 100e3) { k.done = true; return this.fail(`The stage dipped into the atmosphere (perigee ${km(o.pe)} km) with work still to do.`); }
+    if (confirm && !s.lit) {
+      if (step.do === 'deploy') {
+        const tgt = [...plan.slice(0, this.pi)].reverse().find((q) => q.do === 'circ')!.alt! * 1000, err = Math.max(Math.abs(o.ap - tgt), Math.abs(o.pe - tgt));
+        this.planLog.push({ name: step.name!, ap: o.ap, pe: o.pe, err }); s.m -= step.mass || 0; snd.fairing();
+        const sat = this.add.rectangle(k.craft.x, k.craft.y, 3, 2.2, this.planLog.length % 2 ? 0x7fd0ff : 0xffe98a).setStrokeStyle(0.3, 0x0b0c12).setDepth(44); this.tweens.add({ targets: sat, x: sat.x + 14, y: sat.y - 10, alpha: 0, duration: 2200, onComplete: () => sat.destroy() });
+        this.kickT[1].setText(`${step.name} released at ${km(o.ap)} × ${km(o.pe)} km`);
+      } else snd.select();
+      this.pi++; bot.t = 0; bot.burning = false;
+      if (this.pi >= plan.length) { k.done = true; this.end(); return this.planResult(o); }
+    }
+  }
+  planResult(o: L.Orbit) {
+    const s = this.s, plan = this.p.plan as PlanStep[], last = plan[plan.length - 1], log = this.planLog;
+    const worst = Math.max(...log.map((q) => q.err)) / 1000, low = log.find((q) => q.pe < 150e3);
+    if (low) return this.fail(`${low.name} was released with a perigee of ${km(low.pe)} km: inside the atmosphere. Circularise before letting anything go.`);
+    const down = last.do !== 'lower' || o.pe <= last.alt! * 1000 + 5e3, clean = s.stress < 0.5 && s.heat < 0.2 && !this.missed;
+    const stars = worst <= 15 && down && clean ? 3 : worst <= 50 ? 2 : 1;
+    const notes = [worst > 15 ? `a payload was released ${worst.toFixed(0)} km off its orbit` : '', !down ? `the stage was left with its perigee at ${km(o.pe)} km, not ${fmt(last.alt!)}` : '', s.stress >= 0.5 ? `structural load reached ${(s.stress * 100).toFixed(0)}%` : '', this.missed ? 'a NO-GO went uncalled in the count' : ''].filter(Boolean);
+    T(this, 176, 32, 'PLAN COMPLETE', '#7cc56b', 9, '700').setOrigin(0.5).setDepth(44); this.kick!.tip.setText('');
+    this.time.delayedCall(1900, () => finish(this, this.def, { success: true, stars, egg: stars === 3 && worst <= 6, title: 'Two orbits, one kick stage', text: `${log.map((q) => `${q.name} released at ${km(q.ap)} × ${km(q.pe)} km`).join('; ')}. The stage was left in a ${km(o.ap)} × ${km(o.pe)} km orbit with ${((s.prop / this.v.stages[2].prop) * 100).toFixed(0)}% of its Curie propellant.${notes.length ? ' For three stars: ' + notes.join('; ') + '.' : ''}` }));
+  }
   kickPicture(o: L.Orbit) {
     // picture: altitudes are exaggerated so the ellipse reads
-    const k = this.kick!, s = this.s, cx = 176, cy = 98, RD = (alt: number) => 30 + (alt / 1000) * 0.055, g = k.g; g.clear();
+    const k = this.kick!, s = this.s, cx = 176, cy = 98, RD = (alt: number) => this.kr[0] + (alt / 1000) * this.kr[1], g = k.g; g.clear();
     const th = Math.atan2(s.x, s.y), w = th - o.nu, rd = RD(s.alt), px = cx + Math.sin(th) * rd, py = cy - Math.cos(th) * rd;
-    g.lineStyle(0.5, P.lgreen, 0.55).strokeCircle(cx, cy, RD(this.m.ha));
+    for (const ring of this.kRings.length ? this.kRings : [this.m.ha]) g.lineStyle(0.5, P.lgreen, 0.55).strokeCircle(cx, cy, RD(ring));
     g.lineStyle(0.7, 0xffe98a, 0.95).beginPath();
     for (let i = 0; i <= 72; i++) { const nu = (i / 72) * Math.PI * 2, r = (o.a * (1 - o.ecc * o.ecc)) / (1 + o.ecc * Math.cos(nu)), d = RD(r - L.RE), x = cx + Math.sin(w + nu) * d, y = cy - Math.cos(w + nu) * d; if (i) g.lineTo(x, y); else g.moveTo(x, y); }
     g.strokePath();

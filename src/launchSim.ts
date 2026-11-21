@@ -56,7 +56,7 @@ export interface Sim {
   v: Vehicle; t: number; x: number; y: number; vx: number; vy: number;
   r: number; alt: number; vr: number; vt: number; speed: number; down: number; // derived
   stage: number; prop: number; m: number; lit: boolean; held: boolean; throttle: number; pitch: number; prograde: boolean;
-  fairing: boolean; batt: number; swapped: boolean; starved: boolean; dart: boolean; released: boolean;
+  fairing: boolean; batt: number; swapped: boolean; starved: boolean; dart: boolean; released: boolean; retro?: boolean;
   q: number; alpha: number; stress: number; g: number; fmh: number; heat: number; wind: number;
   maxQ: number; apogee: number; ev: Record<string, number>; fail?: string;
 }
@@ -96,7 +96,7 @@ function step1(s: Sim, h: number) {
   s.q = 0.5 * rho * va * va; s.fmh = s.q * va; if (s.q > s.maxQ) { s.maxQ = s.q; s.ev.maxq = s.t; }
   const gam = Math.atan2(ar, at);
   if (v.unguided && Math.hypot(s.x, s.y - RE) > (v.rail || 0)) s.pitch = gam;
-  if (s.prograde) s.pitch = Math.atan2(s.vr, s.vt);
+  if (s.prograde) s.pitch = Math.atan2(s.vr, s.vt) + (s.retro ? Math.PI : 0); // a kick stage holds itself along the velocity vector, or against it to come down
   s.alpha = va > 30 ? Math.atan2(Math.sin(s.pitch - gam), Math.cos(s.pitch - gam)) : 0;
   let F = 0;
   if (s.lit) {
