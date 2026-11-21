@@ -301,7 +301,7 @@ function drawMap(c: C2, w: number, h: number) {
   // Moon and Mars
   c.save(); c.shadowColor = 'rgba(220,225,255,.7)'; c.shadowBlur = 40; el(c, 430, 60, 16, 16, '#c3c6cf'); c.restore(); planet(c, 430, 60, 16, 'moon');
   text(c, 'THE MOON', 430, 82, 4.4, '#aab4d4', 600);
-  el(c, 760, 36, 6, 6, rg(c, 758, 34, 1, 8, [0, '#f0946a'], [1, '#8a3a22'])); text(c, 'MARS', 760, 47, 3.6, '#8f6a5a', 600);
+  c.save(); c.shadowColor = 'rgba(255,140,90,.7)'; c.shadowBlur = 26; el(c, 764, 32, 9, 9, '#c8623a'); c.restore(); el(c, 764, 32, 9, 9, rg(c, 761, 29, 1, 12, [0, '#f0a070'], [0.6, '#c8623a'], [1, '#6a2a18'])); el(c, 761, 34, 3.6, 1.8, 'rgba(110,50,30,.45)'); el(c, 767, 29, 2.2, 1.2, 'rgba(110,50,30,.4)'); el(c, 764, 24.2, 3, 1, 'rgba(255,255,255,.8)'); text(c, 'MARS', 764, 46.4, 4.4, '#c9a090', 600);
   // Aotearoa
   landmass(c, proj(SI, nz), '#5fae62', '#2f7a47'); landmass(c, proj(NI, nz), '#6cb968', '#3a8a4c'); landmass(c, proj(STEWART, nz), '#4f9d55', '#2f7a47');
   poly(c, [...nz(175.75, -36.56), ...nz(175.9, -36.58), ...nz(175.85, -36.68)], '#6cb968', '#e6d9a8', 0.5); // Great Mercury Island

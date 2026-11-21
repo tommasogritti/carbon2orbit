@@ -347,6 +347,12 @@ export function makeBackdrops(scene: Phaser.Scene) {
     for (let i = 0; i < 7; i++) { const x = 112 + i * 30; rr(c, x, 152, 20, 12, 1, '#0b1020', '#3a4a70', 0.5); c.fillStyle = `rgba(${i % 3 ? '127,208,255' : '255,138,112'},.5)`; c.fillRect(x + 2, 154, 16, 8); for (let k = 0; k < 4; k++) line(c, x + 3, 156 + k * 1.6, x + 6 + r() * 11, 156 + k * 1.6, 'rgba(10,15,32,.7)', 0.5); rr(c, x + 8, 164, 4, 3, 0, '#3a4a70'); rr(c, x - 3, 167, 26, 2, 0.5, '#26304c'); c.fillStyle = rg(c, x + 10, 158, 1, 22, [0, 'rgba(127,208,255,.12)'], [1, 'rgba(127,208,255,0)']); c.fillRect(x - 12, 140, 44, 40); }
     rr(c, 274, 168, 5, 6, 0.6, '#e8e6df', OUT, 0.25); c.beginPath(); c.arc(280, 171, 1.6, -1.2, 1.2); c.strokeStyle = '#e8e6df'; c.lineWidth = 0.5; c.stroke(); // a cold cup of coffee
   });
+  // ESCAPADE: Mars, and the twins (same spacecraft, one trimmed blue and one gold)
+  tex(scene, 'mars', 20, 20, (c) => { c.save(); c.shadowColor = 'rgba(255,140,90,.8)'; c.shadowBlur = 14; el(c, 10, 10, 6.4, 6.4, '#c8623a'); c.restore(); el(c, 10, 10, 6.4, 6.4, rg(c, 8, 8, 1, 9, [0, '#f0a070'], [0.6, '#c8623a'], [1, '#6a2a18'])); el(c, 8, 11.4, 2.6, 1.4, 'rgba(110,50,30,.5)'); el(c, 12.4, 8, 1.6, 1, 'rgba(110,50,30,.45)'); el(c, 10, 4.3, 2.2, 0.8, 'rgba(255,255,255,.8)'); });
+  for (const [key, col] of [['esc_blue', '#4d9be8'], ['esc_gold', '#f2c230']] as [string, string][]) tex(scene, key, 14, 12, (c) => {
+    for (const y of [0.4, 8.2]) { rr(c, 4.6, y, 4.8, 3.4, 0.3, '#1d3a7a', OUT, 0.25); line(c, 7, y, 7, y + 3.4, 'rgba(160,200,255,.6)', 0.25); line(c, 4.6, y + 1.7, 9.4, y + 1.7, 'rgba(160,200,255,.6)', 0.25); }
+    rr(c, 4, 3.6, 6, 4.8, 0.8, lg(c, 0, 3.6, 0, 8.4, [0, '#f4f6fa'], [1, '#9aa3b5']), OUT, 0.3); rr(c, 4, 5.2, 6, 1.6, 0, col); poly(c, [4, 4.8, 1.6, 4, 1.6, 8, 4, 7.2], '#5b6275', OUT, 0.25); el(c, 11.2, 6, 1.5, 2.2, '#dfe5ee', OUT, 0.25);
+  });
   // ---- enemies
   tex(scene, 'scooter', 32, 24, (c) => { // the rocket scooter, off on its own
     el(c, 6, 20, 3.4, 3.4, '#15171f', OUT, 0.3); el(c, 26, 20, 3.4, 3.4, '#15171f', OUT, 0.3); el(c, 6, 20, 1.2, 1.2, '#8b93a7'); el(c, 26, 20, 1.2, 1.2, '#8b93a7');

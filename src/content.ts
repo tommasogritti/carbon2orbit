@@ -263,6 +263,16 @@ export const LEVELS: LevelDef[] = [
     sources: [WP + 'Peter_Beck', WP + 'List_of_Electron_launches'],
   },
   {
+    id: 'escapade', kind: 'minigame', mechanic: 'cruise', status: 'flown',
+    title: 'ESCAPADE', date: '2025-11-13', place: 'Earth → Sun–Earth L2 → Mars', map: { x: 736, y: 48 },
+    intro: 'Two small spacecraft, Blue and Gold, designed and built by Rocket Lab for NASA and the University of California, Berkeley, to study how the solar wind strips away the atmosphere of Mars. Having missed the 2024 Mars window, they leave Earth on 13 November 2025 on Blue Origin’s New Glenn and take a road nobody has used before: out to a looping “kidney bean” orbit around the Sun–Earth L2 point, about a million miles away, to wait; then back past Earth a year later, for a powered flyby that throws them at Mars.',
+    how: 'You fly Blue; Gold follows the same path a little behind. ←↑↓→ fire thrusters. There is no drag out here: every push stays until you cancel it with a push the other way, so use small ones and coast. Fly through the four gates around L2 in order. Then fall back to Earth and pass UNDER it through the green band: close, but not into the atmosphere. Hold Space at the lowest point to fire the main engine along your direction of travel: a burn deep in Earth’s gravity well buys far more speed than the same burn anywhere else. Leave through the Mars gate at top left with enough speed. Three stars for arriving with 35% of your propellant.',
+    fact: 'The launch was held up twice in its last week, first by weather and then by a geomagnetic storm: a space-weather mission delayed by space weather. On the day, New Glenn’s booster, named “Never Tell Me The Odds”, made that rocket’s first landing.',
+    after: 'Blue made its powered flyby on 7 November 2026, about 1,000 miles above Earth, and Gold followed on 9 November, about 650 miles up. Each fired its engine for roughly nine or ten minutes, and did it on its own. Both spacecraft are now cruising to Mars, with orbit insertion planned for September 2027 and science from 2028. The story is still being written: this level gets its ending when they arrive.',
+    egg: 'The burn at the bottom has a name, the Oberth effect: the faster a spacecraft is already going, the more energy the same push gives it. That is why the departure burn was made at the lowest point of an Earth flyby.',
+    sources: ['https://science.nasa.gov/mission/escapade/', 'https://science.nasa.gov/science-research/heliophysics/nasas-escapade-completes-powered-earth-flybys-now-en-route-to-mars/', RL + 'updates/the-burns-that-sent-rocket-lab-built-spacecraft-to-mars-and-nbsp/', 'https://escapade.ssl.berkeley.edu/timeline/escapade-launch', 'https://spaceflightnow.com/2025/11/13/blue-origin-launches-twin-mars-probes-for-nasa-as-new-glenn-makes-first-landing/'],
+  },
+  {
     id: 'the-mountain-god-rises', kind: 'launch', mechanic: 'launch', status: 'flown',
     title: 'The Mountain God Rises', date: '2026-11-14', place: 'LC-1, Māhia', map: { x: 248, y: 294 },
     intro: 'Launch number one hundred. A Japanese radar satellite for iQPS sits under the fairing, another in the long “God” series of mission names. Nine years after “It’s a Test”, fly the hundredth Electron like it is routine.',
@@ -366,6 +376,14 @@ export const PEOPLE: LevelDef[] = [
     fact: 'He pledged one dollar to the paediatric intensive care unit at Starship Children’s Hospital for every person who watched the launch webcast. PC Gamer reported the total as NZ$286,092.',
     after: '',
     sources: [RL + 'updates/rocket-lab-launches-16th-mission-completes-booster-recovery/', 'https://www.pcgamer.com/gnome-chompski-is-now-one-with-the-cosmos-and-gabe-newell-donated-dollar200k-to-a-childrens-hospital/'],
+  },
+  {
+    id: 'rob-lillis', kind: 'person', status: 'flown', parent: 'escapade',
+    title: 'Rob Lillis', date: '2025', place: 'UC Berkeley Space Sciences Laboratory', map: { x: 708, y: 66 },
+    intro: 'A planetary scientist at the Space Sciences Laboratory of the University of California, Berkeley, and the principal investigator of ESCAPADE: the scientist who answers to NASA for the mission. Berkeley leads it; Rocket Lab designed and built the two spacecraft, Blue and Gold.',
+    fact: 'Each spacecraft weighs 209 kg dry and 535 kg fuelled. More than half of what left Earth was propellant for the journey.',
+    after: '',
+    sources: ['https://science.nasa.gov/mission/escapade/', 'https://escapade.ssl.berkeley.edu/news/'],
   },
   {
     id: 'adam-spice', kind: 'person', status: 'flown', parent: 'going-public', portrait: 'a',
