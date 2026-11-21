@@ -11,7 +11,7 @@ type Kind = 'go' | 'nogo';
 interface Call { at: number; side: 0 | 1; kind: Kind; text: string; state?: 'live' | 'ok' | 'missed'; t?: number }
 interface Side { name: string; mission: string; site: string; tz: number; day: [number, number]; liftoff: number; label: string }
 const THEMES: Record<string, { music: string; role: string; title: string; text: (gap: string, misses: number) => string }> = {
-  twopads: { music: 'launch', role: 'CEO · two rockets, one mission control', title: 'Two launches, two hemispheres', text: (gap, n) => `Both rockets flew, ${gap} apart${n ? `, with ${n} call${n > 1 ? 's' : ''} answered late or not at all` : ', and every call was answered on time'}.` },
+  twopads: { music: 'launch', role: 'CEO · two pads, two counts', title: 'Two launches, two hemispheres', text: (gap, n) => `Both rockets flew, ${gap} apart${n ? `, with ${n} call${n > 1 ? 's' : ''} answered late or not at all` : ', and every call was answered on time'}.` },
 };
 const hm = (h: number) => { const m = Math.round((((h % 24) + 24) % 24) * 60) % 1440; return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; };
 

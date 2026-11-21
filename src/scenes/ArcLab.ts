@@ -37,7 +37,7 @@ export class ArcLabScene extends Phaser.Scene {
     panel(this, 4, 4, W - 8, 16, 0.9); T(this, 9, 6.6, this.p.heading as string, '#ffffff', 6.2, '700');
     panel(this, 4, 24, 110, 100, 0.9); this.list = T(this, 8, 27, '', '#ffffff', 4.5, '700').setWordWrapWidth(102).setLineSpacing(0.6);
     panel(this, 118, 24, 198, 100, 0.9);
-    T(this, PX, PY - 7.6, 'VOLTS', '#aab4d4', 4, '700'); T(this, PX, PY + PH + 1.6, 'SEA LEVEL', '#aab4d4', 3.8, '700'); T(this, PX + PW, PY + PH + 1.6, 'VACUUM', '#aab4d4', 3.8, '700').setOrigin(1, 0); T(this, PX + PW / 2, PY + PH + 1.6, 'PRESSURE →  falling, as on the way up', '#8fa3c8', 3.8, '700').setOrigin(0.5, 0);
+    T(this, PX, PY - 7.6, 'VOLTS · game scale', '#aab4d4', 4, '700'); T(this, PX, PY + PH + 1.6, 'SEA LEVEL', '#aab4d4', 3.8, '700'); T(this, PX + PW, PY + PH + 1.6, 'VACUUM', '#aab4d4', 3.8, '700').setOrigin(1, 0); T(this, PX + PW / 2, PY + PH + 1.6, 'PRESSURE →  falling, as on the way up', '#8fa3c8', 3.8, '700').setOrigin(0.5, 0);
     this.read = T(this, PX + PW, PY - 7.6, '', '#ffffff', 4.4, '700').setOrigin(1, 0);
     panel(this, 4, 128, W - 8, 30, 0.9);
     this.sw.forEach((s, i) => this.swT.push(T(this, 12 + i * 77, 131, '', '#ffffff', 4.6, '700').setWordWrapWidth(70)));
@@ -51,7 +51,7 @@ export class ArcLabScene extends Phaser.Scene {
   endSweep() {
     this.sweep = -1; this.hum.set(0.1, 0.1);
     const need = this.sw.filter((s) => s.key !== 'fix'), off = need.filter((s) => !s.on), fix = this.on('fix'); let useful = false;
-    if (this.arced) useful = this.tick(0, 'It arcs, part-way up: not at sea level, not in vacuum, but in the thin air between.');
+    if (this.arced) useful = this.tick(0, 'It arcs: not at sea-level pressure, not in a hard vacuum, but at the low pressure in between.');
     else if (fix && !off.length) useful = this.tick(this.tasks.length - 1, 'All three conditions present, and no arc: the sealed frame never lets the pressure fall into the danger band.');
     else if (!fix && off.length === 1 && this.tasks[0].done) useful = this.tick(1 + need.indexOf(off[0]), `No arc without ${off[0].what}. It is needed.`);
     if (!useful) { this.wasted++; this.say(this.arced ? 'It arced again. That was already known.' : !this.tasks[0].done ? 'Nothing. Something that was there in flight is missing here.' : 'Nothing new from that one. Change one condition at a time.'); }

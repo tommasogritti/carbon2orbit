@@ -150,7 +150,8 @@ function peter(c: C2, leg: number, air = false, young = false, fit: Fit = '', ad
 /** Head-and-shoulders portrait, 48 x 54 units. Adult proportions: eyes a little above the middle, long lower face, heavy jaw. */
 // Shaun D'Mello (from the captioned black-and-white portrait on Rocket Lab's team page): short dark hair, cropped close at the
 // sides and brushed up and back on top; clean-shaven; no glasses; a rounded-oval face with full cheeks and dark brows; a
-// blazer over an open-neck white shirt. Colours cannot be read from that photo and are the game's choice.
+// blazer over an open-neck white shirt. Colours cannot be read from that photo and are the game's choice; the skin tone is set
+// a step deeper than Peter's and Adam's because the photo reads that way, and still wants checking against a colour photo.
 function bust(c: C2, young = false, adam = false, shaun = false) {
   const dk = hairCols(young)[0], hy = young ? 1.12 : 1.05, jaw = young ? 1 : 0, nw = young ? 12.5 : adam ? 17.4 : shaun ? 16 : 15.2;
   const onFace = (x: number, y: number) => y > 12.6 && Math.abs(x - 24) < 11.4; // keeps a squarish, high hairline with the corners exposed
@@ -159,21 +160,21 @@ function bust(c: C2, young = false, adam = false, shaun = false) {
   c.beginPath(); c.moveTo(0, 54); c.quadraticCurveTo(3, 46.8, 15, 45.4); c.lineTo(33, 45.4); c.quadraticCurveTo(45, 46.8, 48, 54); c.closePath();
   c.fillStyle = young ? '#cfd5df' : shaun ? lg(c, 0, 0, 48, 0, [0, '#5a6072'], [0.5, '#3f4454'], [1, '#2a2e3a']) : adam ? lg(c, 0, 0, 48, 0, [0, '#2a3a62'], [0.5, '#1c2740'], [1, '#111a2e']) : lg(c, 0, 0, 48, 0, [0, '#26272f'], [0.5, '#17181e'], [1, '#0c0d11']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.5; c.stroke();
   if (young) { rr(c, 11, 50, 26, 6, 1, '#2b4f8a', OUT, 0.4); line(c, 14.5, 50, 16.5, 45.6, '#2b4f8a', 3); line(c, 33.5, 50, 31.5, 45.6, '#2b4f8a', 3); }
-  rr(c, 24 - nw / 2, 35, nw, 13, 3, lg(c, 0, 38, 0, 48, [0, '#c08a6e'], [1, '#e0aa8b']));
+  rr(c, 24 - nw / 2, 35, nw, 13, 3, shaun ? lg(c, 0, 38, 0, 48, [0, '#96694a'], [1, '#bd8c68']) : lg(c, 0, 38, 0, 48, [0, '#c08a6e'], [1, '#e0aa8b']));
   if (adam || shaun) { poly(c, [17, 44.8, 31, 44.8, 24, 54], '#cfe0f2'); poly(c, [16.4, 44.4, 24, 49.4, 19, 52.2], '#dfeaf6', OUT, 0.35); poly(c, [31.6, 44.4, 24, 49.4, 29, 52.2], '#dfeaf6', OUT, 0.35); line(c, 14.4, 45.6, 21.6, 54, '#0f1626', 0.8); line(c, 33.6, 45.6, 26.4, 54, '#0f1626', 0.8); }
   else if (!young) { poly(c, [14.6, 44.6, 24, 50.6, 13.4, 50], '#2c2d37', OUT, 0.35); poly(c, [33.4, 44.6, 24, 50.6, 34.6, 50], '#2c2d37', OUT, 0.35); line(c, 24, 50.6, 24, 54, '#3a3b47', 0.5); }
   else { c.beginPath(); c.arc(24, 44.6, 6.6, 0.15, Math.PI - 0.15); c.strokeStyle = '#aab2c0'; c.lineWidth = 1; c.stroke(); }
   // side hair first, so the cheeks sit in front of it; ears mostly hidden
   if (!adam && !shaun) curls(c, 24, 20.5, 10.5, 16, 0.95, hy, 430, 1.7, 23, young, 0.86, 2.14, (_x, y) => y > 21);
-  if (adam || shaun) { el(c, 12.4, 26, 1.5, 3.3, '#dba283', OUT, 0.45); el(c, 35.6, 26, 1.5, 3.3, '#dba283', OUT, 0.45); } // small, flat ears
+  if (adam || shaun) { const ear = shaun ? '#b98862' : '#dba283'; el(c, 12.4, 26, 1.5, 3.3, ear, OUT, 0.45); el(c, 35.6, 26, 1.5, 3.3, ear, OUT, 0.45); } // small, flat ears
   else { el(c, 11.6, 26.4, 1.5, 3, '#d39a7b'); el(c, 36.4, 26.4, 1.5, 3, '#d39a7b'); }
   // broad face, wide short jaw
   const jx = (adam ? 14.2 : shaun ? 13.4 : 12.6) + jaw, cy = adam ? 43 : shaun ? 41.4 : 42, sx = adam ? 13 : shaun ? 12.2 : 11.6; // Adam: a long, tall oval with a heavy jaw; Shaun: rounder, fuller cheeks
   const dome = adam ? 0.5 : shaun ? 4 : 7.5; // a shaved head shows the whole cranium
   c.beginPath(); c.moveTo(sx, 21); c.bezierCurveTo(sx, dome, 48 - sx, dome, 48 - sx, 21); c.bezierCurveTo(48 - sx + 0.2, 27, 48 - jx + 1.5, 32.4, 48 - jx, 36.8); c.bezierCurveTo(48 - jx - 1.8, 40, 29.6, cy, 24, cy); c.bezierCurveTo(18.4, cy, jx + 1.8, 40, jx, 36.8); c.bezierCurveTo(jx - 1.5, 32.4, sx - 0.2, 27, sx, 21); c.closePath();
-  c.fillStyle = rg(c, 21.5, 22, 2, 25, [0, '#f6cfb3'], [0.65, '#ecb999'], [1, '#d49b7c']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.5; c.stroke();
+  c.fillStyle = shaun ? rg(c, 21.5, 22, 2, 25, [0, '#dcae8a'], [0.65, '#c99872'], [1, '#a97a58']) : rg(c, 21.5, 22, 2, 25, [0, '#f6cfb3'], [0.65, '#ecb999'], [1, '#d49b7c']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.5; c.stroke();
   const blush = young ? 0.3 : adam ? 0.08 : 0.2;
-  if (shaun) for (const x of [17.2, 30.8]) { c.fillStyle = rg(c, x, 32.6, 0, 5.4, [0, 'rgba(246,207,179,.5)'], [1, 'rgba(246,207,179,0)']); c.fillRect(x - 6, 27, 12, 12); } // full cheeks
+  if (shaun) for (const x of [17.2, 30.8]) { c.fillStyle = rg(c, x, 32.6, 0, 5.4, [0, 'rgba(226,182,148,.5)'], [1, 'rgba(226,182,148,0)']); c.fillRect(x - 6, 27, 12, 12); } // full cheeks
   c.fillStyle = rg(c, 16.6, 30.6, 0, 4.6, [0, `rgba(222,110,95,${blush})`], [1, 'rgba(222,110,95,0)']); c.fillRect(11, 25, 12, 12);
   c.fillStyle = rg(c, 31.4, 30.6, 0, 4.6, [0, `rgba(222,110,95,${blush})`], [1, 'rgba(222,110,95,0)']); c.fillRect(25, 25, 12, 12);
   // top hair: tallest on top, fine tight ringlets, dark chocolate brown

@@ -41,7 +41,7 @@ const THEMES: Record<string, { map: string; craft: string; capsule: string; musi
   varda: {
     map: 'worldmap', craft: 'pioneer', capsule: 'capsule', music: 'space', role: 'CEO · Pioneer is Rocket Lab’s; the capsule is Varda’s',
     label: (st) => (st.do === 'lower' ? `LOWER PERIGEE TO ${st.alt} km` : st.do === 'raise' ? `RAISE APOGEE TO ${st.alt} km` : st.do === 'deorbit' ? 'DE-ORBIT BURN · AIM THE LANDING' : `RELEASE CAPSULE AT ${st.alt} km`),
-    title: 'Touchdown', text: (miss, where) => `The capsule came down ${miss.toFixed(0)} km from the centre of ${where}, under its parachute. Pioneer, its job done, burned up behind it.`,
+    title: 'Touchdown', text: (miss, where) => `The capsule came down ${miss.toFixed(0)} km from the centre of ${where}, under its parachute.`,
   },
 };
 
