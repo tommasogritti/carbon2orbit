@@ -19,10 +19,10 @@ const LAG = 2.4; // Gold flies the same path a little behind Blue
  * lowest point of the flyby, and leave for Mars.
  */
 export class CruiseScene extends Phaser.Scene {
-  def!: LevelDef; x = 0; y = 0; vx = 0; vy = 0; fuel = 1; next = 0; t = 0; ended = false; peri = 999; burned = 0; inKey = false; flew = false; path: { x: number; y: number; a: number }[] = [];
+  def!: LevelDef; x = 0; y = 0; vx = 0; vy = 0; fuel = 1; next = 0; t = 0; ended = false; peri = 999; burned = 0; inKey = false; flew = false; started = false; path: { x: number; y: number; a: number }[] = [];
   blue!: Phaser.GameObjects.Image; gold!: Phaser.GameObjects.Image; g!: Phaser.GameObjects.Graphics; hud!: Phaser.GameObjects.Text; call!: Phaser.GameObjects.Text; tip!: Phaser.GameObjects.Text; puff!: Phaser.GameObjects.Particles.ParticleEmitter; flame!: Phaser.GameObjects.Particles.ParticleEmitter; hiss!: Loop; rumble!: Loop;
   constructor() { super('Cruise'); }
-  init(d: { def: LevelDef }) { this.def = d.def; this.x = 104; this.y = 94; this.vx = 26; this.vy = -18; this.fuel = 1; this.next = 0; this.t = 0; this.ended = false; this.peri = 999; this.burned = 0; this.inKey = false; this.flew = false; this.path = []; }
+  init(d: { def: LevelDef }) { this.def = d.def; this.x = 124; this.y = 82; this.vx = 38; this.vy = -31; this.fuel = 1; this.next = 0; this.t = 0; this.ended = false; this.peri = 999; this.burned = 0; this.inKey = false; this.flew = false; this.path = []; this.started = AUTO; }
   create() {
     cam(this); stopLoops(); music.play('space'); this.hiss = loop('hiss'); this.rumble = loop('rumble');
     this.cameras.main.setBackgroundColor('#04050c');
@@ -30,7 +30,7 @@ export class CruiseScene extends Phaser.Scene {
     img(this, -8, EY, 'puff').setScale(S * 22, S * 30).setTint(0xffe9a8).setBlendMode('ADD').setAlpha(0.5); // the Sun is off to the left; L2 is on the far side of Earth from it
     const st = this.add.graphics();
     st.lineStyle(0.4, 0x8fa3c8, 0.45); const pts = [...GATES.map(([x, y]) => new Phaser.Math.Vector2(x, y)), new Phaser.Math.Vector2(GATES[0][0], GATES[0][1])];
-    new Phaser.Curves.Spline([new Phaser.Math.Vector2(104, 94), ...pts.slice(0, 4), new Phaser.Math.Vector2(150, 138), new Phaser.Math.Vector2(104, 132), new Phaser.Math.Vector2(EX - 4, EY + 18), new Phaser.Math.Vector2(EX - 22, EY - 28), new Phaser.Math.Vector2(MARS.x, MARS.y)]).getPoints(130).forEach((p, i) => { if (i % 2) st.fillStyle(0x8fa3c8, 0.5).fillCircle(p.x, p.y, 0.5); });
+    new Phaser.Curves.Spline([new Phaser.Math.Vector2(124, 82), ...pts.slice(0, 4), new Phaser.Math.Vector2(150, 138), new Phaser.Math.Vector2(104, 132), new Phaser.Math.Vector2(EX - 4, EY + 18), new Phaser.Math.Vector2(EX - 22, EY - 28), new Phaser.Math.Vector2(MARS.x, MARS.y)]).getPoints(130).forEach((p, i) => { if (i % 2) st.fillStyle(0x8fa3c8, 0.5).fillCircle(p.x, p.y, 0.5); });
     st.lineStyle(0.5, 0xffe98a, 0.8).lineBetween(232, 84, 240, 84).lineBetween(236, 80, 236, 88); T(this, 236, 90, 'SUN–EARTH L2', '#ffe98a', 4, '700').setOrigin(0.5, 0); T(this, 236, 95, 'about a million miles out', '#8fa3c8', 3.4).setOrigin(0.5, 0);
     st.lineStyle(2.2, P.lgreen, 0.55).beginPath().arc(EX, EY, (KEY.r0 + KEY.r1) / 2, 0.25, Math.PI - 0.25, false).strokePath(); st.lineStyle(KEY.r1 - KEY.r0, P.lgreen, 0.16).beginPath().arc(EX, EY, (KEY.r0 + KEY.r1) / 2, 0.15, Math.PI - 0.15, false).strokePath();
     img(this, EX, EY, 'earth').setDisplaySize(ER * 2.9, ER * 2.9); T(this, EX, EY - 17, 'EARTH', '#aab4d4', 4, '700').setOrigin(0.5, 0);
@@ -42,11 +42,14 @@ export class CruiseScene extends Phaser.Scene {
     this.gold = img(this, this.x, this.y, 'esc_gold').setAlpha(0); this.blue = img(this, this.x, this.y, 'esc_blue');
     panel(this, 110, 150, 84, 26, 0.8); this.hud = T(this, 115, 152.4, '', '#ffffff', 5, '700');
     this.call = T(this, W / 2 + 20, 6, '13 November 2025 · New Glenn has let go of Blue and Gold', '#ffe98a', 6.2, '700').setOrigin(0.5, 0).setShadow(0, 1, '#000000', 3).setAlign('center');
-    this.tip = T(this, W / 2 + 20, 15, '←↑↓→ fire thrusters · every push stays until you cancel it', '#cfd6ea', 4.8, '700').setOrigin(0.5, 0).setShadow(0, 1, '#000000', 3);
-    who(this, { ...this.def, role: this.def.role || 'CEO · Rocket Lab built both spacecraft' }, 4, H - 26);
+    this.tip = T(this, W / 2 + 20, 15, 'press an arrow key to take over · every push stays until you cancel it', '#cfd6ea', 4.8, '700').setOrigin(0.5, 0).setShadow(0, 1, '#000000', 3);
+    who(this, { ...this.def, role: this.def.role || 'CEO · Rocket Lab built Blue and Gold' }, 4, H - 26);
   }
   update(_t: number, dms: number) {
     if (this.ended) return;
+    if (!this.started) { // the clock waits for the first touch of the controls
+      if (held('left') || held('right') || held('up') || held('down') || held('a')) { this.started = true; this.tip.setText('←↑↓→ fire thrusters · small pushes, then coast'); } else return this.draw(Math.hypot(this.vx, this.vy), 0);
+    }
     const dt = Math.min(0.05, dms / 1000); this.t += dt;
     const dx = this.x - EX, dy = this.y - EY, r = Math.hypot(dx, dy), sp = Math.hypot(this.vx, this.vy);
     const below = dy > 0 && r < KEY.r1 + 6;
@@ -98,7 +101,7 @@ export class CruiseScene extends Phaser.Scene {
   }
   lose(text: string) { this.ended = true; this.hiss.set(0); this.rumble.set(0); snd.dud(); this.time.delayedCall(500, () => finish(this, this.def, { success: false, title: 'Off course', text })); }
   win(sp: number) {
-    this.ended = true; this.hiss.set(0); this.rumble.set(0); snd.seco(); this.call.setText('On the way to Mars · Gold follows two days behind'); this.tip.setText('');
+    this.ended = true; this.hiss.set(0); this.rumble.set(0); snd.seco(); this.call.setText('On the way to Mars · Gold left two days later'); this.tip.setText('');
     const left = Math.round(this.fuel * 100), stars = left >= 35 ? 3 : left >= 15 ? 2 : 1, deep = this.burned >= 0.25;
     this.tweens.add({ targets: [this.blue, this.gold], x: 16, y: 16, scale: S * 0.3, alpha: 0.2, duration: 2400, ease: 'Sine.easeIn' });
     this.time.delayedCall(2600, () => finish(this, this.def, { success: true, stars, egg: stars === 3 && deep, title: 'Trans-Mars injection', text: `Blue left Earth at speed ${sp.toFixed(0)} with ${left}% of its propellant in hand${deep ? ', after a burn at the bottom of the flyby, where it counts for most' : ''}. Gold flew the same road two days later.${stars < 3 ? ' For three stars: arrive with 35% or more. Coast more, correct less, and save the big burn for the lowest point of the flyby.' : ''}` }));

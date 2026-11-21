@@ -366,7 +366,7 @@ function stennisMid(c: C2, scene: Phaser.Scene) {
   { const x = 104; for (const dx of [0, 34]) rr(c, x + dx, 30, 3, 108, 0.3, '#8b93a7', OUT, 0.3); for (let y = 34; y < 132; y += 12) { line(c, x + 1.5, y, x + 35.5, y + 12, '#aab2c0', 0.6); line(c, x + 35.5, y, x + 1.5, y + 12, '#aab2c0', 0.6); line(c, x, y, x + 37, y, '#8b93a7', 0.7); } rr(c, x - 4, 26, 45, 5, 0.6, '#5b6275', OUT, 0.3); rr(c, x + 10, 14, 17, 12, 0.6, '#d7dbe4', OUT, 0.3); text(c, 'A-3', x + 18.5, 20.4, 5, '#30508a', 700); line(c, x + 18.5, 14, x + 18.5, 4, '#8b93a7', 0.5); el(c, x + 18.5, 4, 0.9, 0.9, '#d8452e'); }
   el(c, 166, 116, 14, 14, lg(c, 152, 0, 180, 0, [0, '#ffffff'], [1, '#9aa3b5']), OUT, 0.35); for (const dx of [-8, 0, 8]) line(c, 166 + dx, 128, 166 + dx, 138, '#5b6275', 0.9); text(c, 'LOX', 166, 116, 4.4, '#4a5066', 700);
   rr(c, 186, 110, 30, 20, 9, lg(c, 0, 110, 0, 130, [0, '#f4f6fa'], [1, '#9aa3b5']), OUT, 0.35); for (const dx of [192, 210]) rr(c, dx, 130, 2.4, 8, 0.3, '#5b6275'); text(c, 'METHANE', 201, 120.4, 3.2, '#2f7a47', 700);
-  line(c, 228, 138, 228, 96, '#8b93a7', 1.1); poly(c, [226.4, 96, 229.6, 96, 228, 86], '#7fd0ff'); el(c, 228, 90, 1.6, 3, 'rgba(160,220,255,.7)'); // a flare stack: methane burns blue
+  line(c, 228, 138, 228, 96, '#8b93a7', 1.1); poly(c, [226.4, 96, 229.6, 96, 228, 86], '#ffb347'); el(c, 228, 91, 1.4, 2.6, 'rgba(255,240,180,.85)'); // a flare stack
   c.fillStyle = 'rgba(63,127,154,.9)'; c.fillRect(238, 132, 54, 12); for (let x = 240; x < 290; x += 7) line(c, x, 136 + (x % 3), x + 4, 136 + (x % 3), 'rgba(220,240,245,.5)', 0.4); rr(c, 236, 129, 2.4, 14, 0.3, '#8f8a80'); rr(c, 290, 129, 2.4, 14, 0.3, '#8f8a80'); text(c, 'CANAL · 7.5 MILES', 265, 127, 2.8, 'rgba(255,255,255,.75)', 700);
   // ---- B. Middle River, Maryland: the Space Structures Complex and the fibre-placement machine
   sign(300, 100, 62, 'MIDDLE RIVER · MARYLAND', 'Space Structures Complex');
@@ -381,7 +381,7 @@ function stennisMid(c: C2, scene: Phaser.Scene) {
     sign(x - 2, 78, 40, 'HYDROSTATIC TEST', 'January 2026', '#c8102e', '#fff'); }
   { const x = 548; c.beginPath(); c.moveTo(x, 132); c.quadraticCurveTo(x + 22, 96, x + 44, 132); c.closePath(); c.fillStyle = lg(c, 0, 100, 0, 132, [0, '#3a3c48'], [1, '#101116']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.4; c.stroke(); rr(c, x - 2, 132, 48, 3, 0.4, '#8b93a7', OUT, 0.3); for (const dx of [4, 38]) rr(c, x + dx, 135, 2.4, 6, 0.2, '#5b6275');
     line(c, x + 52, 138, x + 52, 100, '#f2d14a', 1.2); line(c, x + 52, 100, x + 30, 106, '#f2d14a', 1); rr(c, x + 26, 105, 6, 4, 0.6, '#f4f6fa', OUT, 0.25); c.fillStyle = 'rgba(124,240,138,.35)'; c.beginPath(); c.moveTo(x + 29, 109); c.lineTo(x + 22, 122); c.lineTo(x + 34, 122); c.closePath(); c.fill();
-    sign(x + 2, 80, 44, 'NEW FORWARD DOME', 'inspection', '#1f5a34', '#fff'); }
+    sign(x + 2, 80, 44, 'REPLACEMENT DOME', 'in manufacture', '#1f5a34', '#fff'); }
   // ---- D. Wallops Island: dunes, the assembly building, and a fairing that never lets go
   for (let i = 0; i < 26; i++) el(c, 606 + r() * 150, 126 + r() * 14, 2 + r() * 4, 0.8 + r(), i % 3 ? 'rgba(95,130,70,.5)' : 'rgba(150,160,90,.45)');
   rr(c, 604, 84, 52, 54, 0.6, '#e9edf2', OUT, 0.4); rr(c, 604, 80, 52, 5, 0.4, '#30508a', OUT, 0.3); rr(c, 612, 94, 36, 44, 0.3, '#1b2236', OUT, 0.3); text(c, 'ASSEMBLY & INTEGRATION', 630, 89.6, 2.4, '#30508a', 700);

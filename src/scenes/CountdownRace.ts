@@ -9,18 +9,18 @@ const HOUR = 2.4; // seconds of play per hour on the clock
 const REAL = 16 + 42 / 60, LIMIT = 24; // the real notice-to-launch time, and what the Space Force asked for
 const NOTICE = 5 + 37 / 60; // local time at Māhia when the notice arrived: 16 h 42 min before the 10:19 pm lift-off
 interface Task { id: string; name: string; h: number; needs: string[] }
-/** The jobs between the notice and lift-off. Only the four hours for the trajectory is a published figure; the rest are game values. */
+/** The jobs between the notice and lift-off. The list and the durations are game values: the only published split is about four hours to finalise trajectories, update flight software and co-ordinate ground stations. */
 const TASKS: Task[] = [
   { id: 'TRAJ', name: 'Trajectory for the new orbit', h: 4, needs: [] },
   { id: 'ENCAP', name: 'Encapsulate Pioneer in the fairing', h: 4.2, needs: [] },
   { id: 'TRACK', name: 'Bring up downrange tracking', h: 3, needs: [] },
   { id: 'CHILL', name: 'Chill down the LOX system', h: 2.4, needs: [] },
-  { id: 'MATE', name: 'Mate the fairing, roll out', h: 3.6, needs: ['ENCAP'] },
+  { id: 'MATE', name: 'Mate the payload, roll out', h: 3.6, needs: ['ENCAP'] },
   { id: 'VERT', name: 'Go vertical, pad checks', h: 2.4, needs: ['MATE'] },
   { id: 'RANGE', name: 'Publish hazard areas, clear the range', h: 4.2, needs: ['TRAJ'] },
   { id: 'FSW', name: 'Load the flight software', h: 1.2, needs: ['TRAJ', 'VERT'] },
   { id: 'PROP', name: 'Load propellants', h: 2.4, needs: ['VERT', 'CHILL'] },
-  { id: 'COUNT', name: 'Terminal count', h: 0.8, needs: ['FSW', 'PROP', 'RANGE', 'TRACK'] },
+  { id: 'COUNT', name: 'Final checks and count', h: 0.8, needs: ['FSW', 'PROP', 'RANGE', 'TRACK'] },
 ];
 const byId = (id: string) => TASKS.find((t) => t.id === id)!;
 /** Longest chain of work from the start of a task to lift-off: what a planner looks at first. */
@@ -55,7 +55,7 @@ export class CountdownRaceScene extends Phaser.Scene {
     for (let i = 0; i < 2; i++) this.crewT.push(T(this, RX + 4, RY + 94 + i * 12, '', '#ffffff', 4.9, '700'));
     this.g = this.add.graphics();
     this.call = T(this, RX + 76, H - 28, '', '#ffe98a', 5.6, '700').setOrigin(0.5, 0).setAlign('center').setWordWrapWidth(150).setShadow(0, 1, '#000000', 3);
-    who(this, { ...this.def, role: this.def.role || 'CEO · the phone has just rung' }, RX + 26, RY + 2);
+    who(this, { ...this.def, role: this.def.role || 'CEO · the notice has just arrived' }, RX + 26, RY + 2);
     this.say('NOTICE TO LAUNCH. The target orbit has just arrived.\n↑ ↓ choose a job · SPACE gives it to a free crew');
     snd.alarm();
   }
@@ -116,7 +116,7 @@ export class CountdownRaceScene extends Phaser.Scene {
     this.sky.setFillStyle(Phaser.Display.Color.GetColor(10 + day * (edge ? 190 : 70), 18 + day * (edge ? 120 : 140), 48 + day * 180)); this.stars.setAlpha(1 - day);
     this.site.setTint(Phaser.Display.Color.GetColor(90 + day * 165, 105 + day * 150, 150 + day * 105)); this.rocket.setTint(day > 0.5 ? 0xffffff : 0xb8c4e0);
     if (!this.timeT) this.timeT = T(this, RX + 148, RY + 83, '', '#ffffff', 4.4, '700').setOrigin(1, 0).setShadow(0, 1, '#000000', 3);
-    this.timeT.setText(`MĀHIA ${hm(clock)} · 19 JUNE 2026`);
+    this.timeT.setText(`MĀHIA ${hm(clock)} · ${19 + Math.floor((NOTICE + this.t) / 24)} JUNE 2026`);
   }
   aux?: Phaser.GameObjects.Text[]; timeT?: Phaser.GameObjects.Text;
   liftoff() {
@@ -127,7 +127,7 @@ export class CountdownRaceScene extends Phaser.Scene {
     this.time.delayedCall(2700, () => {
       this.flame.emitting = false;
       if (!stars) return finish(this, this.def, { success: false, title: `Launched at T+${hm(t)}`, text: 'Electron flew, but outside the 24 hours the Space Force asked for. Start the long chains first: Pioneer has to be encapsulated, mated, rolled out and stood up before anything can be loaded, and the range cannot be cleared until the trajectory exists.' });
-      finish(this, this.def, { success: true, stars, egg: t <= REAL - 1, title: `Launched ${hm(t)} after the notice`, text: `From the phone call to lift-off in ${Math.floor(t)} hours ${Math.floor((t % 1) * 60)} minutes, with the crews idle for ${this.idle.toFixed(1)} crew-hours while jobs were waiting. ${t <= REAL ? 'That beats the real thing.' : 'The real team did it in 16 hours 42 minutes: three stars for matching that.'}` });
+      finish(this, this.def, { success: true, stars, egg: t <= REAL - 1, title: `Launched ${hm(t)} after the notice`, text: `From the notice to lift-off in ${Math.floor(t)} hours ${Math.floor((t % 1) * 60)} minutes, with the crews idle for ${this.idle.toFixed(1)} crew-hours while jobs were waiting. ${t <= REAL ? 'That beats the real thing.' : 'The real team did it in 16 hours 42 minutes: three stars for matching that.'}` });
     });
   }
 }
