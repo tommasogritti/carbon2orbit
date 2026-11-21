@@ -86,12 +86,11 @@ export class LaunchScene extends Phaser.Scene {
     if (two) { this.s1 = img(this, 0, 0, 'electron_s1').setOrigin(0.5, 1); this.s2 = img(this, 0, -58, 'electron_s2').setOrigin(0.5, 1); }
     else this.s1 = img(this, 0, 0, 'atea').setOrigin(0.5, 1);
     this.rocket = this.add.container(RX, 136, [this.flame, this.flame2, this.s1, ...(this.s2 ? [this.s2] : [])]);
-    // the mission patch, where the file is present: a decal on the fairing and a badge on the console
+    // the mission patch, where the file is present: a decal on the fairing (it is also on the level's cards)
     const pk = 'patch_' + this.def.id; this.patch = undefined;
     if (this.textures.exists(pk)) {
       const src = this.textures.get(pk).getSourceImage(), ratio = src.height / src.width;
       if (two) { this.patch = this.add.image(0, -71.4, pk).setDisplaySize(4.6, 4.6 * ratio); this.rocket.add(this.patch); }
-      this.add.image(W - 15, 88, pk).setDisplaySize(20, 20 * ratio).setDepth(19);
     }
     // ---- consoles ----
     panel(this, 4, 4, 86, 44);
@@ -104,7 +103,7 @@ export class LaunchScene extends Phaser.Scene {
     panel(this, W - 100, 4, 96, 72);
     T(this, W - 9, 6.5, (this.p.payload as string).toUpperCase(), '#aab4d4', 5.4, '700').setOrigin(1, 0);
     for (let i = 0; i < 5; i++) { this.lab.push(T(this, W - 96, 16.5 + i * 11.4, '', '#aab4d4', 4.6, '700')); this.val.push(T(this, W - 8, 16.5 + i * 11.4, '', '#ffffff', 4.8, '700').setOrigin(1, 0)); }
-    if (this.p.hundred) T(this, this.textures.exists('patch_' + this.def.id) ? W - 28 : W - 9, 84, 'ELECTRON LAUNCH #100', '#ffe98a', 6.5, '700').setOrigin(1, 0).setShadow(0, 1, '#000', 2);
+    if (this.p.hundred) T(this, W - 9, 84, 'ELECTRON LAUNCH #100', '#ffe98a', 6.5, '700').setOrigin(1, 0).setShadow(0, 1, '#000', 2);
     panel(this, W - 100, 100, 96, 76);
     T(this, W - 96, 102, 'TRAJECTORY', '#aab4d4', 4.6, '700');
     this.plotT = [T(this, W - 8, 102, '', '#8fa3c8', 4.2).setOrigin(1, 0), T(this, W - 8, 170.5, '', '#8fa3c8', 4.2).setOrigin(1, 0), T(this, W - 92, 0, '100 km', '#7fd0ff', 4).setVisible(false)];

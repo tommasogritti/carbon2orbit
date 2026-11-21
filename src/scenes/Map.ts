@@ -3,6 +3,7 @@ import { W, H, T, just, save, persist, DEV, showCard, srcLinks, watchLink, patch
 import { D, S, MAPW, MAPH, BUST_URL, BUSTS, DIAGRAMS } from '../art';
 import { LEVELS, BONUS, PEOPLE, CHARACTERS, LevelDef } from '../content';
 import { snd, music, stopLoops } from '../audio';
+import { tally, showBoard } from '../leaderboard';
 
 const ZOOM = 2.5; // the map is shown wider than gameplay scenes so the geography reads at a glance
 /** Only announced things are locked. A chapter that is still unfolding (in-progress) can be played up to where the story has got to. */
@@ -113,8 +114,10 @@ export class MapScene extends Phaser.Scene {
     this.sub = h(T(this, 30, H - 18, '', '#ffe98a', 6.5));
     const eggs = Object.keys(save.eggs).length, total = LEVELS.filter((d) => d.egg).length;
     h(panel(this, 4, 4, 82, 14)); h(T(this, 9, 6.5, 'CARBON TO ORBIT', '#ffffff', 7.5, '700'));
-    h(panel(this, W - 196, 4, 154, 14)); h(T(this, W - 47, 7, `EGGS ${eggs}/${total}   SECRETS ${Object.keys(save.unlocks).length}/${BONUS.length}   PEOPLE ${Object.keys(save.met).length}/${PEOPLE.length}`, '#ffe98a', 6)).setOrigin(1, 0);
-    h(T(this, 9, 21, '←↑↓→ nearest level that way   ⏎ open   N next level   H controls' + (DEV ? '   K skip (dev)' : ''), '#dfe6f7', 5, '700')).setShadow(0, 1, '#000', 3);
+    const tl = tally();
+    h(panel(this, W - 196, 4, 154, 23)); h(T(this, W - 47, 17, `SCORE ${tl.score.toLocaleString('en-NZ')}   ·   L leaderboard`, '#ffffff', 5.6, '700')).setOrigin(1, 0);
+    h(T(this, W - 47, 7, `EGGS ${eggs}/${total}   SECRETS ${Object.keys(save.unlocks).length}/${BONUS.length}   PEOPLE ${Object.keys(save.met).length}/${PEOPLE.length}`, '#ffe98a', 6)).setOrigin(1, 0);
+    h(T(this, 9, 21, '←↑↓→ move   ⏎ open   N next   H controls' + (DEV ? '   K skip' : ''), '#dfe6f7', 5, '700')).setShadow(0, 1, '#000', 3);
     // the level to play next wears a bouncing tag, and N walks straight to it
     const nxt = this.nextUp();
     if (nxt) {
@@ -124,8 +127,9 @@ export class MapScene extends Phaser.Scene {
       this.tweens.add({ targets: halo, alpha: 0.2, scale: S * 2.5, duration: 800, yoyo: true, repeat: -1 });
       world.push(tagN, halo);
     }
+    hotkeys.KeyL = () => showBoard();
     hotkeys.KeyN = () => { const n = this.nextUp(); if (n && n !== this.cur && !this.moving) this.walkTo(n); };
-    this.events.once('shutdown', () => { hotkeys.KeyN = undefined; });
+    this.events.once('shutdown', () => { hotkeys.KeyN = undefined; hotkeys.KeyL = undefined; });
     cam.ignore(hud);
     this.cameras.add(0, 0, W * D, H * D).setZoom(D).centerOn(W / 2, H / 2).ignore(world);
     this.refresh();

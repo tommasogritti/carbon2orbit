@@ -15,6 +15,7 @@ import { HotfireScene } from './scenes/Hotfire';
 import { HeliScene } from './scenes/Heli';
 import { OrbitRaiseScene } from './scenes/OrbitRaise';
 import { SprintScene } from './scenes/Sprint';
+import { TitleScene } from './scenes/Title';
 import { FaultFinderScene } from './scenes/FaultFinder';
 import { SplashdownScene } from './scenes/Splashdown';
 import { CruiseScene } from './scenes/Cruise';
@@ -32,17 +33,18 @@ class Boot extends Phaser.Scene {
     const q = new URLSearchParams(location.search);
     const lvl = q.get('level');
     if (lvl && byId(lvl)) this.scene.start(SCENE_FOR[byId(lvl).mechanic!], { def: byId(lvl) });
-    else this.scene.start('Map', { title: !q.has('notitle') });
+    else if (q.has('notitle')) this.scene.start('Map', { title: false });
+    else this.scene.start('Title');
   }
 }
 
 Promise.all(['500', '600', '700'].map((w) => document.fonts.load(`${w} 16px "Chakra Petch"`, 'AĀāō'))).finally(() => {
   const game = new Phaser.Game({
     type: Phaser.AUTO, parent: 'game', width: W * D, height: H * D, backgroundColor: '#05060c',
-    scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+    scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, fullscreenTarget: 'stage' },
     render: { antialias: true, roundPixels: false },
     physics: { default: 'arcade', arcade: { gravity: { x: 0, y: 620 } } },
-    scene: [Boot, MapScene, PlatformScene, LaunchScene, HotfireScene, HeliScene, OrbitRaiseScene, SprintScene, FaultFinderScene, SplashdownScene, CruiseScene, CountdownRaceScene, RideScene, OrbitOpsScene, DualCountScene, ArcLabScene],
+    scene: [Boot, TitleScene, MapScene, PlatformScene, LaunchScene, HotfireScene, HeliScene, OrbitRaiseScene, SprintScene, FaultFinderScene, SplashdownScene, CruiseScene, CountdownRaceScene, RideScene, OrbitOpsScene, DualCountScene, ArcLabScene],
   });
   initInput(game);
   // Dev-only gameplay recorder: ?rec=<name> captures the canvas; the clip is saved by the dev server when the level ends.

@@ -9,3 +9,7 @@ src/assets/patches/
 
 # Official Rocket Lab photos (Flickr, all rights reserved, credit required): local play only, never committed
 src/assets/official/
+
+# local environment (leaderboard URL)
+.env
+.env.*

@@ -68,6 +68,10 @@ export function initInput(game: Phaser.Game) {
     else if (sc.def) { sc.scene.pause(); finish(sc, sc.def, { success: true, stars: 1, title: 'Skipped', text: 'Developer mode: level skipped and marked as done.' }); }
   };
   hotkeys.KeyH = () => showHelp(game);
+  // F, or the corner button, fills the screen. The whole stage goes full screen, so cards still show on top of the game.
+  const full = () => { if (game.scale.fullscreen.available) game.scale.toggleFullscreen(); };
+  hotkeys.KeyF = full;
+  document.getElementById('full')?.addEventListener('click', (e) => { (e.currentTarget as HTMLElement).blur(); full(); });
   const help = document.getElementById('help');
   help?.addEventListener('click', () => { help.blur(); if (helpOpen) overlayConfirm(); else showHelp(game); });
   const dev = document.getElementById('dev');
@@ -82,6 +86,7 @@ export function initInput(game: Phaser.Game) {
   window.addEventListener('pointerdown', unlock);
   window.addEventListener('keydown', (e) => {
     unlock(); // browsers only allow sound after a key press or tap
+    if ((e.target as HTMLElement | null)?.tagName === 'INPUT') { if (e.code === 'Enter') { overlayConfirm(); e.preventDefault(); } return; } // typing a name: keys are text, not controls
     if (e.code === 'KeyM' && !e.repeat) setMuted(!muted());
     if (e.code === 'KeyH' && !e.repeat && helpOpen) { overlayConfirm(); e.preventDefault(); return; } // H closes the panel it opened
     if (!e.repeat && !overlayOpen() && hotkeys[e.code]) { hotkeys[e.code]!(); e.preventDefault(); return; }
@@ -168,7 +173,7 @@ export function showCard(html: string, btns: Btn[], photo?: LevelDef['photo']) {
  */
 export interface Help { title: string; rows: [keys: string, does: string][]; note?: string }
 export const CONTROLS: Record<string, Help> = {
-  Map: { title: 'World map', rows: [['← ↑ ↓ →', 'Walk to the nearest level in that direction'], ['Enter', 'Open the level, card or person you are standing on'], ['N', 'Walk straight to the next level to play']], note: 'Greyed-out levels open once every earlier level on the story path is finished.' },
+  Map: { title: 'World map', rows: [['← ↑ ↓ →', 'Walk to the nearest level in that direction'], ['Enter', 'Open the level, card or person you are standing on'], ['N', 'Walk straight to the next level to play'], ['L', 'Your score and the leaderboard']], note: 'Greyed-out levels open once every earlier level on the story path is finished.' },
   Platform: { title: 'Platform level', rows: [['← →', 'Run'], ['Space', 'Jump: hold for a higher jump. Land on a troublemaker to see it off'], ['Space (jet pack)', 'Hold to fly while the jet pack lasts'], ['Space (gumboots)', 'Press again in mid-air for a second jump']], note: 'Collect every part, then reach the goal. Bubbles are power-ups; the timer bar shows how long one lasts.' },
   Hotfire: { title: 'Engine hot-fire', rows: [['Space', 'Hold to spin the electric pumps up; release to let pressure fall']], note: 'Keep the needle in the green band until the qualification bar is full, before the battery runs flat.' },
   Heli: { title: 'Helicopter catch', rows: [['← ↑ ↓ →', 'Fly the helicopter']], note: 'Put the hook at the bottom of your cable on the line trailing above the parachute. You get three passes.' },

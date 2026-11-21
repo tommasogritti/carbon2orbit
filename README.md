@@ -1,52 +1,120 @@
+<div align="center">
+
+<img src="docs/media/title.jpg" alt="Carbon to Orbit title screen: an Electron rocket climbing past the Earth" width="820">
+
 # Carbon to Orbit
 
-An unofficial, open-source browser game that tells the story of Rocket Lab one level at a time, from a rocket bike in a New Zealand workshop to the 100th Electron and on to Neutron.
+**The story of Rocket Lab, one level at a time.**<br>
+From a rocket bike in a Dunedin workshop to the hundredth Electron, and on to Neutron.
 
-**Fan project, not affiliated with Rocket Lab.**
+An unofficial, open-source browser game. Fan project, not affiliated with Rocket Lab.
 
-This is an early draft. The full brief is in [docs/PROJECT_SPEC.md](docs/PROJECT_SPEC.md).
+`25 playable levels` · `14 kinds of play` · `every fact sourced` · `no image or audio files: it is all code`
 
-## Run it
+</div>
+
+---
+
+## What it is
+
+You walk a world map through thirty years of Rocket Lab history. Every stop is a real moment, and each one plays differently:
+
+| | |
+| --- | --- |
+| **Platform levels** | Build the rocket bike after hours at the appliance factory. Haul pad hardware down the coast road to Māhia. Carry the Nasdaq listing across Long Beach as the CFO. |
+| **Launch control** | A real ascent simulation for people who know the vocabulary: call the go/no-go poll, fly the pitch program on a flight director, throttle through Max-Q, command staging, fairing and the battery hot-swap, cut off on apogee, circularise with the kick stage. |
+| **Mini-games** | Catch a booster with a helicopter. Stretch an orbit to the Moon. Find the fault on flight 13. Bring Varda's capsule down in the outback. Run two launch counts in two hemispheres at once. |
+| **Story cards and people** | The founding, the knighthood, and the people who were there, each with sources and, where one exists, a freely licensed photo. |
+
+<div align="center">
+<img src="docs/media/map.jpg" alt="The world map, with levels across New Zealand and the Pacific" width="410"> <img src="docs/media/launch.jpg" alt="Launch control: flight director, gauges and trajectory plot" width="410">
+<img src="docs/media/platform.jpg" alt="A platform level at the Archimedes test complex" width="410"> <img src="docs/media/ride.jpg" alt="A riding level across the farm that became Launch Complex 1" width="410">
+</div>
+
+Every level ends with what really happened, hides an easter egg, and links its sources.
+
+## Play it
 
 ```bash
 npm install
 npm run dev
 ```
 
-Then open the URL Vite prints. Arrow keys walk the world map, Enter opens a node.
+Open the address Vite prints. Press **H** at any moment for the controls of whatever you are doing.
 
-| Kind | Draft levels |
+| Key | Does |
 | --- | --- |
-| Platform | The Rocket Bike, Road to Māhia, Rosie the Robot (conveyors), RKLB rings the bell (played as Adam Spice, with Peter as a running-mate power-up), Archimedes and the tank (in progress: playable up to where the story has got to) |
-| Launch control | Ātea-1, It's a Test, Still Testing, It's Business Time (multi-payload deploy sequence), Virginia Is For Launch Lovers (Wallops, at dusk, inside the AFTS corridor), Scout's Arrow (HASTE: suborbital, no orbit), Paschen's Law (three acts: the lost flight 41, the arc in the lab, the return to flight), Beginning Of The Swarm (a four-burn kick-stage flight plan), The Mountain God Rises |
-| Mini-game | Rutherford hot-fire, Go Find the Launch Site (a dirt-bike ride, played as Shaun D'Mello), Pics Or It Didn't Happen (fault finder), Return To Sender (splashdown), There And Back Again (helicopter catch), CAPSTONE to the Moon, Two Hemispheres (two launch consoles at once), Outback Delivery (ground-track orbit operations for Varda's capsule), ESCAPADE (thruster piloting to the Mars gate), VICTUS HAZE (countdown race) |
-| Story card | Rocket Lab is founded, Sir Peter, Neutron (locked teaser) |
-| People to meet on the map | Mark Rocket and Sir Stephen Tindall, Ky Michaelson, Sir Michael Fay, Dava Newman, Gabe Newell, Adam Spice, Rob Lillis |
-| Secret (find the hidden blueprint) | Princes Street Sprint (bonus mini-game), Kaitorete Spit, Inside the first hundred, Photon, The Hungry Hippo (bonus cards) |
+| Arrows (or W A S D) | Move, steer, pitch, choose |
+| Space (or Z) | Jump, burn, the next step in a sequence |
+| Enter (or X) | Confirm, hold the count, engine cutoff |
+| H | Controls for the current level or the map |
+| L | Your score and the leaderboard |
+| N | On the map: walk to the next level |
+| F | Full screen |
+| M | Sound on or off |
 
-Reusable mechanics, each driven by a level's `params` and documented in the spec (§10): `platform`, `launch`, `ride` (side-on riding), `orbit-ops` (ground-track map), `dual-count` (two consoles), `arc-lab` (an experiment with switches), plus the one-off mini-games. A level can chain several of them as acts (`params.then`).
+A touch pad appears on phones.
 
-Press `H` (or the `?` button, top right) at any moment to pause and see the controls for whatever you are playing, or for the map.
+## The levels
 
-Peter Beck is the main character throughout; a level can hand the lead to someone else (Adam Spice has the Nasdaq listing, Shaun D'Mello the search for a launch site).
+| Kind | Levels |
+| --- | --- |
+| Platform | The Rocket Bike · Road to Māhia · Rosie the Robot · RKLB rings the bell (played as Adam Spice) · Archimedes and the tank |
+| Launch control | Ātea-1 · It's a Test · Still Testing · It's Business Time · Virginia Is For Launch Lovers · Scout's Arrow (HASTE) · Paschen's Law · Beginning Of The Swarm · The Mountain God Rises |
+| Mini-game | Rutherford hot-fire · Go Find the Launch Site (played as Shaun D'Mello) · Pics Or It Didn't Happen · Return To Sender · There And Back Again · CAPSTONE to the Moon · Two Hemispheres · Outback Delivery · ESCAPADE · VICTUS HAZE |
+| Story | Rocket Lab is founded · Sir Peter · Neutron (locked until it flies) |
+| People to meet | Mark Rocket and Sir Stephen Tindall · Ky Michaelson · Sir Michael Fay · Dava Newman · Gabe Newell · Adam Spice · Rob Lillis |
+| Secrets | Princes Street Sprint · Kaitorete Spit · Inside the first hundred · Photon · The Hungry Hippo |
 
-Controls: arrows or WASD to move, Space (A) to jump / burn, Enter (B) to confirm, M to mute. Launch control: ← → pitch (keep the white needle on the green cue), ↑ ↓ throttle, Space commands the next event (lift-off, separation, stage-2 ignition, fairing, hot-swap), Enter holds the count or commands SECO; then hold Space to burn the kick stage at apogee and Enter to deploy. Ātea-1 is unguided: ↑ ↓ aim the rail, Space starts the count and releases the dart. With several payloads aboard, ← → point the kick stage at the green marker and Space releases each one. From Wallops, stay inside the red AFTS corridor. HASTE has no orbit: Enter cuts off on speed, then Space releases the test article in the altitude window. Each mini-game says how it is played on its intro card. Sound and music are synthesised in code (`src/audio.ts`) and start after your first key press. A touch pad appears on phones.
+## Contribute, with or without an agent
 
-## Mission patches (optional, local only)
+The game is built so that a new level is mostly data plus drawing code, and so that an AI coding agent can add one end to end.
 
-The game shows a mission's patch on the rocket's fairing, on the launch console and on that level's cards when a file named `<level id>.png` exists in `src/assets/patches/`. Those patches are Rocket Lab's artwork, so the folder is git-ignored and nothing in it is part of this repository; without the files the game simply runs without patches. To add them for your own play, save the patch from the mission's page under https://rocketlabcorp.com/missions/launches/ as, for example, `src/assets/patches/its-a-test.png` (about 256 px is plenty).
+- **With an agent:** open the repository in your agent and ask for what you want, for example *"add a level about the first Neutron hot-fire"*. The repository ships a skill, [`.claude/skills/add-level`](.claude/skills/add-level/SKILL.md), that walks the agent through research, building, testing with the level's bot, and a fan review. [`AGENTS.md`](AGENTS.md) points any agent at it.
+- **By hand:** the same steps are written for people too. Start with [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), then the skill.
 
-The same goes for official photos: a file `src/assets/official/<level id>.jpg` is shown on that level's cards when the level has no freely licensed photo of its own, credited to Rocket Lab. Their Flickr (https://www.flickr.com/photos/rocketlab/) says images may be downloaded with credit, but they are all rights reserved, so this folder is git-ignored as well. An optional `manifest.json` beside the photos gives each one a title and its Flickr page.
+Three rules keep the game worth playing:
 
-## Useful URLs while developing
+1. **True.** Every fact on screen has a source. Real people are shown in their public role and are never given invented words.
+2. **Its own place.** No level reuses another's backdrop, and enemies and power-ups belong to that chapter of the story.
+3. **Something new to do.** Each level adds a thing the player has not done before. If the story needs a new kind of play, build it as a reusable mechanic.
 
-- Developer mode (the switch in the page footer, or `?dev=1` in the address) opens every node on the map and turns on skipping: `K` on the map marks the level under the marker as done, `K` inside a level ends it at once as a one-star pass, and each level's intro card gets a "Skip (dev)" button
-- `?level=<id>` jumps straight into a level, for example `?level=capstone`
-- `?level=<id>&auto=1` lets a bot play it, platform levels included (used to check each level can be won)
-- `?level=<id>&auto=1&fast=6` does the same six times faster, and keeps running in a background tab
-- `npm run sim` flies the launch physics headless with bots (Electron to several orbits, HASTE, Ātea-1)
-- `?level=<id>&auto=1&rec=<name>` also records the run (dev server only) to `recordings/<name>.webm`; the folder is git-ignored
+The full brief, including the level backlog, is in [docs/PROJECT_SPEC.md](docs/PROJECT_SPEC.md).
 
-## Credits and licences
+## Under the hood
 
-Code: MIT. Text and artwork: CC BY-SA 4.0. All game art is drawn in code in `src/art.ts` (1280×720 render, 320×180-unit world). Photos on story cards are freely licensed images from Wikimedia Commons, listed with authors and licences in [public/assets/photos/CREDITS.md](public/assets/photos/CREDITS.md).
+- **Vite, TypeScript, Phaser 3.** Static and client-only.
+- **All art is drawn in code** with the Canvas 2D API, and **all sound is synthesised** with Web Audio. There are no sprite sheets and no audio files.
+- **Launch control runs a physical model**: a point mass around a round Earth with real gravity, thrust, drag and orbital elements. `npm run sim` flies it headless.
+- **Every level has a bot.** `?level=<id>&auto=1` plays a level to prove it can be won.
+
+### Developer tools
+
+| | |
+| --- | --- |
+| Developer mode | The switch in the page footer (or `?dev=1`): every level open, `K` skips one |
+| `?level=<id>` | Jump straight into a level, for example `?level=capstone` |
+| `?level=<id>&auto=1` | Let the bot play it; add `&fast=6` to run six times faster |
+| `?level=<id>&auto=1&rec=<name>` | Record the run to `recordings/<name>.webm` (dev server only) |
+| `npm run sim` | Fly the launch physics with the autopilot and print timelines and margins |
+| `npm run build` | Type-check and build |
+
+## Score, seasons and the leaderboard
+
+Your score is stars, easter eggs, secrets and people met. Press **L** to see it.
+
+Scores are grouped by **season**, the major.minor of the game version, so a board never mixes players who had different levels to play. The version is on the title screen.
+
+The online leaderboard is optional and runs on a small Cloudflare Worker with a D1 database. Without one, the game shows only your own score. Setup is in [leaderboard/README.md](leaderboard/README.md).
+
+## Official patches and photos (optional, your copy only)
+
+This repository contains no official Rocket Lab media. For your own play, the game will show a mission patch on the fairing and on a level's cards if you save it as `src/assets/patches/<level id>.png`, and an official photo on a level's cards if you save it as `src/assets/official/<level id>.jpg`. Both folders are git-ignored. Patches are on each mission's page at rocketlabcorp.com/missions/launches; photos are on Rocket Lab's Flickr, which asks for credit and marks them all rights reserved.
+
+## Licence and credits
+
+- **Code:** MIT, see [LICENSE](LICENSE).
+- **Story text and generated artwork:** CC BY-SA 4.0.
+- **Photos on story cards:** freely licensed images from Wikimedia Commons, each credited in [public/assets/photos/CREDITS.md](public/assets/photos/CREDITS.md).
+
+Rocket Lab, Electron, Neutron and the mission names belong to Rocket Lab. This project is a tribute by fans and is not endorsed by the company. If you are shown in the game and would like to be removed, open an issue.

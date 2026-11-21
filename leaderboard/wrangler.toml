@@ -1,0 +1,13 @@
+name = "carbon2orbit-leaderboard"
+main = "src/worker.js"
+compatibility_date = "2026-11-01"
+
+# Restrict to the site that hosts the game once you know it, e.g. "https://carbon2orbit.example"
+[vars]
+ALLOWED_ORIGIN = "*"
+
+# Create the database with `npx wrangler d1 create carbon2orbit-leaderboard` and paste its id here.
+[[d1_databases]]
+binding = "DB"
+database_name = "carbon2orbit-leaderboard"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"

@@ -35,7 +35,7 @@ footer { position: fixed; bottom: 0; left: 0; right: 0; height: 22px; line-heigh
 .cast img.toon { background: linear-gradient(180deg, #3f7fd0, #16305f); object-fit: contain; }
 #mute { position: absolute; top: 8px; right: 8px; z-index: 6; width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: rgba(11,14,24,.75); color: #fff; font-size: 17px; cursor: pointer; }
 .card .fact.unlock { border-left-color: #7fd0ff; } .card .fact.unlock b { color: #7fd0ff; }
-#help { position: absolute; top: 8px; right: 54px; z-index: 6; width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: rgba(11,14,24,.75); color: #fff; font-size: 18px; font-weight: 700; cursor: pointer; }
+#help { position: absolute; top: 54px; right: 8px; z-index: 6; width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: rgba(11,14,24,.75); color: #fff; font-size: 18px; font-weight: 700; cursor: pointer; }
 .k-person { background: #c9a8ff; }
 .card figure.drawn img { background: linear-gradient(180deg, #3f7fd0, #16305f); object-fit: contain; }
 .card img.inline { width: 64px; height: 84px; object-fit: cover; object-position: top; border-radius: 6px; float: left; margin: 8px 10px 4px 0; }
@@ -62,3 +62,15 @@ footer { position: fixed; bottom: 0; left: 0; right: 0; height: 22px; line-heigh
 .card table.keys td { padding: 5px 8px 5px 0; vertical-align: top; font-size: 14.5px; line-height: 1.4; border-bottom: 1px solid rgba(255,255,255,.07); }
 .card table.keys td:first-child { white-space: nowrap; width: 1%; padding-right: 16px; color: #cfd6ea; }
 .card kbd { display: inline-block; min-width: 22px; text-align: center; font: 700 13px/20px inherit; font-family: inherit; color: #0b0e18; background: #ffe98a; border-radius: 5px; padding: 0 6px; margin-right: 2px; box-shadow: 0 2px 0 #a8862a; }
+
+.card .board table { width: 100%; border-collapse: collapse; margin: 4px 0 10px; font-size: 14px; }
+.card .board td { padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,.07); }
+.card .board td:first-child { width: 1%; color: #8d97b0; text-align: right; }
+.card .board td:nth-child(3) { text-align: right; font-weight: 700; color: #ffe98a; white-space: nowrap; }
+.card .board td:nth-child(4) { text-align: right; color: #8d97b0; white-space: nowrap; font-size: 12.5px; }
+.card .board tr.me td { background: rgba(255,233,138,.1); color: #fff; }
+.card .lb-name input { font: inherit; font-size: 15px; color: #fff; background: #0b0e18; border: 1px solid rgba(255,255,255,.3); border-radius: 8px; padding: 6px 10px; margin-left: 8px; width: 190px; }
+.card .lb-name input:focus { outline: 2px solid #ffe98a; }
+
+#full { position: absolute; top: 100px; right: 8px; z-index: 6; width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: rgba(11,14,24,.75); color: #fff; font-size: 17px; cursor: pointer; }
+#stage:fullscreen { inset: 0; width: 100vw; height: 100vh; background: #05060c; }
