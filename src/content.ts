@@ -146,6 +146,27 @@ export const LEVELS: LevelDef[] = [
     },
   },
   {
+    id: 'factory', kind: 'platform', mechanic: 'platform', status: 'flown', role: 'Founder and CEO · 2019', unlocks: 'photon',
+    title: 'Rosie the Robot', date: '2019-11-13', place: 'Auckland production complex', map: { x: 128, y: 214 },
+    intro: 'Six launches in 2019, and customers queueing for more. Rocket Lab can finish an Electron about every thirty days; the plan calls for one a week. The slow part is the carbon. Every composite structure comes out of the cure oven needing to be marked, trimmed, drilled and sanded, and by hand that is more than 400 hours a rocket. So in November 2019 the Auckland factory switches on a 140-square-metre, six-axis machine to do all of it, and gives it a name: Rosie. Get today’s parts onto her bed.',
+    how: 'Arrows to run, Space to jump. Collect the five things Rosie needs and reach her cell. New here: conveyors. A belt carries you along whether you walk or not, with it or against it, so time your jumps on and off. Jump on runaway sanders and loose rolls of carbon fibre to stop them; wait out the offcuts falling from the trimming heads; duck the clouds of carbon dust. Power-ups float in bubbles: the clean-room suit makes you untouchable, and the carbon-weave jacket makes you light enough to jump far higher. A hidden blueprint unlocks a secret on the map.',
+    fact: 'Rosie’s machining window is 3.5 m by 16 m, with five axes of movement plus a sixth that turns the part. The Rutherford engines came from further away: in 2019 they were built at Rocket Lab’s headquarters in Huntington Beach, California, and shipped to New Zealand.',
+    after: 'Rosie was unveiled on 13 November 2019. Rocket Lab said she could process every carbon-composite component of an Electron in 12 hours, a job that had taken more than 400 by hand. The six launches of 2019 all reached orbit, and the last of them, “Running Out Of Fingers”, was also the first to steer its first stage back through the atmosphere: the start of the road to recovery.',
+    egg: 'Engine number 100. Rocket Lab finished its hundredth Rutherford in July 2019, at its Huntington Beach headquarters in California, and shipped it to New Zealand like all the others.',
+    sources: ['https://www.space.com/rocket-lab-rosie-robot-build-rocket-12-hours.html', 'https://satnews.com/2019/11/13/rosie-rocks-rocket-lab/', 'https://techcrunch.com/2019/11/13/rocket-labs-new-rosie-the-robot-speeds-up-launch-vehicle-production-by-a-lot', RL + 'updates/rocket-lab-celebrates-100th-rutherford-engine-build/', WP + 'List_of_Electron_launches'],
+    params: {
+      theme: 'factory', width: 80,
+      ground: [[0, 14, 9], [17, 31, 9], [34, 48, 9], [51, 79, 9]],
+      plats: [[4, 7, 3], [18, 7, 3], [21, 5, 3], [39, 7, 3], [42, 5, 2], [52, 8, 3], [55, 6, 4], [70, 7, 3]],
+      belts: [[8, 13, 9, 1], [24, 28, 9, -1], [36, 46, 9, 1], [55, 58, 6, 1]],
+      parts: [[5, 6, 'Stage 1 structure'], [22, 4, 'Stage 2 structure'], [40, 6, 'Fairing half'], [56, 5, 'The other fairing half'], [71, 6, 'Rosie’s cutting program']],
+      hazards: [], sheep: [], egg: [43, 4], goal: 76,
+      enemies: [['roll', 18, 21], ['offcuts', 35, 35], ['dust', 59, 62], ['sander', 64, 67], ['offcuts', 74, 74]],
+      powerups: [['L', 10, 6], ['T', 37, 8]], secret: [30, 3],
+      signs: [],
+    },
+  },
+  {
     id: 'going-public', kind: 'platform', mechanic: 'platform', status: 'flown', hero: 'adam', role: 'Chief Financial Officer · 2021',
     title: 'RKLB rings the bell', date: '2021-08-25', place: 'Long Beach, California', map: { x: 607, y: 274 },
     intro: 'In March 2021 Rocket Lab announces two things at once: a merger with the SPAC Vector Acquisition Corporation, and Neutron, the bigger reusable rocket Beck had said he would never build. Going public is a paper chase, and paper is the finance chief’s department. Pandemic travel limits mean nobody is going to Times Square: on listing day the Nasdaq opening bell will be rung by video link. This level belongs to Adam Spice: carry the listing across the Long Beach headquarters and have everything at the bell before the market opens.',
@@ -261,6 +282,14 @@ export const BONUS: LevelDef[] = [
     fact: 'The spit got its rockets in the end. In 2021 the Crown and local rūnanga bought land there for what became the Tāwhaki National Aerospace Centre, a test and launch site for other companies.',
     after: '',
     sources: [WP + 'Rocket_Lab_Launch_Complex_1', WP + 'Kaitorete_Spit'],
+  },
+  {
+    id: 'photon', kind: 'card', status: 'flown', parent: 'factory',
+    title: 'Photon: the kick stage grows up', date: '2019–2020', place: 'Auckland → low Earth orbit', map: { x: 100, y: 190 },
+    intro: 'On 8 April 2019, in Colorado Springs, Rocket Lab unveils Photon: a satellite bus built out of Electron’s kick stage, so that a customer can bring only an instrument and buy the rocket and the spacecraft together. The first one flies in disguise. On 31 August 2020, about an hour after “I Can’t Believe It’s Not Optical” lifts off, the kick stage releases Capella’s Sequoia satellite and is then commanded into “Photon satellite mode”. The stage that delivered the customer simply stays up, and becomes Rocket Lab’s first satellite: “First Light”.',
+    fact: 'Nobody outside the company knew until Rocket Lab revealed it on 3 September 2020. First Light’s job was to prove the power, thermal and attitude-control systems for long stays in orbit. Two years later a Lunar Photon sent CAPSTONE toward the Moon.',
+    after: '',
+    sources: ['https://spacenews.com/rocket-lab-unveils-photon-smallsat-bus/', RL + 'updates/media-release-rocket-lab-launches-first-in-house-designed-and-built-photon-satellite/', WP + 'Rocket_Lab_Photon'],
   },
 ];
 /**

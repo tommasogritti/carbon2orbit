@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { tex, lg, rg, rr, el, poly, line, text, rng, cloud, OUT, C2 } from './art';
+import { tex, lg, rg, rr, el, poly, line, text, rng, cloud, electronFull, OUT, C2 } from './art';
 
 // Platform backdrops. Rule: no repeating modules. Each backdrop is one long strip that reads left to right as a
 // walk through that chapter of the story, built from things that were really there.
@@ -264,8 +264,76 @@ function listing(c: C2, scene: Phaser.Scene) {
   el(c, 576, 11, 2.2, 2.2, '#ff5a4a'); text(c, 'LIVE · NASDAQ MARKETSITE · TIMES SQUARE, NEW YORK', 664, 11.4, 4.4, '#ffffff', 700);
 }
 
+
+// ------------------------------------------------------------------ Rosie the Robot, 2019: the Auckland production floor
+/** One wall, read left to right: the door, the old way by hand, the cure oven, the rocket line, fairings and the clean room, then Rosie's cell. */
+function factory(c: C2) {
+  const W = 760, r = rng(91);
+  c.fillStyle = lg(c, 0, 0, 0, 180, [0, '#e4eaf1'], [0.7, '#c9d2de'], [1, '#aeb8c6']); c.fillRect(0, 0, W, 180);
+  for (let x = 0; x < W; x += 38) line(c, x, 18, x, 138, 'rgba(60,80,110,.08)', 0.6);
+  rr(c, 0, 0, W, 18, 0, '#f2f5f9'); for (let x = 0; x < W; x += 36) { line(c, x, 17, x + 18, 3, '#b3bdcb', 0.9); line(c, x + 18, 3, x + 36, 17, '#b3bdcb', 0.9); }
+  rr(c, 0, 16.4, W, 1.8, 0, '#b3bdcb'); rr(c, 0, 9, W, 2.6, 0.6, '#f2d14a', OUT, 0.25); // overhead crane rail, the length of the building
+  for (let x = 24; x < W; x += 84) { rr(c, x, 21, 40, 2, 1, '#ffffff'); c.fillStyle = lg(c, 0, 23, 0, 120, [0, 'rgba(255,255,255,.28)'], [1, 'rgba(255,255,255,0)']); c.beginPath(); c.moveTo(x, 23); c.lineTo(x + 40, 23); c.lineTo(x + 66, 120); c.lineTo(x - 26, 120); c.closePath(); c.fill(); }
+  rr(c, 0, 138, W, 6, 0, '#8f99a8'); rr(c, 0, 137.4, W, 0.8, 0, '#4d9be8');
+  const sign = (x: number, y: number, w: number, a: string, bg = '#15171f', fg = '#fff', size = 4) => { rr(c, x, y, w, 9, 1, bg, OUT, 0.35); text(c, a, x + w / 2, y + 4.8, size, fg, 700); };
+
+  // ---- A. the door, open to an Auckland morning, and the year so far on the wall
+  rr(c, 8, 40, 64, 98, 0.6, '#0b1024', '#5b6275', 1.4);
+  c.save(); c.beginPath(); c.rect(9, 41, 62, 96); c.clip();
+  c.fillStyle = lg(c, 0, 41, 0, 137, [0, '#58a8e8'], [0.7, '#bfe3ff'], [1, '#e8f4ff']); c.fillRect(9, 41, 62, 96);
+  c.save(); c.translate(20, 52); cloud(c, 34, 9, 3, '#d6e6f6'); c.restore();
+  poly(c, [9, 118, 22, 104, 30, 100, 38, 104, 50, 116, 71, 120, 71, 137, 9, 137], '#5f9468'); // a volcanic cone: the isthmus is built on them
+  poly(c, [9, 126, 71, 122, 71, 137, 9, 137], '#7fb07a'); for (let i = 0; i < 9; i++) rr(c, 11 + i * 6.6, 124 - (i % 3), 4.4, 5 + (i % 3), 0.2, i % 2 ? '#f4f2ea' : '#dbe9ff');
+  rr(c, 9, 132, 62, 5, 0, '#5b6275'); c.restore();
+  for (let y = 41; y < 52; y += 2.6) rr(c, 8, y, 64, 1.8, 0, '#c2c8d2'); // the roller door, mostly up
+  sign(6, 26, 92, 'AUCKLAND · PRODUCTION COMPLEX', '#15171f', '#fff', 3.9);
+  rr(c, 80, 44, 48, 62, 1, '#f4f6fa', '#8b93a7', 0.8); text(c, '2019', 104, 50, 5, '#c8102e', 700); line(c, 84, 54, 124, 54, '#8b93a7', 0.3);
+  ['Two Thumbs Up', 'That’s a Funny Looking Cactus', 'Make It Rain', 'Look Ma, No Hands', 'As The Crow Flies', 'Running Out Of Fingers'].forEach((m, i) => { el(c, 85, 59.6 + i * 7.6, 1.5, 1.5, '#2f9a4c'); line(c, 84.2, 59.6 + i * 7.6, 84.8, 60.4 + i * 7.6, '#fff', 0.35); line(c, 84.8, 60.4 + i * 7.6, 86, 58.8 + i * 7.6, '#fff', 0.35); text(c, m, 88, 59.8 + i * 7.6, m.length > 22 ? 2.5 : 3, '#15171f', 600, 'left'); });
+  line(c, 132, 138, 132, 96, '#f4f2ea', 0.6); rr(c, 132, 96, 10, 6, 0.2, '#1d3a7a', OUT, 0.2); rr(c, 132, 96, 4.4, 3, 0, '#c8102e'); for (const [sx, sy] of [[139.4, 97.6], [140.4, 99.4], [138.4, 99.8], [139.6, 101]] as number[][]) el(c, sx, sy, 0.45, 0.45, '#c8102e');
+
+  // ---- B. the old way: rolls of carbon fibre, a bench of hand tools, a tally of hours
+  sign(150, 28, 74, 'BY HAND: 400+ HOURS', '#8a6238');
+  for (let i = 0; i < 4; i++) { const y = 52 + i * 15; rr(c, 150, y + 8, 46, 1.6, 0.3, '#5b6275'); for (let k = 0; k < 3; k++) { el(c, 158 + k * 15, y + 2, 6, 6, '#15171f', OUT, 0.3); el(c, 158 + k * 15, y + 2, 4.4, 4.4, undefined, 'rgba(120,128,150,.5)', 0.4); el(c, 158 + k * 15, y + 2, 1.6, 1.6, '#c9a66b', OUT, 0.25); } }
+  rr(c, 148, 48, 2, 90, 0.3, '#5b6275'); rr(c, 196, 48, 2, 90, 0.3, '#5b6275'); text(c, 'CARBON FIBRE', 173, 44, 3, '#5b6275', 700);
+  rr(c, 204, 116, 62, 3.4, 0.5, '#d9dee8', OUT, 0.3); rr(c, 207, 119.4, 3, 18.6, 0.3, '#8b93a7'); rr(c, 260, 119.4, 3, 18.6, 0.3, '#8b93a7');
+  for (const [x, col] of [[210, '#f28c28'], [222, '#f2d14a'], [234, '#f28c28']] as [number, string][]) { rr(c, x, 111, 8, 5, 1, col, OUT, 0.25); rr(c, x + 1, 109.6, 6, 1.6, 0.5, '#23262f'); } // sanding blocks
+  rr(c, 246, 106, 12, 10, 0.6, '#c2c8d2', OUT, 0.25); line(c, 252, 106, 252, 100, '#5b6275', 0.8); el(c, 252, 99, 1.6, 1.6, '#d8452e'); // a hand drill on its stand
+  rr(c, 206, 52, 56, 40, 1, '#f4f6fa', '#8b93a7', 0.8); text(c, 'HOURS PER ROCKET', 234, 58, 3.2, '#5b6275', 700);
+  for (let i = 0; i < 40; i++) { const x = 210 + (i % 20) * 2.5, y = 63 + Math.floor(i / 20) * 9; line(c, x, y, x, y + 6, '#15171f', 0.4); if (i % 5 === 4) line(c, x - 10.5, y + 5, x + 0.5, y + 1, '#15171f', 0.4); }
+  text(c, '… × 10', 250, 86, 3.4, '#c8102e', 700);
+
+  // ---- C. the cure oven
+  rr(c, 276, 50, 60, 88, 2, lg(c, 276, 0, 336, 0, [0, '#dfe5ee'], [1, '#9aa3b5']), OUT, 0.4); rr(c, 282, 58, 48, 76, 1.4, '#3a3f4f', OUT, 0.3);
+  el(c, 306, 92, 13, 13, rg(c, 306, 92, 2, 13, [0, '#ffd27a'], [0.7, '#f28c28'], [1, '#7a2408']), OUT, 0.4); el(c, 306, 92, 15, 15, undefined, '#8b93a7', 1.4);
+  for (let i = 0; i < 8; i++) el(c, 306 + Math.cos(i * 0.785) * 15, 92 + Math.sin(i * 0.785) * 15, 0.9, 0.9, '#23262f'); rr(c, 326, 86, 3, 12, 0.6, '#f2d14a', OUT, 0.25);
+  sign(282, 38, 48, 'CURE OVEN', '#c8102e');
+
+  // ---- D. the rocket line: an Electron on its cradles, engines arriving from California
+  sign(350, 26, 112, 'ONE EVERY 30 DAYS  →  GOAL: ONE A WEEK', '#1f5a34', '#fff', 3.5);
+  for (const y of [78, 116]) { c.save(); c.translate(346, y + 8); c.rotate(-Math.PI / 2); c.scale(1.9, 1.9); electronFull(c, 0, 0); c.restore(); for (const x of [366, 412, 458, 486]) { poly(c, [x - 6, y + 16, x + 6, y + 16, x + 4, y + 7, x - 4, y + 7], '#3f7fd0', OUT, 0.3); rr(c, x - 7, y + 16, 14, 2, 0.4, '#2a5fa8', OUT, 0.25); } }
+  rr(c, 360, 96, 132, 2, 0.3, '#8b93a7', OUT, 0.25); for (const x of [362, 426, 488]) rr(c, x, 98, 2.4, 40, 0.2, '#8b93a7'); // the upper rack
+  rr(c, 500, 112, 30, 26, 0.8, '#c9a66b', OUT, 0.35); line(c, 500, 120, 530, 120, 'rgba(90,60,20,.4)', 0.4); line(c, 515, 112, 515, 138, 'rgba(90,60,20,.4)', 0.4); text(c, 'RUTHERFORD ×9', 515, 116.4, 2.6, '#3a2715', 700); text(c, 'HUNTINGTON', 515, 126, 2.6, '#3a2715', 700); text(c, 'BEACH, CA', 515, 130, 2.6, '#3a2715', 700);
+
+  // ---- E. fairing halves on their stands, and the clean room behind glass
+  for (const [x, flip] of [[548, 1], [566, -1]] as number[][]) { c.save(); c.translate(x, 138); c.scale(flip, 1); c.beginPath(); c.moveTo(0, 0); c.lineTo(0, -34); c.quadraticCurveTo(1, -52, 9, -58); c.lineTo(9, 0); c.closePath(); c.fillStyle = lg(c, 0, 0, 9, 0, [0, '#0a0a0d'], [0.6, '#30323d'], [1, '#191a21']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.3; c.stroke(); rr(c, 2, -30, 4, 2.6, 0.2, '#e8e6df'); c.restore(); }
+  rr(c, 584, 44, 60, 72, 1.2, '#dbe9ff', '#f4f6fa', 2); c.fillStyle = 'rgba(77,155,232,.18)'; c.fillRect(585, 45, 58, 70);
+  rr(c, 596, 86, 16, 12, 1, lg(c, 0, 86, 0, 98, [0, '#f2d14a'], [1, '#a8801c']), OUT, 0.3); rr(c, 600, 80, 8, 6, 0.4, '#d7dbe4', OUT, 0.25); rr(c, 592, 98, 24, 3, 0.4, '#8b93a7', OUT, 0.25); rr(c, 602, 101, 4, 15, 0.2, '#8b93a7'); // a kick stage on its stand
+  rr(c, 622, 54, 16, 22, 0.5, '#0b1024', '#f4f6fa', 0.6); el(c, 630, 62, 4, 4, lg(c, 626, 58, 634, 66, [0, '#f2d14a'], [1, '#a8801c'])); rr(c, 623, 60.6, 3, 2.8, 0.2, '#30508a'); rr(c, 634, 60.6, 3, 2.8, 0.2, '#30508a'); text(c, 'PHOTON', 630, 70, 2.6, '#fff', 700); text(c, 'APR 2019', 630, 73.4, 2, '#aab4d4', 600);
+  line(c, 614, 45, 614, 115, 'rgba(255,255,255,.7)', 0.5); sign(588, 32, 52, 'CLEAN ROOM', '#4d9be8');
+
+  // ---- F. Rosie's cell: fence, floor stripes, extraction duct, and the clock that matters
+  rr(c, 650, 126, 110, 12, 0, 'rgba(242,209,74,.25)'); for (let x = 650; x < 760; x += 10) poly(c, [x, 138, x + 5, 138, x + 9, 132, x + 4, 132], '#f2d14a');
+  for (let x = 654; x <= 756; x += 17) { rr(c, x, 96, 1.6, 42, 0.3, '#f2d14a', OUT, 0.2); } for (const y of [100, 112, 124]) line(c, 654, y, 757, y, 'rgba(242,209,74,.75)', 0.5);
+  rr(c, 690, 18, 12, 30, 1, lg(c, 690, 0, 702, 0, [0, '#dfe5ee'], [1, '#9aa3b5']), OUT, 0.3); poly(c, [684, 54, 708, 54, 702, 48, 690, 48], '#b3bdcb', OUT, 0.3); // dust extraction
+  rr(c, 656, 30, 30, 15, 1.2, '#c8102e', OUT, 0.4); text(c, 'ROSIE', 671, 37.8, 6.4, '#fff', 700);
+  rr(c, 712, 30, 42, 15, 1.2, '#07090f', '#8b93a7', 0.6); text(c, '12:00:00', 733, 36.4, 5.4, '#7cf08a', 700); text(c, 'HOURS PER ROCKET', 733, 42, 2.2, '#7cc56b', 700);
+  text(c, '140 m² · SIX AXES', 705, 64, 3, 'rgba(60,70,90,.7)', 700); text(c, 'MARK · CUT · DRILL · MILL · SAND', 705, 69, 2.6, 'rgba(60,70,90,.6)', 700);
+  for (let i = 0; i < 30; i++) el(c, 650 + r() * 108, 139 + r() * 4, 0.5 + r() * 0.6, 0.3, 'rgba(20,20,26,.35)'); // a little black dust
+}
+
 export function makeBackdrops(scene: Phaser.Scene) {
   tex(scene, 'bg_listing', 760, 180, (c) => listing(c, scene));
+  tex(scene, 'bg_factory', 760, 180, factory);
   tex(scene, 'bg_workshop', 760, 180, workshop);
   tex(scene, 'bg_mahia_far', 520, 180, mahiaFar);
   tex(scene, 'bg_mahia_mid', 760, 180, mahiaMid);
@@ -342,6 +410,52 @@ export function makeBackdrops(scene: Phaser.Scene) {
     c.beginPath(); c.moveTo(13, 24); c.bezierCurveTo(15, 22, 15, 8, 23, 8); c.bezierCurveTo(31, 8, 31, 22, 33, 24); c.closePath(); c.fillStyle = lg(c, 13, 0, 33, 0, [0, '#b8860b'], [0.4, '#ffe98a'], [1, '#a8740a']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.4; c.stroke();
     rr(c, 11.6, 23, 22.8, 2.6, 1.2, '#d9a520', OUT, 0.35); el(c, 23, 27.4, 2, 2, '#8a6208', OUT, 0.3); el(c, 19, 13, 1.6, 3.4, 'rgba(255,255,255,.5)');
   });
+
+  // ---- Rosie the Robot: the Auckland factory floor
+  tex(scene, 't_factory', 16, 16, (c) => {
+    c.fillStyle = lg(c, 0, 0, 0, 16, [0, '#eef2f6'], [0.2, '#d5dce6'], [1, '#b9c2cf']); c.fillRect(0, 0, 16, 16); c.fillStyle = '#ffffff'; c.fillRect(0, 0, 16, 0.7);
+    c.fillStyle = '#4d9be8'; c.fillRect(0, 2.2, 16, 1); line(c, 0, 9.4, 16, 9.4, 'rgba(60,80,110,.2)', 0.4); line(c, 8, 9.4, 8, 16, 'rgba(60,80,110,.2)', 0.4);
+    const r = rng(19); for (let i = 0; i < 8; i++) el(c, r() * 16, 4 + r() * 12, 0.3, 0.3, 'rgba(255,255,255,.5)');
+  });
+  tex(scene, 't_factory_fill', 16, 16, (c) => { c.fillStyle = '#aab3c1'; c.fillRect(0, 0, 16, 16); line(c, 0, 8, 16, 8, 'rgba(60,80,110,.2)', 0.4); line(c, 4, 0, 4, 8, 'rgba(60,80,110,.2)', 0.4); line(c, 12, 8, 12, 16, 'rgba(60,80,110,.2)', 0.4); });
+  tex(scene, 'p_factory', 16, 6, (c) => { c.fillStyle = lg(c, 0, 0, 0, 5, [0, '#f4f6fa'], [1, '#8b93a7']); c.fillRect(0, 0, 16, 4.6); c.fillStyle = '#f2d14a'; c.fillRect(0, 0, 16, 1); for (let x = 1; x < 16; x += 3) line(c, x, 1.6, x + 1.6, 4.2, 'rgba(40,50,70,.35)', 0.3); c.fillStyle = '#5b6275'; c.fillRect(0, 4.6, 16, 1.2); });
+  tex(scene, 'belt', 16, 5, (c) => { c.fillStyle = lg(c, 0, 0, 0, 5, [0, '#3a3f4f'], [1, '#15171f']); c.fillRect(0, 0, 16, 5); for (let x = 0; x < 16; x += 8) poly(c, [x + 1, 0.8, x + 4, 0.8, x + 6, 2.5, x + 4, 4.2, x + 1, 4.2, x + 3, 2.5], '#f2d14a'); c.fillStyle = 'rgba(255,255,255,.25)'; c.fillRect(0, 0, 16, 0.4); });
+  tex(scene, 'sander', 24, 16, (c) => { // an orbital sander that nobody is holding any more
+    c.beginPath(); c.moveTo(1, 9); c.bezierCurveTo(-1, 4, 3, 2, 5, 6); c.strokeStyle = '#15171f'; c.lineWidth = 0.8; c.stroke(); // its cable
+    rr(c, 4, 4, 15, 7, 2.6, lg(c, 0, 4, 0, 11, [0, '#ffe98a'], [1, '#d9a520']), OUT, 0.4); rr(c, 8, 1, 8, 4, 1.6, '#23262f', OUT, 0.3); rr(c, 17, 5.4, 4, 3.6, 1, '#23262f', OUT, 0.3);
+    rr(c, 3, 11, 18, 2.6, 1, '#8b93a7', OUT, 0.3); rr(c, 2.4, 13.4, 19.2, 1.6, 0.6, '#c9a66b', OUT, 0.25); for (let x = 4; x < 21; x += 2) el(c, x, 14.2, 0.3, 0.3, '#6b4a2b');
+    el(c, 14.4, 7.4, 1, 0.9, '#ff5a3c'); el(c, 10.4, 7.4, 1, 0.9, '#ff5a3c'); line(c, 9, 5.6, 11.6, 6.4, '#23262f', 0.5); line(c, 15.8, 5.6, 13.2, 6.4, '#23262f', 0.5);
+  });
+  tex(scene, 'roll', 16, 16, (c) => { // a roll of carbon fibre off its rack
+    el(c, 8, 8, 6.8, 6.8, '#15171f', OUT, 0.4); for (let k = 5.6; k > 2.6; k -= 1.2) el(c, 8, 8, k, k, undefined, 'rgba(120,128,150,.45)', 0.35);
+    for (let i = 0; i < 6; i++) line(c, 8 + Math.cos(i * 1.05) * 3, 8 + Math.sin(i * 1.05) * 3, 8 + Math.cos(i * 1.05) * 6.6, 8 + Math.sin(i * 1.05) * 6.6, 'rgba(120,128,150,.3)', 0.3);
+    el(c, 8, 8, 2.4, 2.4, '#c9a66b', OUT, 0.3); el(c, 8, 8, 1, 1, '#6b4a2b');
+  });
+  for (const f of [0, 1]) tex(scene, 'dust' + f, 26, 14, (c) => { // carbon dust from the machining head, on the loose
+    const r = rng(40 + f); for (let i = 0; i < 16; i++) el(c, 5 + r() * 16, 4 + r() * 6, 2.2 + r() * 2.4, 1.8 + r() * 1.8, i % 3 ? 'rgba(28,29,36,.8)' : 'rgba(70,74,90,.7)');
+    for (let i = 0; i < 9; i++) el(c, 2 + r() * 22, 2 + r() * 10, 0.4, 0.4, '#15171f');
+    el(c, 16.6, 6.6, 1.2, 1.1, '#fff'); el(c, 20, 6.8, 1.1, 1, '#fff'); el(c, 17, 6.8, 0.5, 0.5, '#111'); el(c, 20.3, 7, 0.45, 0.45, '#111'); line(c, 15.4, 5, 18, 5.6, '#fff', 0.4); line(c, 21.4, 5.2, 19.2, 5.8, '#fff', 0.4);
+  });
+  tex(scene, 'trimmer', 22, 30, (c) => { rr(c, 5, 0, 12, 5, 0.6, '#f2d14a', OUT, 0.3); rr(c, 8.6, 5, 4.8, 10, 0.6, '#f4f6fa', OUT, 0.3); el(c, 11, 15.6, 3.6, 3.6, '#f28c28', OUT, 0.3); rr(c, 9.4, 18, 3.2, 6, 0.5, '#8b93a7', OUT, 0.3); rr(c, 10.5, 24, 1, 4.4, 0.2, '#dfe5ee', OUT, 0.2); el(c, 11, 28.6, 2.6, 0.6, 'rgba(20,20,26,.5)'); });
+  tex(scene, 'offcut', 6, 8, (c) => { poly(c, [1, 0.6, 5.4, 2, 3.6, 7.6, 0.6, 5], '#15171f', '#5b6275', 0.3); line(c, 1.6, 2, 4, 5.6, 'rgba(140,148,170,.6)', 0.3); line(c, 3.4, 1.8, 2, 5.2, 'rgba(140,148,170,.4)', 0.3); });
+  tex(scene, 'engine100', 12, 15, (c) => { // Rutherford number 100, tagged
+    c.fillStyle = rg(c, 6, 8, 1, 7, [0, 'rgba(255,230,120,.6)'], [1, 'rgba(255,230,120,0)']); c.fillRect(0, 0, 12, 15);
+    rr(c, 3.6, 1, 4.8, 4.6, 1, lg(c, 3, 0, 9, 0, [0, '#8b93a7'], [0.4, '#e4e8ee'], [1, '#5b6275']), OUT, 0.3); for (const x of [1.2, 8.6]) rr(c, x, 2, 2.4, 4, 0.8, '#4a5066', OUT, 0.25);
+    poly(c, [4.8, 5.6, 7.2, 5.6, 10, 13, 2, 13], lg(c, 2, 0, 10, 0, [0, '#3a3c48'], [0.35, '#9aa3b5'], [1, '#23262f']), OUT, 0.3); rr(c, 2.6, 8, 6.8, 3, 0.4, '#f4f2ea', OUT, 0.25); text(c, '100', 6, 9.7, 2.6, '#c8102e', 700);
+  });
+  tex(scene, 'rosie', 76, 74, (c) => { // a gantry robot over a long machining bed, with a first stage in its grip
+    el(c, 38, 72.6, 34, 1.6, 'rgba(0,0,0,.25)');
+    rr(c, 4, 60, 68, 8, 1, lg(c, 0, 60, 0, 68, [0, '#f4f6fa'], [1, '#9aa3b5']), OUT, 0.4); for (const x of [8, 64]) rr(c, x, 68, 4, 5, 0.3, '#5b6275', OUT, 0.25); for (let x = 8; x < 70; x += 6) poly(c, [x, 60, x + 3, 60, x + 1.5, 62, x - 1.5, 62], '#f2d14a');
+    for (const x of [12, 30, 48, 62]) el(c, x, 58.6, 2, 2, '#3f7fd0', OUT, 0.3); // rollers
+    rr(c, 6, 44, 62, 13, 6, lg(c, 0, 44, 0, 57, [0, '#3a3c48'], [0.3, '#191a21'], [1, '#050506']), OUT, 0.4); line(c, 12, 46.6, 62, 46.6, 'rgba(255,255,255,.2)', 0.4); text(c, 'ELECTRON', 38, 51, 4, '#f2f2ee', 700);
+    for (const x of [2, 68]) rr(c, x, 6, 5, 62, 0.6, lg(c, x, 0, x + 5, 0, [0, '#ffffff'], [1, '#aab2c0']), OUT, 0.4); rr(c, 0, 2, 76, 7, 1.2, lg(c, 0, 2, 0, 9, [0, '#ffffff'], [1, '#b3bdcb']), OUT, 0.4);
+    rr(c, 22, 9, 16, 8, 1, '#f28c28', OUT, 0.35); rr(c, 27, 17, 6, 10, 0.8, '#f4f6fa', OUT, 0.3); el(c, 30, 28.6, 4.6, 4.6, '#f28c28', OUT, 0.35); c.save(); c.translate(30, 28.6); c.rotate(0.5); rr(c, -2, 2, 4, 11, 0.8, '#f4f6fa', OUT, 0.3); rr(c, -1.2, 13, 2.4, 3.6, 0.4, '#8b93a7', OUT, 0.25); rr(c, -0.4, 16.6, 0.8, 2.4, 0.1, '#dfe5ee'); c.restore();
+    c.beginPath(); c.moveTo(38, 12); c.bezierCurveTo(48, 12, 46, 22, 56, 20); c.strokeStyle = '#23262f'; c.lineWidth = 1.1; c.stroke();
+    rr(c, 46, 3, 22, 5, 0.8, '#c8102e', OUT, 0.3); text(c, 'ROSIE', 57, 5.7, 3.6, '#fff', 700);
+    el(c, 20, 13, 0.9, 0.9, '#7cf08a'); el(c, 40, 13, 0.9, 0.9, '#7cf08a'); c.fillStyle = rg(c, 22.6, 45, 0.5, 5, [0, 'rgba(255,240,180,.95)'], [1, 'rgba(255,200,80,0)']); c.fillRect(17, 40, 12, 10);
+  });
+  bubble('pw_T', (c) => { rr(c, 5.2, 5, 7.6, 9, 1.6, '#f4f6fa', OUT, 0.3); line(c, 9, 5.2, 9, 14, '#9aa3b5', 0.35); rr(c, 4.2, 5.4, 2, 5.6, 0.8, '#f4f6fa', OUT, 0.25); rr(c, 11.8, 5.4, 2, 5.6, 0.8, '#f4f6fa', OUT, 0.25); rr(c, 9.8, 6.6, 2, 1.4, 0.2, '#4d9be8'); rr(c, 6.6, 2.6, 4.8, 2, 0.6, 'rgba(190,230,255,.7)', '#4d9be8', 0.3); });
+  bubble('pw_L', (c) => { c.save(); c.beginPath(); c.roundRect(4.6, 4, 8.8, 10, 1.6); c.clip(); c.fillStyle = '#1b1c23'; c.fillRect(4, 3, 10, 12); for (let i = -4; i < 8; i++) { line(c, 4 + i * 1.6, 14.4, 9 + i * 1.6, 3.6, 'rgba(130,138,160,.7)', 0.4); line(c, 4 + i * 1.6, 3.6, 9 + i * 1.6, 14.4, 'rgba(70,74,90,.7)', 0.4); } c.restore(); rr(c, 4.6, 4, 8.8, 10, 1.6, undefined, '#2fd0c0', 0.5); poly(c, [9, 1.4, 11, 4, 7, 4], '#2fd0c0'); });
   bubble('pw_C', (c) => { c.drawImage(scene.textures.get('peter_chip').getSourceImage() as HTMLCanvasElement, 2.4, 2.4, 13.2, 13.2); });
   tex(scene, 'secret', 18, 18, (c) => { // a rolled blueprint, glowing
     c.fillStyle = rg(c, 9, 9, 1, 9, [0, 'rgba(255,220,120,.9)'], [1, 'rgba(255,220,120,0)']); c.fillRect(0, 0, 18, 18);

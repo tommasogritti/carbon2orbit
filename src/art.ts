@@ -56,25 +56,35 @@ function curls(c: C2, cx: number, cy: number, rIn: number, rOut: number, sx: num
     c.beginPath(); c.arc(x - q * 0.2, y - q * 0.25, q * 0.5, 3.6, 5.2); c.strokeStyle = 'rgba(255,225,180,.18)'; c.lineWidth = size * 0.12; c.stroke();
   }
 }
-/** Outfits: '' everyday, 'S' yellow suit and helmet, 'J' jet pack, 'H' hi-vis vest and hard hat, 'B' gumboots and a checked bush shirt. */
-export type Fit = '' | 'S' | 'J' | 'H' | 'B';
+/**
+ * Outfits: '' everyday, 'S' yellow suit and helmet, 'J' jet pack, 'H' hi-vis vest and hard hat, 'B' gumboots and a checked bush shirt,
+ * 'T' clean-room coverall and safety glasses, 'L' carbon-weave jacket, 'F' face shield, apron and cryogenic gauntlets, 'M' methane-oxygen pack.
+ */
+export type Fit = '' | 'S' | 'J' | 'H' | 'B' | 'T' | 'L' | 'F' | 'M';
 function peter(c: C2, leg: number, air = false, young = false, fit: Fit = '', adam = false) {
   const limb = (x0: number, y0: number, ang: number, len: number, w: number, col: string) => { const x1 = x0 + Math.sin(ang) * len, y1 = y0 + Math.cos(ang) * len; line(c, x0, y0, x1, y1, OUT, w + 0.7); line(c, x0, y0, x1, y1, col, w); return [x1, y1]; };
   const a = leg * 0.62, skin = '#eebf9f', skinD = '#dba283';
-  const suit = fit === 'S', boots = fit === 'B';
-  const legA = suit ? '#d9b93a' : adam ? '#2a2e3c' : young ? '#24406f' : '#263f6b', legB = suit ? '#f2d14a' : adam ? '#353a4c' : young ? '#2b4f8a' : '#30508a';
+  const suit = fit === 'S', boots = fit === 'B', clean = fit === 'T', weave = fit === 'L', cryo = fit === 'F';
+  const legA = clean ? '#cfd6e2' : suit ? '#d9b93a' : adam ? '#2a2e3c' : young ? '#24406f' : '#263f6b', legB = clean ? '#f2f5fa' : suit ? '#f2d14a' : adam ? '#353a4c' : young ? '#2b4f8a' : '#30508a';
   const shoe = (x: number, y: number) => {
     if (boots) { rr(c, x - 1.9, y - 5, 4, 6.2, 1, '#17181e', OUT, 0.35); rr(c, x - 1.9, y - 0.6, 5.2, 2.4, 1, '#17181e', OUT, 0.35); rr(c, x - 1.9, y - 5, 4, 1.1, 0.4, '#d8452e'); return; } // gumboots with a red band
+    if (clean) { rr(c, x - 1.8, y - 1.4, 4.8, 2.8, 1.2, '#4d9be8', OUT, 0.35); return; } // blue shoe covers
     rr(c, x - 1.6, y - 1.1, 4.4, 2.3, 1, suit ? '#3a3f4f' : young ? '#6b4a2b' : '#23262f', OUT, 0.35); rr(c, x - 1.6, y + 0.5, 4.4, 0.7, 0.3, young || suit ? '#3a2715' : '#e8e6df');
   };
   // the apprentice has a short-sleeved tee under overalls; today it is a long-sleeved black top
   const arm = (x: number, ang: number, back: boolean) => {
     if (suit) { const [hx, hy] = limb(x, 18, ang, 5.6, 2.6, back ? '#d9b93a' : '#f2d14a'); el(c, hx, hy + 0.5, 1.3, 1.3, '#3a3f4f', OUT, 0.3); }
+    else if (clean) { const [hx, hy] = limb(x, 18, ang, 5.6, 2.6, back ? '#cfd6e2' : '#f2f5fa'); el(c, hx, hy + 0.5, 1.3, 1.3, '#4d9be8', OUT, 0.3); }
+    else if (weave) { const [hx, hy] = limb(x, 18, ang, 5.6, 2.6, back ? '#101116' : '#22242c'); rr(c, hx - 1.3, hy - 1, 2.6, 0.9, 0.3, '#2fd0c0'); el(c, hx, hy + 0.5, 1.2, 1.2, back ? skinD : skin, OUT, 0.3); }
+    else if (cryo) { const [hx, hy] = limb(x, 18, ang, 3, 2.5, back ? '#0f1014' : '#1b1c23'); const [gx, gy] = limb(hx, hy, ang, 3.2, 3.3, back ? '#2a5fa8' : '#3f7fd0'); el(c, gx, gy + 0.4, 1.7, 1.6, back ? '#2a5fa8' : '#3f7fd0', OUT, 0.3); }
     else if (boots) { const [hx, hy] = limb(x, 18, ang, 5.6, 2.5, back ? '#8f2a1c' : '#b8342a'); el(c, hx, hy + 0.5, 1.2, 1.2, back ? skinD : skin, OUT, 0.3); }
     else if (adam) { const [hx, hy] = limb(x, 18, ang, 5.6, 2.6, back ? '#141c30' : '#1f2b47'); rr(c, hx - 1.3, hy - 0.9, 2.6, 1, 0.3, '#f4f4f0'); el(c, hx, hy + 0.6, 1.2, 1.2, back ? skinD : skin, OUT, 0.3); }
     else if (young) { limb(x, 18.2, 0, 1.6, 2.6, '#cfd5df'); const [hx, hy] = limb(x, 19, ang, 5, 2.1, back ? skinD : skin); el(c, hx, hy, 1.25, 1.25, back ? skinD : skin, OUT, 0.3); }
     else { const [hx, hy] = limb(x, 18, ang, 5.6, 2.5, back ? '#0f1014' : '#1b1c23'); el(c, hx, hy + 0.5, 1.2, 1.2, back ? skinD : skin, OUT, 0.3); }
   };
+  if (fit === 'M') for (const [x, col] of [[4.6, '#bfe3ff'], [15.4, '#c8f0c0']] as [number, string][]) { // methane and liquid-oxygen bottles, frosted, with a blue-flame nozzle each
+    rr(c, x, 14, 4, 11, 2, lg(c, x, 0, x + 4, 0, [0, '#ffffff'], [0.5, col], [1, '#6f8fb0']), OUT, 0.35); rr(c, x, 16.4, 4, 1, 0, '#1d3a7a'); poly(c, [x + 0.8, 25, x + 3.2, 25, x + 3.8, 27.4, x + 0.2, 27.4], '#3a3c48', OUT, 0.25); el(c, x + 2, 15.2, 1.2, 0.5, 'rgba(255,255,255,.8)');
+  }
   if (fit === 'J') for (const x of [4.6, 15.4]) { // jet pack: twin tanks behind the shoulders
     rr(c, x, 14.6, 4, 10.4, 1.8, lg(c, x, 0, x + 4, 0, [0, '#f2f4f8'], [0.5, '#b8c0cc'], [1, '#6f7890']), OUT, 0.35); rr(c, x, 17, 4, 1, 0, '#d8452e'); poly(c, [x + 0.8, 25, x + 3.2, 25, x + 3.8, 27.4, x + 0.2, 27.4], '#3a3c48', OUT, 0.25);
   }
@@ -84,6 +94,11 @@ function peter(c: C2, leg: number, air = false, young = false, fit: Fit = '', ad
   // torso
   if (suit) {
     rr(c, 7.4, 16.6, 9.2, 9.4, 2.2, lg(c, 7.4, 0, 16.6, 0, [0, '#ffe98a'], [0.5, '#f2d14a'], [1, '#c9a52a']), OUT, 0.4); line(c, 12, 16.8, 12, 25.6, '#8a6a12', 0.4); rr(c, 7.6, 22.6, 8.8, 1.1, 0, '#3a3f4f');
+  } else if (clean) { // white coverall with a zip and a chest badge
+    rr(c, 7.2, 16.4, 9.6, 9.8, 2.4, lg(c, 7.2, 0, 16.8, 0, [0, '#ffffff'], [0.6, '#eef2f7'], [1, '#c2cad8']), OUT, 0.4); line(c, 12, 16.6, 12, 26, '#9aa3b5', 0.35); rr(c, 13.2, 18.6, 2.4, 1.6, 0.3, '#4d9be8'); rr(c, 7.4, 23.2, 9.2, 0.8, 0, '#cfd6e2');
+  } else if (weave) { // carbon twill, with a bright edge so it reads against dark backgrounds
+    rr(c, 7.2, 16.4, 9.6, 9.8, 2.2, '#1b1c23', OUT, 0.4); c.save(); c.beginPath(); c.roundRect(7.2, 16.4, 9.6, 9.8, 2.2); c.clip(); for (let i = -4; i < 10; i++) { line(c, 7 + i * 1.5, 26.4, 12 + i * 1.5, 16.2, 'rgba(120,128,150,.55)', 0.4); line(c, 7 + i * 1.5, 16.2, 12 + i * 1.5, 26.4, 'rgba(60,64,80,.6)', 0.4); } c.restore();
+    rr(c, 7.2, 16.4, 9.6, 9.8, 2.2, undefined, '#2fd0c0', 0.5); line(c, 12, 16.6, 12, 26, '#2fd0c0', 0.45);
   } else if (boots) {
     rr(c, 7.4, 16.6, 9.2, 9.4, 2.2, '#b8342a', OUT, 0.4); c.save(); c.beginPath(); c.roundRect(7.4, 16.6, 9.2, 9.4, 2.2); c.clip(); for (let i = 0; i < 4; i++) { c.fillStyle = 'rgba(15,15,20,.55)'; c.fillRect(7.4 + i * 2.6, 16.6, 1.2, 9.4); c.fillRect(7.4, 17.4 + i * 2.6, 9.2, 1.2); } c.restore();
   } else if (adam) { // navy blazer over an open-collar white shirt
@@ -100,7 +115,8 @@ function peter(c: C2, leg: number, air = false, young = false, fit: Fit = '', ad
   if (fit === 'H') { // hi-vis vest with reflective bands
     rr(c, 8, 16.8, 8, 8.6, 1.4, '#ff7a1a', OUT, 0.35); rr(c, 8, 20.4, 8, 1.1, 0, '#e8eef2'); rr(c, 8, 22.6, 8, 1.1, 0, '#e8eef2'); rr(c, 9.4, 16.8, 1, 8.6, 0, '#ffe98a'); rr(c, 13.6, 16.8, 1, 8.6, 0, '#ffe98a'); poly(c, [10.4, 16.8, 12, 19.4, 13.6, 16.8], '#17181e');
   }
-  if (fit === 'J') { line(c, 9, 16.8, 10.2, 25.4, '#3a3f4f', 0.9); line(c, 15, 16.8, 13.8, 25.4, '#3a3f4f', 0.9); rr(c, 9.4, 20.4, 5.2, 1.1, 0.3, '#3a3f4f'); }
+  if (cryo) { rr(c, 8.2, 17.4, 7.6, 10.6, 1, lg(c, 0, 17, 0, 28, [0, '#4d8fdc'], [1, '#2a5fa8']), OUT, 0.35); line(c, 9.4, 17.4, 10.6, 16.6, '#2a5fa8', 0.7); line(c, 14.6, 17.4, 13.4, 16.6, '#2a5fa8', 0.7); rr(c, 10.4, 21, 3.2, 2.4, 0.4, '#2a5fa8', 'rgba(0,0,0,.3)', 0.25); } // long apron
+  if (fit === 'J' || fit === 'M') { line(c, 9, 16.8, 10.2, 25.4, '#3a3f4f', 0.9); line(c, 15, 16.8, 13.8, 25.4, '#3a3f4f', 0.9); rr(c, 9.4, 20.4, 5.2, 1.1, 0.3, '#3a3f4f'); }
   rr(c, adam ? 9 : 9.6, 14.6, adam ? 6 : 4.8, 2.6, 0.8, skinD);
   // hair behind, then a broad, square-jawed face
   if (!adam) el(c, 12, 7.6, 6.9, 6.7, hairCols(young)[0]);
@@ -118,7 +134,8 @@ function peter(c: C2, leg: number, air = false, young = false, fit: Fit = '', ad
     c.beginPath(); c.moveTo(6.2, 5.6); c.bezierCurveTo(6.2, -0.8, 17.8, -0.8, 17.8, 5.6); c.closePath(); c.fillStyle = lg(c, 6, 0, 18, 0, [0, '#ffffff'], [1, '#c2c8d2']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.4; c.stroke();
     rr(c, 4.8, 5, 14.4, 1.4, 0.7, '#f4f4f0', OUT, 0.35); line(c, 12, 0.8, 12, 5, 'rgba(0,0,0,.2)', 0.5);
   }
-  if (fit === 'J') { const gy = adam ? 14.4 : 6.2; rr(c, 7.4, gy, 9.2, 2.2, 1, '#23262f', OUT, 0.3); el(c, 9.8, gy + 1.1, 1.5, 1.0, 'rgba(160,215,255,.85)', OUT, 0.25); el(c, 14.2, gy + 1.1, 1.5, 1.0, 'rgba(160,215,255,.85)', OUT, 0.25); } // goggles pushed up on the forehead (round the neck for a shaved head, so it still shows)
+  if (clean || weave) { for (const ex of [9.9, 14.1]) rr(c, ex - 1.5, 8.9, 3, 2, 0.6, 'rgba(190,230,255,.45)', clean ? '#4d9be8' : '#2fd0c0', 0.3); line(c, 11.4, 9.7, 12.6, 9.7, clean ? '#4d9be8' : '#2fd0c0', 0.3); } // safety glasses
+  if (fit === 'J' || fit === 'M') { const gy = adam ? 14.4 : 6.2; rr(c, 7.4, gy, 9.2, 2.2, 1, '#23262f', OUT, 0.3); el(c, 9.8, gy + 1.1, 1.5, 1.0, 'rgba(160,215,255,.85)', OUT, 0.25); el(c, 14.2, gy + 1.1, 1.5, 1.0, 'rgba(160,215,255,.85)', OUT, 0.25); } // goggles pushed up on the forehead (round the neck for a shaved head, so it still shows)
   // small, hooded grey-blue eyes; straight brows; a flat, closed, slightly lopsided smile
   el(c, 9.9, 9.9, 0.85, 0.5, '#fbfbf8'); el(c, 14.1, 9.9, 0.85, 0.5, '#fbfbf8');
   el(c, 10, 9.95, 0.44, 0.46, adam ? '#5c6770' : '#6f8799'); el(c, 14.2, 9.95, 0.44, 0.46, adam ? '#5c6770' : '#6f8799'); el(c, 10, 9.95, 0.2, 0.22, '#111'); el(c, 14.2, 9.95, 0.2, 0.22, '#111');
@@ -127,6 +144,7 @@ function peter(c: C2, leg: number, air = false, young = false, fit: Fit = '', ad
   c.beginPath(); c.moveTo(12.2, 10.2); c.quadraticCurveTo(12.9, 11.8, 12.1, 12.1); c.strokeStyle = '#c98f72'; c.lineWidth = 0.35; c.stroke();
   c.beginPath(); c.moveTo(adam ? 10.5 : 10.2, adam ? 13.5 : 13.3); c.quadraticCurveTo(12.2, adam ? 13.6 : 14.5, adam ? 13.7 : 14, adam ? 13.5 : 13.0); c.strokeStyle = '#8a4b3c'; c.lineWidth = 0.45; c.stroke();
   if (!adam) { c.fillStyle = rg(c, 8.5, 12, 0, 1.6, [0, 'rgba(226,120,100,.22)'], [1, 'rgba(226,120,100,0)']); c.fillRect(6.5, 10.2, 4, 3.6); c.fillStyle = rg(c, 15.5, 12, 0, 1.6, [0, 'rgba(226,120,100,.22)'], [1, 'rgba(226,120,100,0)']); c.fillRect(13.5, 10.2, 4, 3.6); }
+  if (cryo) { rr(c, 6, 5.2, 12, 1.5, 0.7, '#f2d14a', OUT, 0.3); c.beginPath(); c.moveTo(6.6, 6.6); c.lineTo(17.4, 6.6); c.quadraticCurveTo(18, 12.5, 15.6, 15.8); c.lineTo(8.4, 15.8); c.quadraticCurveTo(6, 12.5, 6.6, 6.6); c.closePath(); c.fillStyle = 'rgba(190,232,255,.34)'; c.fill(); c.strokeStyle = 'rgba(220,245,255,.9)'; c.lineWidth = 0.35; c.stroke(); line(c, 8.2, 7.6, 9, 13.6, 'rgba(255,255,255,.55)', 0.5); } // clear face shield on a yellow headband: the curls stay out
   arm(8.4, -a * 0.9 + (air ? 2.2 : 0), false);
 }
 /** Head-and-shoulders portrait, 48 x 54 units. Adult proportions: eyes a little above the middle, long lower face, heavy jaw. */
@@ -319,7 +337,7 @@ export function makeArt(scene: Phaser.Scene) {
   // Peter: present-day set, and a younger set ('y' prefix) for the 1990s workshop
   // Character sets, by key prefix: '' Peter Beck today, 'y' Peter in the 1990s, 'a' Adam Spice. Each gets the everyday look plus power-up outfits.
   for (const [pre, young, adam] of [['', false, false], ['y', true, false], ['a', false, true]] as [string, boolean, boolean][]) {
-    for (const fit of (adam ? ['', 'S', 'J', 'H', 'B'] : young ? ['', 'S', 'J'] : ['', 'H', 'B']) as Fit[]) {
+    for (const fit of (adam ? ['', 'S', 'J', 'H', 'B'] : young ? ['', 'S', 'J'] : ['', 'H', 'B', 'T', 'L', 'F', 'M']) as Fit[]) {
       [0, 1, 0.5, -0.5, -1, -0.5, 0.5].forEach((l, i) => tex(scene, pre + fit + (i === 0 ? 'peter0' : 'peterw' + (i - 1)), 24, 34, (c) => peter(c, i === 0 ? 0.12 : l, false, young, fit, adam)));
       tex(scene, pre + fit + 'peterj', 24, 34, (c) => peter(c, 0.9, true, young, fit, adam));
     }
