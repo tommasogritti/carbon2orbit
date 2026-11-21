@@ -9,32 +9,43 @@ const TS = 16;
 const AUTO = new URLSearchParams(location.search).has('auto');
 interface Way { x: number; top: number; x0: number; x1: number }
 interface Foe { o: Phaser.Physics.Arcade.Image; kind: string; x0: number; x1: number; dir: number; speed: number; alive: boolean; t: number; baseY: number; vx?: number; charging?: boolean; extra?: Phaser.GameObjects.Image }
-const SPEED: Record<string, number> = { scooter: 85, drawerbot: 22, ram: 28, redtape: 44, gull: 55, bear: 24 };
-const HURT: Record<string, string> = { scooter: 'Run over by your own scooter!', drawerbot: 'Chomped by a DishDrawer!', ram: 'Rammed!', gull: 'Pecked!', redtape: 'Tangled in red tape!', bear: 'Mauled by a bear market!' };
+const SPEED: Record<string, number> = { scooter: 85, drawerbot: 22, ram: 28, redtape: 44, gull: 55, bear: 24, sander: 64, roll: 30, dust: 46, crab: 72, void: 40 };
+/** Behaviour groups: flyers skim overhead on a wave, chargers rush you when you are in front of them, droppers hang from the ceiling, rollers spin. */
+const FLY = new Set(['gull', 'dust', 'void']), CHARGE: Record<string, number> = { ram: 105 }, DROP = new Set(['sparks', 'candles', 'offcuts', 'ice']), ROLL = new Set(['redtape', 'roll']), SLOW = new Set(['drawerbot', 'redtape', 'bear', 'roll']);
+const BELT = 48; // conveyor speed, px/s
+/** A test position fires on a cycle: FIRE[0] seconds of flame, quiet until FIRE[1], warning lights until the period FIRE[2] is up. */
+const FIRE = [1.0, 2.8, 3.6];
+const HURT: Record<string, string> = { scooter: 'Run over by your own scooter!', drawerbot: 'Chomped by a DishDrawer!', ram: 'Rammed!', gull: 'Pecked!', redtape: 'Tangled in red tape!', bear: 'Mauled by a bear market!', sander: 'Sanded!', roll: 'Bowled over by a roll of carbon fibre!', dust: 'A faceful of carbon dust!', crab: 'Pinched by a blue crab!', void: 'Caught in a void!' };
 const POWER: Record<string, { name: string; secs: number; tip: string }> = {
   J: { name: 'JET PACK', secs: 7, tip: 'Jet pack! Hold SPACE to fly' },
   S: { name: 'SUIT + HELMET', secs: 7, tip: 'Suited up: nothing can touch you' },
   H: { name: 'HARD HAT + HI-VIS', secs: 7, tip: 'Site safe: nothing can touch you' },
   B: { name: 'GUMBOOTS', secs: 9, tip: 'Gumboots! Faster, and SPACE again in mid-air' },
   C: { name: 'RUNNING MATE', secs: 11, tip: 'joins you and clears the way' }, // a companion: see `buddy`
+  T: { name: 'CLEAN-ROOM SUIT', secs: 7, tip: 'Suited up: dust and offcuts cannot touch you' },
+  F: { name: 'CRYO KIT', secs: 7, tip: 'Face shield, apron, gauntlets: nothing can touch you' },
+  M: { name: 'METHANE + OXYGEN', secs: 7, tip: 'Methane and oxygen! Hold SPACE to fly on a blue flame' },
+  L: { name: 'CARBON LIGHT', secs: 10, tip: 'Light as carbon fibre: jump far higher, fall slowly' },
 };
 /** What changes from one platform setting to the next. */
 const THEMES: Record<string, { music: string; amb: 'hiss' | 'sea'; layers: [string, number][]; tiles: string; goal: string; egg: string; young?: boolean; pit: string; drop: [string, string, string]; title: string; text: (secs: string) => string }> = {
   workshop: { music: 'workshop', amb: 'hiss', layers: [['bg_workshop', 760]], tiles: 'workshop', goal: 'bike', egg: 'waterrocket', young: true, pit: 'Mind the service pit!', drop: ['welder', 'spark', 'Welding sparks!'], title: 'Rocket bike: assembled', text: (t) => `All five parts in ${t} s. The bike screams off down Princes Street on hydrogen peroxide.` },
   mahia: { music: 'mahia', amb: 'sea', layers: [['bg_mahia_far', 520], ['bg_mahia_mid', 760]], tiles: 'mahia', goal: 'pad_empty', egg: 'gnome', pit: 'Splash!', drop: ['welder', 'spark', 'Sparks!'], title: 'Pad hardware delivered', text: (t) => `Everything reached the tip of the peninsula in ${t} s. Launch Complex 1 can open.` },
+  factory: { music: 'factory', amb: 'hiss', layers: [['bg_factory', 760]], tiles: 'factory', goal: 'rosie', egg: 'engine100', pit: 'Into the cable trench!', drop: ['trimmer', 'offcut', 'Hit by a carbon offcut!'], title: 'Rosie is running', text: (t) => `Everything loaded onto Rosie’s bed in ${t} s. She marks, cuts, drills, mills and sands it: a rocket’s worth of carbon composite in 12 hours, where the hand work took more than 400.` },
+  stennis: { music: 'delta', amb: 'sea', layers: [['bg_stennis_far', 520], ['bg_stennis_mid', 760]], tiles: 'stennis', goal: 'lc3', egg: 'eureka', pit: 'Splash!', drop: ['cryoline', 'icicle', 'Hit by falling ice!'], title: 'Everything but the rocket', text: (t) => `Delivered to Wallops in ${t} s. The engine runs, the pad is open and a replacement dome is being made. What is left is the part nobody can hurry: assemble the tank, fill it, chill it, and only then name a date.` },
   listing: { music: 'heli', amb: 'hiss', layers: [['bg_listing', 760]], tiles: 'workshop', goal: 'bell', egg: 'blender', pit: 'Fell into a funding gap!', drop: ['tickerbox', 'candle', 'Hit by a red candle!'], title: 'RKLB is trading', text: (t) => `The whole listing delivered in ${t} s. Peter Beck rings the opening bell by video link, and VACQ becomes RKLB.` },
 };
-const BOP: Record<string, string> = { scooter: 'Scooter: kill switch hit', drawerbot: 'Drawer shut', ram: 'Ram sent packing', gull: 'Shoo!', redtape: 'Red tape cut', bear: 'Bear squeezed' };
+const BOP: Record<string, string> = { scooter: 'Scooter: kill switch hit', drawerbot: 'Drawer shut', ram: 'Ram sent packing', gull: 'Shoo!', redtape: 'Red tape cut', bear: 'Bear squeezed', sander: 'Sander unplugged', roll: 'Roll stopped', dust: 'Dust cleared', crab: 'Crab back in the bay', void: 'Void closed up' };
 export class PlatformScene extends Phaser.Scene {
   def!: LevelDef; p: any; me!: Phaser.Physics.Arcade.Sprite; solids!: Phaser.Physics.Arcade.StaticGroup;
-  amb?: Loop; jet?: Loop; power: Fit | 'C' = ''; buddy?: Phaser.GameObjects.Image; buddyPre = ''; powerT = 0; powerMax = 1; dbl = false; secret = false; pwHud!: Phaser.GameObjects.Graphics; pwIcon!: Phaser.GameObjects.Image; pwText!: Phaser.GameObjects.Text; jetFx?: Phaser.GameObjects.Particles.ParticleEmitter; wasDown = true; inv = 0; bopped = 0; foes: Foe[] = []; droppers: { x: number; t: number; gy: number; live: Phaser.Physics.Arcade.Image[] }[] = []; pre = ''; got = 0; egg = false; hud!: Phaser.GameObjects.Text; msg!: Phaser.GameObjects.Text; safe = { x: 24, y: 100 }; done = false; stun = 0; t0 = 0; falls = 0;
+  amb?: Loop; jet?: Loop; power: Fit | 'C' = ''; buddy?: Phaser.GameObjects.Image; buddyPre = ''; powerT = 0; powerMax = 1; dbl = false; secret = false; pwHud!: Phaser.GameObjects.Graphics; pwIcon!: Phaser.GameObjects.Image; pwText!: Phaser.GameObjects.Text; jetFx?: Phaser.GameObjects.Particles.ParticleEmitter; wasDown = true; inv = 0; bopped = 0; belts: { x0: number; x1: number; y: number; dir: number; o: Phaser.GameObjects.TileSprite }[] = []; fires: { x: number; t: number; fx: Phaser.GameObjects.Particles.ParticleEmitter; lamp: Phaser.GameObjects.Arc; on: boolean }[] = []; roar?: Loop; jetFxM?: Phaser.GameObjects.Particles.ParticleEmitter; foes: Foe[] = []; droppers: { x: number; t: number; gy: number; live: Phaser.Physics.Arcade.Image[] }[] = []; pre = ''; got = 0; egg = false; hud!: Phaser.GameObjects.Text; msg!: Phaser.GameObjects.Text; safe = { x: 24, y: 100 }; done = false; stun = 0; t0 = 0; falls = 0;
   constructor() { super('Platform'); }
-  init(d: { def: LevelDef }) { this.def = d.def; this.p = d.def.params; this.got = 0; this.egg = false; this.done = false; this.stun = 0; this.falls = 0; this.safe = { x: 24, y: 100 }; this.sheepList = []; this.foes = []; this.droppers = []; this.inv = 0; this.bopped = 0; this.hits = []; this.botWait = 0; this.power = ''; this.powerT = 0; this.dbl = false; this.secret = false; this.buddy = undefined; }
+  init(d: { def: LevelDef }) { this.def = d.def; this.p = d.def.params; this.got = 0; this.egg = false; this.done = false; this.stun = 0; this.falls = 0; this.safe = { x: 24, y: 100 }; this.sheepList = []; this.foes = []; this.droppers = []; this.belts = []; this.fires = []; this.inv = 0; this.bopped = 0; this.hits = []; this.botWait = 0; this.power = ''; this.powerT = 0; this.dbl = false; this.secret = false; this.buddy = undefined; }
   create() {
     const p = this.p, LW = p.width * TS, th = p.theme as string;
     const TH = THEMES[th], tl = TH.tiles;
     const me = hero(this.def, !!TH.young), pre = (this.pre = me.pre); // Peter is the 1990s apprentice in the workshop; a level's own lead comes as they are
-    this.t0 = this.time.now;
+    this.t0 = 0; // seconds of play so far: counted in update, so time spent paused (controls panel) is not charged
     stopLoops(); music.play(TH.music);
     this.amb = loop(TH.amb); if (TH.amb === 'sea') this.amb.set(0.7);
     this.physics.world.setBounds(0, -200, LW, H + 400);
@@ -50,6 +61,16 @@ export class PlatformScene extends Phaser.Scene {
         (this.solids.create(x * TS + 8, y * TS + 8, y > row ? `t_${tl}_fill` : 't_' + tl) as Phaser.Physics.Arcade.Image).setScale(S).refreshBody();
     for (const [x, row, w] of p.plats as number[][]) for (let i = 0; i < w; i++)
       (this.solids.create((x + i) * TS + 8, row * TS + 3, 'p_' + tl) as Phaser.Physics.Arcade.Image).setScale(S).refreshBody();
+    // conveyors: a moving strip laid over ground or platform tiles; standing on one carries you along
+    for (const [x0, x1, row, dir] of (p.belts || []) as number[][]) this.belts.push({ x0: x0 * TS, x1: (x1 + 1) * TS, y: row * TS, dir, o: this.add.tileSprite(x0 * TS, row * TS, (x1 - x0 + 1) * TS * D, 5 * D, 'belt').setOrigin(0).setScale(S).setDepth(1).setFlipX(dir < 0) });
+    // test positions: an engine over the trench that fires on a cycle. Cross between firings.
+    (p.fires || []).forEach((tx: number, i: number) => {
+      const x = tx * TS + 8, gy = ((p.ground as number[][]).find(([a, b]) => tx >= a && tx <= b)?.[2] ?? 9) * TS;
+      img(this, x, gy, 'firestand').setOrigin(0.5, 1).setDepth(1);
+      const fx = this.add.particles(x, gy - 54, 'puff', { speedY: { min: 150, max: 230 }, speedX: { min: -9, max: 9 }, lifespan: { min: 200, max: 290 }, scale: { start: S * 0.75, end: S * 0.25 }, color: [0xffffff, 0xcfe9ff, 0x7fb4ff, 0x3f6fd0], alpha: { start: 1, end: 0 }, blendMode: 'ADD', frequency: 8, quantity: 2, emitting: false }).setDepth(3);
+      this.fires.push({ x, t: i * 1.3, fx, lamp: this.add.circle(x - 9.4, gy - 48.6, 1.2, 0x7cc56b).setDepth(2), on: false });
+    });
+    if (this.fires.length) this.roar = loop('rumble');
     const groundRow = (tx: number) => (p.ground as number[][]).find(([a, b]) => tx >= a && tx <= b)?.[2] ?? 9;
     const board = (x: number, y: number, a: string, b?: string, strike = false) => {
       img(this, x, y, 'sign').setOrigin(0.5, 1).setDepth(1);
@@ -62,6 +83,7 @@ export class PlatformScene extends Phaser.Scene {
       else if (kind === 'sign2') board(x, y, 'WAIROA', 'Māhia Peninsula →');
       else if (kind === 'sign3') board(x, y, 'KAITORETE SPIT', 'launch site: on hold', true);
       else if (kind === 'princes') board(x, y, 'PRINCES ST');
+      else if (kind.startsWith('board:')) { const [a, b] = kind.slice(6).split('|'); board(x, y, a, b); }
       else {
         const s = img(this, x, y, kind).setOrigin(0.5, 1).setDepth(1);
         if (kind === 'jetpack') s.y -= 22;
@@ -75,7 +97,7 @@ export class PlatformScene extends Phaser.Scene {
     // player
     this.me = this.physics.add.sprite(24, 100, pre + 'peter0').setScale(S).setDepth(5);
     this.me.setSize(8 * D, 23 * D).setOffset(8 * D, 10.5 * D).setCollideWorldBounds(true).setAngle(0);
-    for (const fit of ['', 'S', 'J', 'H', 'B']) if (this.textures.exists(pre + fit + 'peterw0') && !this.anims.exists(pre + fit + 'walk')) this.anims.create({ key: pre + fit + 'walk', frames: [0, 1, 2, 3, 4, 5].map((i) => ({ key: pre + fit + 'peterw' + i })), frameRate: 12, repeat: -1 });
+    for (const fit of ['', 'S', 'J', 'H', 'B', 'T', 'L', 'F', 'M']) if (this.textures.exists(pre + fit + 'peterw0') && !this.anims.exists(pre + fit + 'walk')) this.anims.create({ key: pre + fit + 'walk', frames: [0, 1, 2, 3, 4, 5].map((i) => ({ key: pre + fit + 'peterw' + i })), frameRate: 12, repeat: -1 });
     this.physics.add.collider(this.me, this.solids);
     this.cameras.main.startFollow(this.me, false, 0.12, 0.12, -40, 20);
     // parts
@@ -88,7 +110,7 @@ export class PlatformScene extends Phaser.Scene {
     const e = this.physics.add.staticImage(p.egg[0] * TS + 8, p.egg[1] * TS + 8, TH.egg).setScale(S).refreshBody();
     this.physics.add.overlap(this.me, e, () => { this.burst(e.x, e.y, 0xffffff); e.destroy(); this.egg = true; snd.egg(); this.say('Easter egg!'); });
     // power-ups and the hidden blueprint
-    for (const [code, tx, ty] of (p.powerups || []) as [Fit | 'C', number, number][]) {
+    for (const [code, tx, ty] of (p.powerups || []) as [Exclude<Fit, ''> | 'C', number, number][]) {
       const it = this.physics.add.staticImage(tx * TS + 8, ty * TS + 8, 'pw_' + code).setScale(S).refreshBody().setDepth(3);
       this.tweens.add({ targets: it, y: it.y - 3, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
       this.physics.add.overlap(this.me, it, () => { this.burst(it.x, it.y, 0x9fe6ff); it.destroy(); this.givePower(code); });
@@ -127,7 +149,7 @@ export class PlatformScene extends Phaser.Scene {
           const live = [panel(this, goal.x - 37, goal.y - 104, 74, 34, 0.92).setDepth(6), img(this, goal.x - 22, goal.y - 87, 'peter_chip').setScale(S * 0.9).setDepth(7), T(this, goal.x - 6, goal.y - 99, '● LIVE', '#ff6a50', 4.6, '700').setDepth(7), T(this, goal.x - 6, goal.y - 92, 'PETER BECK', '#ffffff', 6, '700').setDepth(7), T(this, goal.x - 6, goal.y - 83.6, 'by video link', '#ffe98a', 4.8).setDepth(7)];
           live.forEach((o) => o.setAlpha(0)); this.tweens.add({ targets: live, alpha: 1, duration: 200 });
         } }
-      const secs = (this.time.now - this.t0) / 1000;
+      const secs = this.t0;
       const stars = this.falls === 0 && secs < 75 ? 3 : this.falls <= 2 ? 2 : 1;
       this.time.delayedCall(1400, () => finish(this, this.def, {
         success: true, stars, egg: this.egg, secret: this.secret,
@@ -139,6 +161,7 @@ export class PlatformScene extends Phaser.Scene {
     this.msg = fix(T(this, W / 2, 34, '', '#ffe98a', 10, '700')).setOrigin(0.5).setDepth(11).setShadow(0, 1, '#000000', 3);
     who(this, this.def, W - 104, 4, !!TH.young, fix);
     this.pwHud = fix(this.add.graphics()).setDepth(10); this.pwIcon = fix(img(this, 13, 30, 'pw_J')).setScale(S * 0.9).setDepth(11).setVisible(false); this.pwText = fix(T(this, 23, 22.6, '', '#bfe9ff', 5.6, '700')).setDepth(11);
+    this.jetFxM = this.add.particles(0, 0, 'puff', { speedY: { min: 60, max: 110 }, speedX: { min: -8, max: 8 }, lifespan: 260, scale: { start: S * 0.3, end: S * 0.05 }, color: [0xffffff, 0xbfe3ff, 0x4d9be8], alpha: { start: 1, end: 0 }, blendMode: 'ADD', frequency: 14, emitting: false }).setDepth(4);
     this.jet = loop('hiss');
     this.plan();
     this.refresh();
@@ -150,7 +173,8 @@ export class PlatformScene extends Phaser.Scene {
     const rows: [string, string][] = [['← →', 'Run'], ['Space', 'Jump: hold for a higher jump. Land on a troublemaker to see it off']];
     if (has('J')) rows.push(['Space', 'With the jet pack: hold to fly while it lasts']);
     if (has('B')) rows.push(['Space', 'With the gumboots: press again in mid-air for a second jump (you also run faster)']);
-    const notes = [has('S') ? 'The suit and helmet make you untouchable.' : '', has('H') ? 'The hard hat and hi-vis make you untouchable.' : '', has('C') && mate ? `The bubble with ${mate.name.split(' ')[0]}’s face brings ${mate.name} in to run ahead and clear the way.` : ''].filter(Boolean).join(' ');
+    if (has('M')) rows.push(['Space', 'With methane and oxygen: hold to fly on a blue flame while it lasts']);
+    const notes = [has('S') ? 'The suit and helmet make you untouchable.' : '', has('H') ? 'The hard hat and hi-vis make you untouchable.' : '', has('T') ? 'The clean-room suit makes you untouchable.' : '', has('F') ? 'The cryo kit makes you untouchable.' : '', has('L') ? 'Carbon light lets you jump far higher and fall slowly.' : '', has('C') && mate ? `The bubble with ${mate.name.split(' ')[0]}’s face brings ${mate.name} in to run ahead and clear the way.` : ''].filter(Boolean).join(' ');
     return { title: this.def.title, rows, note: `Collect all ${this.p.parts.length} parts, then reach the goal. Bubbles are power-ups; the bar shows how long one lasts. ${notes}` };
   }
   /** Waypoints for the ?auto=1 bot: every pickup in order (via a stepping-stone platform where needed), then the goal. */
@@ -194,21 +218,27 @@ export class PlatformScene extends Phaser.Scene {
       if (off && (p.hazards as number[]).some((h) => { const k = (h * TS + 8 - x) * d; return k > 0 && k < 75; })) forced = true;
     }
     // ground enemies: take off early enough to be at full height over them, later for slow ones, sooner for fast ones
-    const walkers = [...this.sheepList.map((o) => ({ x: o.x, y: o.y, vx: 0, hw: 10, slow: false })), ...this.foes.filter((f) => f.alive && f.kind !== 'gull').map((f) => ({ x: f.o.x, y: f.o.y, vx: f.vx || 0, hw: f.o.displayWidth * 0.4, slow: f.kind === 'drawerbot' || f.kind === 'redtape' || f.kind === 'bear' }))];
+    const run = 95 + this.beltAt(x, feet) * d; // ground speed in the direction of travel
+    const walkers = [...this.sheepList.map((o) => ({ x: o.x, y: o.y, vx: 0, hw: 10, slow: false })), ...this.foes.filter((f) => f.alive && !FLY.has(f.kind)).map((f) => ({ x: f.o.x, y: f.o.y, vx: f.vx || 0, hw: f.o.displayWidth * 0.4, slow: SLOW.has(f.kind) }))];
+    let hold = false;
     for (const e of walkers) {
       const k = (e.x - x) * d; if (k < 0 || Math.abs(e.y - feet) > 26) continue;
-      const vc = 95 - e.vx * d; // closing speed
+      const vc = run - e.vx * d; // closing speed
+      if (!e.slow && e.vx * d > 35 && k < 100) { hold = true; continue; } // a fast one running away: let it turn round rather than chase it
       if (e.slow && Math.abs(k - 0.79 * vc) < 4) { avoid = true; continue; } // slow ones: time the jump to come down on top of them
       if (vc < 30) { if (k < 26) avoid = true; } else if (k > 0.13 * vc + e.hw + 2 && k < Math.max(0.3 * vc + e.hw + 6, 0.55 * vc - e.hw)) avoid = true;
     }
     // an optional hop (over a vent or an enemy) must not end in a pit
     if (avoid && !(groundAt(x + d * 66) && groundAt(x + d * 84))) avoid = false;
     jump = up || forced || avoid;
+    if (hold && b.blocked.down && !forced) return { dir: 0, jump: false };
     if (b.blocked.down) {
       // never jump up into a gull, and never walk under a falling spark; give up waiting on a gull after a while
-      const gull = jump && this.foes.some((f) => { const k = (f.o.x - x) * d; return f.alive && f.kind === 'gull' && k > -18 && k < (f.dir * d < 0 ? 150 : 104); }); // wait until it is behind, or well ahead and flying away
-      const spark = this.droppers.some((dr) => { const k = (dr.x - x) * d; return k > 2 && k < (jump ? 92 : 40) && (dr.live.length > 0 || dr.t > 0.75); });
-      if ((gull && this.botWait < 8) || spark) { dir = 0; jump = false; this.botWait += this.game.loop.delta / 1000; } else if (!gull) this.botWait = 0;
+      const gull = jump && this.foes.some((f) => { const k = (f.o.x - x) * d; return f.alive && FLY.has(f.kind) && k > -18 && k < (f.dir * d < 0 ? 150 : 104); }); // wait until it is behind, or well ahead and flying away
+      const spark = this.droppers.find((dr) => { const k = (dr.x - x) * d; return k > 2 && k < (jump ? 92 : 40) && (dr.live.length > 0 || dr.t > 0.75); });
+      const fire = this.fires.find((f) => { const k = (f.x - x) * d, ph = f.t % FIRE[2]; return k > 13 && k < 48 && !(ph > FIRE[0] + 0.05 && ph < FIRE[2] - 0.8); }); // only start across with time to clear it
+      if (fire) return { dir: (fire.x - x) * d < 20 ? -d : 0, jump: false };
+      if ((gull && this.botWait < 8) || spark) { dir = spark && (spark.x - x) * d < 14 ? -d : 0; jump = false; this.botWait += this.game.loop.delta / 1000; } else if (!gull) this.botWait = 0;
     }
     return { dir, jump: jump && b.blocked.down };
   }
@@ -220,8 +250,10 @@ export class PlatformScene extends Phaser.Scene {
   say(s: string) { this.msg.setText(s).setAlpha(1); this.tweens.killTweensOf(this.msg); this.tweens.add({ targets: this.msg, alpha: 0, delay: 1100, duration: 400 }); }
   refresh() { this.hud.setText(`PARTS ${this.got}/${this.p.parts.length}   ${this.def.title.toUpperCase()}`); }
   /** Power-ups change how Peter looks and what he can do, for a few seconds. */
-  tough() { return this.power === 'S' || this.power === 'H'; }
-  givePower(code: Fit | 'C') {
+  tough() { return this.power === 'S' || this.power === 'H' || this.power === 'T' || this.power === 'F'; }
+  /** Conveyor speed under a point at foot level, signed; 0 when not on a belt. */
+  beltAt(x: number, feet: number) { const b = this.belts.find((q) => x >= q.x0 && x <= q.x1 && Math.abs(feet - q.y) < 4); return b ? b.dir * BELT : 0; }
+  givePower(code: Exclude<Fit, ''> | 'C') {
     const pw = POWER[code]; this.power = code; this.powerT = this.powerMax = pw.secs; this.dbl = false;
     const mate = code === 'C' ? CHARACTERS.find((c) => c.id === this.p.buddy) || CHARACTERS[0] : undefined;
     this.buddy?.destroy(); this.buddy = undefined;
@@ -234,7 +266,7 @@ export class PlatformScene extends Phaser.Scene {
   }
   powerStep(dt: number, b: Phaser.Physics.Arcade.Body) {
     const g = this.pwHud; g.clear();
-    if (!this.power) { this.jetFx!.emitting = false; this.jet?.set(0); return; }
+    if (!this.power) { this.jetFx!.emitting = false; this.jetFxM!.emitting = false; this.jet?.set(0); return; }
     this.powerT -= dt;
     if (this.buddy) { // the running mate keeps a few steps ahead, copies your stride, and sees off whatever he reaches
       const bd = this.buddy, ahead = this.me.x + (this.me.flipX ? -26 : 26), moving = Math.abs(b.velocity.x) > 5;
@@ -242,21 +274,23 @@ export class PlatformScene extends Phaser.Scene {
       bd.setTexture(this.buddyPre + (!b.blocked.down ? 'peterj' : moving ? 'peterw' + (Math.floor(this.time.now / 85) % 6) : 'peter0')).setAlpha(this.powerT < 1.5 && Math.floor(this.time.now / 120) % 2 ? 0.4 : 1);
       for (const f of this.foes) if (f.alive && Math.abs(f.o.x - bd.x) < 15 && Math.abs(f.o.y - bd.y) < 26) this.bop(f, false);
     }
-    const flying = this.power === 'J' && (held('a') || held('up')) && !b.blocked.down;
+    const flying = (this.power === 'J' || this.power === 'M') && (held('a') || held('up')) && !b.blocked.down;
+    if (this.power === 'L' && b.velocity.y > 62) this.me.setVelocityY(62); // carbon fibre: next to no weight, so a slow fall
     if (flying) this.me.setVelocityY(this.me.y < 30 ? Math.max(b.velocity.y, 0) : Math.max(b.velocity.y - 1500 * dt, -135)); // stays under the roof
-    this.jetFx!.emitting = flying; this.jetFx!.setPosition(this.me.x - (this.me.flipX ? -3 : 3), this.me.y + 9); this.jet?.set(flying ? 1 : 0);
+    const fx = this.power === 'M' ? this.jetFxM! : this.jetFx!; // methane burns blue
+    fx.emitting = flying; fx.setPosition(this.me.x - (this.me.flipX ? -3 : 3), this.me.y + 9); this.jet?.set(flying ? 1 : 0);
     if (this.power === 'B' && !b.blocked.down && Math.random() < 0.2) this.burst(this.me.x, this.me.y + 14, 0xd9cfb4);
     g.fillStyle(0x0b0e18, 0.8).fillRoundedRect(4, 20, 96, 20, 3); g.lineStyle(0.5, 0x9fe6ff, 0.6).strokeRoundedRect(4, 20, 96, 20, 3);
     g.fillStyle(0x000000, 0.5).fillRoundedRect(23, 31.5, 72, 4, 2); const w = 72 * Math.max(0, this.powerT / this.powerMax); if (w > 1) g.fillStyle(this.powerT < 2 ? 0xff7a5c : 0x7fd0ff).fillRoundedRect(23, 31.5, Math.max(4, w), 4, 2);
-    if (this.powerT <= 0) { this.power = ''; this.buddy?.destroy(); this.buddy = undefined; this.pwIcon.setVisible(false); this.pwText.setText(''); g.clear(); snd.powerEnd(); this.say('Power-up worn off'); this.jetFx!.emitting = false; this.jet?.set(0); }
+    if (this.powerT <= 0) { this.power = ''; this.buddy?.destroy(); this.buddy = undefined; this.pwIcon.setVisible(false); this.pwText.setText(''); g.clear(); snd.powerEnd(); this.say('Power-up worn off'); this.jetFx!.emitting = false; this.jetFxM!.emitting = false; this.jet?.set(0); }
   }
   /** Enemies. Jumping on one from above sees it off; touching it any other way costs a retry from the last safe spot. */
   spawn(kind: string, a: number, b: number, gy: number) {
     const x0 = a * TS + 8, x1 = b * TS + 8;
-    if (kind === 'sparks' || kind === 'candles') { img(this, x0, 19, THEMES[this.p.theme].drop[0]).setOrigin(0.5, 0).setDepth(1); this.droppers.push({ x: x0 + 1, t: Math.random(), gy, live: [] }); return; }
-    const o = this.physics.add.image(x0, 0, kind === 'drawerbot' ? 'drawerbot0' : kind === 'gull' ? 'gull0' : kind).setScale(S).setDepth(4);
+    if (DROP.has(kind)) { img(this, x0, 19, THEMES[this.p.theme].drop[0]).setOrigin(0.5, 0).setDepth(1); this.droppers.push({ x: x0 + 1, t: Math.random(), gy, live: [] }); return; }
+    const o = this.physics.add.image(x0, 0, kind === 'drawerbot' ? 'drawerbot0' : FLY.has(kind) ? kind + '0' : kind).setScale(S).setDepth(4);
     const body = o.body as Phaser.Physics.Arcade.Body; body.setAllowGravity(false); body.setSize(o.width * 0.76, o.height * 0.8);
-    const baseY = kind === 'gull' ? gy - 49 : gy - o.displayHeight / 2; // gulls skim just over your head: only a jump brings you into them
+    const baseY = FLY.has(kind) ? gy - 49 : gy - o.displayHeight / 2; // gulls skim just over your head: only a jump brings you into them
     o.y = baseY;
     const foe: Foe = { o, kind, x0, x1, dir: 1, speed: SPEED[kind], alive: true, t: Math.random() * 3, baseY };
     if (kind === 'redtape') foe.extra = img(this, x0, gy - 3, 'tapetail').setDepth(3);
@@ -280,20 +314,30 @@ export class PlatformScene extends Phaser.Scene {
       if (!f.alive) continue;
       f.t += dt;
       let sp = f.speed;
-      if (f.kind === 'ram') { // lowers its head and charges when you are in front of it
+      if (CHARGE[f.kind]) { // lowers its head and charges when you are in front of it
         const dx = this.me.x - f.o.x, charge = Math.abs(dx) < 72 && Math.sign(dx) === f.dir && Math.abs(this.me.y - f.o.y) < 30;
-        if (charge) { sp = 105; if (!f.charging) snd.snort(); } f.charging = charge;
+        if (charge) { sp = CHARGE[f.kind]; if (!f.charging) snd.snort(); } f.charging = charge;
       }
       f.o.x += f.dir * sp * dt; f.vx = f.dir * sp;
       if (f.o.x > f.x1) { f.o.x = f.x1; f.dir = -1; } else if (f.o.x < f.x0) { f.o.x = f.x0; f.dir = 1; }
       f.o.setFlipX(f.dir < 0);
-      if (f.kind === 'gull') { f.o.y = f.baseY + Math.sin(f.t * 2.4) * 18; f.o.setTexture('gull' + (Math.floor(f.t * 7) % 2)); }
+      if (FLY.has(f.kind)) { f.o.y = f.baseY + Math.sin(f.t * 2.4) * 18; f.o.setTexture(f.kind + (Math.floor(f.t * 7) % 2)); }
       else if (f.kind === 'drawerbot') { f.o.setTexture('drawerbot' + (Math.floor(f.t * 2.6) % 2)); f.o.y = f.baseY - Math.abs(Math.sin(f.t * 5.2)) * 2; }
-      else if (f.kind === 'redtape') { f.o.rotation += (f.dir * sp * dt) / 6.6; f.extra!.setPosition(f.o.x - f.dir * 14, f.baseY + 5).setFlipX(f.dir < 0); }
+      else if (ROLL.has(f.kind)) { f.o.rotation += (f.dir * sp * dt) / 6.6; f.extra?.setPosition(f.o.x - f.dir * 14, f.baseY + 5).setFlipX(f.dir < 0); }
+      else if (f.kind === 'sander') f.o.y = f.baseY + Math.sin(f.t * 60) * 0.35;
       else if (f.kind === 'scooter') { f.o.y = f.baseY + Math.sin(f.t * 30) * 0.3; f.extra!.setPosition(f.o.x - f.dir * 18, f.baseY + 0.5).setAlpha(0.6 + Math.random() * 0.4); }
       else if (f.kind === 'bear') f.o.y = f.baseY - Math.abs(Math.sin(f.t * 6)) * 1.2;
       else if (f.kind === 'ram') f.o.y = f.baseY - (f.charging ? Math.abs(Math.sin(f.t * 14)) * 1.5 : 0);
     }
+    let roar = 0;
+    for (const f of this.fires) { // hot-fire cycle: flame, quiet, warning lights
+      f.t += dt; const ph = f.t % FIRE[2], on = ph < FIRE[0], warn = ph > FIRE[1];
+      if (on && !f.on && Math.abs(f.x - this.me.x) < 150) snd.ignition();
+      f.on = on; f.fx.emitting = on; f.lamp.setFillStyle(on ? 0xff5a3c : warn ? (Math.floor(f.t * 8) % 2 ? 0xffe98a : 0x5b4410) : 0x7cc56b);
+      if (warn && Math.abs(f.x - this.me.x) < 110 && Math.floor(ph * 5) !== Math.floor((ph - dt) * 5)) snd.tick();
+      if (on) { roar = Math.max(roar, 1 - Math.abs(f.x - this.me.x) / 170); if (Math.abs(f.x - this.me.x) < 11 && this.me.y > 60 && this.inv <= 0 && !this.done && !this.tough()) this.respawn('Caught in the hot fire!'); }
+    }
+    this.roar?.set(Math.max(0, roar), 0.6);
     for (const d of this.droppers) { // welding arms shed a spark every second and a half
       d.t += dt;
       if (d.t > 1.5) {
@@ -314,17 +358,20 @@ export class PlatformScene extends Phaser.Scene {
   }
   update(_t: number, dms: number) {
     if (this.done) return;
+    this.t0 += dms / 1000;
     const b = this.me.body as Phaser.Physics.Arcade.Body;
     this.stun = Math.max(0, this.stun - dms / 1000);
     this.inv = Math.max(0, this.inv - dms / 1000); this.me.setAlpha(this.inv > 0 && Math.floor(this.time.now / 80) % 2 ? 0.35 : 1);
     this.foeStep(Math.min(0.05, dms / 1000));
+    for (const q of this.belts) q.o.tilePositionX -= q.dir * BELT * D * Math.min(0.05, dms / 1000) * (q.dir < 0 ? -1 : 1);
     if (this.stun <= 0) {
       const bot = AUTO ? this.bot() : undefined;
       const dir = bot ? bot.dir : (held('right') ? 1 : 0) - (held('left') ? 1 : 0);
       const look = this.pre + (this.power === 'C' || (this.powerT < 1.5 && Math.floor(this.time.now / 120) % 2) ? '' : this.power); // flickers back as it runs out
-      this.me.setVelocityX(dir * 95 * (this.power === 'B' && !bot ? 1.45 : 1));
+      const belt = b.blocked.down ? this.beltAt(this.me.x, b.bottom) : 0;
+      this.me.setVelocityX(bot && !dir ? 0 : dir * 95 * (this.power === 'B' && !bot ? 1.45 : 1) + belt); // the bot feathers against a belt to hold still
       if (dir) this.me.setFlipX(dir < 0);
-      if ((bot ? bot.jump : just('a') || just('up')) && b.blocked.down) { this.me.setVelocityY(-245); snd.jump(); this.dbl = false; }
+      if ((bot ? bot.jump : just('a') || just('up')) && b.blocked.down) { this.me.setVelocityY(this.power === 'L' ? -318 : -245); snd.jump(); this.dbl = false; }
       else if (this.power === 'B' && !b.blocked.down && !this.dbl && (just('a') || just('up'))) { this.dbl = true; this.me.setVelocityY(-232); snd.jump(); this.burst(this.me.x, this.me.y + 12, 0xffffff); }
       if (!bot && !held('a') && !held('up') && b.velocity.y < -90) this.me.setVelocityY(-90); // variable jump height
       this.powerStep(Math.min(0.05, dms / 1000), b);

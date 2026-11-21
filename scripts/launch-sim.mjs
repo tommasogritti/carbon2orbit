@@ -47,3 +47,21 @@ const A = S.VEHICLES['atea-1'];
 console.log('\nĀtea-1: apogee / range (km) by rail elevation and wind (m/s, + = tailwind)');
 for (const w of [-4, -2, 0, 2, 4]) console.log(`  wind ${String(w).padStart(2)}:`, [74, 78, 80, 82, 84, 86, 88].map((el) => { const b = S.ballistic(A, el * DEG, w); return `${el}° ${km(b.apogee)}/${km(b.range)}`; }).join('  '));
 console.log('  dart released late, 84°, calm:', [0.15, 0.5, 1, 2].map((l) => `${l}s ${km(S.ballistic(A, 84 * DEG, 0, l).apogee)}`).join('  '), ' burnout', S.ballistic(A, 84 * DEG, 0).burnout.toFixed(1), 's');
+
+// ---- more Electron missions flown in the game ----
+for (const [name, m] of [['It\'s Business Time 210x500', { hp: 210e3, ha: 500e3 }], ['LC-2 250x550', { hp: 250e3, ha: 550e3 }]]) {
+  const ref = S.reference(E, m);
+  console.log(`\nElectron → ${name}: margin ${(ref.margin * 100).toFixed(1)}%`, fly(m, { ref }));
+}
+
+// ---- HASTE: suborbital, cut off on speed, release the test article on the way down ----
+const Hv = S.VEHICLES.haste;
+for (const m of [{ hp: 140e3, ha: 140e3, vCut: 6000, relAlt: 90e3 }]) {
+  const ref = S.reference(Hv, m);
+  const s = S.newSim(Hv); S.ignite(s); S.step(s, 2); S.release(s);
+  let minFpa = 0;
+  while (s.t < 1500 && !s.fail && !s.released) { const e = S.botEvent(s, m); if (e === 'go') S.go(s); else if (e === 'cut') S.cutoff(s); S.pilot(s, m, 0.05, ref); S.step(s, 0.05); minFpa = Math.atan2(s.vr, s.vt) / DEG; }
+  console.log(`\nHASTE → level at ${km(m.hp)} km, SECO at ${m.vCut} m/s, release at ${km(m.relAlt)} km: reference kick ${(ref.kick / DEG).toFixed(1)}°, margin ${(ref.margin * 100).toFixed(1)}%`);
+  console.log('  autopilot      ', { fail: s.fail, maxQ_kPa: (s.maxQ / 1000).toFixed(1), stress: s.stress.toFixed(2), meco: clock(s.ev.meco ?? 0), fairing: clock(s.ev.fairing ?? 0), swap: s.ev.swap ? clock(s.ev.swap) : 'none', seco: clock(s.ev.seco ?? 0), secoAlt: km(ref.pts.find((p) => p.t >= ref.ev.seco).alt), release: clock(s.ev.release ?? 0), relAlt: (s.alt / 1000).toFixed(1), relSpeed: s.speed.toFixed(0), fpa: minFpa.toFixed(1), down: km(s.down), heat: s.heat.toFixed(2) });
+  if (s.fail || !s.released) { console.error('HASTE autopilot failed'); process.exitCode = 1; }
+}

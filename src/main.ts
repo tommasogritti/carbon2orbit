@@ -15,6 +15,14 @@ import { HotfireScene } from './scenes/Hotfire';
 import { HeliScene } from './scenes/Heli';
 import { OrbitRaiseScene } from './scenes/OrbitRaise';
 import { SprintScene } from './scenes/Sprint';
+import { FaultFinderScene } from './scenes/FaultFinder';
+import { SplashdownScene } from './scenes/Splashdown';
+import { CruiseScene } from './scenes/Cruise';
+import { CountdownRaceScene } from './scenes/CountdownRace';
+import { RideScene } from './scenes/Ride';
+import { OrbitOpsScene } from './scenes/OrbitOps';
+import { DualCountScene } from './scenes/DualCount';
+import { ArcLabScene } from './scenes/ArcLab';
 
 class Boot extends Phaser.Scene {
   constructor() { super('Boot'); }
@@ -34,7 +42,7 @@ Promise.all(['500', '600', '700'].map((w) => document.fonts.load(`${w} 16px "Cha
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     render: { antialias: true, roundPixels: false },
     physics: { default: 'arcade', arcade: { gravity: { x: 0, y: 620 } } },
-    scene: [Boot, MapScene, PlatformScene, LaunchScene, HotfireScene, HeliScene, OrbitRaiseScene, SprintScene],
+    scene: [Boot, MapScene, PlatformScene, LaunchScene, HotfireScene, HeliScene, OrbitRaiseScene, SprintScene, FaultFinderScene, SplashdownScene, CruiseScene, CountdownRaceScene, RideScene, OrbitOpsScene, DualCountScene, ArcLabScene],
   });
   initInput(game);
   // Dev-only gameplay recorder: ?rec=<name> captures the canvas; the clip is saved by the dev server when the level ends.
@@ -56,6 +64,14 @@ Promise.all(['500', '600', '700'].map((w) => document.fonts.load(`${w} 16px "Cha
       (window as any).__g2o.recStop = recStop;
     });
   }
+  // Dev-only fast-forward for bot runs: ?fast=6 steps the whole game six times per tick (it also keeps running in a background tab).
+  const fast = Number(new URLSearchParams(location.search).get('fast'));
+  if (fast > 1) game.events.once('ready', () => {
+    game.loop.stop(); game.loop.wake = () => {}; game.loop.sleep = () => {};
+    let t = performance.now();
+    const draw = game.step.bind(game), skip = game.headlessStep.bind(game); // only the last step of each tick is drawn
+    setInterval(() => { for (let i = 0; i < fast; i++) { t += 1000 / 60; game.loop.callback = i === fast - 1 ? draw : skip; game.loop.step(t); } }, 16);
+  });
   // Test and dev hooks (used by the Playwright smoke test and ?dev=1).
   (window as any).__g2o = {
     game, save, LEVELS, resetSave, closeCard, openLevel, audio: audioState,
