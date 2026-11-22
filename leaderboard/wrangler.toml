@@ -2,12 +2,16 @@ name = "carbon2orbit-leaderboard"
 main = "src/worker.js"
 compatibility_date = "2026-11-01"
 
-# Restrict to the site that hosts the game once you know it, e.g. "https://carbon2orbit.example"
-[vars]
-ALLOWED_ORIGIN = "*"
+# The public leaderboard runs at https://lb.carbon2orbit.com. A fork deploying its own copy changes the
+# route, the allowed origins and the database id below (see README.md).
+workers_dev = false
+routes = [{ pattern = "lb.carbon2orbit.com", custom_domain = true }]
 
-# Create the database with `npx wrangler d1 create carbon2orbit-leaderboard` and paste its id here.
+# Sites allowed to call the board from a browser, comma-separated. "*.carbon2orbit.pages.dev" covers preview deploys.
+[vars]
+ALLOWED_ORIGIN = "https://carbon2orbit.com,https://carbon2orbit.pages.dev,*.carbon2orbit.pages.dev"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "carbon2orbit-leaderboard"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "f6a44518-642a-413b-aa4b-042926b42d80"
