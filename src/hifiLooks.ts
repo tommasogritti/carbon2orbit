@@ -17,6 +17,11 @@ import { twopadsLook } from './looks/twopads';
 import { hazeLook } from './looks/haze';
 import { editLook } from './looks/edit';
 import { diaryLook } from './looks/diary';
+import { reentryLook } from './looks/reentry';
+import { catchLook } from './looks/catch';
+import { cislunarLook } from './looks/cislunar';
+import { groundtrackLook } from './looks/groundtrack';
+import { cruiseLook } from './looks/cruise';
 import type { HiFi, Look } from './hifi';
 
 // The looks a level's theme can name (see hifi.ts). A look is the art and the numbers; the engine is shared.
@@ -252,4 +257,9 @@ export const LOOKS: Record<string, Look> = { listing: listingLook, workshop: wor
   haze: hazeLook,
   edit: editLook,
   diary: diaryLook,
+  reentry: reentryLook,
+  catch: catchLook,
+  cislunar: cislunarLook,
+  groundtrack: groundtrackLook,
+  cruise: cruiseLook,
 };

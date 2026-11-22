@@ -4,6 +4,8 @@ import { snd, music, stopLoops, loop, Loop } from '../audio';
 import { P, S } from '../art';
 import type { LevelDef } from '../content';
 import { MU, RE } from '../launchSim';
+import { hifi, HiFi } from '../hifi';
+import { LOOKS } from '../hifiLooks';
 
 const AUTO = new URLSearchParams(location.search).has('auto');
 const DEG = Math.PI / 180, WE = 360 / 86164; // Earth turns this many degrees a second
@@ -37,9 +39,9 @@ class Orb {
   }
 }
 interface Step { do: 'lower' | 'raise' | 'deorbit' | 'release'; alt?: number }
-const THEMES: Record<string, { map: string; craft: string; capsule: string; music: string; role: string; label: (st: Step) => string; title: string; text: (miss: number, where: string) => string }> = {
+const THEMES: Record<string, { /** The hi-fi look (hifiLooks.ts), if the theme has one. */ hifi?: string; map: string; craft: string; capsule: string; music: string; role: string; label: (st: Step) => string; title: string; text: (miss: number, where: string) => string }> = {
   varda: {
-    map: 'worldmap', craft: 'pioneer', capsule: 'capsule', music: 'space', role: 'CEO · Pioneer is Rocket Lab’s; the capsule is Varda’s',
+    hifi: 'groundtrack', map: 'worldmap', craft: 'pioneer', capsule: 'capsule', music: 'space', role: 'CEO · Pioneer is Rocket Lab’s; the capsule is Varda’s',
     label: (st) => (st.do === 'lower' ? `LOWER PERIGEE TO ${st.alt} km` : st.do === 'raise' ? `RAISE APOGEE TO ${st.alt} km` : st.do === 'deorbit' ? 'DE-ORBIT BURN · AIM THE LANDING' : `RELEASE CAPSULE AT ${st.alt} km`),
     title: 'Touchdown', text: (miss, where) => `The capsule came down ${miss.toFixed(0)} km from the centre of ${where}, under its parachute.`,
   },
@@ -52,7 +54,7 @@ const THEMES: Record<string, { map: string; craft: string; capsule: string; musi
  */
 export class OrbitOpsScene extends Phaser.Scene {
   def!: LevelDef; p: any; th!: (typeof THEMES)[string]; o!: Orb; cap?: Orb; steps: Step[] = []; si = 0; inc = 97.5; node = 0; U1 = 0; uT = 0; ended = false; used = 0; relAlt = 0; lit = false; phasing = 0; lastVr = 0; trail: number[][] = []; pred?: { lat: number; lon: number; miss: number; along: number }; predT = 0; botBurn = false; missed = 0;
-  g!: Phaser.GameObjects.Graphics; craft!: Phaser.GameObjects.Image; info!: Phaser.GameObjects.Text; list!: Phaser.GameObjects.Text; call!: Phaser.GameObjects.Text; rumble!: Loop;
+  g!: Phaser.GameObjects.Graphics; craft!: Phaser.GameObjects.Image; info!: Phaser.GameObjects.Text; list!: Phaser.GameObjects.Text; call!: Phaser.GameObjects.Text; rumble!: Loop; hf?: HiFi;
   constructor() { super('OrbitOps'); }
   /** The controls panel (H or the ? button): what the keys do right now, in this level and this phase. Shape agreed with core's showHelp. */
   help(): { title: string; rows: [keys: string, does: string][]; note?: string } {
@@ -82,15 +84,17 @@ export class OrbitOpsScene extends Phaser.Scene {
   }
   create() {
     cam(this); stopLoops(); music.play(this.th.music); this.rumble = loop('rumble');
-    this.cameras.main.setBackgroundColor('#05060c'); img(this, 0, 0, 'stars').setOrigin(0).setAlpha(0.6);
+    const hf = (this.hf = hifi(this, LOOKS[this.th.hifi || ''])), K = (k: string) => (hf ? hf.key(k) : k); // the look redraws the map and the sky behind it
+    this.cameras.main.setBackgroundColor('#05060c'); const stars = img(this, 0, 0, K('stars')).setOrigin(0).setAlpha(0.6);
     panel(this, 4, 4, W - 8, 20, 0.9); T(this, 9, 6, this.def.title.toUpperCase() + ' · GROUND TRACK', '#ffffff', 6, '700'); this.call = T(this, 9, 14, '', '#ffe98a', 5.4, '700');
-    img(this, MX, MY, this.th.map).setOrigin(0);
-    const tg = this.p.target; this.add.circle(X(tg.lon), Y(tg.lat), 3.4).setStrokeStyle(0.7, 0xffe98a); this.add.circle(X(tg.lon), Y(tg.lat), 0.9, 0xffe98a); T(this, X(tg.lon) + 5, Y(tg.lat) + 2, tg.name, '#ffe98a', 4.4, '700').setShadow(0, 1, '#000', 2);
+    const map = img(this, MX, MY, K(this.th.map)).setOrigin(0);
+    const tg = this.p.target, ring = this.add.circle(X(tg.lon), Y(tg.lat), 3.4).setStrokeStyle(0.7, 0xffe98a), dot = this.add.circle(X(tg.lon), Y(tg.lat), 0.9, 0xffe98a); T(this, X(tg.lon) + 5, Y(tg.lat) + 2, tg.name, '#ffe98a', 4.4, '700').setShadow(0, 1, '#000', 2);
     this.g = this.add.graphics(); this.craft = img(this, 0, 0, this.th.craft).setScale(S * 0.8);
     panel(this, 4, 146, 150, 30, 0.9); this.list = T(this, 8, 148, '', '#ffffff', 4.5, '700').setLineSpacing(-0.4);
     panel(this, 158, 146, 158, 30, 0.9); this.info = T(this, 163, 148.4, '', '#ffffff', 5, '700');
     who(this, { ...this.def, role: this.def.role || this.th.role }, W - 108, 28);
     this.say('SPACE burns. Each burn belongs at one place on the orbit: watch for the marker on the track.');
+    if (hf) { const world: Phaser.GameObjects.GameObject[] = [stars, map, ring, dot, this.g, this.craft]; hf.tag({ stars, map, craft: this.craft }); hf.set({ t: this.o.t, phasing: 0, lit: 0, x: 0, y: 0, rot: 0, dir: 1, cap: 0, cx: 0, cy: 0, calt: 0 }); hf.ready({ hud: this.children.list.filter((q) => !world.includes(q)) }); } // the map and what is drawn on it stay in the world; panels and words go to the HUD
   }
   say(s: string) { this.call.setText(s); }
   update(_t: number, dms: number) {
@@ -157,6 +161,7 @@ export class OrbitOpsScene extends Phaser.Scene {
     if (this.cap) { const cx = X(this.lon(this.cap.u, this.cap.t)), cy = Y(this.lat(this.cap.u)); g.fillStyle(0xffffff).fillCircle(cx, cy, 1.3); }
     this.craft.setPosition(x, y).setRotation(Math.atan2(Y(this.lat(o.u + 2)) - y, X(this.lon(o.u + 2, o.t + 30)) - x));
     if (this.lit) g.fillStyle(0xffb347, 0.9).fillCircle(x, y, 2.2 + Math.random());
+    this.hf?.set({ t: o.t, phasing: Math.max(0, this.phasing), lit: this.lit ? 1 : 0, x, y, rot: this.craft.rotation, dir: step.do === 'raise' ? 1 : -1, ...(this.cap ? { cap: 1, cx: X(this.lon(this.cap.u, this.cap.t)), cy: Y(this.lat(this.cap.u)), calt: this.cap.alt / 1000 } : {}) });
     this.list.setText(this.steps.map((q, i) => `${i < this.si ? '✓' : i === this.si ? '▶' : '·'} ${this.th.label(q)}`).join('\n'));
     this.info.setText(`ALT ${km(o.alt)} km   AP ${km(e.ap)} · PE ${e.pe < 0 ? '—' : km(e.pe)} km\nΔV USED ${this.used.toFixed(0)} m/s\n${this.pred ? `LANDING ${this.pred.miss.toFixed(0)} km from the range · ${this.pred.along > 0 ? 'long' : 'short'}` : 'NO RE-ENTRY ON THIS ORBIT'}`).setColor(this.pred && this.pred.miss < 80 ? '#7cc56b' : '#ffffff');
   }

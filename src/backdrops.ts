@@ -486,26 +486,13 @@ export function makeBackdrops(scene: Phaser.Scene) {
 
   tex(scene, 'bg_review', 320, 180, (c) => review(c));
   // ESCAPADE: Mars, and the twins (same spacecraft, one trimmed blue and one gold)
-  tex(scene, 'mars', 20, 20, (c) => { c.save(); c.shadowColor = 'rgba(255,140,90,.8)'; c.shadowBlur = 14; el(c, 10, 10, 6.4, 6.4, '#c8623a'); c.restore(); el(c, 10, 10, 6.4, 6.4, rg(c, 8, 8, 1, 9, [0, '#f0a070'], [0.6, '#c8623a'], [1, '#6a2a18'])); el(c, 8, 11.4, 2.6, 1.4, 'rgba(110,50,30,.5)'); el(c, 12.4, 8, 1.6, 1, 'rgba(110,50,30,.45)'); el(c, 10, 4.3, 2.2, 0.8, 'rgba(255,255,255,.8)'); });
+  tex(scene, 'mars', 20, 20, (c) => mars(c));
   for (const [key, col] of [['esc_blue', '#4d9be8'], ['esc_gold', '#f2c230']] as [string, string][]) tex(scene, key, 14, 12, (c) => {
     for (const y of [0.4, 8.2]) { rr(c, 4.6, y, 4.8, 3.4, 0.3, '#1d3a7a', OUT, 0.25); line(c, 7, y, 7, y + 3.4, 'rgba(160,200,255,.6)', 0.25); line(c, 4.6, y + 1.7, 9.4, y + 1.7, 'rgba(160,200,255,.6)', 0.25); }
     rr(c, 4, 3.6, 6, 4.8, 0.8, lg(c, 0, 3.6, 0, 8.4, [0, '#f4f6fa'], [1, '#9aa3b5']), OUT, 0.3); rr(c, 4, 5.2, 6, 1.6, 0, col); poly(c, [4, 4.8, 1.6, 4, 1.6, 8, 4, 7.2], '#5b6275', OUT, 0.25); el(c, 11.2, 6, 1.5, 2.2, '#dfe5ee', OUT, 0.25);
   });
   // A plain world map for ground tracks: longitude -30 at the left edge, so Australia and the Pacific sit in the middle
-  tex(scene, 'worldmap', 300, 112, (c) => {
-    c.fillStyle = lg(c, 0, 0, 0, 112, [0, '#123a78'], [0.5, '#1f5aa8'], [1, '#123a78']); c.fillRect(0, 0, 300, 112);
-    const px = (lon: number) => ((((lon + 30) % 360) + 360) % 360) * (300 / 360), py = (lat: number) => (90 - lat) * (112 / 180);
-    for (let lon = 0; lon < 360; lon += 30) line(c, px(lon), 0, px(lon), 112, 'rgba(255,255,255,.07)', 0.3); for (let lat = -60; lat <= 60; lat += 30) line(c, 0, py(lat), 300, py(lat), lat ? 'rgba(255,255,255,.07)' : 'rgba(255,255,255,.16)', 0.3);
-    const land = (pts: number[], col = '#5f9a5c') => { const q: number[] = []; for (let i = 0; i < pts.length; i += 2) q.push(px(pts[i]), py(pts[i + 1])); poly(c, q, col, 'rgba(10,30,20,.5)', 0.3); };
-    land([-17, 15, -6, 36, 10, 37, 32, 31, 43, 12, 51, 11, 40, -10, 35, -24, 27, -34, 18, -34, 12, -17, 9, 4, -8, 5], '#b8a868'); // Africa
-    land([-9, 37, -9, 43, 0, 50, 8, 54, 6, 58, 12, 65, 26, 71, 60, 69, 100, 76, 140, 72, 170, 66, 162, 58, 142, 52, 140, 44, 128, 38, 122, 31, 121, 23, 108, 21, 106, 10, 100, 13, 98, 8, 95, 17, 90, 22, 80, 15, 77, 8, 72, 20, 66, 25, 57, 26, 51, 29, 48, 30, 43, 13, 35, 28, 36, 36, 27, 37, 23, 38, 15, 41, 12, 44, 3, 43, -5, 36], '#8fae6a'); // Europe and Asia
-    land([131, 32, 136, 35, 141, 37, 142, 44, 140, 42, 136, 36], '#8fae6a'); land([95, 5, 105, -6, 115, -8, 120, -2, 110, 2], '#6fa85a'); land([131, -2, 141, -3, 150, -10, 141, -9], '#6fa85a');
-    land([113, -22, 114, -34, 118, -35, 124, -33, 129, -32, 134, -33, 138, -35, 141, -38, 147, -39, 150, -37, 153, -31, 153, -25, 146, -19, 142, -11, 139, -17, 136, -12, 131, -12, 126, -14, 122, -18], '#d9a860'); // Australia
-    land([173, -35, 178, -38, 176, -41, 174, -39], '#6fb968'); land([172, -41, 174, -42, 171, -45, 168, -46, 167, -45], '#6fb968');
-    land([-168, 66, -140, 70, -95, 72, -80, 62, -60, 50, -65, 45, -75, 35, -81, 25, -97, 26, -105, 22, -110, 24, -117, 33, -124, 40, -124, 48, -135, 58, -152, 60, -165, 55], '#a8b070'); land([-80, 8, -60, 10, -50, 0, -35, -7, -40, -22, -58, -38, -68, -54, -74, -45, -70, -18, -81, -5], '#6fa85a');
-    c.fillStyle = '#e8eef4'; c.fillRect(0, py(-72), 300, 112 - py(-72)); text(c, 'AUSTRALIA', px(134), py(-25), 3.2, 'rgba(60,40,10,.8)', 700);
-    c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 0.5; c.strokeRect(0.25, 0.25, 299.5, 111.5);
-  });
+  tex(scene, 'worldmap', 300, 112, (c) => worldmap(c));
   // Varda's capsule on a Rocket Lab Pioneer, and the capsule alone
   tex(scene, 'pioneer', 16, 12, (c) => { for (const y of [0.4, 8.2]) { rr(c, 6, y, 5, 3.4, 0.3, '#1d3a7a', OUT, 0.25); line(c, 8.5, y, 8.5, y + 3.4, 'rgba(160,200,255,.6)', 0.25); } rr(c, 5.4, 3.6, 6.2, 4.8, 0.8, lg(c, 0, 3.6, 0, 8.4, [0, '#f2d14a'], [1, '#a8801c']), OUT, 0.3); poly(c, [11.6, 3.8, 15.4, 6, 11.6, 8.2], '#e8e6df', OUT, 0.3); poly(c, [5.4, 4.8, 3.2, 4, 3.2, 8, 5.4, 7.2], '#5b6275', OUT, 0.25); });
   tex(scene, 'capsule', 8, 8, (c) => { poly(c, [1, 6.4, 7, 6.4, 5.4, 2, 2.6, 2], '#e8e6df', OUT, 0.3); rr(c, 0.6, 6, 6.8, 1.2, 0.5, '#8a6238', OUT, 0.25); });
@@ -721,3 +708,24 @@ export function makeBackdrops(scene: Phaser.Scene) {
   tex(scene, 'finish', 30, 80, (c) => { rr(c, 2, 8, 2.4, 72, 0.4, '#e8e6df', OUT, 0.3); rr(c, 25.6, 8, 2.4, 72, 0.4, '#e8e6df', OUT, 0.3); for (let i = 0; i < 6; i++) for (let j = 0; j < 3; j++) rr(c, 2 + i * 4.33, 2 + j * 3, 4.33, 3, 0, (i + j) % 2 ? '#15171f' : '#f4f2ea'); c.strokeStyle = OUT; c.lineWidth = 0.3; c.strokeRect(2, 2, 26, 9); });
   tex(scene, 'tapetail', 20, 6, (c) => { c.beginPath(); c.moveTo(0, 3); c.bezierCurveTo(5, 0, 9, 6, 13, 3); c.bezierCurveTo(16, 1, 18, 4, 20, 2.4); c.strokeStyle = '#d8452e'; c.lineWidth = 1.6; c.stroke(); });
 }
+
+/** The plain world map for ground tracks, 300 x 112. `part`: 1 the sea and its grid, 2 the land, 4 the name on it, 8 the ice and the frame. */
+export function worldmap(real: C2, part = 15) {
+  const pick = parts(real, part); let c = pick(1);
+  c.fillStyle = lg(c, 0, 0, 0, 112, [0, '#123a78'], [0.5, '#1f5aa8'], [1, '#123a78']); c.fillRect(0, 0, 300, 112);
+  const px = (lon: number) => ((((lon + 30) % 360) + 360) % 360) * (300 / 360), py = (lat: number) => (90 - lat) * (112 / 180);
+  for (let lon = 0; lon < 360; lon += 30) line(c, px(lon), 0, px(lon), 112, 'rgba(255,255,255,.07)', 0.3); for (let lat = -60; lat <= 60; lat += 30) line(c, 0, py(lat), 300, py(lat), lat ? 'rgba(255,255,255,.07)' : 'rgba(255,255,255,.16)', 0.3);
+  c = pick(2);
+  const land = (pts: number[], col = '#5f9a5c') => { const q: number[] = []; for (let i = 0; i < pts.length; i += 2) q.push(px(pts[i]), py(pts[i + 1])); poly(c, q, col, 'rgba(10,30,20,.5)', 0.3); };
+  land([-17, 15, -6, 36, 10, 37, 32, 31, 43, 12, 51, 11, 40, -10, 35, -24, 27, -34, 18, -34, 12, -17, 9, 4, -8, 5], '#b8a868'); // Africa
+  land([-9, 37, -9, 43, 0, 50, 8, 54, 6, 58, 12, 65, 26, 71, 60, 69, 100, 76, 140, 72, 170, 66, 162, 58, 142, 52, 140, 44, 128, 38, 122, 31, 121, 23, 108, 21, 106, 10, 100, 13, 98, 8, 95, 17, 90, 22, 80, 15, 77, 8, 72, 20, 66, 25, 57, 26, 51, 29, 48, 30, 43, 13, 35, 28, 36, 36, 27, 37, 23, 38, 15, 41, 12, 44, 3, 43, -5, 36], '#8fae6a'); // Europe and Asia
+  land([131, 32, 136, 35, 141, 37, 142, 44, 140, 42, 136, 36], '#8fae6a'); land([95, 5, 105, -6, 115, -8, 120, -2, 110, 2], '#6fa85a'); land([131, -2, 141, -3, 150, -10, 141, -9], '#6fa85a');
+  land([113, -22, 114, -34, 118, -35, 124, -33, 129, -32, 134, -33, 138, -35, 141, -38, 147, -39, 150, -37, 153, -31, 153, -25, 146, -19, 142, -11, 139, -17, 136, -12, 131, -12, 126, -14, 122, -18], '#d9a860'); // Australia
+  land([173, -35, 178, -38, 176, -41, 174, -39], '#6fb968'); land([172, -41, 174, -42, 171, -45, 168, -46, 167, -45], '#6fb968');
+  land([-168, 66, -140, 70, -95, 72, -80, 62, -60, 50, -65, 45, -75, 35, -81, 25, -97, 26, -105, 22, -110, 24, -117, 33, -124, 40, -124, 48, -135, 58, -152, 60, -165, 55], '#a8b070'); land([-80, 8, -60, 10, -50, 0, -35, -7, -40, -22, -58, -38, -68, -54, -74, -45, -70, -18, -81, -5], '#6fa85a');
+  c = pick(8); c.fillStyle = '#e8eef4'; c.fillRect(0, py(-72), 300, 112 - py(-72)); c = pick(4); text(c, 'AUSTRALIA', px(134), py(-25), 3.2, 'rgba(60,40,10,.8)', 700);
+  c = pick(8); c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 0.5; c.strokeRect(0.25, 0.25, 299.5, 111.5);
+}
+
+/** Mars, 20 x 20. `sun` is where its light comes from, in units from the centre (the plain art lights it from the upper left). */
+export function mars(c: C2, sun = [-2, -2]) { c.save(); c.shadowColor = 'rgba(255,140,90,.8)'; c.shadowBlur = 14; el(c, 10, 10, 6.4, 6.4, '#c8623a'); c.restore(); el(c, 10, 10, 6.4, 6.4, rg(c, 10 + sun[0], 10 + sun[1], 1, 9, [0, '#f0a070'], [0.6, '#c8623a'], [1, '#6a2a18'])); el(c, 8, 11.4, 2.6, 1.4, 'rgba(110,50,30,.5)'); el(c, 12.4, 8, 1.6, 1, 'rgba(110,50,30,.45)'); el(c, 10, 4.3, 2.2, 0.8, 'rgba(255,255,255,.8)'); }

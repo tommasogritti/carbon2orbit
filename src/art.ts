@@ -403,20 +403,22 @@ export function cloud(c: C2, w: number, h: number, seed: number, shade = '#b9cfe
   }
   rr(c, w * 0.08, h * 0.6, w * 0.84, h * 0.24, h * 0.12, shade);
 }
-function planet(c: C2, cx: number, cy: number, r: number, kind: 'earth' | 'moon') {
+/** A world seen whole. `sun` is where its light comes from, as a fraction of the radius from the centre (the plain art lights everything from the upper left). */
+export function planet(c: C2, cx: number, cy: number, r: number, kind: 'earth' | 'moon', sun = [-0.35, -0.35]) {
+  const lx = cx + r * sun[0], ly = cy + r * sun[1], dx = cx - r * sun[0] * (0.5 / 0.35), dy = cy - r * sun[1] * (0.5 / 0.35);
   c.save(); el(c, cx, cy, r, r); c.clip();
   if (kind === 'earth') {
-    c.fillStyle = rg(c, cx - r * 0.35, cy - r * 0.35, r * 0.1, r * 1.5, [0, '#4d9be8'], [0.6, '#1f5fb8'], [1, '#0b2a63']); c.fillRect(cx - r, cy - r, r * 2, r * 2);
+    c.fillStyle = rg(c, lx, ly, r * 0.1, r * 1.5, [0, '#4d9be8'], [0.6, '#1f5fb8'], [1, '#0b2a63']); c.fillRect(cx - r, cy - r, r * 2, r * 2);
     const q = rng(11);
     for (let i = 0; i < 7; i++) { const x = cx + (q() - 0.5) * r * 1.7, y = cy + (q() - 0.5) * r * 1.7; c.beginPath(); for (let k = 0; k < 9; k++) { const t = (k / 9) * 6.283, d = r * (0.16 + q() * 0.22); k ? c.lineTo(x + Math.cos(t) * d * 1.3, y + Math.sin(t) * d) : c.moveTo(x + Math.cos(t) * d * 1.3, y + Math.sin(t) * d); } c.closePath(); c.fillStyle = i % 2 ? '#4f9d4f' : '#6fae5a'; c.fill(); }
     for (let i = 0; i < 9; i++) el(c, cx + (q() - 0.5) * r * 1.8, cy + (q() - 0.5) * r * 1.8, r * (0.2 + q() * 0.3), r * 0.06, 'rgba(255,255,255,.55)');
   } else {
-    c.fillStyle = rg(c, cx - r * 0.35, cy - r * 0.35, r * 0.1, r * 1.5, [0, '#f1f1ee'], [0.6, '#c3c6cf'], [1, '#70758a']); c.fillRect(cx - r, cy - r, r * 2, r * 2);
+    c.fillStyle = rg(c, lx, ly, r * 0.1, r * 1.5, [0, '#f1f1ee'], [0.6, '#c3c6cf'], [1, '#70758a']); c.fillRect(cx - r, cy - r, r * 2, r * 2);
     const q = rng(5);
     for (let i = 0; i < 12; i++) { const x = cx + (q() - 0.5) * r * 1.6, y = cy + (q() - 0.5) * r * 1.6, d = r * (0.05 + q() * 0.14); el(c, x, y, d, d, 'rgba(120,125,145,.55)'); el(c, x + d * 0.2, y + d * 0.2, d * 0.75, d * 0.75, 'rgba(200,203,212,.5)'); }
     el(c, cx - r * 0.3, cy - r * 0.2, r * 0.36, r * 0.3, 'rgba(120,125,145,.35)'); el(c, cx + r * 0.25, cy + r * 0.3, r * 0.28, r * 0.22, 'rgba(120,125,145,.3)');
   }
-  c.fillStyle = rg(c, cx + r * 0.5, cy + r * 0.5, r * 0.4, r * 1.5, [0, 'rgba(0,0,10,.0)'], [1, 'rgba(0,0,10,.6)']); c.fillRect(cx - r, cy - r, r * 2, r * 2);
+  c.fillStyle = rg(c, dx, dy, r * 0.4, r * 1.5, [0, 'rgba(0,0,10,.0)'], [1, 'rgba(0,0,10,.6)']); c.fillRect(cx - r, cy - r, r * 2, r * 2);
   c.restore();
 }
 export function starfield(c: C2, w: number, h: number, n: number, seed: number) {
