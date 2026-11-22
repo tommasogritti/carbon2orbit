@@ -36,7 +36,7 @@ export function showCredits(game: Phaser.Game) {
     `<p>Carbon to Orbit is an open-source fan game. Everything in it, from the levels to the music, was built by the people below.</p>` +
     `<table class="people">${rows}</table>` +
     `<p class="watch">${out(REPO, 'Source on GitHub')} Add a level, fix a fact or report a bug. Your name goes on this page with your first merged change.</p>` +
-    `<p class="src">Code: MIT licence. Story text and artwork: CC BY-SA 4.0. Photos are credited on their cards. A fan project, not affiliated with or endorsed by Rocket Lab.</p>`,
+    `<p class="src">Code: MIT licence. Story text and the artwork the game draws: CC BY-SA 4.0. Mission patches © Rocket Lab, not covered by these licences. Photos are credited on their cards. A fan project, not affiliated with or endorsed by Rocket Lab.</p>`,
     [{ label: 'Back to the game', fn: () => sc?.scene.resume() }],
   );
 }

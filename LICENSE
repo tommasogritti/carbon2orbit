@@ -24,4 +24,6 @@ The MIT License above covers the source code. The game's story text and the
 artwork it generates are licensed under Creative Commons Attribution-ShareAlike
 4.0 International (CC BY-SA 4.0): https://creativecommons.org/licenses/by-sa/4.0/
 Photos in public/assets/photos/ keep their own licences, listed in
-public/assets/photos/CREDITS.md.
+public/assets/photos/CREDITS.md. The official mission patches in
+src/assets/patches/ are © Rocket Lab and are not covered by either licence;
+src/assets/patches/patches.json links each one to its source.

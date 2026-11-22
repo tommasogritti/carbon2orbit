@@ -9,7 +9,7 @@ From a rocket bike in a Dunedin workshop to the hundredth Electron, and on to Ne
 
 An unofficial, open-source browser game. Fan project, not affiliated with Rocket Lab.
 
-`26 playable levels` · `15 kinds of play` · `every fact sourced` · `no image or audio files: it is all code`
+`28 playable levels` · `16 kinds of play` · `every fact sourced` · `art and sound made in code`
 
 </div>
 
@@ -27,8 +27,8 @@ You walk a world map through thirty years of Rocket Lab history. Every stop is a
 | **Story cards and people** | The founding, the knighthood, and the people who were there, each with sources and, where one exists, a freely licensed photo. |
 
 <div align="center">
-<img src="docs/media/map.jpg" alt="The world map, with levels across New Zealand and the Pacific" width="410"> <img src="docs/media/launch.jpg" alt="Launch control: flight director, gauges and trajectory plot" width="410">
-<img src="docs/media/platform.jpg" alt="A platform level at the Archimedes test complex" width="410"> <img src="docs/media/ride.jpg" alt="A riding level across the farm that became Launch Complex 1" width="410">
+<img src="docs/media/map.jpg" alt="The world map, with levels across New Zealand and the Pacific" width="410"> <img src="docs/media/launch.jpg" alt="Launch control at golden hour: flight director, gauges and trajectory plot as Electron climbs past Max-Q" width="410">
+<img src="docs/media/platform.jpg" alt="A platform level at the Archimedes test stand, Stennis, on a Gulf-coast afternoon" width="410"> <img src="docs/media/ride.jpg" alt="A riding level across the farm that became Launch Complex 1" width="410">
 </div>
 
 Every level ends with what really happened, hides an easter egg, and links its sources.
@@ -99,7 +99,7 @@ The same list is in the game: **Credits** in the page footer, or **C** on the ti
 ## Under the hood
 
 - **Vite, TypeScript, Phaser 3.** Static and client-only.
-- **All art is drawn in code** with the Canvas 2D API, and **all sound is synthesised** with Web Audio. There are no sprite sheets and no audio files.
+- **All art is drawn in code** with the Canvas 2D API, and **all sound is synthesised** with Web Audio. There are no sprite sheets and no audio files; the only images are the official mission patches and a few credited photos.
 - **Launch control runs a physical model**: a point mass around a round Earth with real gravity, thrust, drag and orbital elements. `npm run sim` flies it headless.
 - **Every level has a bot.** `?level=<id>&auto=1` plays a level to prove it can be won.
 
