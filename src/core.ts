@@ -41,7 +41,7 @@ export function patchImg(id: string) {
 }
 export const W = 320;
 export const H = 180;
-export const SCENE_FOR: Record<string, string> = { platform: 'Platform', launch: 'Launch', hotfire: 'Hotfire', 'heli-catch': 'Heli', 'orbit-raise': 'OrbitRaise', sprint: 'Sprint', 'fault-finder': 'FaultFinder', splashdown: 'Splashdown', cruise: 'Cruise', 'countdown-race': 'CountdownRace', ride: 'Ride', 'orbit-ops': 'OrbitOps', 'dual-count': 'DualCount', 'arc-lab': 'ArcLab' };
+export const SCENE_FOR: Record<string, string> = { platform: 'Platform', launch: 'Launch', hotfire: 'Hotfire', 'heli-catch': 'Heli', 'orbit-raise': 'OrbitRaise', sprint: 'Sprint', 'fault-finder': 'FaultFinder', splashdown: 'Splashdown', cruise: 'Cruise', 'countdown-race': 'CountdownRace', ride: 'Ride', 'orbit-ops': 'OrbitOps', 'dual-count': 'DualCount', 'arc-lab': 'ArcLab', 'edit-bay': 'EditBay' };
 export const FONT = UI;
 
 export const plain = (s: string) => s;
@@ -266,7 +266,7 @@ export const KIND_LABEL: Record<string, string> = { platform: 'PLATFORM', launch
 /** A link out to a video on its own site. The footage is never copied into the game. */
 export const watchLink = (def: LevelDef) => (def.watch ? `<p class="watch"><a href="${def.watch.url}" target="_blank" rel="noopener">▶ Watch</a> ${def.watch.label}</p>` : '');
 export const srcLinks = (urls: string[]) =>
-  `<p class="src">Sources: ${urls.map((u) => `<a href="${u}" target="_blank" rel="noopener">${new URL(u).hostname.replace('www.', '')}</a>`).join('')}</p>`;
+  `<p class="src">Sources: ${urls.map((u) => `<a href="${u}" target="_blank" rel="noopener">${new URL(u).hostname.replace('www.', '')}</a>`).join(' ')}</p>`; // spaced, so a long list can wrap
 
 /**
  * Says who the player is: a small name plate (portrait, name, role) shown as the level opens, which then fades away

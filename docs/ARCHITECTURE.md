@@ -27,6 +27,7 @@ index.html ─ src/main.ts ─ Boot ─┬─ Title ── Map ──(Enter on a
 | `src/scenes/Title.ts` | The title screen. |
 | `src/scenes/<Mechanic>.ts` | One scene per mechanic (table below). |
 | `src/launchSim.ts` | The launch physics, pure TypeScript with no Phaser, shared by `Launch.ts` and `scripts/launch-sim.mjs`. |
+| `src/creators.ts` | The four YouTube creators of the Q2 2024 interview: portraits, chips and the cast drawing. |
 | `src/art.ts`, `src/backdrops.ts` | All textures. `art.ts` has the drawing helpers, characters, rockets, map; `backdrops.ts` has level backdrops, enemies, power-up bubbles. |
 | `src/hifi.ts`, `src/hifiLooks.ts` | The optional hi-fi layer: parallax depth, lighting, reflections and a post pass (`hifi.ts`), and the looks that use it (`hifiLooks.ts`). See [The hi-fi layer](#the-hi-fi-layer). |
 | `src/audio.ts` | `snd.*` one-shot effects, `loop(kind)` continuous sounds, `music.play(song)`. |
@@ -49,9 +50,10 @@ index.html ─ src/main.ts ─ Boot ─┬─ Title ── Map ──(Enter on a
 | `orbit-ops` | `OrbitOps.ts` | Spacecraft burns on a ground-track map | §10.10 |
 | `dual-count` | `DualCount.ts` | Two launch consoles against one clock | §10.11 |
 | `arc-lab` | `ArcLab.ts` | Set conditions, run an experiment | §10.12 |
+| `edit-bay` | `EditBay.ts` | Cut a recording into parts, send each to the right channel, schedule uploads before release times | §10.13 |
 | `hotfire`, `heli-catch`, `orbit-raise`, `sprint`, `fault-finder`, `splashdown`, `cruise`, `countdown-race` | one file each | Single-purpose mini-games | §10.2 to §10.8 |
 
-The first six are **reusable**: a second level can use them with different params and art. A level can also be told in several acts: `params.then = { mechanic, params, intro?, how? }` hands a successful act to the next scene, and nothing is saved until the last act ends.
+The first six, and `edit-bay`, are **reusable**: a second level can use them with different params and art. A level can also be told in several acts: `params.then = { mechanic, params, intro?, how? }` hands a successful act to the next scene, and nothing is saved until the last act ends.
 
 ## Conventions every scene follows
 
