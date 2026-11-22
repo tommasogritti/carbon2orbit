@@ -11,7 +11,7 @@ import { spaceTextures, SPACE, puffy, CloudTone } from './flight';
 // The fair weather and the scattered cumulus are the plain level's own (no source gives the sea state): kept, and lit.
 // Space is the launch looks' space (flight.ts). The stage, the two parachutes and the recovery ship are the plain
 // drawings, lit for real: the sun from one side, the Earth's light from underneath, and through the wall the stage's own
-// shock layer, which is the brightest thing in the sky while it lasts.
+// shock layer, which is the brightest thing in the sky while it lasts. (Up where the fall starts there is no air: the stars are steady.)
 const SUN = [182, 38], BX = 112, DEG = Math.PI / 180;
 const TONE: CloudTone = { shade: '#bccde4', down: [[0, 'rgba(255,254,246,.95)'], [0.42, 'rgba(255,250,236,.18)'], [0.7, 'rgba(124,146,192,.26)'], [1, 'rgba(88,112,168,.62)']], across: [[0, 'rgba(64,92,152,.22)'], [0.6, 'rgba(255,246,222,0)'], [1, 'rgba(255,240,204,.42)']] };
 const GRADE: Grade = { threshold: 0.8, bloom: 0.62, exposure: 1.04, contrast: 1.1, saturation: 1.12, shadows: [0.86, 0.95, 1.2], highs: [1.08, 1.0, 0.9], vignette: 0.5, grain: 0.028, fringe: 0.006 };
@@ -58,7 +58,7 @@ const ember = (c: C2) => { c.fillStyle = lg(c, 0, 30, 0, 58, [0, 'rgba(255,90,30
 
 type Im = Phaser.GameObjects.Image; type Em = Phaser.GameObjects.Particles.ParticleEmitter;
 const VEILS: [number, number, number][] = [[10.4, 28, 0], [8.6, 96, 1], [6.3, 34, 0], [4.9, 120, 1], [3.4, 40, 0], [2.6, 88, 1]]; // each bank: its height in km, how fast it passes, and whether it passes in front
-let o: { sun: Im; ghosts: Im[]; twinkle: Im[]; shock: Im; wake: Im; streams: Em; embers: Em; streaks: Em; rimR: Im; rimL: Im; hot: Im; haze: Im; glitter: Em; mirror: Im; foam: Im; veils: Im[]; ksGlow: Im; ring: Im; mist: Em; down: boolean } | undefined;
+let o: { sun: Im; ghosts: Im[]; shock: Im; wake: Im; streams: Em; embers: Em; streaks: Em; rimR: Im; rimL: Im; hot: Im; haze: Im; glitter: Em; mirror: Im; foam: Im; veils: Im[]; ksGlow: Im; ring: Im; mist: Em; down: boolean } | undefined;
 const mix = (a: number, b: number, k: number) => a + (b - a) * k, rgb = (a: number, b: number, k: number) => (Math.round(mix((a >> 16) & 255, (b >> 16) & 255, k)) << 16) | (Math.round(mix((a >> 8) & 255, (b >> 8) & 255, k)) << 8) | Math.round(mix(a & 255, b & 255, k));
 
 export const reentryLook: Look = {
@@ -79,11 +79,10 @@ export const reentryLook: Look = {
   ],
   grade: GRADE,
   live(hf) {
-    const s = hf.scene, r = rng(8), [sx, sy] = SUN, boo = hf.tags.boo as Phaser.GameObjects.Container;
+    const s = hf.scene, [sx, sy] = SUN, boo = hf.tags.boo as Phaser.GameObjects.Container;
     const puff = (x: number, y: number, kx: number, ky: number, tint: number, a: number) => s.add.image(x, y, 'puff').setScale(S * kx, S * ky).setTint(tint).setBlendMode('ADD').setAlpha(a);
     const sunIm = hf.above(s.add.image(sx, sy, 'hf_re_sun').setScale(1 / D).setBlendMode('ADD'), 'sky');
     const ghosts = [[0.36, 1.5, 0x9fd0ff, 0.12], [0.62, 0.6, 0xffe2b0, 0.2], [0.9, 2.4, 0x8fffd8, 0.07], [1.2, 4, 0xffb0a0, 0.05]].map(([k, size, tint, a]) => hf.above(puff(sx + (BX - sx) * k * 1.6, sy + (84 - sy) * k * 1.6, size, size, tint, a), 'sky')); // the lens, strung from the sun through the stage
-    const twinkle = Array.from({ length: 14 }, () => hf.above(puff(r() * 320, r() * 96, 0.14 + r() * 0.2, 0.14 + r() * 0.2, r() < 0.3 ? 0xffe2c0 : 0xdfe8ff, 0), 'stars'));
     // banks of cloud on the way down: some behind the stage and some between it and the lens
     const veils = VEILS.map(([, , front], i) => { const v = s.add.image(40 + ((i * 97) % 240), -200, 'hf_re_veil').setScale(2 * (front ? 1.5 : 1), 2 * (front ? 1.3 : 0.9)).setAlpha(front ? 0.2 : 0.4).setFlipX(i % 2 === 0); return front ? v : hf.below(v, 'sea'); });
     // the sea: haze on the horizon, glitter that moves, and the ship's own reflection
@@ -102,7 +101,7 @@ export const reentryLook: Look = {
     const ksGlow = hf.below(puff(0, 0, 0.5, 1.1, 0xbfdcff, 0), 'ks');
     const rg2 = s.add.image(BX, 300, 'hf_re_ring').setScale(0.1).setAlpha(0), mist = s.add.particles(BX, 152, 'puff', { speedY: { min: -70, max: -14 }, speedX: { min: -44, max: 44 }, gravityY: 60, lifespan: { min: 900, max: 1900 }, scale: { start: S * 0.5, end: S * 2.2 }, alpha: { start: 0.42, end: 0 }, tint: 0xeef6ff, emitting: false });
     Object.assign(GRADE, { threshold: 0.8, bloom: 0.62, vignette: 0.5, saturation: 1.12 });
-    o = { sun: sunIm, ghosts, twinkle, shock: sh, wake: wk, streams, embers, streaks, rimR, rimL, hot, haze: hz, glitter, mirror, foam, veils, ksGlow, ring: rg2, mist, down: false };
+    o = { sun: sunIm, ghosts, shock: sh, wake: wk, streams, embers, streaks, rimR, rimL, hot, haze: hz, glitter, mirror, foam, veils, ksGlow, ring: rg2, mist, down: false };
   },
   step(hf) {
     if (!o) return;
@@ -112,7 +111,6 @@ export const reentryLook: Look = {
     if (hf.gl) s.lights.setAmbientColor(rgb(0x969cb8, 0xc8d0e2, day));
     hf.power(0, hot * fl); hf.power(2, 1 - 0.55 * day);
     o.sun.setAlpha(1 - 0.4 * day).setScale((1 + 0.03 * Math.sin(t * 1.3)) / D); o.ghosts.forEach((g, i) => g.setAlpha([0.12, 0.2, 0.07, 0.05][i] * (1 - 0.75 * day)));
-    o.twinkle.forEach((q, i) => q.setAlpha((1 - day) * (0.5 + 0.5 * Math.sin(t * (2 + i * 0.37) + i))));
     // the stage: a lit edge on whichever side faces the sun, the Earth's blue on the other, and its hot end
     const facing = Math.cos(th) * 0.74 - Math.sin(th) * 0.67; // how squarely the stage's right-hand side faces the sun
     o.rimR.setAlpha(Phaser.Math.Clamp(facing > 0 ? facing * 0.9 : -facing * 0.3 * (1 - day), 0, 1)).setTint(facing > 0 ? 0xfff0d0 : 0x7fb0ff);
