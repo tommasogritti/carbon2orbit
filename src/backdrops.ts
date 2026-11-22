@@ -361,7 +361,7 @@ export function factory(real: C2, part = 15) {
 
   // ---- D. the rocket line: an Electron on its cradles, engines arriving from California
   sign(350, 26, 112, 'ONE EVERY 30 DAYS  →  GOAL: ONE A WEEK', '#1f5a34', '#fff', 3.5);
-  for (const y of [78, 116]) { c.save(); c.translate(346, y + 8); c.rotate(-Math.PI / 2); c.scale(1.9, 1.9); electronFull(c, 0, 0); c.restore(); for (const x of [366, 412, 458, 486]) { poly(c, [x - 6, y + 16, x + 6, y + 16, x + 4, y + 7, x - 4, y + 7], '#3f7fd0', OUT, 0.3); rr(c, x - 7, y + 16, 14, 2, 0.4, '#2a5fa8', OUT, 0.25); } }
+  for (const y of [78, 116]) { c.save(); c.translate(497.2, y - 3.4); c.rotate(Math.PI / 2); c.scale(1.9, 1.9); electronFull(c, 0, 0); c.restore(); /* nose to the right, so ELECTRON and the flags read the right way up */ for (const x of [366, 412, 458, 486]) { poly(c, [x - 6, y + 16, x + 6, y + 16, x + 4, y + 7, x - 4, y + 7], '#3f7fd0', OUT, 0.3); rr(c, x - 7, y + 16, 14, 2, 0.4, '#2a5fa8', OUT, 0.25); } }
   rr(c, 360, 96, 132, 2, 0.3, '#8b93a7', OUT, 0.25); for (const x of [362, 426, 488]) rr(c, x, 98, 2.4, 40, 0.2, '#8b93a7'); // the upper rack
   rr(c, 500, 112, 30, 26, 0.8, '#c9a66b', OUT, 0.35); line(c, 500, 120, 530, 120, 'rgba(90,60,20,.4)', 0.4); line(c, 515, 112, 515, 138, 'rgba(90,60,20,.4)', 0.4); text(c, 'RUTHERFORD ×10', 515, 116.4, 2.6, '#3a2715', 700); text(c, 'HUNTINGTON', 515, 126, 2.6, '#3a2715', 700); text(c, 'BEACH, CA', 515, 130, 2.6, '#3a2715', 700);
 
