@@ -2,6 +2,7 @@ import { D, C2, el, line, poly, lg, rg, rng, drawSite } from '../art';
 import { texAt, soft, add, halo, sheet } from '../hifi';
 import type { Grade, Look } from '../hifi';
 import { spaceTextures, SPACE, puffy, ascentLive, ascentStep, CloudTone, NOON } from './flight';
+import { evening, Eve, Pad } from './evening';
 
 // ------------------------------------------------------------------ Launch Complex 1, Māhia: one pad, a different day each flight
 // Every Electron in the story leaves the same cliff-top pad, so the site is one drawing (`drawSite`, the plain one's code)
@@ -17,7 +18,7 @@ interface Day {
   sea: [number, string][]; swell: [string, string]; glitter: (k: number) => string; bank?: string;
   haze: [string, string]; mist: string; grassDark: string; grassLight: string;
   slope: [number, string][]; cliff: [number, string][]; shadow: [number, number, number, string];
-  thing: [number, string][]; tone: CloudTone; grade: Grade; flare: number; sunTint: number; glint: number;
+  thing: [number, string][]; tone: CloudTone; grade: Grade; flare: number; sunTint: number; glint: number; /** The glitter that moves, where the sun stands over the strip of sea behind the pad: half its width, and how far down it reaches. */ glintBox?: [number, number];
 }
 
 const sky = (d: Day) => (c: C2) => {
@@ -120,7 +121,60 @@ const look = (d: Day): Look => ({
   layers: [],
   swap: { ...SPACE, sky_day: d.key + '_sky', site_mahia: d.key + '_site', cloud1: d.key + '_cloud1', cloud2: d.key + '_cloud2', cloud3: d.key + '_cloud3' },
   grade: d.grade,
-  live(hf) { ascentLive(hf, { sun: d.sun, glint: { x: d.sun[0], y0: -17, y1: 2, tint: d.glint }, flare: d.flare, sunTint: d.sunTint, plume: 1.5 }); },
+  live(hf) { ascentLive(hf, { sun: d.sun, glint: { x: d.sun[0], y0: -17, y1: d.glintBox?.[1] ?? 2, tint: d.glint, w: d.glintBox?.[0] }, flare: d.flare, sunTint: d.sunTint, plume: 1.5 }); },
   step: ascentStep,
 });
-export const lc1Looks: Record<string, Look> = { 'lc1-test': look(TEST), 'lc1-still': look(STILL), 'lc1-business': look(BUSINESS) };
+// ---- 15 December 2023, 5:05 pm NZDT: "The Moon God Awakens", the return to flight in the third act of Paschen's Law
+// (04:05 UTC in the list of Electron launches). A week before midsummer, more than three hours before sunset: the sun
+// is still a third of the way up the sky, white with a little warmth in it. The cloudless sky is the game's choice.
+const MOONGOD: Day = {
+  key: 'hf_l1g', seed: 21, sun: [206, 62], disc: [6.8, '#fffdf0'],
+  sky: [[0, '#07358c'], [0.35, '#1c66c8'], [0.6, '#5aa6e6'], [0.82, '#a8d4f2'], [1, '#e2eef2']],
+  sunRGB: '255,246,220', glow: [150, 0.3, 54, 0.56], rays: 1.5, cirrus: [22, '255,255,255'],
+  sea: [[0, '#b9dcec'], [0.05, '#52a6d4'], [0.2, '#1873be'], [0.6, '#0d52a0'], [1, '#083674']], swell: ['232,246,255', 'rgba(6,36,92,.22)'],
+  glitter: (k) => `rgba(255,${252 - k * 24},${232 - k * 46},${0.85 - k * 0.5})`,
+  haze: ['rgba(180,208,232,.30)', 'rgba(206,226,240,.64)'], mist: 'rgba(226,240,250,.26)', grassDark: 'rgba(16,80,42,.22)', grassLight: 'rgba(232,250,140,.24)',
+  slope: [[0, 'rgba(255,246,170,.26)'], [0.42, 'rgba(20,50,44,.02)'], [1, 'rgba(6,40,48,.32)']], cliff: [[0, 'rgba(60,48,44,.26)'], [0.5, 'rgba(255,240,200,.07)'], [1, 'rgba(255,240,200,.36)']],
+  shadow: [0.5, -0.18, 0.5, '#05201c'], thing: [[0, 'rgba(8,28,40,.3)'], [0.58, 'rgba(8,28,40,.03)'], [1, 'rgba(255,244,200,.32)']],
+  tone: NOON,
+  grade: { threshold: 0.89, bloom: 0.44, exposure: 1.0, contrast: 1.12, saturation: 1.17, shadows: [0.91, 0.99, 1.13], highs: [1.06, 1.02, 0.94], vignette: 0.37, grain: 0.018, fringe: 0.005 },
+  flare: 0.9, sunTint: 0xfff4dc, glint: 0xfffbe6,
+};
+
+// ---- Launch Complex 1 after sunset: the same drawing in the dark, under the pad's floodlights (evening.ts). Where the
+// lamps stand is the game's choice; the hangar, the sheep and the fence are the plain drawing's own.
+const PAD: Pad = {
+  site: 'site_mahia', hz: HZ, draw: (c, part) => drawSite(c, false, part), far: 4, land: 2, things: 8,
+  ground(t: C2) {
+    const q = rng(19); for (let i = 0; i < 1500; i++) { const x = q() * 218, y = 98 + q() * 52, k = q(), far = (y - 98) / 52; line(t, x, y, x + (q() - 0.5) * (0.8 + far), y - 0.4 - q() * (0.6 + far), k < 0.5 ? 'rgba(20,52,34,.26)' : 'rgba(232,246,150,.2)', 0.2 + far * 0.2); } // pasture, coarser toward us
+    for (let i = 0; i < 26; i++) { const y = 108 + q() * 40; line(t, 222 + (y - 108) * 0.1 + q() * 3, y, 256 - q() * 4, y + (q() - 0.5) * 2.4, 'rgba(96,72,44,.22)', 0.3 + q() * 0.4); } // the beds of the papa cliffs
+  },
+  crest(c: C2) { c.beginPath(); c.moveTo(0, 104); c.quadraticCurveTo(60, 96, 110, 100); c.lineTo(214, 100); c.quadraticCurveTo(250, 100, 262, 108); },
+  // floodlights on the vehicle and its apron, the hangar's own lamps, and a little left over for the sheep
+  pools: [[156, 62, 56, 66, 1], [160, 102, 66, 9, 1], [78, 94, 25, 10, 0.9], [34, 108, 26, 7, 0.34]],
+  floods: [[120, 36], [196, 36]], reds: [[120, 12.4], [196, 12.4]], warm: [[71, 91.4], [93, 88.6]],
+  apron: [132, 192, 99.1],
+};
+
+// ---- 19 September 2023, 6:55 pm NZST: "We Will Never Desert You", the first act of Paschen's Law (06:55 UTC in the
+// level's account; New Zealand was still on standard time). Four days before the equinox the sun sets at Māhia a few
+// minutes after six, so the count ran out some fifty minutes into dusk: stars overhead, a band of orange where the sun
+// went. The new moon had been on 15 September, so a four-day-old crescent stood above the afterglow, leaning the way it
+// does in the southern sky. Where it and the afterglow sit in the frame, and the clear weather, are the game's choice.
+const DESERT: Eve = {
+  key: 'hf_l1d', seed: 31, west: 110,
+  sky: [[0, '#040818'], [0.26, '#0a1440'], [0.46, '#1c2a6c'], [0.56, '#40407f'], [0.61, '#8e5484'], [0.64, '#dc7a5e'], [0.658, '#f8aa68'], [0.7, '#93608a'], [0.79, '#2a2c6a'], [1, '#0a0e30']],
+  glow: [[140, '255,130,90', 0.36], [54, '255,176,120', 0.46], [16, '255,220,170', 0.5]], cold: 'rgba(12,18,66,.66)', stars: 130, moon: [129, 60, 0.7, -1.3],
+  bars: 16, bar: 'rgba(34,28,74,.62)', ember: '255,150,100',
+  sea: [[0, '#ea9c70'], [0.04, '#7c5884'], [0.16, '#2c3274'], [0.5, '#131a4c'], [1, '#080c28']], swell: '180,170,230',
+  path: (k) => `rgba(255,${186 - k * 60},${128 - k * 40},${0.85 - k * 0.55})`, pathW: 5, mist: 'rgba(255,160,120,.36)',
+  far: '#2a2458', dark: 'rgba(10,14,46,.86)', darkThing: 'rgba(10,12,44,.82)', rim: 'rgba(255,160,130,.45)', spill: 1.1,
+  tone: { shade: '#3a3866', down: [[0, 'rgba(58,54,110,.94)'], [0.55, 'rgba(48,42,92,.92)'], [0.85, 'rgba(150,80,106,.9)'], [1, 'rgba(232,132,100,.9)']], across: [[0, 'rgba(255,140,100,.3)'], [0.4, 'rgba(0,0,0,0)'], [1, 'rgba(16,18,66,.4)']] },
+  grade: { threshold: 0.72, bloom: 0.6, exposure: 1.04, contrast: 1.1, saturation: 1.14, shadows: [0.88, 0.94, 1.2], highs: [1.08, 1.0, 0.92], vignette: 0.46, grain: 0.024, fringe: 0.005 },
+  glint: 0xffa878, glintW: 10, lift: 0.32, twilight: true, limb: 0x9a86c8, air: 0xb8a0e0,
+};
+
+export const lc1Looks: Record<string, Look> = {
+  'lc1-test': look(TEST), 'lc1-still': look(STILL), 'lc1-business': look(BUSINESS),
+  'lc1-desert': evening(PAD, DESERT), 'lc1-moongod': look(MOONGOD),
+};
