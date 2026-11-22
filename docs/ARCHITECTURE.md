@@ -74,7 +74,7 @@ A scrolling level can opt into a cinematic look without changing how it plays. `
 - **Lighting.** Phaser's Light2D pipeline on the ground, the hero, enemies and props. Normal maps are generated: `bevelNormals()` from a texture's outline, `paintNormals()` by hand for tiles. Lights that belong to a backdrop layer give that layer's width (`w`) and ride with it.
 - **The hero** is drawn by a stand-in image that copies the physics sprite each step and adds squash, stretch, lean and dust. Enemies get a shadow, a floor reflection and a rocking walk by rotation only. Nothing here may scale or move a physics body: that is what keeps the bot's run identical.
 - **Post pass.** One `PostFXPipeline` on the play camera: thresholded bloom at half size, split-tone grade, vignette, grain, a little lens fringing. The HUD moves to a second camera so the pass never touches it: `ready()` sends everything with scroll factor 0 there.
-- **Fallbacks.** Without WebGL the layers, shadows, reflections and animation stay, and lighting and the post pass are skipped. `?hifi=0` turns the layer off; `?renderer=canvas` forces the Canvas renderer to check the fallback.
+- **Fallbacks.** Without WebGL the layers, shadows, reflections and animation stay, and lighting and the post pass are skipped. Players choose high or standard graphics with `G` or the HD/SD button (`hifiOn()` in `src/core.ts`, remembered, high by default; the choice applies from the next start of a level). `?hifi=0` turns the layer off for one visit; `?renderer=canvas` forces the Canvas renderer to check the fallback.
 - **Budget.** The look must hold the display's refresh rate at 1280 × 720: measure frame intervals over 20 s or more with the level running, and compare with `?hifi=0`.
 
 ## Cards and text

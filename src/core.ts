@@ -89,6 +89,8 @@ export function initInput(game: Phaser.Game) {
   // T, or the note button, steps through the soundtracks; the new one's name shows for a moment.
   const track = () => { unlock(); const s = nextSoundtrack(); toast(`♪ Soundtrack: ${s.name} · ${s.style}`); };
   document.getElementById('track')?.addEventListener('click', (e) => { (e.currentTarget as HTMLElement).blur(); track(); });
+  document.getElementById('gfx')?.addEventListener('click', (e) => { (e.currentTarget as HTMLElement).blur(); toggleGfx(game); });
+  showGfx();
   const help = document.getElementById('help');
   help?.addEventListener('click', () => { help.blur(); if (helpOpen) overlayConfirm(); else showHelp(game); });
   const dev = document.getElementById('dev');
@@ -108,6 +110,7 @@ export function initInput(game: Phaser.Game) {
     if (!overlayOpen() && (e.key === '+' || e.key === '=' || e.code === 'NumpadAdd')) { setSpeed(1); e.preventDefault(); return; }
     if (!overlayOpen() && (e.key === '-' || e.key === '_' || e.code === 'NumpadSubtract')) { setSpeed(-1); e.preventDefault(); return; }
     if (e.code === 'KeyT' && !e.repeat) track();
+    if (e.code === 'KeyG' && !e.repeat && !overlayOpen()) { toggleGfx(game); e.preventDefault(); return; }
     if (e.code === 'KeyH' && !e.repeat && helpOpen) { overlayConfirm(); e.preventDefault(); return; } // H closes the panel it opened
     if (!e.repeat && !overlayOpen() && hotkeys[e.code]) { hotkeys[e.code]!(); e.preventDefault(); return; }
     const k = MAP[e.code];
@@ -194,6 +197,18 @@ export function toast(text: string) {
   el.textContent = text; el.classList.add('on');
   clearTimeout(toastTimer); toastTimer = window.setTimeout(() => el.classList.remove('on'), 2400);
 }
+// ---------- graphics: high uses the hi-fi layer (hifi.ts) wherever a level has a look; G or the HD button ----------
+const GFX_KEY = 'carbon-to-orbit-graphics';
+let gfxHigh = (() => { try { return localStorage.getItem(GFX_KEY) !== 'standard'; } catch { return true; } })();
+if (new URLSearchParams(location.search).get('hifi') === '0') gfxHigh = false;
+export const hifiOn = () => gfxHigh;
+function showGfx() { const b = document.getElementById('gfx'); if (b) { b.textContent = gfxHigh ? 'HD' : 'SD'; b.classList.toggle('on', gfxHigh); } }
+function toggleGfx(game: Phaser.Game) {
+  gfxHigh = !gfxHigh; snd.click(); showGfx();
+  try { localStorage.setItem(GFX_KEY, gfxHigh ? 'high' : 'standard'); } catch { /* private mode */ }
+  const sc = game.scene.getScenes(true)[0] as any;
+  toast(`Graphics: ${gfxHigh ? 'high' : 'standard'}${sc && sc.def ? ' · from the next start of a level' : ''}`);
+}
 // ---------- game speed: + and - at any moment in a level ----------
 /** The speeds on offer. Speed applies inside levels (not on the map), and a level's points scale with it: see `speedFactor`. */
 export const SPEEDS = [0.5, 0.75, 1, 1.5, 2, 3, 4];
@@ -241,7 +256,7 @@ export function showHelp(game: Phaser.Game) {
   const sc = game.scene.getScenes(true)[0] as any;
   const h: Help | undefined = sc && (sc.help?.() || CONTROLS[sc.scene.key]);
   if (!h) return;
-  const rows: [string, string][] = [...h.rows, ['+ −', 'Game speed in a level: faster scores more, slower scores less'], ['H', 'Show or hide this panel'], ['M', 'Sound on or off'], ['T', 'Next soundtrack: four to choose from'], ...(DEV ? [['K', 'Developer mode: skip this level'] as [string, string]] : [])];
+  const rows: [string, string][] = [...h.rows, ['+ −', 'Game speed in a level: faster scores more, slower scores less'], ['H', 'Show or hide this panel'], ['M', 'Sound on or off'], ['T', 'Next soundtrack: four to choose from'], ['G', 'Graphics: high (HD) or standard (SD), for slower computers'], ...(DEV ? [['K', 'Developer mode: skip this level'] as [string, string]] : [])];
   sc.scene.pause(); helpOpen = true; snd.select();
   showCard(`<div class="kicker">CONTROLS · GAME PAUSED</div><h1>${h.title}</h1><table class="keys">${rows.map(([k, t]) => `<tr><td>${kbd(k)}</td><td>${t}</td></tr>`).join('')}</table>${h.note ? `<p class="how">${h.note}</p>` : ''}<p class="src">Arrows also work as W A S D, Space as Z, Enter as X.</p>`,
     [{ label: 'Back to the game', fn: () => { helpOpen = false; sc.scene.resume(); } }]);

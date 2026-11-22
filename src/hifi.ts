@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { W, H, HX } from './core';
+import { W, H, HX, hifiOn } from './core';
 import { D, S, C2 } from './art';
 
 // The hi-fi layer: a cinematic look a scrolling level can opt into, without changing how it plays.
@@ -10,9 +10,10 @@ import { D, S, C2 } from './art';
 //   - contact shadows and floor reflections, and squash, stretch and lean on the hero;
 //   - one post pass over the play camera: thresholded bloom, a colour grade, vignette and film grain.
 // The HUD moves to its own camera so the post pass never touches it. Without WebGL the art and the
-// animation stay and the lighting and post pass are skipped; `?hifi=0` turns the whole layer off.
+// animation stay and the lighting and post pass are skipped. Players switch it with the Graphics button or G
+// (remembered, high by default); `?hifi=0` turns it off for one visit.
 
-export const HIFI_OFF = new URLSearchParams(location.search).get('hifi') === '0';
+
 
 export interface Grade { threshold: number; bloom: number; exposure: number; contrast: number; saturation: number; shadows: [number, number, number]; highs: [number, number, number]; vignette: number; grain: number; fringe: number }
 /** `w` is the width in units of the parallax layer a thing rides on (as for a level's own layers); leave it out for world space. */
@@ -253,7 +254,7 @@ export class HiFi {
   }
 }
 
-/** The hi-fi layer for a level, or undefined when its theme has no look or the player turned it off with `?hifi=0`. */
+/** The hi-fi layer for a level, or undefined when its theme has no look or the player chose standard graphics. */
 export function hifi(scene: Phaser.Scene, look: Look | undefined, world: World) {
-  return look && !HIFI_OFF ? new HiFi(scene, look, world) : undefined;
+  return look && hifiOn() ? new HiFi(scene, look, world) : undefined;
 }

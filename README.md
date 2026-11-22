@@ -54,6 +54,7 @@ Open the address Vite prints. Press **H** at any moment for the controls of what
 | F | Full screen |
 | M | Sound on or off |
 | T | Next soundtrack: the original score, 1980s synthwave, chiptune, or slow and cinematic |
+| G | Graphics: high (HD), with lighting, reflections and glow in levels that have it, or standard (SD) for slower computers |
 
 A touch pad appears on phones.
 
