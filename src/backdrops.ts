@@ -1,11 +1,13 @@
 import Phaser from 'phaser';
-import { tex, lg, rg, rr, el, poly, line, text, rng, cloud, electronFull, OUT, C2 } from './art';
+import { tex, lg, rg, rr, el, poly, line, text, rng, cloud, electronFull, parts, OUT, C2 } from './art';
 
 // Platform backdrops. Rule: no repeating modules. Each backdrop is one long strip that reads left to right as a
 // walk through that chapter of the story, built from things that were really there.
 
 // ------------------------------------------------------------------ The Rocket Bike: appliance works, 1990s, after hours
-function workshop(c: C2) {
+/** `part` (see `parts` in art.ts): 1 the walls and roof, 2 the things, 4 what gives off light (windows, the CRT, the street), 8 the lamps' bulbs and beams. */
+export function workshop(real: C2, part = 15) {
+  const pick = parts(real, part); let c = pick(1);
   const W = 760;
   c.fillStyle = lg(c, 0, 0, 0, 180, [0, '#252a3c'], [1, '#363c56']); c.fillRect(0, 0, W, 180);
   for (let y = 20; y < 180; y += 9) for (let x = (y / 9) % 2 ? 0 : -10; x < W; x += 20) rr(c, x + 0.4, y + 0.4, 19.2, 8.2, 0.4, 'rgba(255,255,255,.022)');
@@ -16,17 +18,20 @@ function workshop(c: C2) {
   rr(c, 0, 17, W, 2.4, 0, '#3a4057'); rr(c, 0, 0, W, 2, 0, '#3a4057');
   rr(c, 96, 8, 250, 6, 3, lg(c, 0, 8, 0, 14, [0, '#7b8399'], [1, '#474d60'])); for (let x = 110; x < 340; x += 38) rr(c, x, 7, 2, 8, 0, '#2a2e3c');
   const lamp = (x: number, warm = 'rgba(255,235,170,') => {
-    line(c, x, 19, x, 28, '#15171f', 0.5); poly(c, [x - 6, 33, x + 6, 33, x + 3, 28, x - 3, 28], '#4a5066', OUT, 0.3); el(c, x, 33.4, 3, 1, '#fff3c4');
+    const was = c; c = pick(2);
+    line(c, x, 19, x, 28, '#15171f', 0.5); poly(c, [x - 6, 33, x + 6, 33, x + 3, 28, x - 3, 28], '#4a5066', OUT, 0.3); c = pick(8); el(c, x, 33.4, 3, 1, '#fff3c4');
     c.fillStyle = lg(c, 0, 33, 0, 150, [0, warm + '.2)'], [1, warm + '0)']); c.beginPath(); c.moveTo(x - 5, 33); c.lineTo(x + 5, 33); c.lineTo(x + 44, 150); c.lineTo(x - 44, 150); c.closePath(); c.fill();
+    c = was;
   };
   const win = (x: number, y: number, w: number, h: number, sky: (x: number, y: number, w: number, h: number) => void) => {
-    rr(c, x - 2, y - 2, w + 4, h + 4, 1.2, '#1a1f30', '#4a5066', 1.2); c.fillStyle = lg(c, 0, y, 0, y + h, [0, '#070d26'], [1, '#27407a']); c.fillRect(x, y, w, h);
-    c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip(); sky(x, y, w, h); c.restore();
+    rr(c, x - 2, y - 2, w + 4, h + 4, 1.2, '#1a1f30', '#4a5066', 1.2); c = pick(4); c.fillStyle = lg(c, 0, y, 0, y + h, [0, '#070d26'], [1, '#27407a']); c.fillRect(x, y, w, h);
+    c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip(); sky(x, y, w, h); c.restore(); c = pick(2);
     line(c, x + w / 2, y, x + w / 2, y + h, '#4a5066', 1); line(c, x, y + h / 2, x + w, y + h / 2, '#4a5066', 1); rr(c, x - 3, y + h + 2, w + 6, 2, 0.4, '#5b6275');
   };
   const stars = (x: number, y: number, w: number, h: number, n: number) => { for (let i = 0; i < n; i++) el(c, x + r() * w, y + r() * h * 0.8, 0.25 + r() * 0.2, 0.25 + r() * 0.2, '#fff'); };
   const sign = (x: number, y: number, w: number, s: string, bg = '#1f5a34', fg = '#fff', size = 4.2) => { line(c, x + 6, 19, x + 6, y, '#15171f', 0.4); line(c, x + w - 6, 19, x + w - 6, y, '#15171f', 0.4); rr(c, x, y, w, 9, 1, bg, OUT, 0.35); text(c, s, x + w / 2, y + 4.8, size, fg, 700); };
 
+  c = pick(2);
   // ---- A. clocking in: night window with the Southern Cross, wall clock, time cards
   win(18, 34, 54, 50, (x, y, w, h) => {
     stars(x, y, w, h, 16); el(c, x + 42, y + 12, 5, 5, '#f4f2ea'); el(c, x + 44.4, y + 10.6, 4.4, 4.4, '#0b1430');
@@ -76,7 +81,7 @@ function workshop(c: C2) {
   for (const [bx, by] of [[474, 126], [496, 118]] as number[][]) el(c, bx, by, 4.4, 3.4, undefined, '#dbe9ff', 0.4); line(c, 474, 126, 482, 118, '#dbe9ff', 0.4); line(c, 482, 118, 494, 114, '#dbe9ff', 0.4); line(c, 494, 114, 496, 118, '#dbe9ff', 0.4); rr(c, 472, 121.4, 16, 2.2, 1, undefined, '#dbe9ff', 0.4);
   line(c, 470, 136, 466, 144, '#3a3f4f', 1.4); line(c, 506, 122, 510, 144, '#3a3f4f', 1.4);
   rr(c, 524, 118, 40, 4, 0.6, '#8a6238', OUT, 0.3); rr(c, 526, 122, 4, 22, 0.3, '#5b3d22'); rr(c, 558, 122, 4, 22, 0.3, '#5b3d22'); // desk and CRT
-  rr(c, 530, 96, 26, 22, 2, '#d7dbe4', OUT, 0.35); rr(c, 532.4, 98.4, 21.2, 15, 1.4, '#0c1a14'); for (let i = 0; i < 4; i++) { c.beginPath(); c.ellipse(543, 106, 8 - i * 1.6, 5.4, 0, 0, 6.3); c.strokeStyle = '#4fe07a'; c.lineWidth = 0.3; c.stroke(); } line(c, 535, 106, 551, 106, '#4fe07a', 0.3);
+  rr(c, 530, 96, 26, 22, 2, '#d7dbe4', OUT, 0.35); rr(c, 532.4, 98.4, 21.2, 15, 1.4, '#0c1a14'); c = pick(4); for (let i = 0; i < 4; i++) { c.beginPath(); c.ellipse(543, 106, 8 - i * 1.6, 5.4, 0, 0, 6.3); c.strokeStyle = '#4fe07a'; c.lineWidth = 0.3; c.stroke(); } line(c, 535, 106, 551, 106, '#4fe07a', 0.3); c = pick(2);
   rr(c, 528, 40, 30, 40, 0.6, '#0b1024', '#f4f2ea', 1); el(c, 543, 56, 9, 9, rg(c, 540, 53, 1, 12, [0, '#f1f1ee'], [1, '#8b90a2'])); el(c, 540, 54, 2, 2, 'rgba(120,125,145,.6)'); el(c, 546, 60, 1.5, 1.5, 'rgba(120,125,145,.6)'); text(c, 'TE MARAMA', 543, 73, 2.8, '#aab4d4', 700); // Moon poster
   win(574, 44, 34, 44, (x, y, w, h) => { stars(x, y, w, h, 14); el(c, x + 9, y + 9, 1.2, 1.2, '#ffd9a8'); });
   line(c, 598, 144, 590, 112, '#3a3f4f', 0.9); line(c, 582, 144, 590, 112, '#3a3f4f', 0.9); line(c, 590, 144, 590, 112, '#3a3f4f', 0.9); // telescope pointed at the window
@@ -98,7 +103,7 @@ function workshop(c: C2) {
 
   // ---- F. the roller door, open to Princes Street at night
   rr(c, 720, 46, 40, 98, 0, '#0a1024'); rr(c, 716, 36, 44, 10, 0.6, '#1f5a34', '#f4f2ea', 0.8); text(c, 'PRINCES ST', 738, 41.4, 4.2, '#fff', 700);
-  c.save(); c.beginPath(); c.rect(720, 48, 40, 96); c.clip();
+  c = pick(4); c.save(); c.beginPath(); c.rect(720, 48, 40, 96); c.clip();
   c.fillStyle = lg(c, 0, 48, 0, 144, [0, '#0a1024'], [1, '#27407a']); c.fillRect(720, 48, 40, 96);
   for (let i = 0; i < 9; i++) el(c, 722 + r() * 36, 50 + r() * 30, 0.3, 0.3, '#fff');
   rr(c, 722, 96, 12, 34, 0.3, '#141b33'); rr(c, 736, 86, 10, 44, 0.3, '#182040'); poly(c, [739, 86, 741, 78, 743, 86], '#182040'); rr(c, 748, 100, 12, 30, 0.3, '#141b33'); for (let i = 0; i < 10; i++) rr(c, 723 + (i % 3) * 13 + r() * 6, 98 + r() * 26, 1.2, 1.6, 0, '#ffe98a');
@@ -107,22 +112,24 @@ function workshop(c: C2) {
   for (let i = 0; i < 6; i++) poly(c, [720 + i * 7, 52, 727 + i * 7, 52, 723.5 + i * 7, 58], i % 2 ? '#f4f2ea' : '#15171f'); // street-sprint bunting
   c.beginPath(); c.moveTo(733, 131); c.lineTo(735, 127.6); c.quadraticCurveTo(741, 124.4, 747, 125.6); c.lineTo(752, 127.4); c.lineTo(760, 128.4); c.lineTo(760, 131); c.closePath(); c.fillStyle = '#c8102e'; c.fill(); el(c, 739, 131, 2, 2, '#0b0c12'); el(c, 754, 131, 2, 2, '#0b0c12'); // a low red sports car waits at the line
   for (const dx of [722, 729]) { rr(c, dx, 124, 6, 11, 1, lg(c, dx, 0, dx + 6, 0, [0, '#4d9be8'], [1, '#163a70']), OUT, 0.3); poly(c, [dx + 3, 127, dx + 4.6, 129, dx + 3, 131, dx + 1.4, 129], '#f2d14a'); } // the peroxide stays outside
-  c.restore();
+  c.restore(); c = pick(2);
   rr(c, 716, 46, 4, 98, 0.4, '#f2d14a', OUT, 0.3); for (let y = 50; y < 144; y += 10) poly(c, [716, y, 720, y + 4, 720, y + 8, 716, y + 4], '#15171f');
 }
 
 // ------------------------------------------------------------------ Road to Māhia, 2016
-/** Far layer: sky, the long white cloud, Hawke Bay, Mokotahi, a dolphin, Portland Island and its light. */
-function mahiaFar(c: C2) {
+/** Far layer: sky, the long white cloud, Hawke Bay, Mokotahi, a dolphin, Portland Island and its light. `part`: 1 sky, sun and sea, 4 the clouds, 2 land, sea life, the boat and the birds. */
+export function mahiaFar(real: C2, part = 7) {
+  const pick = parts(real, part); let c = pick(1);
   const W = 520;
   c.fillStyle = '#12407f'; c.fillRect(0, 0, W, 180);
-  c.translate(0, -15); // horizon sits above the middle layer's ridge so the bay, the island and the boat stay in view
+  real.translate(0, -15); // horizon sits above the middle layer's ridge so the bay, the island and the boat stay in view
   c.fillStyle = lg(c, 0, 0, 0, 120, [0, '#2a78d2'], [0.6, '#7cc0f0'], [1, '#d6ecfb']); c.fillRect(0, 0, W, 120);
   c.fillStyle = rg(c, 430, 34, 2, 76, [0, 'rgba(255,250,220,.95)'], [0.12, 'rgba(255,245,200,.5)'], [1, 'rgba(255,245,200,0)']); c.fillRect(330, 0, 190, 120); el(c, 430, 34, 7, 7, '#fffbe6');
-  c.save(); c.translate(70, 40); c.scale(1, 0.55); cloud(c, 230, 34, 9, '#c8dcf0'); c.restore(); // ao tea roa: the long white cloud
+  c = pick(4); c.save(); c.translate(70, 40); c.scale(1, 0.55); cloud(c, 230, 34, 9, '#c8dcf0'); c.restore(); // ao tea roa: the long white cloud
   c.save(); c.translate(330, 62); cloud(c, 64, 16, 4, '#c8dcf0'); c.restore();
-  c.fillStyle = lg(c, 0, 116, 0, 180, [0, '#8cc8f0'], [0.07, '#2f7fd0'], [1, '#12407f']); c.fillRect(0, 116, W, 64);
+  c = pick(1); c.fillStyle = lg(c, 0, 116, 0, 180, [0, '#8cc8f0'], [0.07, '#2f7fd0'], [1, '#12407f']); c.fillRect(0, 116, W, 64);
   const r = rng(52); for (let i = 0; i < 170; i++) { const x = r() * W, y = 120 + r() * 58; line(c, x, y, x + 3 + r() * 8, y, `rgba(220,240,255,${0.12 + r() * 0.28})`, 0.4); }
+  c = pick(2);
   // the hills behind Wairoa
   poly(c, [0, 117, 0, 92, 30, 84, 62, 94, 96, 88, 130, 104, 150, 117], lg(c, 0, 84, 0, 117, [0, '#6f9fb8'], [1, '#5a8aa6']));
   // Mokotahi: the pale headland at Māhia Beach
@@ -138,7 +145,7 @@ function mahiaFar(c: C2) {
   for (const [gx, gy, s] of [[250, 44, 1], [262, 50, 0.8], [240, 54, 0.7], [388, 72, 0.9]] as number[][]) { c.beginPath(); c.moveTo(gx - 5 * s, gy); c.quadraticCurveTo(gx - 2 * s, gy - 3 * s, gx, gy); c.quadraticCurveTo(gx + 2 * s, gy - 3 * s, gx + 5 * s, gy); c.strokeStyle = '#f4f2ea'; c.lineWidth = 0.7; c.stroke(); el(c, gx - 5 * s, gy, 0.5, 0.4, '#15171f'); el(c, gx + 5 * s, gy, 0.5, 0.4, '#15171f'); }
 }
 /** Middle layer, transparent above the ridge, in the order you would drive it: Wairoa, Māhia Beach, the coast road, Onenui Station, the building site, the range. */
-function mahiaMid(c: C2) {
+export function mahiaMid(c: C2) {
   const W = 760, r = rng(61);
   const ridge = (x: number) => 104 + 9 * Math.sin(x * 0.016 + 0.6) + 5 * Math.sin(x * 0.041 + 2) - (x > 560 ? Math.min(10, (x - 560) * 0.06) : 0);
   c.beginPath(); c.moveTo(0, 138); for (let x = 0; x <= W; x += 4) c.lineTo(x, ridge(x)); c.lineTo(W, 138); c.closePath();
@@ -407,20 +414,21 @@ function stennisMid(c: C2, scene: Phaser.Scene) {
 }
 
 // ------------------------------------------------------------------ Go Find the Launch Site, about 2015: the far end of the Māhia Peninsula before there was a road
-/** Far layer: a big sky, the Pacific to the horizon on every side but one, and nothing on it. */
-function rideFar(c: C2) {
+/** Far layer: a big sky, the Pacific to the horizon on every side but one, and nothing on it. `part`: 1 sky and sea, 4 the clouds, 2 land, birds and boats. */
+export function rideFar(real: C2, part = 7) {
+  const pick = parts(real, part); let c = pick(1);
   const W = 520, r = rng(71);
   c.fillStyle = lg(c, 0, 0, 0, 104, [0, '#3a86d6'], [0.7, '#a6d2f2'], [1, '#e6f2fb']); c.fillRect(0, 0, W, 104);
-  for (const [x, y, w, k] of [[40, 22, 120, 2], [210, 40, 80, 5], [330, 18, 130, 8]]) { c.save(); c.translate(x, y); cloud(c, w, w * 0.24, k, '#d0e0f0'); c.restore(); }
-  c.fillStyle = lg(c, 0, 100, 0, 180, [0, '#9fd0ee'], [0.06, '#2f7fd0'], [1, '#143c78']); c.fillRect(0, 100, W, 80);
+  c = pick(4); for (const [x, y, w, k] of [[40, 22, 120, 2], [210, 40, 80, 5], [330, 18, 130, 8]]) { c.save(); c.translate(x, y); cloud(c, w, w * 0.24, k, '#d0e0f0'); c.restore(); }
+  c = pick(1); c.fillStyle = lg(c, 0, 100, 0, 180, [0, '#9fd0ee'], [0.06, '#2f7fd0'], [1, '#143c78']); c.fillRect(0, 100, W, 80);
   for (let i = 0; i < 190; i++) { const x = r() * W, y = 104 + r() * 74; line(c, x, y, x + 3 + r() * 9, y, `rgba(220,240,255,${0.1 + r() * 0.26})`, 0.4); }
-  poly(c, [0, 101, 0, 82, 40, 76, 84, 86, 120, 101], lg(c, 0, 76, 0, 101, [0, '#7fa8b8'], [1, '#6a96aa'])); // the mainland, falling behind
+  c = pick(2); poly(c, [0, 101, 0, 82, 40, 76, 84, 86, 120, 101], lg(c, 0, 76, 0, 101, [0, '#7fa8b8'], [1, '#6a96aa'])); // the mainland, falling behind
   for (const [gx, gy, k] of [[150, 52, 1], [164, 58, 0.8], [300, 46, 0.9], [420, 60, 0.7]] as number[][]) { c.beginPath(); c.moveTo(gx - 5 * k, gy); c.quadraticCurveTo(gx - 2 * k, gy - 3 * k, gx, gy); c.quadraticCurveTo(gx + 2 * k, gy - 3 * k, gx + 5 * k, gy); c.strokeStyle = '#f4f2ea'; c.lineWidth = 0.7; c.stroke(); }
   c.beginPath(); c.moveTo(440, 101); c.quadraticCurveTo(462, 88, 488, 90); c.lineTo(510, 94); c.lineTo(518, 101); c.closePath(); c.fillStyle = '#6f9f7a'; c.fill(); // Portland Island off the tip
   for (const x of [250, 380]) { poly(c, [x, 108, x + 9, 108, x + 7.6, 110.4, x + 1.4, 110.4], '#e8e6df', OUT, 0.25); line(c, x + 4.5, 108, x + 4.5, 103, '#3a3f4f', 0.35); } // fishing boats, a long way out
 }
 /** Middle layer, transparent above the hills: farm country getting emptier, then the last headland. */
-function rideMid(c: C2) {
+export function rideMid(c: C2) {
   const W = 760, r = rng(83);
   const ridge = (x: number) => 112 + 12 * Math.sin(x * 0.011 + 1) + 6 * Math.sin(x * 0.033) - (x > 600 ? (x - 600) * 0.05 : 0);
   c.beginPath(); c.moveTo(0, 180); for (let x = 0; x <= W; x += 4) c.lineTo(x, ridge(x)); c.lineTo(W, 180); c.closePath(); c.fillStyle = lg(c, 0, 96, 0, 180, [0, '#8acb72'], [0.5, '#62a85c'], [1, '#4a8a4c']); c.fill();
@@ -439,14 +447,14 @@ function rideMid(c: C2) {
 }
 
 export function makeBackdrops(scene: Phaser.Scene) {
-  tex(scene, 'bg_ride_far', 520, 180, rideFar);
+  tex(scene, 'bg_ride_far', 520, 180, (c) => rideFar(c));
   tex(scene, 'bg_ride_mid', 760, 180, rideMid);
   tex(scene, 'bg_stennis_far', 520, 180, stennisFar);
   tex(scene, 'bg_stennis_mid', 760, 180, (c) => stennisMid(c, scene));
   tex(scene, 'bg_listing', 760, 180, (c) => listing(c, scene));
   tex(scene, 'bg_factory', 760, 180, factory);
-  tex(scene, 'bg_workshop', 760, 180, workshop);
-  tex(scene, 'bg_mahia_far', 520, 180, mahiaFar);
+  tex(scene, 'bg_workshop', 760, 180, (c) => workshop(c));
+  tex(scene, 'bg_mahia_far', 520, 180, (c) => mahiaFar(c));
   tex(scene, 'bg_mahia_mid', 760, 180, mahiaMid);
 
   // Mission control in Auckland the morning flight 13 was lost: dark room, live consoles, a wall clock on New Zealand time

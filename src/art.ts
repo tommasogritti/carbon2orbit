@@ -36,6 +36,12 @@ export const poly = (c: C2, pts: number[], fill?: string | CanvasGradient, strok
 export const line = (c: C2, x0: number, y0: number, x1: number, y1: number, col: string, lw: number) => { c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.strokeStyle = col; c.lineWidth = lw; c.stroke(); };
 export const text = (c: C2, s: string, x: number, y: number, size: number, col: string, weight = 600, align: CanvasTextAlign = 'center') => { c.font = `${weight} ${size}px ${UI}`; c.textAlign = align; c.textBaseline = 'middle'; c.fillStyle = col; c.fillText(s, x, y); };
 const i3 = (k: number) => (k > 0.66 ? '#8b93a7' : k > 0.33 ? '#6f7890' : '#a8aebc');
+/**
+ * Lets one backdrop function draw itself in parts, for the hi-fi looks (src/looks/): `pick(k)` gives the real canvas when
+ * `part` includes k and a throwaway one when it does not, so the drawing code runs unchanged and in the same order.
+ * Each backdrop says what its bits mean; by habit 1 is the shell (sky, sea, walls) and 2 the things in it.
+ */
+export function parts(c: C2, part: number) { const sink = document.createElement('canvas').getContext('2d')!; return (k: number) => (part & k ? c : sink); }
 export function rng(seed: number) { return () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 export const OUT = '#0b0c12';
 
@@ -419,6 +425,67 @@ export function starfield(c: C2, w: number, h: number, n: number, seed: number) 
   c.globalAlpha = 1;
 }
 
+// ---------------------------------------------------------------- the engine test stand
+/** The Rutherford test stand at night, 320 x 180. `part`: 1 the sky, hills and apron, 2 the stand and everything on it, 4 the floodlight's glow. */
+export function drawStand(real: C2, part = 7) {
+  const pick = parts(real, part); let c = pick(1);
+  c.fillStyle = lg(c, 0, 0, 0, 180, [0, '#0b1024'], [0.7, '#1c2a52'], [1, '#2c3f70']); c.fillRect(0, 0, 320, 180); starfield(c, 320, 110, 120, 12);
+  poly(c, [0, 132, 50, 112, 110, 124, 180, 108, 260, 122, 320, 112, 320, 140, 0, 140], '#0f1a36');
+  c.fillStyle = lg(c, 0, 134, 0, 180, [0, '#3a4057'], [1, '#22273a']); c.fillRect(0, 134, 320, 46);
+  for (let x = -20; x < 340; x += 26) line(c, x, 180, x + 30, 134, 'rgba(255,255,255,.04)', 0.5);
+  c = pick(2);
+  // stand
+  for (const x of [58, 152]) { rr(c, x, 26, 6, 108, 0.5, lg(c, x, 0, x + 6, 0, [0, '#6f7890'], [1, '#3a3f4f']), OUT, 0.3); }
+  rr(c, 52, 22, 112, 7, 1, lg(c, 0, 22, 0, 29, [0, '#8b93a7'], [1, '#4a5066']), OUT, 0.3);
+  for (let y = 34; y < 130; y += 16) { line(c, 64, y, 152, y + 16, 'rgba(120,130,150,.35)', 0.6); line(c, 152, y, 64, y + 16, 'rgba(120,130,150,.35)', 0.6); }
+  for (let x = 52; x < 164; x += 8) poly(c, [x, 22, x + 4, 22, x + 2, 25, x - 2, 25], '#f2d14a');
+  poly(c, [84, 134, 132, 134, 124, 120, 92, 120], lg(c, 0, 120, 0, 134, [0, '#5b6275'], [1, '#2a2e3c']), OUT, 0.3); // flame deflector
+  // battery cart and tanks
+  rr(c, 14, 100, 30, 30, 2, lg(c, 14, 0, 44, 0, [0, '#ffe98a'], [1, '#c8961c']), OUT, 0.4); rr(c, 18, 104, 22, 8, 1, '#23262f'); for (let i = 0; i < 4; i++) rr(c, 20 + i * 5, 106, 3.4, 4, 0.4, '#7cc56b'); text(c, 'BATT', 29, 121, 4.4, '#5b4410', 700); el(c, 20, 132, 3, 3, '#15171f'); el(c, 38, 132, 3, 3, '#15171f');
+  c.beginPath(); c.moveTo(44, 110); c.bezierCurveTo(70, 118, 80, 60, 96, 52); c.strokeStyle = '#f2d14a'; c.lineWidth = 1; c.stroke();
+  rr(c, 176, 70, 18, 64, 8, lg(c, 176, 0, 194, 0, [0, '#f2f4f8'], [1, '#8b93a7']), OUT, 0.35); text(c, 'LOX', 185, 100, 4, '#4a5066', 700);
+  rr(c, 198, 84, 14, 50, 6, lg(c, 198, 0, 212, 0, [0, '#e8b796'], [1, '#a8603c']), OUT, 0.35); text(c, 'RP-1', 205, 110, 3, '#4a2a18', 700);
+  c = pick(4); c.fillStyle = rg(c, 108, 26, 2, 60, [0, 'rgba(255,240,200,.22)'], [1, 'rgba(255,240,200,0)']); c.fillRect(40, 0, 140, 100);
+}
+
+// ---------------------------------------------------------------- launch sites
+/**
+ * A launch site, 320 x 150 with the ground line at y = 100: Great Mercury Island (`island`) or the pad at Māhia.
+ * `part`: 1 the sea, 4 the far headlands, 2 the land, 8 what stands on it.
+ */
+export function drawSite(real: C2, island: boolean, part = 15) {
+  const pick = parts(real, part); let c = pick(1);
+  c.fillStyle = lg(c, 0, 82, 0, 150, [0, '#7fc0ee'], [0.08, '#2f7fd0'], [1, '#12407f']); c.fillRect(0, 82, 320, 68);
+  const r = rng(island ? 41 : 42);
+  for (let i = 0; i < 90; i++) { const x = r() * 320, y = 86 + r() * 62; line(c, x, y, x + 3 + r() * 7, y, `rgba(210,235,255,${0.12 + r() * 0.25})`, 0.4); }
+  c = pick(4); poly(c, [0, 84, 30, 76, 66, 80, 96, 84], '#5d86a8'); poly(c, [230, 84, 262, 74, 300, 78, 320, 82, 320, 84], '#5d86a8'); // far headlands
+  c = pick(2);
+  if (island) {
+    c.beginPath(); c.moveTo(40, 112); c.quadraticCurveTo(80, 84, 140, 96); c.quadraticCurveTo(180, 90, 220, 99); c.quadraticCurveTo(262, 100, 286, 114); c.quadraticCurveTo(160, 126, 40, 112); c.fillStyle = lg(c, 0, 86, 0, 120, [0, '#6cb968'], [1, '#2f7a47']); c.fill();
+    c.beginPath(); c.moveTo(40, 112); c.quadraticCurveTo(160, 126, 286, 114); c.quadraticCurveTo(160, 134, 40, 112); c.fillStyle = '#e6d9a8'; c.fill();
+    c = pick(8);
+    for (let i = 0; i < 16; i++) { const x = 60 + r() * 60, y = 96 + r() * 10; el(c, x, y, 4 + r() * 3, 3 + r() * 2, i % 3 ? '#2f6b3a' : '#3f8a4c'); if (i % 4 === 0) el(c, x + 1, y - 1, 1.6, 1.2, '#c8102e'); }
+    rr(c, 146, 98.6, 30, 3, 1, '#b8b29a', OUT, 0.25); line(c, 150, 100, 158, 64, '#8b93a7', 0.9); line(c, 152, 100, 158, 64, '#5b6275', 0.5); // launch rail
+    rr(c, 196, 93, 12, 7, 0.6, '#f4f2ea', OUT, 0.3); poly(c, [195, 93, 202, 89, 209, 93], '#d8452e', OUT, 0.3);
+  } else {
+    // Māhia: a cliff-top pad at the tip of the peninsula
+    c.beginPath(); c.moveTo(0, 104); c.quadraticCurveTo(60, 96, 110, 100); c.lineTo(214, 100); c.quadraticCurveTo(250, 100, 262, 108); c.lineTo(258, 150); c.lineTo(0, 150); c.closePath(); c.fillStyle = lg(c, 0, 98, 0, 150, [0, '#7cc56b'], [0.2, '#4f9d4f'], [1, '#2f6b3a']); c.fill();
+    poly(c, [214, 100, 262, 108, 258, 150, 226, 150, 222, 120], lg(c, 0, 100, 0, 150, [0, '#e2d6b4'], [1, '#9a8a66'])); // papa cliffs
+    for (let i = 0; i < 9; i++) line(c, 226 + r() * 30, 108 + r() * 36, 228 + r() * 30, 112 + r() * 36, 'rgba(90,70,40,.35)', 0.4);
+    c = pick(8);
+    rr(c, 132, 99, 60, 3, 1, lg(c, 0, 99, 0, 102, [0, '#c8ccd4'], [1, '#8b93a7']), OUT, 0.25); // pad apron
+    // strongback, lowered away from the vehicle
+    rr(c, 140, 30, 2.4, 70, 0.3, '#5b6275', OUT, 0.25); rr(c, 146, 30, 2.4, 70, 0.3, '#5b6275', OUT, 0.25);
+    for (let y = 32; y < 98; y += 7) { line(c, 141, y, 147.5, y + 7, '#8b93a7', 0.45); line(c, 147.5, y, 141, y + 7, '#8b93a7', 0.45); }
+    for (const y of [44, 66]) rr(c, 148.4, y, 7, 1.2, 0.3, '#d8452e', OUT, 0.2);
+    for (const x of [120, 196]) { line(c, x, 12, x, 100, '#8b93a7', 0.6); line(c, x, 12, x, 16, '#d8452e', 0.8); }
+    rr(c, 170, 86, 12, 14, 4, lg(c, 170, 0, 182, 0, [0, '#f2f4f8'], [1, '#9aa3b5']), OUT, 0.3); rr(c, 184, 90, 9, 10, 3, lg(c, 184, 0, 193, 0, [0, '#f2f4f8'], [1, '#9aa3b5']), OUT, 0.3);
+    rr(c, 60, 90, 34, 10, 0.8, '#e4e8ee', OUT, 0.3); poly(c, [58, 90, 77, 84, 96, 90], '#9aa3b5', OUT, 0.3); rr(c, 66, 93, 10, 7, 0.3, '#5b6275'); // hangar
+    for (let i = 0; i < 6; i++) { const x = 14 + r() * 40, y = 104 + r() * 8; el(c, x, y, 1.8, 1.2, '#f4f2ea'); el(c, x + 1.5, y - 0.4, 0.7, 0.6, '#2f2f38'); } // sheep, of course
+    for (let x = 100; x < 214; x += 5) { line(c, x, 103, x, 106, '#e8e6df', 0.35); } line(c, 100, 104, 214, 104, '#e8e6df', 0.25);
+  }
+}
+
 // ---------------------------------------------------------------- map geography (lon, lat) outlines
 const NI = [172.7, -34.4, 173.0, -34.4, 173.5, -34.9, 174.1, -35.2, 174.5, -35.8, 174.8, -36.4, 174.9, -36.85, 175.3, -37.0, 175.5, -36.7, 175.35, -36.47, 175.75, -36.6, 175.95, -37.0, 175.95, -37.45, 176.3, -37.7, 177.0, -37.95, 177.6, -37.95, 178.0, -37.55, 178.55, -37.7, 178.35, -38.3, 178.0, -38.7, 177.95, -39.05, 177.98, -39.3, 177.82, -39.22, 177.4, -39.07, 176.9, -39.45, 177.1, -39.65, 176.7, -40.3, 176.2, -41.0, 175.3, -41.6, 174.75, -41.35, 175.0, -40.8, 175.25, -40.3, 175.0, -39.95, 174.3, -39.6, 173.8, -39.3, 174.1, -39.0, 174.6, -38.8, 174.75, -38.1, 174.75, -37.4, 174.55, -37.05, 174.3, -36.5, 173.9, -36.0, 173.4, -35.5, 173.1, -35.0];
 const SI = [172.7, -40.5, 173.05, -40.52, 173.0, -41.15, 173.8, -40.9, 174.3, -41.05, 174.3, -41.7, 173.7, -42.4, 172.8, -43.25, 173.1, -43.65, 172.9, -43.9, 172.3, -43.9, 171.3, -44.4, 171.0, -45.1, 170.75, -45.8, 169.8, -46.45, 168.9, -46.65, 168.35, -46.6, 167.7, -46.25, 166.5, -46.2, 166.6, -45.6, 167.4, -44.9, 168.0, -44.3, 168.8, -43.9, 170.2, -43.2, 171.2, -42.4, 171.6, -41.7, 172.1, -40.9];
@@ -738,34 +805,7 @@ export function makeArt(scene: Phaser.Scene) {
   });
 
   // launch sites: ground line at y = 100 of 150
-  const site = (key: string, island: boolean) => tex(scene, key, 320, 150, (c) => {
-    c.fillStyle = lg(c, 0, 82, 0, 150, [0, '#7fc0ee'], [0.08, '#2f7fd0'], [1, '#12407f']); c.fillRect(0, 82, 320, 68);
-    const r = rng(island ? 41 : 42);
-    for (let i = 0; i < 90; i++) { const x = r() * 320, y = 86 + r() * 62; line(c, x, y, x + 3 + r() * 7, y, `rgba(210,235,255,${0.12 + r() * 0.25})`, 0.4); }
-    poly(c, [0, 84, 30, 76, 66, 80, 96, 84], '#5d86a8'); poly(c, [230, 84, 262, 74, 300, 78, 320, 82, 320, 84], '#5d86a8'); // far headlands
-    if (island) {
-      c.beginPath(); c.moveTo(40, 112); c.quadraticCurveTo(80, 84, 140, 96); c.quadraticCurveTo(180, 90, 220, 99); c.quadraticCurveTo(262, 100, 286, 114); c.quadraticCurveTo(160, 126, 40, 112); c.fillStyle = lg(c, 0, 86, 0, 120, [0, '#6cb968'], [1, '#2f7a47']); c.fill();
-      c.beginPath(); c.moveTo(40, 112); c.quadraticCurveTo(160, 126, 286, 114); c.quadraticCurveTo(160, 134, 40, 112); c.fillStyle = '#e6d9a8'; c.fill();
-      for (let i = 0; i < 16; i++) { const x = 60 + r() * 60, y = 96 + r() * 10; el(c, x, y, 4 + r() * 3, 3 + r() * 2, i % 3 ? '#2f6b3a' : '#3f8a4c'); if (i % 4 === 0) el(c, x + 1, y - 1, 1.6, 1.2, '#c8102e'); }
-      rr(c, 146, 98.6, 30, 3, 1, '#b8b29a', OUT, 0.25); line(c, 150, 100, 158, 64, '#8b93a7', 0.9); line(c, 152, 100, 158, 64, '#5b6275', 0.5); // launch rail
-      rr(c, 196, 93, 12, 7, 0.6, '#f4f2ea', OUT, 0.3); poly(c, [195, 93, 202, 89, 209, 93], '#d8452e', OUT, 0.3);
-    } else {
-      // Māhia: a cliff-top pad at the tip of the peninsula
-      c.beginPath(); c.moveTo(0, 104); c.quadraticCurveTo(60, 96, 110, 100); c.lineTo(214, 100); c.quadraticCurveTo(250, 100, 262, 108); c.lineTo(258, 150); c.lineTo(0, 150); c.closePath(); c.fillStyle = lg(c, 0, 98, 0, 150, [0, '#7cc56b'], [0.2, '#4f9d4f'], [1, '#2f6b3a']); c.fill();
-      poly(c, [214, 100, 262, 108, 258, 150, 226, 150, 222, 120], lg(c, 0, 100, 0, 150, [0, '#e2d6b4'], [1, '#9a8a66'])); // papa cliffs
-      for (let i = 0; i < 9; i++) line(c, 226 + r() * 30, 108 + r() * 36, 228 + r() * 30, 112 + r() * 36, 'rgba(90,70,40,.35)', 0.4);
-      rr(c, 132, 99, 60, 3, 1, lg(c, 0, 99, 0, 102, [0, '#c8ccd4'], [1, '#8b93a7']), OUT, 0.25); // pad apron
-      // strongback, lowered away from the vehicle
-      rr(c, 140, 30, 2.4, 70, 0.3, '#5b6275', OUT, 0.25); rr(c, 146, 30, 2.4, 70, 0.3, '#5b6275', OUT, 0.25);
-      for (let y = 32; y < 98; y += 7) { line(c, 141, y, 147.5, y + 7, '#8b93a7', 0.45); line(c, 147.5, y, 141, y + 7, '#8b93a7', 0.45); }
-      for (const y of [44, 66]) rr(c, 148.4, y, 7, 1.2, 0.3, '#d8452e', OUT, 0.2);
-      for (const x of [120, 196]) { line(c, x, 12, x, 100, '#8b93a7', 0.6); line(c, x, 12, x, 16, '#d8452e', 0.8); }
-      rr(c, 170, 86, 12, 14, 4, lg(c, 170, 0, 182, 0, [0, '#f2f4f8'], [1, '#9aa3b5']), OUT, 0.3); rr(c, 184, 90, 9, 10, 3, lg(c, 184, 0, 193, 0, [0, '#f2f4f8'], [1, '#9aa3b5']), OUT, 0.3);
-      rr(c, 60, 90, 34, 10, 0.8, '#e4e8ee', OUT, 0.3); poly(c, [58, 90, 77, 84, 96, 90], '#9aa3b5', OUT, 0.3); rr(c, 66, 93, 10, 7, 0.3, '#5b6275'); // hangar
-      for (let i = 0; i < 6; i++) { const x = 14 + r() * 40, y = 104 + r() * 8; el(c, x, y, 1.8, 1.2, '#f4f2ea'); el(c, x + 1.5, y - 0.4, 0.7, 0.6, '#2f2f38'); } // sheep, of course
-      for (let x = 100; x < 214; x += 5) { line(c, x, 103, x, 106, '#e8e6df', 0.35); } line(c, 100, 104, 214, 104, '#e8e6df', 0.25);
-    }
-  });
+  const site = (key: string, island: boolean) => tex(scene, key, 320, 150, (c) => drawSite(c, island));
   site('site_mahia', false); site('site_island', true);
   // Wallops Island, Virginia: Launch Complex 2 on a flat barrier island, the Atlantic behind it, Pad 0A and its water tower next door
   tex(scene, 'site_wallops', 320, 150, (c) => {
@@ -835,24 +875,7 @@ export function makeArt(scene: Phaser.Scene) {
     c.fillStyle = lg(c, 7, 0, 33, 0, [0, '#3a3c48'], [0.3, '#9aa3b5'], [0.55, '#5b6275'], [1, '#23262f']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.4; c.stroke();
     for (let i = 1; i < 7; i++) { const y = 23 + i * 4, w = 3.4 + i * 1.5; line(c, 20 - w, y, 20 + w, y, 'rgba(0,0,0,.2)', 0.25); }
   });
-  tex(scene, 'bg_stand', 320, 180, (c) => {
-    c.fillStyle = lg(c, 0, 0, 0, 180, [0, '#0b1024'], [0.7, '#1c2a52'], [1, '#2c3f70']); c.fillRect(0, 0, 320, 180); starfield(c, 320, 110, 120, 12);
-    poly(c, [0, 132, 50, 112, 110, 124, 180, 108, 260, 122, 320, 112, 320, 140, 0, 140], '#0f1a36');
-    c.fillStyle = lg(c, 0, 134, 0, 180, [0, '#3a4057'], [1, '#22273a']); c.fillRect(0, 134, 320, 46);
-    for (let x = -20; x < 340; x += 26) line(c, x, 180, x + 30, 134, 'rgba(255,255,255,.04)', 0.5);
-    // stand
-    for (const x of [58, 152]) { rr(c, x, 26, 6, 108, 0.5, lg(c, x, 0, x + 6, 0, [0, '#6f7890'], [1, '#3a3f4f']), OUT, 0.3); }
-    rr(c, 52, 22, 112, 7, 1, lg(c, 0, 22, 0, 29, [0, '#8b93a7'], [1, '#4a5066']), OUT, 0.3);
-    for (let y = 34; y < 130; y += 16) { line(c, 64, y, 152, y + 16, 'rgba(120,130,150,.35)', 0.6); line(c, 152, y, 64, y + 16, 'rgba(120,130,150,.35)', 0.6); }
-    for (let x = 52; x < 164; x += 8) poly(c, [x, 22, x + 4, 22, x + 2, 25, x - 2, 25], '#f2d14a');
-    poly(c, [84, 134, 132, 134, 124, 120, 92, 120], lg(c, 0, 120, 0, 134, [0, '#5b6275'], [1, '#2a2e3c']), OUT, 0.3); // flame deflector
-    // battery cart and tanks
-    rr(c, 14, 100, 30, 30, 2, lg(c, 14, 0, 44, 0, [0, '#ffe98a'], [1, '#c8961c']), OUT, 0.4); rr(c, 18, 104, 22, 8, 1, '#23262f'); for (let i = 0; i < 4; i++) rr(c, 20 + i * 5, 106, 3.4, 4, 0.4, '#7cc56b'); text(c, 'BATT', 29, 121, 4.4, '#5b4410', 700); el(c, 20, 132, 3, 3, '#15171f'); el(c, 38, 132, 3, 3, '#15171f');
-    c.beginPath(); c.moveTo(44, 110); c.bezierCurveTo(70, 118, 80, 60, 96, 52); c.strokeStyle = '#f2d14a'; c.lineWidth = 1; c.stroke();
-    rr(c, 176, 70, 18, 64, 8, lg(c, 176, 0, 194, 0, [0, '#f2f4f8'], [1, '#8b93a7']), OUT, 0.35); text(c, 'LOX', 185, 100, 4, '#4a5066', 700);
-    rr(c, 198, 84, 14, 50, 6, lg(c, 198, 0, 212, 0, [0, '#e8b796'], [1, '#a8603c']), OUT, 0.35); text(c, 'RP-1', 205, 110, 3, '#4a2a18', 700);
-    c.fillStyle = rg(c, 108, 26, 2, 60, [0, 'rgba(255,240,200,.22)'], [1, 'rgba(255,240,200,0)']); c.fillRect(40, 0, 140, 100);
-  });
+  tex(scene, 'bg_stand', 320, 180, (c) => drawStand(c));
 
   // world map and its nodes
   tex(scene, 'map', MAPW, MAPH, drawMap);

@@ -2,16 +2,18 @@ import Phaser from 'phaser';
 import { D, S, C2, tex, rr, el, poly, line, lg, rg, rng } from './art';
 import { HX } from './core';
 import { listing } from './backdrops';
-import { texAt, paintNormals } from './hifi';
+import { texAt, paintNormals, soft, add, halo } from './hifi';
+import { workshopLook } from './looks/workshop';
+import { mercuryLook } from './looks/mercury';
+import { standLook } from './looks/stand';
+import { farmLook } from './looks/farm';
+import { mahiaLook } from './looks/mahia';
 import type { HiFi, Look } from './hifi';
 
 // The looks a level's theme can name (see hifi.ts). A look is the art and the numbers; the engine is shared.
-// To give another platform theme the treatment: add a Look here, draw its layers, and set `hifi: '<name>'` on the theme
-// (docs/ARCHITECTURE.md, "The hi-fi layer").
+// To give another level the treatment: write a Look in src/looks/, list it in LOOKS below, and name it from the scene
+// (docs/ARCHITECTURE.md, "The hi-fi layer"; steps in .claude/skills/add-level/HIFI.md). `listing`, the first, lives here.
 
-const soft = (c: C2, px: number) => { if ('filter' in c) c.filter = px ? `blur(${px}px)` : 'none'; }; // where the browser has no canvas filter, the coarse layer resolution does the softening
-const add = (c: C2, fn: () => void) => { c.save(); c.globalCompositeOperation = 'lighter'; fn(); c.restore(); };
-const halo = (c: C2, x: number, y: number, r: number, rgb: string, a: number) => add(c, () => { c.fillStyle = rg(c, x, y, 0, r, [0, `rgba(${rgb},${a})`], [0.4, `rgba(${rgb},${a * 0.35})`], [1, `rgba(${rgb},0)`]); c.fillRect(x - r, y - r, r * 2, r * 2); });
 
 // ------------------------------------------------------------------ RKLB rings the bell: Long Beach at first light
 // The bell rang at 9:30 a.m. in New York, which is 6:30 a.m. in Long Beach: a few minutes after sunrise on 25 August.
@@ -236,4 +238,4 @@ const listingLook: Look = {
 let sat: Phaser.GameObjects.Image | undefined;
 const sat0 = (hf: HiFi) => HX * (1 - (WALL - 320) / (hf.world.LW - 320));
 
-export const LOOKS: Record<string, Look> = { listing: listingLook };
+export const LOOKS: Record<string, Look> = { listing: listingLook, workshop: workshopLook, mercury: mercuryLook, stand: standLook, farm: farmLook, mahia: mahiaLook };

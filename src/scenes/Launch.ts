@@ -4,6 +4,8 @@ import { snd, music, stopLoops, loop, Loop } from '../audio';
 import { P, S } from '../art';
 import type { LevelDef } from '../content';
 import * as L from '../launchSim';
+import { hifi, HiFi } from '../hifi';
+import { LOOKS } from '../hifiLooks';
 
 const AUTO = new URLSearchParams(location.search).has('auto');
 const DEG = Math.PI / 180, RX = 154; // the rocket's screen column
@@ -26,6 +28,8 @@ const fmt = (n: number) => Math.round(n).toLocaleString('en-NZ');
 /** One step of a kick-stage flight plan: burn to circularise at apogee, raise apogee, lower perigee, or let a payload go. */
 interface PlanStep { do: 'circ' | 'raise' | 'lower' | 'deploy'; alt?: number; name?: string; mass?: number }
 const STEP_LABEL = (st: PlanStep) => st.do === 'circ' ? `CIRCULARISE AT ${fmt(st.alt!)} km` : st.do === 'raise' ? `RAISE APOGEE TO ${fmt(st.alt!)} km` : st.do === 'lower' ? `DE-ORBIT BURN · PERIGEE ${fmt(st.alt!)} km` : `DEPLOY ${st.name!.toUpperCase()}`;
+/** Launch sites with a hi-fi look (hifiLooks.ts): the day sky, the site, the clouds and space are redrawn, and the consoles move to the HUD camera. */
+const SITE_LOOK: Record<string, string> = { island: 'mercury' };
 const TIMELINE: [string, string, number][] = [['maxq', 'MAX-Q', -1], ['meco', 'MECO', 1], ['fairing', 'FAIRING', -1], ['swap', 'HOT-SWAP', 1], ['seco', 'SECO', -1]];
 
 /**
@@ -39,7 +43,7 @@ export class LaunchScene extends Phaser.Scene {
   clouds: { o: Phaser.GameObjects.Image; alt: number }[] = []; streaks: Phaser.GameObjects.Rectangle[] = [];
   rocket!: Phaser.GameObjects.Container; s1!: Phaser.GameObjects.Image; s2?: Phaser.GameObjects.Image; flame!: Emitter; flame2!: Emitter; smoke!: Emitter;
   g!: Phaser.GameObjects.Graphics; clockT!: Txt; tele!: Txt; call!: Txt; prompt!: Txt; hint!: Txt; warpT!: Txt; dialT!: Txt; plotT!: Txt[]; lab: Txt[] = []; val: Txt[] = []; poll: Txt[] = []; tl: Txt[] = [];
-  rumble!: Loop; sea!: Loop; patch?: Phaser.GameObjects.Image;
+  rumble!: Loop; sea!: Loop; patch?: Phaser.GameObjects.Image; hf?: HiFi;
   ended = false; count = 12; pollT = 0; holdT = 0; resume = ''; nogo?: { i: number; at: number; shown: boolean; done: boolean }; missed = false; scrubbed = true; lastC = 99;
   warp = 1; trail: { d: number; a: number }[] = []; trailT = 0; said: Record<string, boolean> = {}; alarmT = 0; why = ''; sawQ = 0; seco0?: L.Orbit; margin = 0; stageDelay = 0;
   // sounding rocket
@@ -71,12 +75,13 @@ export class LaunchScene extends Phaser.Scene {
     stopLoops(); music.play('launch', 0);
     this.rumble = loop('rumble'); this.sea = loop('sea'); this.sea.set(0.8);
     const night = !!this.p.night, dusk = !!this.p.dusk, two = !this.ung;
-    img(this, 0, 0, night ? 'sky_night' : dusk ? 'sky_dusk' : 'sky_day').setOrigin(0);
+    const hf = (this.hf = night || dusk ? undefined : hifi(this, LOOKS[SITE_LOOK[this.p.site] || ''])), K = (k: string) => (hf ? hf.key(k) : k); // a look redraws these by name
+    const sky = img(this, 0, 0, K(night ? 'sky_night' : dusk ? 'sky_dusk' : 'sky_day')).setOrigin(0);
     this.dark = this.add.rectangle(0, 0, W, H, 0x04050c, 0).setOrigin(0);
-    this.stars = img(this, 0, 0, 'stars').setOrigin(0).setAlpha(0);
-    this.earth = img(this, W / 2, H + 20, 'earthlimb').setOrigin(0.5, 0).setVisible(false);
-    [[1.2, 40, 1], [2.2, 250, 2], [3.6, 120, 3], [5.5, 280, 1], [7.5, 60, 2], [10, 200, 3]].forEach(([alt, x, k]) => this.clouds.push({ o: img(this, x, -50, 'cloud' + k).setAlpha(night ? 0.35 : dusk ? 0.8 : 0.95).setTint(dusk ? 0xffc8b0 : 0xffffff), alt }));
-    this.ground = img(this, RX + 6, 136, 'site_' + this.p.site).setOrigin(0.5, 100 / 150);
+    this.stars = img(this, 0, 0, K('stars')).setOrigin(0).setAlpha(0);
+    this.earth = img(this, W / 2, H + 20, K('earthlimb')).setOrigin(0.5, 0).setVisible(false);
+    [[1.2, 40, 1], [2.2, 250, 2], [3.6, 120, 3], [5.5, 280, 1], [7.5, 60, 2], [10, 200, 3]].forEach(([alt, x, k]) => this.clouds.push({ o: img(this, x, -50, K('cloud' + k)).setAlpha(night ? 0.35 : dusk ? 0.8 : 0.95).setTint(dusk ? 0xffc8b0 : 0xffffff), alt }));
+    this.ground = img(this, RX + 6, 136, K('site_' + this.p.site)).setOrigin(0.5, 100 / 150);
     if (night) this.ground.setTint(0x7088c8); else if (dusk) this.ground.setTint(0xd9b4c0);
     const rnd = new Phaser.Math.RandomDataGenerator([this.def.id]);
     for (let i = 0; i < 16; i++) this.streaks.push(this.add.rectangle(rnd.between(0, W), rnd.between(0, H), 0.4, 7, 0xffffff, 0.4));
@@ -93,6 +98,7 @@ export class LaunchScene extends Phaser.Scene {
       if (two) { this.patch = this.add.image(0, -71.4, pk).setDisplaySize(4.6, 4.6 * ratio); this.rocket.add(this.patch); }
     }
     // ---- consoles ----
+    const worldN = this.children.length; // everything from here on is HUD
     panel(this, 4, 4, 86, 44);
     this.clockT = T(this, 9, 6, 'T-00:12', '#ffe98a', 10, '700');
     this.warpT = T(this, 86, 8.5, '', '#aab4d4', 5, '700').setOrigin(1, 0);
@@ -121,6 +127,7 @@ export class LaunchScene extends Phaser.Scene {
     this.hint = T(this, RX, 50.5, '', '#cfd6ea', 5.2, '700').setOrigin(0.5).setDepth(21).setShadow(0, 1, '#000000', 3).setAlign('center');
     who(this, { ...this.def, role: this.def.role || 'CEO · calling the launch' }, 4, 52);
     this.say(this.ung ? 'Aim the rail against the wind' : 'Terminal count');
+    if (hf) { hf.tag({ sky, dark: this.dark, stars: this.stars, earth: this.earth, ground: this.ground, smoke: this.smoke, rocket: this.rocket }); hf.set({ rx: RX, alt: 0, base: 136, ry: 136, rot: 0, burn: 0, up: 0 }); hf.ready({ hud: this.children.list.slice(worldN), lateHud: true }); }
   }
   say(s: string) { this.call.setText(s); }
   /** For the controls panel: launch control changes with the vehicle and the phase. */
@@ -345,6 +352,7 @@ export class LaunchScene extends Phaser.Scene {
     this.rocket.y = ry; this.rocket.rotation = Math.PI / 2 - s.pitch;
     const base = ry + gY(a);
     this.ground.y = base; this.ground.setVisible(base < H + 110);
+    this.hf?.set({ alt: a, base, ry, rot: this.rocket.rotation, burn: burning ? s.throttle : 0, up: up ? 1 : 0 });
     for (const c of this.clouds) { c.o.y = base - gY(c.alt) - 20; c.o.setVisible(c.o.y > -30 && c.o.y < H + 30); }
     const k = clamp((a - 8) / 80, 0, 1);
     this.dark.setAlpha(k); this.stars.setAlpha(k);
