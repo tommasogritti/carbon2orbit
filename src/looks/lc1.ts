@@ -95,6 +95,23 @@ const STILL: Day = {
   flare: 0.8, sunTint: 0xfff6dc, glint: 0xfffbe6,
 };
 
+// ---- 11 November 2018, 16:50 NZDT: "It's Business Time". The level's own account gives the hour: ten to five on a late
+// spring afternoon, three hours before sunset, the sun about a third of the way up the sky. Warm white light from one
+// side, shadows as long as the things that throw them, cumulus building over the sea. (The cloud is the game's choice.)
+const BUSINESS: Day = {
+  key: 'hf_l1b', seed: 14, sun: [212, 68], disc: [6.8, '#fffbe8'],
+  sky: [[0, '#0b3a8c'], [0.35, '#2a6cc4'], [0.6, '#74b0e4'], [0.8, '#c0daee'], [1, '#f2e8d4']],
+  sunRGB: '255,240,204', glow: [130, 0.3, 44, 0.6], rays: 1.1, cirrus: [18, '255,248,236'],
+  sea: [[0, '#cfe0e6'], [0.05, '#5fa4cc'], [0.2, '#1f6fb4'], [0.6, '#114e96'], [1, '#0a3470']], swell: ['240,246,250', 'rgba(8,34,86,.22)'],
+  glitter: (k) => `rgba(255,${250 - k * 30},${222 - k * 52},${0.9 - k * 0.5})`, bank: 'rgba(255,244,230,.6)',
+  haze: ['rgba(190,208,226,.30)', 'rgba(226,226,220,.64)'], mist: 'rgba(244,238,222,.3)', grassDark: 'rgba(16,76,40,.24)', grassLight: 'rgba(236,246,130,.24)',
+  slope: [[0, 'rgba(255,240,150,.26)'], [0.4, 'rgba(40,60,40,.04)'], [1, 'rgba(6,36,48,.36)']], cliff: [[0, 'rgba(56,44,48,.3)'], [0.5, 'rgba(255,230,180,.08)'], [1, 'rgba(255,232,180,.38)']],
+  shadow: [0.62, -0.2, 0.5, '#06201c'], thing: [[0, 'rgba(10,26,44,.34)'], [0.6, 'rgba(10,26,44,.06)'], [1, 'rgba(255,236,186,.36)']],
+  tone: { shade: '#b8c6dc', down: [[0, 'rgba(255,252,240,.95)'], [0.42, 'rgba(255,246,226,.2)'], [0.7, 'rgba(130,140,180,.28)'], [1, 'rgba(96,104,156,.62)']], across: [[0, 'rgba(60,80,140,.26)'], [0.6, 'rgba(255,240,210,0)'], [1, 'rgba(255,232,186,.5)']] },
+  grade: { threshold: 0.88, bloom: 0.46, exposure: 1.0, contrast: 1.12, saturation: 1.16, shadows: [0.9, 0.98, 1.14], highs: [1.07, 1.02, 0.93], vignette: 0.38, grain: 0.018, fringe: 0.005 },
+  flare: 1, sunTint: 0xfff0d0, glint: 0xfff6dc,
+};
+
 const look = (d: Day): Look => ({
   build(scene) {
     texAt(scene, d.key + '_sky', 320, 180, D, sky(d)); texAt(scene, d.key + '_site', 320, 150, D, site(d)); spaceTextures(scene);
@@ -106,4 +123,4 @@ const look = (d: Day): Look => ({
   live(hf) { ascentLive(hf, { sun: d.sun, glint: { x: d.sun[0], y0: -17, y1: 2, tint: d.glint }, flare: d.flare, sunTint: d.sunTint, plume: 1.5 }); },
   step: ascentStep,
 });
-export const lc1Looks: Record<string, Look> = { 'lc1-test': look(TEST), 'lc1-still': look(STILL) };
+export const lc1Looks: Record<string, Look> = { 'lc1-test': look(TEST), 'lc1-still': look(STILL), 'lc1-business': look(BUSINESS) };

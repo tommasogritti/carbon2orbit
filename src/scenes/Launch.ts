@@ -31,7 +31,7 @@ const STEP_LABEL = (st: PlanStep) => st.do === 'circ' ? `CIRCULARISE AT ${fmt(st
 /** Launch sites with a hi-fi look (hifiLooks.ts): the day sky, the site, the clouds and space are redrawn, and the consoles move to the HUD camera. */
 const SITE_LOOK: Record<string, string> = { island: 'mercury' };
 /** A flight with its own light at a shared site: Launch Complex 1 on the day and at the hour each mission flew (looks/lc1.ts). */
-const LEVEL_LOOK: Record<string, string> = { 'its-a-test': 'lc1-test', 'still-testing': 'lc1-still' };
+const LEVEL_LOOK: Record<string, string> = { 'its-a-test': 'lc1-test', 'still-testing': 'lc1-still', 'its-business-time': 'lc1-business' };
 const TIMELINE: [string, string, number][] = [['maxq', 'MAX-Q', -1], ['meco', 'MECO', 1], ['fairing', 'FAIRING', -1], ['swap', 'HOT-SWAP', 1], ['seco', 'SECO', -1]];
 
 /**
