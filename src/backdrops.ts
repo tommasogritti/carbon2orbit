@@ -1,17 +1,11 @@
 import Phaser from 'phaser';
-import { tex, lg, rg, rr, el, poly, line, text, rng, cloud, electronFull, OUT, C2 } from './art';
+import { tex, lg, rg, rr, el, poly, line, text, rng, cloud, electronFull, parts, OUT, C2 } from './art';
 
 // Platform backdrops. Rule: no repeating modules. Each backdrop is one long strip that reads left to right as a
 // walk through that chapter of the story, built from things that were really there.
 
-/**
- * Lets one backdrop function draw itself in parts, for the hi-fi looks (src/looks/): `pick(k)` gives the real canvas when
- * `part` includes k and a throwaway one when it does not, so the drawing code runs unchanged and in the same order.
- * By convention 1 is the shell (sky, walls), 2 the things, 4 what gives off light, 8 lamps and their beams.
- */
-function parts(c: C2, part: number) { const sink = document.createElement('canvas').getContext('2d')!; return (k: number) => (part & k ? c : sink); }
-
 // ------------------------------------------------------------------ The Rocket Bike: appliance works, 1990s, after hours
+/** `part` (see `parts` in art.ts): 1 the walls and roof, 2 the things, 4 what gives off light (windows, the CRT, the street), 8 the lamps' bulbs and beams. */
 export function workshop(real: C2, part = 15) {
   const pick = parts(real, part); let c = pick(1);
   const W = 760;

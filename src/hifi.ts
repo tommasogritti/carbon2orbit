@@ -223,6 +223,16 @@ export class HiFi {
   key(k: string) { return this.look.swap?.[k] ?? k; }
   /** The scene's numbers for this step, for the look to animate from. */
   set(o: Record<string, number>) { Object.assign(this.state, o); }
+  /** Things of the scene's that a look may need to find: the scene names them (`tag`), the look slips its own in above or below one. */
+  readonly tags: Record<string, Obj> = {};
+  tag(o: Record<string, Obj>) { Object.assign(this.tags, o); }
+  above<T extends Obj>(o: T, name: string) { return this.beside(o, name, 1); }
+  below<T extends Obj>(o: T, name: string) { return this.beside(o, name, 0); }
+  private beside<T extends Obj>(o: T, name: string, after: number) { // Phaser's own moveAbove leaves a thing where it is when it is already somewhere above
+    const l = this.scene.children, t = this.tags[name]; if (!t || !l.exists(t) || !l.exists(o)) return o;
+    const at = l.getIndex(t), cur = l.getIndex(o); l.moveTo(o as Obj, Math.min(l.length - 1, at + after - (cur < at ? 1 : 0)));
+    return o;
+  }
   /** Sends things to the HUD camera, out of reach of the post pass. Scenes without scroll factors (single-screen ones) name their HUD this way. */
   hud(...list: (Obj | undefined)[]) { if (this.ui) for (const o of list) if (o) o.cameraFilter = this.scene.cameras.main.id; }
   /** Lights a sprite with Light2D, with a normal map made from its outline. */

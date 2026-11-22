@@ -4,6 +4,7 @@ import { HX } from './core';
 import { listing } from './backdrops';
 import { texAt, paintNormals, soft, add, halo } from './hifi';
 import { workshopLook } from './looks/workshop';
+import { mercuryLook } from './looks/mercury';
 import type { HiFi, Look } from './hifi';
 
 // The looks a level's theme can name (see hifi.ts). A look is the art and the numbers; the engine is shared.
@@ -234,4 +235,4 @@ const listingLook: Look = {
 let sat: Phaser.GameObjects.Image | undefined;
 const sat0 = (hf: HiFi) => HX * (1 - (WALL - 320) / (hf.world.LW - 320));
 
-export const LOOKS: Record<string, Look> = { listing: listingLook, workshop: workshopLook };
+export const LOOKS: Record<string, Look> = { listing: listingLook, workshop: workshopLook, mercury: mercuryLook };
