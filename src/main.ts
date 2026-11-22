@@ -16,7 +16,7 @@ import { HeliScene } from './scenes/Heli';
 import { OrbitRaiseScene } from './scenes/OrbitRaise';
 import { SprintScene } from './scenes/Sprint';
 import { TitleScene } from './scenes/Title';
-import { showCredits } from './contributors';
+import { showCredits, showAbout } from './contributors';
 import { FaultFinderScene } from './scenes/FaultFinder';
 import { SplashdownScene } from './scenes/Splashdown';
 import { CruiseScene } from './scenes/Cruise';
@@ -49,6 +49,7 @@ Promise.all(['500', '600', '700'].map((w) => document.fonts.load(`${w} 16px "Cha
   });
   initInput(game);
   document.getElementById('credits')?.addEventListener('click', (e) => { (e.currentTarget as HTMLElement).blur(); showCredits(game); });
+  document.getElementById('about-btn')?.addEventListener('click', (e) => { (e.currentTarget as HTMLElement).blur(); showAbout(game); });
   // Dev-only gameplay recorder: ?rec=<name> captures the canvas; the clip is saved by the dev server when the level ends.
   // &recmix=sfx records the sound effects without the music, for footage that is cut to its own music afterwards.
   const recName = new URLSearchParams(location.search).get('rec');
