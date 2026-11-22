@@ -23,6 +23,7 @@ export interface LevelDef {
   diagram?: { key: string; caption: string }; // a labelled drawing (art.ts DIAGRAMS) shown on the intro card
   watch?: { url: string; label: string }; // a video on its own site: linked, never copied
   portrait?: string; // people: character prefix of a drawn portrait, used when there is no freely licensed photo
+  portraitCredit?: string; // people: where the drawn portrait's likeness comes from
   sources: string[];
   params?: any;
   /** Set by the engine while a level in several acts is being played (see `then` in core.finish): the worst stars so far, and whether the egg has been earned. */
@@ -169,20 +170,20 @@ export const LEVELS: LevelDef[] = [
     id: 'factory', kind: 'platform', mechanic: 'platform', status: 'flown', role: 'Founder and CEO · 2019', unlocks: 'photon',
     title: 'Rosie the Robot', date: '2019-11-13', place: 'Auckland production complex', map: { x: 128, y: 214 },
     intro: 'Five launches so far in 2019, a sixth due in December, and customers queueing for more. Rocket Lab can finish an Electron about every thirty days; the plan calls for one a week. The slow part is the carbon. Every composite structure comes out of the cure oven needing to be marked, trimmed, drilled and sanded, and by hand that is more than 400 hours a rocket. So in November 2019 the Auckland factory switches on a 140-square-metre, six-axis machine to do all of it, and gives it a name: Rosie. Get today’s parts onto her bed.',
-    how: 'Arrows to run, Space to jump. Collect the five things Rosie needs and reach her cell. New here: conveyors. A belt carries you along whether you walk or not, with it or against it, so time your jumps on and off. Jump on runaway sanders and loose rolls of carbon fibre to stop them; wait out the offcuts falling from the trimming heads; duck the clouds of carbon dust. Power-ups float in bubbles: the clean-room suit makes you untouchable, and the carbon-weave jacket makes you light enough to jump far higher. A hidden blueprint unlocks a secret on the map.',
+    how: 'Arrows to run, Space to jump. Collect the five things Rosie needs and reach her cell. New here: conveyors. A belt carries you along whether you walk or not, with it or against it, so time your jumps on and off. Jump on runaway sanders and loose rolls of carbon fibre to stop them; wait out the offcuts falling from the trimming heads; duck the clouds of carbon dust. Power-ups float in bubbles: the clean-room suit makes you untouchable, and the carbon-weave jacket makes you light enough to jump far higher. The bubble with Ashlee Vance’s face by the door brings the journalist along for 20 seconds: his notebook marks where the hidden things are, and Enter takes a photo whose flash stops troublemakers in their tracks for a moment. A hidden blueprint unlocks a secret on the map.',
     fact: 'Rosie’s machining window is 3.5 m by 16 m, with five axes of movement plus a sixth that turns the part. The Rutherford engines came from further away: in 2019 they were built at Rocket Lab’s headquarters in Huntington Beach, California, and shipped to New Zealand.',
     after: 'Rosie was unveiled on 13 November 2019. Rocket Lab said she could process every carbon-composite component of an Electron in 12 hours, a job that had taken more than 400 by hand. The six launches of 2019 all reached orbit, and the last of them, “Running Out Of Fingers”, was also the first to steer its first stage back through the atmosphere: the start of the road to recovery.',
     egg: 'Engine number 100. Rocket Lab finished its hundredth Rutherford in July 2019, at its Huntington Beach headquarters in California, and shipped it to New Zealand like all the others. By then seventy of them had already flown.',
-    sources: ['https://www.space.com/rocket-lab-rosie-robot-build-rocket-12-hours.html', 'https://satnews.com/2019/11/13/rosie-rocks-rocket-lab/', 'https://techcrunch.com/2019/11/13/rocket-labs-new-rosie-the-robot-speeds-up-launch-vehicle-production-by-a-lot', RL + 'updates/rocket-lab-celebrates-100th-rutherford-engine-build/', 'https://www.thefabricator.com/additivereport/news/additive/rocket-lab-celebrates-completion-of-its-100th-3d-printed-engine', WP + 'List_of_Electron_launches'],
+    sources: ['https://www.space.com/rocket-lab-rosie-robot-build-rocket-12-hours.html', 'https://satnews.com/2019/11/13/rosie-rocks-rocket-lab/', 'https://techcrunch.com/2019/11/13/rocket-labs-new-rosie-the-robot-speeds-up-launch-vehicle-production-by-a-lot', RL + 'updates/rocket-lab-celebrates-100th-rutherford-engine-build/', 'https://www.thefabricator.com/additivereport/news/additive/rocket-lab-celebrates-completion-of-its-100th-3d-printed-engine', WP + 'List_of_Electron_launches', 'https://www.bloomberg.com/news/features/2023-05-04/peter-beck-s-rocket-lab-challenges-elon-musk-and-spacex', 'https://www.iheart.com/podcast/1049-markets-with-madison-128331977/episode/untold-rocket-lab-astra-stories-197999327/'],
     params: {
-      theme: 'factory', width: 80,
+      theme: 'factory', width: 80, buddy: 'vance',
       ground: [[0, 14, 9], [17, 31, 9], [34, 48, 9], [51, 79, 9]],
       plats: [[4, 7, 3], [18, 7, 3], [21, 5, 3], [39, 7, 3], [42, 5, 2], [52, 8, 3], [55, 6, 4], [70, 7, 3]],
       belts: [[8, 13, 9, 1], [24, 28, 9, -1], [36, 46, 9, 1], [55, 58, 6, 1]],
       parts: [[5, 6, 'Stage 1 structure'], [22, 4, 'Stage 2 structure'], [40, 6, 'Fairing half'], [56, 5, 'The other fairing half'], [71, 6, 'Rosie’s cutting program']],
       hazards: [], sheep: [], egg: [43, 4], goal: 76,
       enemies: [['roll', 18, 21], ['offcuts', 35, 35], ['dust', 59, 62], ['sander', 64, 67], ['offcuts', 74, 74]],
-      powerups: [['L', 10, 6], ['T', 37, 8]], secret: [30, 3],
+      powerups: [['C', 2, 8], ['L', 10, 6], ['T', 37, 8]], secret: [30, 3],
       signs: [],
     },
   },
@@ -263,6 +264,24 @@ export const LEVELS: LevelDef[] = [
     },
   },
   {
+    id: 'heavens-on-sale', kind: 'card', status: 'flown',
+    title: 'When the Heavens Went on Sale', date: '2023-05-09', place: 'New York · Ecco, HarperCollins', map: { x: 790, y: 222 },
+    intro: 'Ashlee Vance, the journalist who wrote the bestselling biography of Elon Musk, publishes a book about the people trying to make the road to orbit cheap: <i>When the Heavens Went on Sale: The Misfits and Geniuses Racing to Put Space Within Reach</i>, from Ecco, an imprint of HarperCollins, in May 2023 (the US hardcover is dated 9 May). It follows four companies: Astra, Firefly, Planet and Rocket Lab. For the Rocket Lab story he spent time with Peter Beck in Auckland, including a day at the company’s main factory in November 2018. Bloomberg Businessweek ran an excerpt on 4 May whose headline calls Beck a “dishwasher engineer”: he started at Fisher & Paykel, where the first level of this game is set.',
+    fact: 'Vance first visited Beck in Auckland in 2015, filming the first season of his Bloomberg show Hello World. By his own account he found “three rocket bodies” on the shop floor, and went back about seven times for the book and the film that followed. You can meet him in the Rosie the Robot level, where the game brings him back to the factory a year after his real visit.',
+    after: '',
+    diagram: { key: 'card_heavens', caption: 'Drawn for the game: the spine is not the published design. The notebook lists the four companies the book follows.' },
+    sources: ['https://www.publishersweekly.com/9780062998873', 'https://www.penguin.co.uk/books/441285/when-the-heavens-went-on-sale-by-vance-ashlee/9780753557754', 'https://www.bloomberg.com/news/features/2023-05-04/peter-beck-s-rocket-lab-challenges-elon-musk-and-spacex', WP + 'Ashlee_Vance', 'https://www.iheart.com/podcast/1049-markets-with-madison-128331977/episode/untold-rocket-lab-astra-stories-197999327/'],
+  },
+  {
+    id: 'markets-with-madison', kind: 'card', status: 'flown',
+    title: 'Markets with Madison', date: '2023-05-18', place: 'NZ Herald, Auckland · Peter Beck in California', map: { x: 600, y: 248 },
+    intro: 'The NZ Herald’s investment show, launched in February 2023 and hosted by the business journalist Madison Malone (then bylined Madison Reidy), puts Peter Beck on the programme. He speaks from California, where Rocket Lab is now based. They talk about Neutron, which Beck says will go “head to head” with SpaceX’s Falcon 9; about SpaceX’s Starship, which had exploded on its first test flight in April; and about Electron, which Beck calls “the most reliable small launch vehicle”.',
+    fact: 'NZME says the twice-weekly show passed 1.4 million views in just over a year, with guests from the Reserve Bank governor Adrian Orr to Peter Beck. A year after this interview, Madison Malone was inside Rocket Lab’s mission control for the 50th Electron launch: meet her beside the Sir Peter card.',
+    after: '',
+    diagram: { key: 'card_mwm', caption: 'Drawn for the game: the studio in Auckland, Peter Beck on the line from California, and the three things they talked about.' },
+    sources: ['https://www.nzherald.co.nz/business/markets-with-madison/markets-with-madison-rocket-labs-peter-beck-takes-aim-at-musks-explosion/3RSGW7C74RDRTML7BUVUEWEYPE/', 'https://www.nzme.co.nz/news/nz-herald-s-madison-reidy-makes-2024-forbes-30-under-30-asia-list'],
+  },
+  {
     id: 'haste', kind: 'launch', mechanic: 'launch', status: 'flown',
     title: 'Scout’s Arrow', date: '2023-06-18', place: 'LC-2, Wallops Island, Virginia', map: { x: 834, y: 226 },
     intro: 'In April 2023 Rocket Lab announces HASTE, the Hypersonic Accelerator Suborbital Test Electron: the same carbon-composite rocket and Rutherford engines, with a modified third stage, room for up to 700 kg, and no intention of reaching orbit. A hypersonic test article has to be thrown into the upper atmosphere at an exact speed, height and attitude, and that is the service on offer. Two months after the announcement the first one stands on the pad at Wallops, for a customer nobody is naming tonight. Fly it low, fast and precise, and let go at the right moment.',
@@ -320,10 +339,28 @@ export const LEVELS: LevelDef[] = [
     id: 'sir-peter', kind: 'card', status: 'flown',
     title: 'Sir Peter', date: '2024-06-03', place: 'Aotearoa New Zealand', map: { x: 187, y: 300 },
     intro: 'In the 2024 King’s Birthday Honours, the apprentice toolmaker from Invercargill is made a Knight Companion of the New Zealand Order of Merit, for services to the aerospace industry, business and education. He is invested on 5 September 2024. In the month of the honours list Electron flies its 50th mission, “No Time Toulouse”.',
-    fact: 'Screen time, too: Ashlee Vance’s book “When the Heavens Went on Sale” (2023) and the HBO documentary “Wild Wild Space” (2024) both follow Beck and Rocket Lab.',
+    fact: 'The 50th launch lifted off at 6:13 on a Friday morning, 21 June 2024 in New Zealand, and Rocket Lab let the NZ Herald’s Markets with Madison into its mission control in Auckland to watch it: meet Madison Malone beside this card.',
     after: '',
     photo: { file: 'beck_knzm.jpg', caption: 'Sir Peter Beck KNZM at his investiture.', credit: 'New Zealand Government, Office of the Governor-General, CC0', page: C + 'Peter_Beck_KNZM_(cropped).jpg' },
-    sources: [WP + 'Peter_Beck', WP + 'List_of_Electron_launches'],
+    sources: [WP + 'Peter_Beck', WP + 'List_of_Electron_launches', 'https://www.nzherald.co.nz/hawkes-bay-today/news/behind-rocket-labs-50th-launch-realising-sir-peter-becks-dream/HXA325VFNVGKNOPYIN4ZNRIOHU'],
+  },
+  {
+    id: 'wild-wild-space', kind: 'card', status: 'flown',
+    title: 'Wild Wild Space', date: '2024-07-17', place: 'HBO and Max', map: { x: 380, y: 268 },
+    intro: 'Ashlee Vance’s book becomes a documentary. Directed by Ross Kauffman, <i>Wild Wild Space</i> has its world premiere at the DC/DOX festival in Washington on 14 June 2024 and arrives on HBO and Max on 17 July. It tells the race to put small satellites in orbit through three founders: Astra’s Chris Kemp, Planet’s Will Marshall and Peter Beck, who appears in the HBO documentary as the engineer from New Zealand with very different ideas from Kemp’s about how to build a rocket company.',
+    fact: 'Ross Kauffman had already won an Academy Award, for the documentary <i>Born into Brothels</i> (2004). Vance is one of the film’s producers, and four days after it reached HBO he was a guest on <i>Markets with Madison</i>, the show from the May 2023 card, telling the story behind it.',
+    after: '',
+    diagram: { key: 'card_wws', caption: 'Drawn for the game, with none of the film’s artwork. On the strip: the three companies it follows.' },
+    sources: ['https://dcdoxfest.com/films/wild-wild-space/', WP + 'Wild_Wild_Space', 'https://techcrunch.com/2024/07/11/wild-wild-space-doc-captures-the-risks-and-rivalries-of-the-new-space-race/', WP + 'Ross_Kauffman'],
+  },
+  {
+    id: 'space-billionaire', kind: 'card', status: 'flown',
+    title: 'Forbes counts a billionaire', date: '2024-11-15', place: 'Forbes estimate', map: { x: 440, y: 214 },
+    intro: 'In November 2024 Forbes estimated Peter Beck’s fortune at US$1 billion for the first time, after Rocket Lab’s share price rose. The estimate counted his stake of roughly 10% in the company, plus money from shares he had sold over the years.',
+    fact: 'Forbes’s write-up describes a self-taught engineer who skipped university and started out as an apprentice at the appliance maker Fisher & Paykel: the workshop in the first level of this game.',
+    after: '',
+    diagram: { key: 'card_forbes', caption: 'Drawn for the game, with none of Forbes’s artwork: what the estimate counted.' },
+    sources: ['https://www.forbes.com/sites/mattdurot/2024/11/15/rocket-labs-founder-peter-beck-just-became-the-worlds-newest-space-billionaire/'],
   },
   {
     id: 'two-hemispheres', kind: 'minigame', mechanic: 'dual-count', status: 'flown',
@@ -471,10 +508,17 @@ export const BONUS: LevelDef[] = [
  * The cast. Peter Beck is the main character of the whole game. Other people take the lead for a level that is theirs
  * (`hero` on the level), or join as a power-up (`buddy` in a platform level). `pre` is the texture prefix of the sprite set (see art.ts).
  */
-export interface Character { id: string; pre: string; name: string; role: string; since: number; likeness: string }
+export interface Character {
+  id: string; pre: string; name: string; role: string; since: number; likeness: string;
+  /** A running mate who does something other than clear the way: 'reporter' walks with you, marks hidden things and takes photos (Platform.ts). */
+  trait?: 'reporter';
+  /** For a running mate: who they are and why they are in this level, shown on the level's intro card. */
+  note?: string;
+}
 export const CHARACTERS: Character[] = [
   { id: 'peter', pre: '', name: 'Peter Beck', role: 'Founder and CEO', since: 1995, likeness: 'A tall mop of tight dark curls, a broad face, black top and jeans.' },
   { id: 'adam', pre: 'a', name: 'Adam Spice', role: 'Chief Financial Officer', since: 2018, likeness: 'Shaved head, long face with a heavy jaw, pale brows, navy blazer over an open-collar shirt.' },
+  { id: 'vance', pre: 'v', name: 'Ashlee Vance', role: 'Journalist · reporting a book', since: 2015, trait: 'reporter', likeness: 'Shaggy mid-brown hair parted on one side, the fringe swept across the forehead and the sides over the ears; a broad, smiling face with laughter lines and a little stubble; a green shirt checked with blue and white, open over a dark tee. Here he carries a reporter’s notebook and a camera.', note: 'A Bloomberg Businessweek journalist and the author of a biography of Elon Musk. In November 2018 he spent a day at Rocket Lab’s main factory in Auckland with Peter Beck, while reporting his book <i>When the Heavens Went on Sale</i>; he had first visited Beck in Auckland in 2015. This level is set a year after that day, so his walk round the floor here is the game’s own.' },
   { id: 'shaun', pre: 's', name: 'Shaun D’Mello', role: 'an engineer at Rocket Lab since 2014, today Vice President, Neutron', since: 2014, likeness: 'Short dark hair, close at the sides and brushed up on top; clean-shaven; a rounded face with dark brows; blazer over an open-neck white shirt.' },
 ];
 
@@ -530,6 +574,15 @@ export const PEOPLE: LevelDef[] = [
     fact: 'Each spacecraft weighs 209 kg dry and 535 kg fuelled. More than half of what left Earth was propellant for the journey.',
     after: '',
     sources: ['https://science.nasa.gov/mission/escapade/', 'https://escapade.ssl.berkeley.edu/news/', 'https://news.berkeley.edu/2026/11/09/berkeleys-escapade-spacecraft-say-goodbye-to-earth-next-stop-mars/'],
+  },
+  {
+    id: 'madison-malone', kind: 'person', status: 'flown', parent: 'sir-peter', portrait: 'm',
+    portraitCredit: 'Likeness from her byline photo on NZ Herald articles; no freely licensed photo is available.',
+    title: 'Madison Malone', date: '2024-06', place: 'Rocket Lab mission control, Auckland', map: { x: 176, y: 238 },
+    intro: 'In 2024, a senior business journalist at the NZ Herald and the host of its investment show <i>Markets with Madison</i>, which launched in February 2023; she was bylined Madison Reidy when it began. For Electron’s 50th launch, “No Time Toulouse”, early on Friday 21 June 2024 New Zealand time, Rocket Lab gave the show exclusive access to its mission control in Auckland. Her report from inside the room was published on 23 June.',
+    fact: 'In May 2024 NZME announced that she was the only New Zealander in the media category of that year’s Forbes 30 Under 30 Asia list. Peter Beck had been on her show a year earlier: see the Markets with Madison card in America.',
+    after: '',
+    sources: ['https://www.nzherald.co.nz/hawkes-bay-today/news/behind-rocket-labs-50th-launch-realising-sir-peter-becks-dream/HXA325VFNVGKNOPYIN4ZNRIOHU', 'https://www.nzme.co.nz/news/nz-herald-s-madison-reidy-makes-2024-forbes-30-under-30-asia-list', WP + 'List_of_Electron_launches'],
   },
   {
     id: 'adam-spice', kind: 'person', status: 'flown', parent: 'going-public', portrait: 'a',

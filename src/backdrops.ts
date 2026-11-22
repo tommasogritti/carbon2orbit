@@ -665,6 +665,8 @@ export function makeBackdrops(scene: Phaser.Scene) {
   tex(scene, 'container', 18, 12, (c) => { c.fillStyle = rg(c, 9, 6, 1, 9, [0, 'rgba(255,230,120,.5)'], [1, 'rgba(255,230,120,0)']); c.fillRect(0, 0, 18, 12); rr(c, 1.4, 2.6, 15.2, 7.6, 0.4, '#30508a', OUT, 0.35); for (let x = 3; x < 16; x += 1.6) line(c, x, 3, x, 9.8, 'rgba(0,0,0,.22)', 0.25); rr(c, 10.6, 4, 4.6, 5.4, 0.2, '#27407a', OUT, 0.25); rr(c, 3, 4.4, 3.2, 2.2, 0.2, '#bfe3ff', OUT, 0.2); line(c, 12.9, 4, 12.9, 9.4, OUT, 0.25); });
   bubble('pw_K', (c) => { el(c, 9, 9, 5, 5, '#15171f', OUT, 0.3); el(c, 9, 9, 2.4, 2.4, undefined, '#8b93a7', 0.4); for (let i = 0; i < 10; i++) rr(c, 9 + Math.cos(i * 0.628) * 5.6 - 0.8, 9 + Math.sin(i * 0.628) * 5.6 - 0.8, 1.6, 1.6, 0.2, '#f28c28'); });
   bubble('pw_C', (c) => { c.drawImage(scene.textures.get('peter_chip').getSourceImage() as HTMLCanvasElement, 2.4, 2.4, 13.2, 13.2); });
+  // a running mate other than Peter gets a bubble with their own face: pw_C + their texture prefix
+  bubble('pw_Cv', (c) => { c.drawImage(scene.textures.get('vpeter_chip').getSourceImage() as HTMLCanvasElement, 2.4, 2.4, 13.2, 13.2); });
   tex(scene, 'secret', 18, 18, (c) => { // a rolled blueprint, glowing
     c.fillStyle = rg(c, 9, 9, 1, 9, [0, 'rgba(255,220,120,.9)'], [1, 'rgba(255,220,120,0)']); c.fillRect(0, 0, 18, 18);
     c.save(); c.translate(9, 9); c.rotate(-0.5); rr(c, -6.4, -3, 12.8, 6, 1, '#2d5fa8', OUT, 0.35); line(c, -4, -1, 3, -1, '#dbe9ff', 0.4); line(c, -4, 1, 1, 1, '#dbe9ff', 0.4); el(c, 4, 0, 1.3, 1.3, undefined, '#dbe9ff', 0.4); el(c, -6.4, 0, 1.2, 3, '#4d7fd0', OUT, 0.3); el(c, 6.4, 0, 1.2, 3, '#4d7fd0', OUT, 0.3); c.restore();

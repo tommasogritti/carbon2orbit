@@ -116,6 +116,7 @@ export const snd = {
   cutoff: () => { tone({ f: 120, to: 40, dur: 0.35, type: 'sine', vol: 0.3 }); noise({ dur: 0.3, vol: 0.12, f: 700, to: 120 }); },
   stage: () => { noise({ dur: 0.09, vol: 0.4, f: 1800 }); tone({ f: 95, to: 50, dur: 0.25, type: 'sine', vol: 0.4 }); noise({ dur: 0.7, vol: 0.12, type: 'highpass', f: 4000, at: 0.08 }); },
   fairing: () => { noise({ dur: 0.06, vol: 0.3, type: 'bandpass', f: 2400 }); noise({ dur: 0.06, vol: 0.3, type: 'bandpass', f: 2000, at: 0.09 }); tone({ f: 1500, to: 700, dur: 0.25, type: 'sine', vol: 0.06, at: 0.02 }); },
+  shutter: () => { noise({ dur: 0.03, vol: 0.32, type: 'bandpass', f: 3400, q: 1.5 }); noise({ dur: 0.05, vol: 0.22, type: 'bandpass', f: 2200, q: 1.5, at: 0.06 }); tone({ f: 2200, to: 4200, dur: 0.5, type: 'sine', vol: 0.035, at: 0.12 }); }, // a camera: shutter, then the flash recharging
   click: () => { noise({ dur: 0.04, vol: 0.25, type: 'bandpass', f: 3000, q: 2 }); noise({ dur: 0.04, vol: 0.25, type: 'bandpass', f: 2600, q: 2, at: 0.1 }); },
   seco: () => { tone({ f: 100, to: 45, dur: 0.3, type: 'sine', vol: 0.25 }); tone({ f: 784, dur: 0.5, type: 'sine', vol: 0.1, at: 0.15 }); tone({ f: 1175, dur: 0.7, type: 'sine', vol: 0.08, at: 0.3 }); },
   staticBurst: () => noise({ dur: 0.07, vol: 0.2, type: 'bandpass', f: 600 + Math.random() * 5000, q: 1.2 }),
