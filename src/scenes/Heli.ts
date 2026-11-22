@@ -3,33 +3,41 @@ import { W, H, T, held, finish, cam, img, panel, who } from '../core';
 import { snd, music, stopLoops, loop, Loop } from '../audio';
 import { P, S } from '../art';
 import type { LevelDef } from '../content';
+import { hifi, HiFi } from '../hifi';
+import { LOOKS } from '../hifiLooks';
 
 const AUTO = new URLSearchParams(location.search).has('auto');
 const MISS_Y = 98, SEA_Y = 112;
+const LOOK = 'catch'; // the hi-fi look (looks/catch.ts)
 /** There And Back Again: hook the parachute line of a falling Electron booster. */
 export class HeliScene extends Phaser.Scene {
   def!: LevelDef; heli!: Phaser.GameObjects.Container; rotor!: Phaser.GameObjects.Image; hv = { x: 0, y: 0 };
   boo!: Phaser.GameObjects.Container; bt = 0; pass = 1; state: 'fall' | 'caught' | 'released' | 'missed' | 'over' = 'fall'; phase0 = 0;
-  g!: Phaser.GameObjects.Graphics; call!: Phaser.GameObjects.Text; hud!: Phaser.GameObjects.Text; timer = 0; splash!: Phaser.GameObjects.Particles.ParticleEmitter; wet = false; rotorS!: Loop;
+  g!: Phaser.GameObjects.Graphics; call!: Phaser.GameObjects.Text; hud!: Phaser.GameObjects.Text; timer = 0; splash!: Phaser.GameObjects.Particles.ParticleEmitter; wet = false; rotorS!: Loop; hf?: HiFi;
   constructor() { super('Heli'); }
   init(d: { def: LevelDef }) { this.def = d.def; this.pass = 1; this.state = 'fall'; this.bt = 0; this.hv = { x: 0, y: 0 }; this.timer = 0; this.wet = false; }
   create() {
     cam(this);
     stopLoops(); music.play('heli'); this.rotorS = loop('rotor'); loop('sea').set(0.5);
-    img(this, 0, 0, 'sky_day').setOrigin(0);
-    [[40, 34, 2], [200, 58, 1], [120, 84, 3], [280, 96, 3]].forEach(([x, y, k], i) => { const c = img(this, x, y, 'cloud' + k).setAlpha(0.9); this.tweens.add({ targets: c, x: x + 26, duration: 16000 + i * 5000, yoyo: true, repeat: -1 }); });
+    const hf = (this.hf = hifi(this, LOOKS[LOOK])), K = (k: string) => (hf ? hf.key(k) : k); // the look redraws the sky, the clouds and the sea
+    const sky = img(this, 0, 0, K('sky_day')).setOrigin(0);
+    [[40, 34, 2], [200, 58, 1], [120, 84, 3], [280, 96, 3]].forEach(([x, y, k], i) => { const c = img(this, x, y, K('cloud' + k)).setAlpha(0.9); this.tweens.add({ targets: c, x: x + 26, duration: 16000 + i * 5000, yoyo: true, repeat: -1 }); });
     this.g = this.add.graphics();
     const stage = img(this, 0, 20, 'electron_s1').setOrigin(0.5, 0).setScale(S * 0.5);
-    this.boo = this.add.container(160, -40, [img(this, 0, 0, 'chute').setOrigin(0.5, 0).setScale(S * 0.7), stage]);
-    img(this, 0, 152, 'sea').setOrigin(0);
+    const chute = img(this, 0, 0, 'chute').setOrigin(0.5, 0).setScale(S * 0.7);
+    this.boo = this.add.container(160, -40, [chute, stage]);
+    const sea = img(this, 0, 152, K('sea')).setOrigin(0);
     const ship = img(this, 262, 151, 'ship').setScale(S * 0.8); this.tweens.add({ targets: ship, y: 152.2, angle: 1.2, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     this.splash = this.add.particles(0, 153, 'puff', { speedY: { min: -90, max: -30 }, speedX: { min: -40, max: 40 }, gravityY: 220, lifespan: 700, scale: { start: S * 0.5, end: S * 0.1 }, alpha: { start: 0.9, end: 0 }, emitting: false });
     this.rotor = img(this, -1.5, -9.6, 'rotor').setScale(S * 0.8, S);
-    this.heli = this.add.container(60, 60, [img(this, 0, 0, 'heli').setScale(S * 0.75), this.rotor]);
+    const body = img(this, 0, 0, 'heli').setScale(S * 0.75);
+    this.heli = this.add.container(60, 60, [body, this.rotor]);
+    const worldN = this.children.length; // everything from here on is HUD
     panel(this, 4, 4, 56, 14); this.hud = T(this, 9, 6.5, '', '#ffffff', 7, '700');
     this.call = T(this, W / 2, H - 9, 'Hook the line above the parachute', '#ffffff', 8, '700').setOrigin(0.5).setShadow(0, 1, '#000000', 3);
     who(this, { ...this.def, role: this.def.role || 'CEO · in Mission Control' }, W - 104, 4);
     this.newPass();
+    if (hf) { hf.shade(stage, 3, 2); hf.shade(chute); hf.shade(ship); hf.shade(body, 4, 2); hf.tag({ sky, sea, ship, boo: this.boo, heli: this.heli }); hf.set({ caught: 0, wet: 0, bx: 160, kx: 0, ky: 0 }); hf.ready({ hud: this.children.list.slice(worldN) }); }
   }
   newPass() { this.state = 'fall'; this.bt = 0; this.wet = false; this.phase0 = Math.random() * 6; this.boo.setPosition(160, -50).setAngle(0); this.hud.setText(`PASS ${this.pass} / 3`); }
   boosterX(t: number) { return 160 + 85 * Math.sin(t * 0.55 + this.phase0) + 18 * Math.sin(t * 1.7); }
@@ -70,6 +78,7 @@ export class HeliScene extends Phaser.Scene {
         else { this.pass++; this.newPass(); this.call.setText('It is still falling. Come around again'); }
       }
     }
+    this.hf?.set({ caught: this.state === 'caught' ? 1 : 0, wet: this.wet ? 1 : 0, bx: this.boo.x, kx: hook.x, ky: hook.y });
     const g = this.g; g.clear();
     g.lineStyle(0.5, 0x10131c).lineBetween(this.heli.x, this.heli.y + 8, hook.x, hook.y);
     g.lineStyle(1, P.yellow).beginPath().arc(hook.x, hook.y, 1.8, 0, Math.PI, false).strokePath();

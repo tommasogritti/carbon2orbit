@@ -18,6 +18,7 @@ import { hazeLook } from './looks/haze';
 import { editLook } from './looks/edit';
 import { diaryLook } from './looks/diary';
 import { reentryLook } from './looks/reentry';
+import { catchLook } from './looks/catch';
 import type { HiFi, Look } from './hifi';
 
 // The looks a level's theme can name (see hifi.ts). A look is the art and the numbers; the engine is shared.
@@ -254,4 +255,5 @@ export const LOOKS: Record<string, Look> = { listing: listingLook, workshop: wor
   edit: editLook,
   diary: diaryLook,
   reentry: reentryLook,
+  catch: catchLook,
 };
