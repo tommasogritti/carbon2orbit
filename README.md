@@ -21,7 +21,7 @@ You walk a world map through thirty years of Rocket Lab history. Every stop is a
 
 | | |
 | --- | --- |
-| **Platform levels** | Build the rocket bike after hours at the appliance factory. Haul pad hardware down the coast road to Māhia. Carry the Nasdaq listing across Long Beach as the CFO. |
+| **Platform levels** | Build the rocket bike after hours at the appliance factory. Haul pad hardware down the coast road to Māhia. Carry the Nasdaq listing across Long Beach as the CFO. Walk into mission control before dawn for Electron's 50th launch. |
 | **Launch control** | A real ascent simulation for people who know the vocabulary: call the go/no-go poll, fly the pitch program on a flight director, throttle through Max-Q, command staging, fairing and the battery hot-swap, cut off on apogee, circularise with the kick stage. |
 | **Mini-games** | Catch a booster with a helicopter. Stretch an orbit to the Moon. Find the fault on flight 13. Bring Varda's capsule down in the outback. Run two launch counts in two hemispheres at once. Cut a creator interview into four parts for four channels. |
 | **Story cards and people** | The founding, the knighthood, and the people who were there, each with sources and, where one exists, a freely licensed photo. |
@@ -64,12 +64,12 @@ A touch pad appears on phones.
 
 | Kind | Levels |
 | --- | --- |
-| Platform | The Rocket Bike · Road to Māhia · Rosie the Robot (with Ashlee Vance as a running mate) · RKLB rings the bell (played as Adam Spice) · Archimedes and the tank |
+| Platform | The Rocket Bike · Road to Māhia · Rosie the Robot (with Ashlee Vance as a running mate) · RKLB rings the bell (played as Adam Spice) · No Time Toulouse (with Madison Malone as a running mate) · Archimedes and the tank |
 | Launch control | Ātea-1 · It's a Test · Still Testing · It's Business Time · Virginia Is For Launch Lovers · Scout's Arrow (HASTE) · Paschen's Law · Beginning Of The Swarm · The Mountain God Rises |
 | Mini-game | Rutherford hot-fire · Go Find the Launch Site (played as Shaun D'Mello) · Pics Or It Didn't Happen · Return To Sender · There And Back Again · CAPSTONE to the Moon · Four channels, one call (Q2 2024 creator interview) · Two Hemispheres · Outback Delivery · ESCAPADE · Seven diaries, one slot (played as Mrs. Iglesias: the Q1 2026 creator interview) · VICTUS HAZE |
 | Story | Rocket Lab is founded · When the Heavens Went on Sale · Markets with Madison · Sir Peter · Wild Wild Space · Forbes counts a billionaire · Five channels, one Q&A · Neutron (locked until it flies) |
 | People to meet | Mark Rocket and Sir Stephen Tindall · Ky Michaelson · Sir Michael Fay · Dava Newman · Gabe Newell · Adam Spice · Rob Lillis · Madison Malone · Vince is Bullish · Dave G · Matt Farley · Scott O · Mrs. Iglesias |
-| Secrets | Princes Street Sprint · Kaitorete Spit · Inside the first hundred · Photon · The Hungry Hippo |
+| Secrets | Princes Street Sprint · Kaitorete Spit · Inside the first hundred · Photon · The Hungry Hippo · Kinéis: five for five |
 
 ## Contribute, with or without an agent
 

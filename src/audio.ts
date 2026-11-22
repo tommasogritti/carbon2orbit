@@ -117,6 +117,9 @@ export const snd = {
   stage: () => { noise({ dur: 0.09, vol: 0.4, f: 1800 }); tone({ f: 95, to: 50, dur: 0.25, type: 'sine', vol: 0.4 }); noise({ dur: 0.7, vol: 0.12, type: 'highpass', f: 4000, at: 0.08 }); },
   fairing: () => { noise({ dur: 0.06, vol: 0.3, type: 'bandpass', f: 2400 }); noise({ dur: 0.06, vol: 0.3, type: 'bandpass', f: 2000, at: 0.09 }); tone({ f: 1500, to: 700, dur: 0.25, type: 'sine', vol: 0.06, at: 0.02 }); },
   shutter: () => { noise({ dur: 0.03, vol: 0.32, type: 'bandpass', f: 3400, q: 1.5 }); noise({ dur: 0.05, vol: 0.22, type: 'bandpass', f: 2200, q: 1.5, at: 0.06 }); tone({ f: 2200, to: 4200, dur: 0.5, type: 'sine', vol: 0.035, at: 0.12 }); }, // a camera: shutter, then the flash recharging
+  door: (open: boolean) => { tone({ f: open ? 1320 : 520, dur: 0.08, type: 'sine', vol: 0.06 }); noise({ dur: 0.22, vol: 0.08, type: 'bandpass', f: open ? 900 : 600, to: open ? 1500 : 380, q: 0.8, at: 0.04 }); }, // a badge beep, and the door sliding
+  ring: () => { for (let i = 0; i < 6; i++) tone({ f: i % 2 ? 2350 : 2500, dur: 0.035, type: 'square', vol: 0.025, lp: 4200, at: i * 0.045 }); }, // a wind-up alarm clock
+  hoot: () => { tone({ f: 520, to: 470, dur: 0.22, type: 'sine', vol: 0.07 }); tone({ f: 440, to: 400, dur: 0.3, type: 'sine', vol: 0.07, at: 0.3 }); }, // more-pork
   click: () => { noise({ dur: 0.04, vol: 0.25, type: 'bandpass', f: 3000, q: 2 }); noise({ dur: 0.04, vol: 0.25, type: 'bandpass', f: 2600, q: 2, at: 0.1 }); },
   seco: () => { tone({ f: 100, to: 45, dur: 0.3, type: 'sine', vol: 0.25 }); tone({ f: 784, dur: 0.5, type: 'sine', vol: 0.1, at: 0.15 }); tone({ f: 1175, dur: 0.7, type: 'sine', vol: 0.08, at: 0.3 }); },
   staticBurst: () => noise({ dur: 0.07, vol: 0.2, type: 'bandpass', f: 600 + Math.random() * 5000, q: 1.2 }),
