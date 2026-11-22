@@ -1,8 +1,10 @@
 import Phaser from 'phaser';
 import { W, T, held, just, finish, cam, img, panel, who } from '../core';
 import { snd, music, stopLoops } from '../audio';
-import { S, tex, lg, rg, rr, el, line, poly, text, rng, OUT, type C2 } from '../art';
+import { S, tex, lg, rg, rr, el, line, poly, text, rng, parts, OUT, type C2 } from '../art';
 import type { LevelDef } from '../content';
+import { hifi, HiFi } from '../hifi';
+import { LOOKS } from '../hifiLooks';
 
 const AUTO = new URLSearchParams(location.search).has('auto');
 
@@ -18,13 +20,13 @@ const AUTO = new URLSearchParams(location.search).has('auto');
 interface Row { name: string; chip: string; busy: [from: number, to: number, label?: string][]; known?: boolean; lead?: boolean }
 interface Clash { row: number; from: number; to: number; at: number; label: string }
 interface Theme {
-  music: string; room: (c: C2) => void; legend: string; chatNote: string;
+  music: string; room: (c: C2) => void; /** The room's hi-fi look (hifiLooks.ts). */ hifi?: string; legend: string; chatNote: string;
   clashText: (who: string, when: string) => string; breakText: (who: string) => string;
   winTitle: string; winText: (o: { len: number; invites: number; late: boolean; when: string }) => string; failText: string;
 }
 const THEMES: Record<string, Theme> = {
   'q1-2026': {
-    music: 'delta', room: roomQ1,
+    music: 'delta', room: (c) => roomQ1(c), hifi: 'diary',
     legend: 'All times Pacific. Every busy block is a game value: nobody’s real diary is known, nor when the interview was recorded. Only the results call (2 p.m.) and the release times are real.',
     chatNote: 'GROUP CHAT (a game element: how the seven really found their time is not published).',
     clashText: (w, when) => `${w}: the tentative entry at ${when} is now a meeting (a game element).`,
@@ -49,7 +51,7 @@ export class SlotFinderScene extends Phaser.Scene {
   seen: Set<number>[] = []; free: [number, number][][] = []; all: boolean[] = []; acc: (boolean | undefined)[] = []; replies: { row: number; at: number }[] = [];
   cues: [number, string, boolean?][] = []; invites = 0; chats = 0; chatsUsed = 0; hints = 0; pick = 0; holdT = 0; repT = 0; botT = 0; late = false; recAt = 0; broke = 0;
   g!: Phaser.GameObjects.Graphics; topL!: Phaser.GameObjects.Text; topR!: Phaser.GameObjects.Text; msg!: Phaser.GameObjects.Text; blockT!: Phaser.GameObjects.Text;
-  names: Phaser.GameObjects.Text[] = []; replyT: Phaser.GameObjects.Text[] = []; labels: Phaser.GameObjects.Text[] = []; nlab = 0;
+  names: Phaser.GameObjects.Text[] = []; replyT: Phaser.GameObjects.Text[] = []; labels: Phaser.GameObjects.Text[] = []; nlab = 0; hf?: HiFi;
   constructor() { super('SlotFinder'); }
 
   /** The controls panel (H or the ? button), by phase. Shape agreed with core's showHelp. */
@@ -84,11 +86,12 @@ export class SlotFinderScene extends Phaser.Scene {
     cam(this); stopLoops(); music.play(this.th.music, 1);
     const key = 'sf_room_' + this.p.theme;
     if (!this.textures.exists(key)) tex(this, key, W, 180, (c) => this.th.room(c));
-    img(this, 0, 0, key).setOrigin(0);
-    panel(this, 4, 3, W - 8, 14, 0.9);
+    const hf = (this.hf = hifi(this, LOOKS[this.th.hifi || ''])); // the room, the panels and the grid take the look; every word and every face stays on the HUD camera
+    const world: Record<string, Phaser.GameObjects.GameObject> = { room: img(this, 0, 0, hf ? hf.key(key) : key).setOrigin(0) };
+    world.top = panel(this, 4, 3, W - 8, 14, 0.9);
     this.topL = T(this, 8, 5.2, '', '#ffe98a', 6.6, '700'); this.topR = T(this, W - 8, 6.2, '', '#cfd6ea', 4.4, '700').setOrigin(1, 0);
-    panel(this, 4, 20, W - 8, 104, 0.88);
-    this.g = this.add.graphics().setDepth(2);
+    world.grid = panel(this, 4, 20, W - 8, 104, 0.88);
+    world.g = this.g = this.add.graphics().setDepth(2);
     this.rows.forEach((r, i) => {
       const y = RY0 + i * RH;
       img(this, 12, y + RH / 2, r.chip + 'peter_chip').setScale(S * 0.34).setDepth(3);
@@ -97,11 +100,17 @@ export class SlotFinderScene extends Phaser.Scene {
     });
     for (let i = 0; i < 40; i++) this.labels.push(T(this, 0, 0, '', '#ffffff', 3, '700').setDepth(4).setVisible(false));
     this.blockT = T(this, 0, 0, '', '#ffe98a', 3.4, '700').setOrigin(0.5, 1).setDepth(5).setShadow(0, 1, '#000000', 2);
-    panel(this, MX, MY, MW, MH, 0.9);
+    world.msg = panel(this, MX, MY, MW, MH, 0.9);
     this.msg = T(this, MX + 4, MY + 3, '', '#ffe98a', 4.4, '700').setDepth(5).setWordWrapWidth(MW - 8).setShadow(0, 1, '#000000', 2);
     T(this, MX + 4, MY + MH - 10.4, this.th.legend, '#8f9bb5', 3.1, '600').setDepth(5).setWordWrapWidth(MW - 8);
     who(this, this.def, 104, 146);
     this.say(`${this.when(this.now)}: the results call is over. Find one slot when all ${this.rows.length} of you are free. ← → slide, ↑ ↓ length, Space sends the invitation, Enter opens the group chat.`);
+    if (hf) { const w = Object.values(world); hf.tag(world); this.tell(); hf.ready({ hud: this.children.list.filter((o) => !w.includes(o)), lateHud: true }); }
+  }
+  /** What the look animates from: the clock (`now`, hours), the phase (`st`: 0 planning, 1 waiting for replies, 2 the group chat, 3 locked, 4 recording, 5 the edit), where the meeting block is, and the replies so far. */
+  tell() {
+    if (!this.hf) return; const s = this.start;
+    this.hf.set({ now: this.now, st: ['plan', 'wait', 'chat', 'locked', 'rec', 'edit'].indexOf(this.state), bx: this.X(s), bw: this.X(s + this.len()) - this.X(s), nx: this.X(Math.min(this.g1, Math.max(this.g0, this.now))), yes: this.acc.filter((a) => a === true).length, no: this.acc.filter((a) => a === false).length, chats: this.chatsUsed, soon: s < this.now + this.p.notice - 1e-6 ? 1 : 0 });
   }
   say(s: string) { this.msg.setText(s); }
   len() { return this.lengths[this.li]; }
@@ -277,6 +286,7 @@ export class SlotFinderScene extends Phaser.Scene {
     if (this.state === 'edit') g.fillStyle(0xc9b8ff, 1).fillRect(bx + bw, ty, Math.max(0, Math.min(this.X(this.now), tx1) - bx - bw), 3.6);
     this.lab(`${this.p.tail.label} · ${this.p.tail.hours} h (a game value)` + (late ? ' · TOO LATE FOR THE RELEASE' : ''), Math.min(bx + bw + 1, GX + GW - 2), ty + 4.4, late ? '#ff8a70' : '#c9b8ff', 2.6, bx + bw > GX + GW * 0.6 ? 1 : 0);
     for (let i = this.nlab; i < this.labels.length; i++) this.labels[i].setVisible(false);
+    this.tell();
   }
 }
 
@@ -285,20 +295,23 @@ export class SlotFinderScene extends Phaser.Scene {
  * through the window is no particular city. On the shelf, a boxed Electron model (her channel has an Electron model
  * unboxing) and a phone with the group chat open.
  */
-function roomQ1(c: C2) {
+export function roomQ1(real: C2, part = 31) { // `part`: 1 the wall, 2 the window's frame and what is on the shelf, 4 the sky in the window, 8 the city, 16 its lit windows
+  const pick = parts(real, part); let c = pick(1);
   c.fillStyle = lg(c, 0, 0, 0, 180, [0, '#1f2a44'], [0.6, '#172036'], [1, '#0c1120']); c.fillRect(0, 0, 320, 180);
   for (let x = 0; x < 320; x += 16) line(c, x, 0, x, 180, 'rgba(255,255,255,.025)', 6); // a faint striped wallpaper
   // the window: a city at dusk and a line of lights
   const wx = 210, wy = 128, ww = 56, wh = 48;
-  rr(c, wx - 1.6, wy - 1.6, ww + 3.2, wh + 3.2, 1.2, '#3a3226', OUT, 0.5);
-  c.save(); c.beginPath(); c.rect(wx, wy, ww, wh); c.clip();
+  rr(pick(2), wx - 1.6, wy - 1.6, ww + 3.2, wh + 3.2, 1.2, '#3a3226', OUT, 0.5);
+  for (const k of [4, 8, 16]) { const q = pick(k); q.save(); q.beginPath(); q.rect(wx, wy, ww, wh); q.clip(); }
+  c = pick(4);
   c.fillStyle = lg(c, 0, wy, 0, wy + wh, [0, '#2b2e6a'], [0.45, '#a8507a'], [0.75, '#f28c4a'], [1, '#ffd38a']); c.fillRect(wx, wy, ww, wh);
   c.fillStyle = rg(c, wx + 40, wy + 40, 1, 10, [0, 'rgba(255,240,200,.9)'], [1, 'rgba(255,240,200,0)']); c.fillRect(wx, wy, ww, wh);
-  const r = rng(12); let x = wx; c.fillStyle = '#1a1424';
+  const r = rng(12); let x = wx; c = pick(8); c.fillStyle = '#1a1424';
   while (x < wx + ww) { const bw = 3 + r() * 6, bh = 4 + r() * 12; c.fillRect(x, wy + wh - bh, bw, bh); x += bw; }
-  for (let i = 0; i < 26; i++) el(c, wx + r() * ww, wy + wh - 1 - r() * 9, 0.25, 0.25, r() < 0.5 ? '#ffe9a0' : '#ffb86a');
-  for (const [bx, bw, bh] of [[wx + 6, 6, 30], [wx + 31, 5, 36], [wx + 44, 7, 26]] as [number, number, number][]) { c.fillStyle = '#140f1c'; c.fillRect(bx, wy + wh - bh, bw, bh); for (let k = 0; k < 9; k++) el(c, bx + 1 + r() * (bw - 2), wy + wh - bh + 2 + r() * (bh - 4), 0.3, 0.3, '#ffe9a0'); } // a few taller blocks, windows lit
-  c.restore();
+  for (let i = 0; i < 26; i++) el(pick(16), wx + r() * ww, wy + wh - 1 - r() * 9, 0.25, 0.25, r() < 0.5 ? '#ffe9a0' : '#ffb86a');
+  for (const [bx, bw, bh] of [[wx + 6, 6, 30], [wx + 31, 5, 36], [wx + 44, 7, 26]] as [number, number, number][]) { c.fillStyle = '#140f1c'; c.fillRect(bx, wy + wh - bh, bw, bh); for (let k = 0; k < 9; k++) el(pick(16), bx + 1 + r() * (bw - 2), wy + wh - bh + 2 + r() * (bh - 4), 0.3, 0.3, '#ffe9a0'); } // a few taller blocks, windows lit
+  for (const k of [4, 8, 16]) pick(k).restore();
+  c = pick(2);
   line(c, wx + ww / 2, wy, wx + ww / 2, wy + wh, '#3a3226', 1.2); line(c, wx, wy + wh / 2, wx + ww, wy + wh / 2, '#3a3226', 1.2);
   // the shelf, with a boxed Electron model and a phone showing the group chat
   rr(c, 270, 160, 48, 3, 0.6, '#5a4430', OUT, 0.4); rr(c, 270, 163, 48, 15, 0, 'rgba(0,0,0,.25)');

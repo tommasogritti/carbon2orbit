@@ -3,6 +3,8 @@ import { W, H, T, just, finish, cam, img, panel, who } from '../core';
 import { snd, music, stopLoops, loop, Loop } from '../audio';
 import { P, S } from '../art';
 import type { LevelDef } from '../content';
+import { hifi, HiFi } from '../hifi';
+import { LOOKS } from '../hifiLooks';
 
 const AUTO = new URLSearchParams(location.search).has('auto');
 const HOUR = 2.4; // seconds of play per hour on the clock
@@ -27,6 +29,7 @@ const byId = (id: string) => TASKS.find((t) => t.id === id)!;
 const tail = (id: string): number => byId(id).h + Math.max(0, ...TASKS.filter((t) => t.needs.includes(id)).map((t) => tail(t.id)));
 const hm = (h: number) => `${String(Math.floor(h)).padStart(2, '0')}:${String(Math.floor((h % 1) * 60)).padStart(2, '0')}`;
 const RX = 164, RY = 26; // top-left of the pad picture
+const LOOK = 'haze'; // the hi-fi look (hifiLooks.ts)
 
 /**
  * VICTUS HAZE: the order to launch arrives with an orbit nobody knew in advance, and the clock starts. Two crews, ten
@@ -35,7 +38,7 @@ const RX = 164, RY = 26; // top-left of the pad picture
 export class CountdownRaceScene extends Phaser.Scene {
   def!: LevelDef; t = 0; done: Record<string, number> = {}; work: { id: string; left: number }[] = []; cur = 0; ended = false; idle = 0; botT = 0;
   g!: Phaser.GameObjects.Graphics; rows: Phaser.GameObjects.Text[] = []; clockT!: Phaser.GameObjects.Text; crewT: Phaser.GameObjects.Text[] = []; call!: Phaser.GameObjects.Text;
-  sky!: Phaser.GameObjects.Rectangle; stars!: Phaser.GameObjects.Image; site!: Phaser.GameObjects.Image; rocket!: Phaser.GameObjects.Image; flame!: Phaser.GameObjects.Particles.ParticleEmitter; vent!: Phaser.GameObjects.Particles.ParticleEmitter; hum!: Loop;
+  sky!: Phaser.GameObjects.Rectangle; stars!: Phaser.GameObjects.Image; site!: Phaser.GameObjects.Image; rocket!: Phaser.GameObjects.Image; flame!: Phaser.GameObjects.Particles.ParticleEmitter; vent!: Phaser.GameObjects.Particles.ParticleEmitter; hum!: Loop; hf?: HiFi;
   constructor() { super('CountdownRace'); }
   /** The controls panel (H or the ? button): what the keys do right now, in this level and this phase. Shape agreed with core's showHelp. */
   help(): { title: string; rows: [keys: string, does: string][]; note?: string } {
@@ -45,16 +48,17 @@ export class CountdownRaceScene extends Phaser.Scene {
   create() {
     cam(this); stopLoops(); music.play('launch', 1); this.hum = loop('sea'); this.hum.set(0.5);
     this.cameras.main.setBackgroundColor('#0a0f20');
+    const hf = (this.hf = hifi(this, LOOKS[LOOK])); // the picture, the panels and the job list take the look; every word stays on the HUD camera
     // the pad at Māhia, from the early-morning notice to a night launch
     this.sky = this.add.rectangle(RX, RY, 152, 90, 0x0a1230).setOrigin(0); this.stars = img(this, RX, RY, 'stars').setOrigin(0).setCrop(0, 0, 152 * 4, 60 * 4);
-    this.site = img(this, RX - 4, RY + 16, 'site_mahia').setOrigin(0).setScale(S * 0.5).setCrop(8 * 4, 0, 304 * 4, 150 * 4);
+    this.site = img(this, RX - 4, RY + 16, hf ? hf.key('site_mahia') : 'site_mahia').setOrigin(0).setScale(S * 0.5).setCrop(8 * 4, 0, 304 * 4, 150 * 4);
     this.vent = this.add.particles(RX + 74, RY + 58, 'puff', { speedX: { min: 6, max: 18 }, speedY: { min: -6, max: 2 }, lifespan: 900, scale: { start: S * 0.2, end: S * 0.7 }, alpha: { start: 0.7, end: 0 }, frequency: 90, emitting: false });
     this.flame = this.add.particles(0, 0, 'puff', { speedY: { min: 40, max: 80 }, speedX: { min: -5, max: 5 }, lifespan: 300, scale: { start: S * 0.4, end: S * 0.1 }, color: [0xffffff, 0xfff0b0, 0xffb347, 0xff5a1f], alpha: { start: 1, end: 0 }, blendMode: 'ADD', frequency: 12, emitting: false });
     this.rocket = img(this, RX + 73, RY + 66, 'electron_full').setOrigin(0.5, 1).setScale(S * 0.5).setVisible(false);
-    this.add.rectangle(RX, RY + 90, 152, 30, 0x0a0f20).setOrigin(0); // crews panel sits over the bottom of the picture
-    this.add.graphics().lineStyle(0.6, 0xffffff, 0.25).strokeRoundedRect(RX, RY, 152, 90, 2);
-    panel(this, 4, 4, W - 8, 18, 0.9); this.clockT = T(this, 9, 6.4, '', '#ffe98a', 8.4, '700');
-    panel(this, 4, RY, 156, 150, 0.85);
+    const cover = this.add.rectangle(RX, RY + 90, 152, 30, 0x0a0f20).setOrigin(0); // crews panel sits over the bottom of the picture
+    const frame = this.add.graphics().lineStyle(0.6, 0xffffff, 0.25).strokeRoundedRect(RX, RY, 152, 90, 2);
+    const top = panel(this, 4, 4, W - 8, 18, 0.9); this.clockT = T(this, 9, 6.4, '', '#ffe98a', 8.4, '700');
+    const list = panel(this, 4, RY, 156, 150, 0.85);
     TASKS.forEach((_t, i) => this.rows.push(T(this, 16, RY + 4 + i * 14.4, '', '#ffffff', 4.9, '700').setDepth(2)));
     for (let i = 0; i < 2; i++) this.crewT.push(T(this, RX + 4, RY + 94 + i * 12, '', '#ffffff', 4.9, '700'));
     this.g = this.add.graphics();
@@ -62,6 +66,12 @@ export class CountdownRaceScene extends Phaser.Scene {
     who(this, { ...this.def, role: this.def.role || 'CEO · the notice has just arrived' }, RX + 26, RY + 2);
     this.say('NOTICE TO LAUNCH. The target orbit has just arrived.\n↑ ↓ choose a job · SPACE gives it to a free crew');
     snd.alarm();
+    if (hf) { const world = { sky: this.sky, stars: this.stars, site: this.site, vent: this.vent, flame: this.flame, rocket: this.rocket, cover, frame, top, list, rows: this.g }, w = Object.values(world) as Phaser.GameObjects.GameObject[]; hf.tag(world); this.tell(); hf.ready({ hud: this.children.list.filter((o) => !w.includes(o)), lateHud: true }); }
+  }
+  /** What the look animates from: daylight `l` and the local hour `h` at Māhia, the hours its winter day begins and ends, what each crew is doing (`w0`, `w1`: 0 idle with a job waiting, 1 working, 2 standing by) and whether the real time has passed. */
+  tell() {
+    if (!this.hf) return; const clock = (NOTICE + this.t) % 24, ready = TASKS.some((t) => this.state(t) === 'ready'), w = this.work.map((q) => (q.id ? 1 : ready ? 0 : 2));
+    this.hf.set({ l: Phaser.Math.Clamp(Math.min((clock - 6.6) / 1.2, (17.6 - clock) / 1.2), 0, 1), h: clock, r: 7, s: 17.5, w0: w[0], w1: w[1], late: this.t > REAL ? 1 : 0 });
   }
   say(s: string) { this.call.setText(s); }
   state(t: Task) { return this.done[t.id] !== undefined ? 'done' : this.work.some((w) => w.id === t.id) ? 'work' : t.needs.every((n) => this.done[n] !== undefined) ? 'ready' : 'wait'; }
@@ -87,7 +97,7 @@ export class CountdownRaceScene extends Phaser.Scene {
       if (just('down')) { this.cur = (this.cur + 1) % TASKS.length; snd.tick(); } if (just('up')) { this.cur = (this.cur + TASKS.length - 1) % TASKS.length; snd.tick(); }
       if (just('a') || just('b')) this.assign(TASKS[this.cur]);
     }
-    this.draw();
+    this.draw(); this.tell();
     if (this.t > LIMIT + 3) { this.ended = true; finish(this, this.def, { success: false, title: 'Still on the ground', text: 'More than 27 hours after the notice, Electron has not flown: slower than the record it set out to beat. Keep both crews busy, and start the jobs that other jobs are waiting for first.' }); }
   }
   milestone(id: string) {
@@ -124,7 +134,7 @@ export class CountdownRaceScene extends Phaser.Scene {
   }
   aux?: Phaser.GameObjects.Text[]; timeT?: Phaser.GameObjects.Text;
   liftoff() {
-    this.ended = true; const t = this.t; this.draw(); this.vent.emitting = false; this.hum.set(0); snd.liftoff(); this.cameras.main.shake(600, 0.004);
+    this.ended = true; const t = this.t; this.draw(); this.tell(); this.vent.emitting = false; this.hum.set(0); snd.liftoff(); this.cameras.main.shake(600, 0.004);
     this.flame.startFollow(this.rocket, 0, 1); this.flame.emitting = true; this.say('Lift-off!');
     this.tweens.add({ targets: this.rocket, y: RY - 30, duration: 2600, ease: 'Quad.easeIn' });
     const stars = t <= REAL ? 3 : t <= 20 ? 2 : t <= LIMIT ? 1 : 0;

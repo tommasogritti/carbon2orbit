@@ -3,10 +3,13 @@ import { W, H, T, just, finish, cam, img, panel, who } from '../core';
 import { snd, music, stopLoops, loop, Loop } from '../audio';
 import { P, S } from '../art';
 import type { LevelDef } from '../content';
+import { hifi, HiFi } from '../hifi';
+import { LOOKS } from '../hifiLooks';
 
 const AUTO = new URLSearchParams(location.search).has('auto');
 const HW = 156; // width of each half
 const SLIP = 20; // minutes a missed call costs that pad
+const LOOK: Record<string, string> = { twopads: 'twopads' }; // each theme's hi-fi look (hifiLooks.ts)
 type Kind = 'go' | 'nogo';
 interface Call { at: number; side: 0 | 1; kind: Kind; text: string; state?: 'live' | 'ok' | 'missed'; t?: number }
 interface Side { name: string; mission: string; site: string; tz: number; day: [number, number]; liftoff: number; label: string }
@@ -22,7 +25,7 @@ const hm = (h: number) => { const m = Math.round((((h % 24) + 24) % 24) * 60) % 
  */
 export class DualCountScene extends Phaser.Scene {
   def!: LevelDef; p: any; th!: (typeof THEMES)[string]; sides: Side[] = []; calls: Call[] = []; t = 0; misses = 0; slip = [0, 0]; ended = false; flew = [false, false]; botT = [0, 0]; clean = true;
-  g!: Phaser.GameObjects.Graphics; clockT!: Phaser.GameObjects.Text; callT: Phaser.GameObjects.Text[] = []; nextT: Phaser.GameObjects.Text[] = []; localT: Phaser.GameObjects.Text[] = []; sky: Phaser.GameObjects.Rectangle[] = []; ground: Phaser.GameObjects.Image[] = []; rocket: Phaser.GameObjects.Image[] = []; flame: Phaser.GameObjects.Particles.ParticleEmitter[] = []; rumble!: Loop; msg!: Phaser.GameObjects.Text;
+  g!: Phaser.GameObjects.Graphics; clockT!: Phaser.GameObjects.Text; callT: Phaser.GameObjects.Text[] = []; nextT: Phaser.GameObjects.Text[] = []; localT: Phaser.GameObjects.Text[] = []; sky: Phaser.GameObjects.Rectangle[] = []; ground: Phaser.GameObjects.Image[] = []; rocket: Phaser.GameObjects.Image[] = []; flame: Phaser.GameObjects.Particles.ParticleEmitter[] = []; rumble!: Loop; msg!: Phaser.GameObjects.Text; hf?: HiFi;
   constructor() { super('DualCount'); }
   /** The controls panel (H or the ? button): what the keys do right now, in this level and this phase. Shape agreed with core's showHelp. */
   help(): { title: string; rows: [keys: string, does: string][]; note?: string } {
@@ -35,15 +38,17 @@ export class DualCountScene extends Phaser.Scene {
   create() {
     cam(this); stopLoops(); music.play(this.th.music, 1); this.rumble = loop('rumble');
     this.cameras.main.setBackgroundColor('#0a0f20');
-    panel(this, 4, 4, W - 8, 16, 0.9); this.clockT = T(this, W / 2, 6.6, '', '#ffe98a', 7.4, '700').setOrigin(0.5, 0);
+    const hf = (this.hf = hifi(this, LOOKS[LOOK[this.p.theme]])), tags: Record<string, Phaser.GameObjects.GameObject> = {}; // the pictures, the panels and the call lights take the look; every word stays on the HUD camera
+    tags.top = panel(this, 4, 4, W - 8, 16, 0.9); this.clockT = T(this, W / 2, 6.6, '', '#ffe98a', 7.4, '700').setOrigin(0.5, 0);
     this.sides.forEach((sd, i) => {
       const x0 = 3 + i * (HW + 2);
       this.sky.push(this.add.rectangle(x0, 24, HW, 80, 0x0a1230).setOrigin(0));
-      const gr = img(this, x0 - 2, 28, 'site_' + sd.site).setOrigin(0).setScale(S * 0.5).setCrop(4 * 4, 0, 312 * 4, 150 * 4); this.ground.push(gr);
+      const gr = img(this, x0 - 2, 28, hf ? hf.key('site_' + sd.site) : 'site_' + sd.site).setOrigin(0).setScale(S * 0.5).setCrop(4 * 4, 0, 312 * 4, 150 * 4); this.ground.push(gr);
       this.flame.push(this.add.particles(0, 0, 'puff', { speedY: { min: 40, max: 80 }, speedX: { min: -5, max: 5 }, lifespan: 300, scale: { start: S * 0.4, end: S * 0.1 }, color: [0xffffff, 0xfff0b0, 0xffb347, 0xff5a1f], alpha: { start: 1, end: 0 }, blendMode: 'ADD', frequency: 12, emitting: false }));
       this.rocket.push(img(this, x0 + 75, 78, 'electron_full').setOrigin(0.5, 1).setScale(S * 0.5));
-      this.add.rectangle(x0, 104, HW, 76, 0x0a0f20).setOrigin(0); this.add.graphics().lineStyle(0.6, 0xffffff, 0.25).strokeRoundedRect(x0, 24, HW, 80, 2);
-      panel(this, x0, 106, HW, 70, 0.9);
+      tags['cover' + i] = this.add.rectangle(x0, 104, HW, 76, 0x0a0f20).setOrigin(0); tags['frame' + i] = this.add.graphics().lineStyle(0.6, 0xffffff, 0.25).strokeRoundedRect(x0, 24, HW, 80, 2);
+      tags['desk' + i] = panel(this, x0, 106, HW, 70, 0.9);
+      Object.assign(tags, { ['sky' + i]: this.sky[i], ['site' + i]: gr, ['flame' + i]: this.flame[i], ['rocket' + i]: this.rocket[i] });
       T(this, x0 + 5, 108.4, sd.name, '#ffffff', 6, '700'); T(this, x0 + 5, 116, sd.mission, '#aab4d4', 4.6, '700'); this.localT.push(T(this, x0 + HW - 5, 108.6, '', '#aab4d4', 4.6, '700').setOrigin(1, 0));
       this.callT.push(T(this, x0 + HW / 2, 127, '', '#ffffff', 6, '700').setOrigin(0.5, 0).setAlign('center').setWordWrapWidth(HW - 14).setDepth(3));
       this.nextT.push(T(this, x0 + 5, 168, '', '#7483a6', 4, '700'));
@@ -52,6 +57,13 @@ export class DualCountScene extends Phaser.Scene {
     this.g = this.add.graphics().setDepth(2);
     this.msg = T(this, W / 2, 96, '', '#ffe98a', 6.4, '700').setOrigin(0.5).setShadow(0, 1, '#000000', 3).setDepth(5);
     who(this, { ...this.def, role: this.def.role || this.th.role }, W / 2 - 50, 40);
+    if (hf) { tags.calls = this.g; hf.tag(tags); this.tell(() => 1); const world = Object.values(tags); hf.ready({ hud: this.children.list.filter((o) => !world.includes(o)), lateHud: true }); }
+  }
+  /** What the look animates from, per console `i`: daylight `l`, local hour `h`, the hours its day begins and ends `r`, `s`, and the call that is up: `c` (1 go, 2 no-go) and how much of its time is gone `u`. */
+  tell(win: (c: Call) => number) {
+    if (!this.hf) return; const utc = this.utc(this.t), st: Record<string, number> = {};
+    this.sides.forEach((sd, i) => { const local = (((utc + sd.tz) % 24) + 24) % 24, c = this.calls.find((q) => q.state === 'live' && q.side === i); Object.assign(st, { ['l' + i]: Phaser.Math.Clamp(Math.min(local - sd.day[0], sd.day[1] - local), 0, 1), ['h' + i]: local, ['r' + i]: sd.day[0], ['s' + i]: sd.day[1], ['c' + i]: c ? (c.kind === 'go' ? 1 : 2) : 0, ['u' + i]: c ? c.t! / win(c) : 0 }); });
+    this.hf.set(st);
   }
   say(s: string) { this.msg.setText(s).setAlpha(1); this.tweens.killTweensOf(this.msg); this.tweens.add({ targets: this.msg, alpha: 0, delay: 1300, duration: 400 }); }
   miss(c: Call, why: string, cost = 1) { c.state = 'missed'; this.misses += cost; this.slip[c.side] += SLIP * cost; this.clean = false; snd.deny(); this.cameras.main.shake(120, 0.004); this.say(why); }
@@ -79,7 +91,7 @@ export class DualCountScene extends Phaser.Scene {
       if (!this.flew[i] && this.t >= sd.liftoff) { this.flew[i] = true; snd.liftoff(); this.cameras.main.shake(400, 0.003); this.flame[i].startFollow(this.rocket[i], 0, 1); this.flame[i].emitting = true; this.tweens.add({ targets: this.rocket[i], y: -20, duration: 2600, ease: 'Quad.easeIn', onComplete: () => (this.flame[i].emitting = false) }); this.say(`${sd.label}: lift-off of ${sd.mission.split('·')[0].trim()}`); }
     });
     this.rumble.set(this.flame.some((f) => f.emitting) ? 0.5 : 0, 0.6);
-    this.draw(win);
+    this.draw(win); this.tell(win);
     if (this.t >= this.p.length) return this.done();
   }
   draw(win: (c: Call) => number) {

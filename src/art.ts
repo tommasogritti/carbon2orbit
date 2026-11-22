@@ -486,6 +486,38 @@ export function drawSite(real: C2, island: boolean, part = 15) {
   }
 }
 
+// Wallops Island, Virginia: Launch Complex 2 on a flat barrier island, the Atlantic behind it, Pad 0A and its water tower next door
+/** Launch Complex 2 on Wallops Island. `part`, as for `drawSite`: 1 the sea, 2 the island, 8 what stands on it. */
+export function drawWallops(real: C2, part = 15) {
+  const pick = parts(real, part); let c = pick(1);
+  c.fillStyle = lg(c, 0, 80, 0, 150, [0, '#8cc0e6'], [0.1, '#2f74c0'], [1, '#143c78']); c.fillRect(0, 80, 320, 70);
+  const r = rng(57);
+  for (let i = 0; i < 110; i++) { const x = r() * 320, y = 84 + r() * 64; line(c, x, y, x + 3 + r() * 8, y, `rgba(215,235,255,${0.1 + r() * 0.25})`, 0.4); }
+  c = pick(2);
+  // the island: low dunes and a seawall of rock, never more than a few metres above the sea
+  c.beginPath(); c.moveTo(0, 100); c.quadraticCurveTo(40, 97, 90, 99); c.lineTo(246, 99); c.quadraticCurveTo(290, 100, 320, 104); c.lineTo(320, 118); c.quadraticCurveTo(160, 124, 0, 116); c.closePath(); c.fillStyle = lg(c, 0, 97, 0, 122, [0, '#d9cf9f'], [0.35, '#c6bb86'], [1, '#a59c6e']); c.fill();
+  for (let i = 0; i < 60; i++) { const x = r() * 320, y = 101 + r() * 14; el(c, x, y, 2 + r() * 4, 0.8 + r(), i % 3 ? 'rgba(95,130,70,.5)' : 'rgba(150,160,90,.45)'); } // dune grass
+  for (let x = 200; x < 320; x += 5) el(c, x + r() * 2, 117 + (x - 200) * 0.012 + r() * 2, 2.6, 1.6, i3(r()), OUT, 0.2); // rock seawall
+  c = pick(8);
+  // Pad 0A next door: the tall water tower, the ramp and four lightning masts
+  rr(c, 30, 95, 52, 4, 0.6, '#b8bcc4', OUT, 0.25); poly(c, [30, 99, 16, 99, 30, 95], '#a8acb4', OUT, 0.25);
+  line(c, 62, 95, 62, 14, '#d7dbe4', 2.6); line(c, 62, 95, 62, 14, 'rgba(0,0,0,.15)', 0.7); el(c, 62, 11, 8, 6.2, lg(c, 54, 0, 70, 0, [0, '#ffffff'], [1, '#aab2c0']), OUT, 0.3); rr(c, 59.2, 16, 5.6, 3.4, 0.4, '#c2c8d2', OUT, 0.25); // the 94 m water tower: the tallest thing on the island
+  for (const x of [34, 46, 74, 84]) { line(c, x, 95, x, 30, '#8b93a7', 0.5); line(c, x, 30, x, 34, '#d8452e', 0.7); }
+  rr(c, 40, 86, 10, 9, 0.5, '#d7dbe4', OUT, 0.3); text(c, '0A', 45, 90.6, 3.2, '#4a5066', 700);
+  // LC-2: concrete apron, flame duct, strongback lowered away, tanks, the integration building inland
+  rr(c, 118, 97.6, 84, 3.4, 0.8, lg(c, 0, 97.6, 0, 101, [0, '#d2d6dc'], [1, '#8b93a7']), OUT, 0.25);
+  rr(c, 146, 92, 20, 6, 0.6, lg(c, 0, 92, 0, 98, [0, '#8b93a7'], [1, '#4a5066']), OUT, 0.3); rr(c, 150, 95, 12, 3, 0.3, '#15171f'); // launch mount over the flame duct
+  rr(c, 140, 28, 2.4, 66, 0.3, '#5b6275', OUT, 0.25); rr(c, 146, 28, 2.4, 66, 0.3, '#5b6275', OUT, 0.25);
+  for (let y = 30; y < 92; y += 7) { line(c, 141, y, 147.5, y + 7, '#8b93a7', 0.45); line(c, 147.5, y, 141, y + 7, '#8b93a7', 0.45); }
+  for (const y of [42, 64]) rr(c, 148.4, y, 7, 1.2, 0.3, '#d8452e', OUT, 0.2);
+  for (const x of [124, 194]) { line(c, x, 40, x, 98, '#8b93a7', 0.6); line(c, x, 40, x, 44, '#d8452e', 0.8); }
+  rr(c, 172, 86, 11, 12, 4, lg(c, 172, 0, 183, 0, [0, '#f2f4f8'], [1, '#9aa3b5']), OUT, 0.3); rr(c, 185, 90, 8, 8, 3, lg(c, 185, 0, 193, 0, [0, '#f2f4f8'], [1, '#9aa3b5']), OUT, 0.3);
+  rr(c, 100, 90.6, 13, 7.4, 0.6, '#f4f2ea', OUT, 0.3); text(c, 'LC-2', 106.5, 94.4, 3.4, '#1d3a7a', 700);
+  line(c, 280, 99, 280, 84, '#f4f2ea', 0.5); rr(c, 280, 84, 8, 4.6, 0.2, '#f4f2ea', OUT, 0.2); for (let i = 0; i < 3; i++) rr(c, 280, 84.4 + i * 1.5, 8, 0.6, 0, '#c8102e'); rr(c, 280, 84, 3.4, 2.4, 0, '#1d3a7a'); // the Stars and Stripes
+  // piping plovers on the sand (they nest on Wallops Island); the wild ponies live next door on Assateague, not here
+  for (const x of [222, 229, 300]) { el(c, x, 110, 1.5, 1, '#d9cdb0', OUT, 0.2); el(c, x + 1.3, 109.2, 0.8, 0.7, '#f4f2ea', OUT, 0.2); line(c, x + 2, 109.3, x + 2.9, 109.5, '#f28c28', 0.3); line(c, x, 111, x, 112.2, '#f28c28', 0.25); }
+}
+
 // ---------------------------------------------------------------- map geography (lon, lat) outlines
 const NI = [172.7, -34.4, 173.0, -34.4, 173.5, -34.9, 174.1, -35.2, 174.5, -35.8, 174.8, -36.4, 174.9, -36.85, 175.3, -37.0, 175.5, -36.7, 175.35, -36.47, 175.75, -36.6, 175.95, -37.0, 175.95, -37.45, 176.3, -37.7, 177.0, -37.95, 177.6, -37.95, 178.0, -37.55, 178.55, -37.7, 178.35, -38.3, 178.0, -38.7, 177.95, -39.05, 177.98, -39.3, 177.82, -39.22, 177.4, -39.07, 176.9, -39.45, 177.1, -39.65, 176.7, -40.3, 176.2, -41.0, 175.3, -41.6, 174.75, -41.35, 175.0, -40.8, 175.25, -40.3, 175.0, -39.95, 174.3, -39.6, 173.8, -39.3, 174.1, -39.0, 174.6, -38.8, 174.75, -38.1, 174.75, -37.4, 174.55, -37.05, 174.3, -36.5, 173.9, -36.0, 173.4, -35.5, 173.1, -35.0];
 const SI = [172.7, -40.5, 173.05, -40.52, 173.0, -41.15, 173.8, -40.9, 174.3, -41.05, 174.3, -41.7, 173.7, -42.4, 172.8, -43.25, 173.1, -43.65, 172.9, -43.9, 172.3, -43.9, 171.3, -44.4, 171.0, -45.1, 170.75, -45.8, 169.8, -46.45, 168.9, -46.65, 168.35, -46.6, 167.7, -46.25, 166.5, -46.2, 166.6, -45.6, 167.4, -44.9, 168.0, -44.3, 168.8, -43.9, 170.2, -43.2, 171.2, -42.4, 171.6, -41.7, 172.1, -40.9];
@@ -814,32 +846,7 @@ export function makeArt(scene: Phaser.Scene) {
   const site = (key: string, island: boolean) => tex(scene, key, 320, 150, (c) => drawSite(c, island));
   site('site_mahia', false); site('site_island', true);
   // Wallops Island, Virginia: Launch Complex 2 on a flat barrier island, the Atlantic behind it, Pad 0A and its water tower next door
-  tex(scene, 'site_wallops', 320, 150, (c) => {
-    c.fillStyle = lg(c, 0, 80, 0, 150, [0, '#8cc0e6'], [0.1, '#2f74c0'], [1, '#143c78']); c.fillRect(0, 80, 320, 70);
-    const r = rng(57);
-    for (let i = 0; i < 110; i++) { const x = r() * 320, y = 84 + r() * 64; line(c, x, y, x + 3 + r() * 8, y, `rgba(215,235,255,${0.1 + r() * 0.25})`, 0.4); }
-    // the island: low dunes and a seawall of rock, never more than a few metres above the sea
-    c.beginPath(); c.moveTo(0, 100); c.quadraticCurveTo(40, 97, 90, 99); c.lineTo(246, 99); c.quadraticCurveTo(290, 100, 320, 104); c.lineTo(320, 118); c.quadraticCurveTo(160, 124, 0, 116); c.closePath(); c.fillStyle = lg(c, 0, 97, 0, 122, [0, '#d9cf9f'], [0.35, '#c6bb86'], [1, '#a59c6e']); c.fill();
-    for (let i = 0; i < 60; i++) { const x = r() * 320, y = 101 + r() * 14; el(c, x, y, 2 + r() * 4, 0.8 + r(), i % 3 ? 'rgba(95,130,70,.5)' : 'rgba(150,160,90,.45)'); } // dune grass
-    for (let x = 200; x < 320; x += 5) el(c, x + r() * 2, 117 + (x - 200) * 0.012 + r() * 2, 2.6, 1.6, i3(r()), OUT, 0.2); // rock seawall
-    // Pad 0A next door: the tall water tower, the ramp and four lightning masts
-    rr(c, 30, 95, 52, 4, 0.6, '#b8bcc4', OUT, 0.25); poly(c, [30, 99, 16, 99, 30, 95], '#a8acb4', OUT, 0.25);
-    line(c, 62, 95, 62, 14, '#d7dbe4', 2.6); line(c, 62, 95, 62, 14, 'rgba(0,0,0,.15)', 0.7); el(c, 62, 11, 8, 6.2, lg(c, 54, 0, 70, 0, [0, '#ffffff'], [1, '#aab2c0']), OUT, 0.3); rr(c, 59.2, 16, 5.6, 3.4, 0.4, '#c2c8d2', OUT, 0.25); // the 94 m water tower: the tallest thing on the island
-    for (const x of [34, 46, 74, 84]) { line(c, x, 95, x, 30, '#8b93a7', 0.5); line(c, x, 30, x, 34, '#d8452e', 0.7); }
-    rr(c, 40, 86, 10, 9, 0.5, '#d7dbe4', OUT, 0.3); text(c, '0A', 45, 90.6, 3.2, '#4a5066', 700);
-    // LC-2: concrete apron, flame duct, strongback lowered away, tanks, the integration building inland
-    rr(c, 118, 97.6, 84, 3.4, 0.8, lg(c, 0, 97.6, 0, 101, [0, '#d2d6dc'], [1, '#8b93a7']), OUT, 0.25);
-    rr(c, 146, 92, 20, 6, 0.6, lg(c, 0, 92, 0, 98, [0, '#8b93a7'], [1, '#4a5066']), OUT, 0.3); rr(c, 150, 95, 12, 3, 0.3, '#15171f'); // launch mount over the flame duct
-    rr(c, 140, 28, 2.4, 66, 0.3, '#5b6275', OUT, 0.25); rr(c, 146, 28, 2.4, 66, 0.3, '#5b6275', OUT, 0.25);
-    for (let y = 30; y < 92; y += 7) { line(c, 141, y, 147.5, y + 7, '#8b93a7', 0.45); line(c, 147.5, y, 141, y + 7, '#8b93a7', 0.45); }
-    for (const y of [42, 64]) rr(c, 148.4, y, 7, 1.2, 0.3, '#d8452e', OUT, 0.2);
-    for (const x of [124, 194]) { line(c, x, 40, x, 98, '#8b93a7', 0.6); line(c, x, 40, x, 44, '#d8452e', 0.8); }
-    rr(c, 172, 86, 11, 12, 4, lg(c, 172, 0, 183, 0, [0, '#f2f4f8'], [1, '#9aa3b5']), OUT, 0.3); rr(c, 185, 90, 8, 8, 3, lg(c, 185, 0, 193, 0, [0, '#f2f4f8'], [1, '#9aa3b5']), OUT, 0.3);
-    rr(c, 100, 90.6, 13, 7.4, 0.6, '#f4f2ea', OUT, 0.3); text(c, 'LC-2', 106.5, 94.4, 3.4, '#1d3a7a', 700);
-    line(c, 280, 99, 280, 84, '#f4f2ea', 0.5); rr(c, 280, 84, 8, 4.6, 0.2, '#f4f2ea', OUT, 0.2); for (let i = 0; i < 3; i++) rr(c, 280, 84.4 + i * 1.5, 8, 0.6, 0, '#c8102e'); rr(c, 280, 84, 3.4, 2.4, 0, '#1d3a7a'); // the Stars and Stripes
-    // piping plovers on the sand (they nest on Wallops Island); the wild ponies live next door on Assateague, not here
-    for (const x of [222, 229, 300]) { el(c, x, 110, 1.5, 1, '#d9cdb0', OUT, 0.2); el(c, x + 1.3, 109.2, 0.8, 0.7, '#f4f2ea', OUT, 0.2); line(c, x + 2, 109.3, x + 2.9, 109.5, '#f28c28', 0.3); line(c, x, 111, x, 112.2, '#f28c28', 0.25); }
-  });
+  tex(scene, 'site_wallops', 320, 150, (c) => drawWallops(c));
   // twilight for the first launch from Virginia: lift-off came about 45 minutes after sunset
   tex(scene, 'sky_dusk', 320, 180, (c) => { c.fillStyle = lg(c, 0, 0, 0, 180, [0, '#141a44'], [0.38, '#3b3f86'], [0.66, '#b0679a'], [0.86, '#f0946a'], [1, '#ffd08a']); c.fillRect(0, 0, 320, 180); starfield(c, 320, 70, 70, 23); c.fillStyle = rg(c, 60, 176, 4, 150, [0, 'rgba(255,220,150,.75)'], [1, 'rgba(255,200,140,0)']); c.fillRect(0, 0, 320, 180); for (const [x, y, w] of [[40, 120, 90], [150, 132, 120], [230, 110, 70]]) { c.fillStyle = 'rgba(70,40,90,.35)'; c.beginPath(); c.ellipse(x, y, w / 2, 2.2, 0, 0, 6.3); c.fill(); } });
 
