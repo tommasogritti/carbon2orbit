@@ -4,6 +4,7 @@ import { speedFactor, levelPoints } from '../leaderboard/src/rules.js';
 import type { LevelDef } from './content';
 import { D, S, UI, BUSTS } from './art';
 import { beep, snd, music, stopLoops, unlock, muted, setMuted, nextSoundtrack } from './audio';
+import { count } from './stats';
 
 /** `?clean=1` leaves Rocket Lab's mission patches and the optional local photos out, for footage without their artwork. */
 const CLEAN = new URLSearchParams(location.search).has('clean');
@@ -297,6 +298,7 @@ export function finish(scene: Phaser.Scene, def: LevelDef, r: { success: boolean
     return showCard(`<div class="kicker">${def.title.toUpperCase()} · NEXT ACT</div><h1>${r.title}</h1><p>${r.text}</p>${nxt.intro ? `<p class="fact">${nxt.intro}</p>` : ''}${nxt.how ? `<p class="how">How to play: ${nxt.how}</p>` : ''}`, [{ label: 'Continue', fn: go }]);
   }
   if (r.success && def._stars !== undefined) r = { ...r, stars: Math.min(def._stars, r.stars || 1), egg: r.egg || def._egg };
+  if (!DEV) count(r.success ? 'finish' : 'fail', def.id, r.success ? r.stars || 1 : 0);
   stopLoops(); music.stop(0.3); if (r.success) snd.win(); else snd.lose();
   // points for the level: stars × 100, scaled by the average game speed it was played at; the best run is kept
   const avg = runAverage(), factor = speedFactor(avg) as number, earned = r.success ? (levelPoints(r.stars || 1, avg) as number) : 0;

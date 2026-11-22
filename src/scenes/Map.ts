@@ -4,6 +4,7 @@ import { D, S, MAPW, MAPH, BUST_URL, BUSTS, DIAGRAMS } from '../art';
 import { LEVELS, BONUS, PEOPLE, CHARACTERS, LevelDef } from '../content';
 import { snd, music, stopLoops } from '../audio';
 import { tally, showBoard } from '../leaderboard';
+import { count } from '../stats';
 import { showCredits } from '../contributors';
 
 const ZOOM = 2.5; // the map is shown wider than gameplay scenes so the geography reads at a glance
@@ -38,7 +39,7 @@ export function openLevel(scene: Phaser.Scene, def: LevelDef) {
     const mate = CHARACTERS.find((c) => c.id === def.params?.buddy && c.id !== 'peter'); // a running mate from the story is introduced too
     const mateCast = mate ? `<div class="cast"><img class="toon" src="${BUSTS[mate.pre]}" alt="Cartoon of ${mate.name}"><div><b>Running mate: ${mate.name}.</b> ${mate.note || mate.role} ${mate.likeness}<br><span class="src">Drawn likeness; no photo is used.</span></div></div>` : '';
     const skip = { label: 'Skip (dev)', alt: true, fn: () => { save.done[def.id] = save.done[def.id] || 1; save.at = def.id; persist(); scene.scene.restart({ title: false }); } };
-    showCard(head + cast + mateCast + diagram + `<p class="how">How to play: ${def.how}</p>` + watchLink(def) + srcLinks(def.sources), [{ label: 'Start', fn: () => scene.scene.start(SCENE_FOR[def.mechanic!], { def }) }, back, ...(DEV ? [skip] : [])], cardPhoto(def));
+    showCard(head + cast + mateCast + diagram + `<p class="how">How to play: ${def.how}</p>` + watchLink(def) + srcLinks(def.sources), [{ label: 'Start', fn: () => { if (!DEV) count('start', def.id); scene.scene.start(SCENE_FOR[def.mechanic!], { def }); } }, back, ...(DEV ? [skip] : [])], cardPhoto(def));
   }
 }
 

@@ -18,11 +18,33 @@ function allowOrigin(origin, allowed) {
   return ok ? origin : list[0];
 }
 
+/**
+ * POST /events, sent by the game as a beacon: { season, level, event: start|finish|fail, stars }. Adds one to that
+ * day's total. Nothing that identifies a player is sent or stored. A browser beacon from a site that is not allowed is
+ * refused; the reply has no body, since beacons ignore it.
+ */
+const EVENTS = new Set(['start', 'finish', 'fail']);
+async function countEvent(request, env) {
+  const from = request.headers.get('origin');
+  const allowed = env.ALLOWED_ORIGIN || '*';
+  if (from && allowed.trim() !== '*' && allowOrigin(from, allowed) !== from) return new Response(null, { status: 403 });
+  const text = await request.text();
+  if (text.length > 300) return new Response(null, { status: 413 });
+  let b; try { b = JSON.parse(text); } catch { return new Response(null, { status: 400 }); }
+  const stars = Number.isInteger(b?.stars) ? b.stars : 0;
+  if (!SEASON_RE.test(b?.season || '') || !/^[a-z0-9-]{1,48}$/.test(b?.level || '') || !EVENTS.has(b?.event) || stars < 0 || stars > 3) return new Response(null, { status: 400 });
+  const day = new Date().toISOString().slice(0, 10);
+  await env.DB.prepare('INSERT INTO plays (day, season, level, event, stars, n) VALUES (?, ?, ?, ?, ?, 1) ON CONFLICT(day, season, level, event, stars) DO UPDATE SET n = n + 1')
+    .bind(day, b.season, b.level, b.event, b.event === 'finish' ? stars : 0).run();
+  return new Response(null, { status: 204 });
+}
+
 export default {
   async fetch(request, env) {
     const origin = allowOrigin(request.headers.get('origin'), env.ALLOWED_ORIGIN || '*');
     const url = new URL(request.url);
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(origin) }); // a 204 may not carry a body
+    if (url.pathname.replace(/\/$/, '') === '/events' && request.method === 'POST') return countEvent(request, env);
     if (url.pathname.replace(/\/$/, '') !== '/scores') return json({ error: 'not found' }, 404, origin);
 
     if (request.method === 'GET') {

@@ -9,3 +9,14 @@ CREATE TABLE IF NOT EXISTS scores (
   PRIMARY KEY (season, name)
 );
 CREATE INDEX IF NOT EXISTS scores_by_rank ON scores (season, score DESC, at ASC);
+
+-- Anonymous play counts: one row per day, season, level, event and stars, holding how many times it happened.
+CREATE TABLE IF NOT EXISTS plays (
+  day     TEXT    NOT NULL,   -- UTC date, YYYY-MM-DD
+  season  TEXT    NOT NULL,
+  level   TEXT    NOT NULL,   -- level id
+  event   TEXT    NOT NULL,   -- start, finish or fail
+  stars   INTEGER NOT NULL,   -- 1 to 3 for finish, 0 otherwise
+  n       INTEGER NOT NULL,
+  PRIMARY KEY (day, season, level, event, stars)
+);
