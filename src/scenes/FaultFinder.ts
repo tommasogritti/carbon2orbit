@@ -30,20 +30,45 @@ const TESTS: [string, number][] = [['VIBRATION', 2], ['THERMAL VACUUM', 4], ['TH
 export class FaultFinderScene extends Phaser.Scene {
   def!: LevelDef; g!: Phaser.GameObjects.Graphics; call!: Phaser.GameObjects.Text; dayT!: Phaser.GameObjects.Text; head!: Phaser.GameObjects.Text; labels: Phaser.GameObjects.Text[] = []; aux: Phaser.GameObjects.Text[] = [];
   order: number[] = []; on: number[] = []; marks: { c: number; t: number; ok: boolean }[] = []; ct = -20; cc = 0; days = 3; wrong = 0; phase: 1 | 2 | 3 = 1; ended = false; hum!: Loop;
-  bad = 0; test = 0; running = -1; prog = 0; ran: number[] = []; joint = 0; shown = false; botT = 0; hf?: HiFi;
+  bad = 0; test = 0; running = -1; prog = 0; ran: number[] = []; joint = 0; shown = false; botT = 0; hf?: HiFi; hints = [0, 0, 0]; hintRow = -1;
   constructor() { super('FaultFinder'); }
   /** The controls panel (H or the ? button): what the keys do right now, in this level and this phase. Shape agreed with core's showHelp. */
   help(): { title: string; rows: [keys: string, does: string][]; note?: string } {
-    if (this.phase === 1) return { title: 'Fault finder · the telemetry trace', rows: [['← →', 'Move the cursor through time.'], ['↑ ↓', 'Change channel.'], ['Space', 'Flag the point under the cursor as the first sign of trouble.']], note: 'A wrong flag costs two days.' };
+    if (this.phase === 1) return { title: 'Fault finder · the telemetry trace', rows: [['← →', 'Move the cursor through time.'], ['↑ ↓', 'Change channel.'], ['Space', 'Flag the point under the cursor as the first sign of trouble.']], note: 'A wrong flag costs two days. Stuck? I or the 💡 button gives a hint, for one day each.' };
     const rows: [string, string][] = [['↑ ↓', 'Choose a test.'], ['Space', 'Run the chosen test on the suspect harness. Every test costs days.']];
     if (this.shown) rows.push(['← →', 'Select a connection.'], ['Enter', 'Tag the selected connection as the root cause.']);
-    return { title: 'Fault finder · the bench', rows, note: this.shown ? undefined : 'Once a test makes one connection give itself away, ← → select it and Enter tags it.' };
+    return { title: 'Fault finder · the bench', rows, note: (this.shown ? '' : 'Once a test makes one connection give itself away, ← → select it and Enter tags it. ') + 'Stuck? I or the 💡 button gives a hint, for one day each.' };
+  }
+  /**
+   * The hint button (or I): the next hint for this phase, from a nudge to the answer. Each one costs the investigation a
+   * day, so hints still count against the 27 days that earn three stars.
+   */
+  hint(): { title: string; text: string; cost?: string } | undefined {
+    if (this.ended || this.phase === 3) return undefined;
+    const stage = this.phase === 1 ? 0 : this.shown ? 2 : 1, k = this.hints[stage]; // the trace, choosing a test, choosing a connection
+    const rootRow = this.order.indexOf(5), lead = Math.round(-this.on[5] / 10) * 10;
+    const steps = this.phase === 1 ? [
+      { title: 'Work backwards', text: 'Start at the red SHUTDOWN line and move left. Every channel that goes wrong was pushed by something that went wrong earlier. The first sign of trouble is the change furthest to the left, on whichever channel it is.' },
+      { title: 'Which kind of channel?', text: 'The engine, the pumps and the battery are all symptoms of the same thing. Look at the electrical channels: one of them starts changing long before the others, well over a minute before the shutdown.' },
+      { title: 'The channel', text: `It is <b>JOINT RESISTANCE</b>, row ${rootRow + 1} from the top: it is highlighted now. Find where its line first starts to wobble and climb, and flag that point with Space.` },
+      { title: 'The moment', text: `On JOINT RESISTANCE the first blip comes about <b>${lead} seconds before the shutdown</b> (the counter under the rows shows T −${lead} s). Flag within a few seconds of it.` },
+    ] : this.shown ? [
+      { title: 'Which connection?', text: 'Look at the six read-outs over the harness. One bar is red and flickers while the others stay low and green: select it with ← → and tag it with Enter.' },
+      { title: 'The connection', text: `It is <b>J${this.bad + 1}</b>. Select it with ← → and press Enter.` },
+    ] : [
+      { title: 'Which test?', text: 'The flight unit passed every standard acceptance test, so running those again tells you little. Think about what the telemetry showed: resistance climbing slowly, under a long load.' },
+      { title: 'The test', text: 'Run <b>SUSTAINED LOAD · LOG RESISTANCE</b>: choose it with ↑ ↓ and press Space. Then watch which connection gives itself away.' },
+    ];
+    if (k >= steps.length) return undefined;
+    this.hints[stage]++; this.days += 1;
+    if (this.phase === 1 && k >= 2) { this.hintRow = rootRow; this.cc = rootRow; }
+    return { ...steps[k], cost: `Hint ${k + 1} of ${steps.length}. Asking cost the investigation one day.` };
   }
   init(d: { def: LevelDef }) {
     this.def = d.def; this.labels = []; this.aux = []; this.marks = []; this.days = 3; this.wrong = 0; this.phase = 1; this.ended = false; this.cc = 0; this.ct = -20;
     this.order = Phaser.Utils.Array.Shuffle([0, 1, 2, 3, 4, 5]); // the rows come up in a different order every time
     this.on = CHANNELS.map((c) => (c.onset === undefined ? 0 : c.onset < -20 ? c.onset + Phaser.Math.Between(-8, 8) : c.onset));
-    this.bad = Phaser.Math.Between(0, 5); this.test = 0; this.running = -1; this.prog = 0; this.ran = []; this.joint = 0; this.shown = false; this.botT = 0;
+    this.bad = Phaser.Math.Between(0, 5); this.test = 0; this.running = -1; this.prog = 0; this.ran = []; this.joint = 0; this.shown = false; this.botT = 0; this.hints = [0, 0, 0]; this.hintRow = -1;
   }
   create() {
     cam(this); stopLoops(); music.play('space'); this.hum = loop('whine'); this.hum.set(0.12, 0.05);
@@ -91,6 +116,7 @@ export class FaultFinderScene extends Phaser.Scene {
       const ch = CHANNELS[ci], y = Y0 + r * RH, sel = r === this.cc;
       this.labels[r].setText(`${ch.name}\n${ch.unit}`).setColor(sel ? '#ffffff' : '#8fa3c8');
       g.fillStyle(sel ? 0x1c2a4a : 0x0b1020, sel ? 0.9 : 0.6).fillRect(X0, y, XW, RH - 2);
+      if (r === this.hintRow) g.lineStyle(0.6, 0xffe98a, 0.55 + 0.35 * Math.sin(this.time.now / 180)).strokeRect(X0 - 0.5, y - 0.5, XW + 1, RH - 1);
       g.lineStyle(0.6, sel ? 0x7fd0ff : 0x5f7fb0, 1).beginPath();
       for (let i = 0; i <= 250; i++) { const t = T0 + ((T1 - T0) * i) / 250, v = Phaser.Math.Clamp(ch.f(t, this.on[ci]), 0, 1), px = X0 + (XW * i) / 250, py = y + (RH - 3) * (1 - v) + 0.5; if (i) g.lineTo(px, py); else g.moveTo(px, py); }
       g.strokePath();

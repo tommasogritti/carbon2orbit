@@ -64,6 +64,7 @@ The first six, and `edit-bay`, are **reusable**: a second level can use them wit
 - **Time** comes from the `update(time, delta)` delta or scene timers, never from the wall clock: the controls panel pauses and resumes scenes at any moment, and the player can run a level at ×0.5 to ×4.
 - **Ending.** Call `finish(scene, def, { success, stars, title, text, egg?, secret? })` exactly once. It saves, shows the result card with "what really happened", and returns to the map.
 - **Controls panel.** Give the scene a `help()` method returning `{ title, rows: [keys, does][], note? }`, reflecting the level and the phase. Simple scenes can use an entry in `CONTROLS` in `core.ts` instead.
+- **Hints (optional).** A hard puzzle can give the scene a `hint()` method returning the next hint for where the player is, `{ title, text, cost? }`, or `undefined` when none is left; it may charge for each hint in the level's own currency (the flight 13 investigation charges a day). The 💡 button and `I` appear only in scenes that have one. Every level also gets the ⌂ button and `Esc`, which ask, then return to the map without saving the run.
 - **A bot.** When the page has `?auto=1`, the scene plays itself to a three-star finish. This is how a level is shown to be winnable; `&fast=6` runs it six times faster.
 - **Starting a scene.** Always pass data to `scene.start(key, data)`. Phaser reuses the previous data when none is given.
 
