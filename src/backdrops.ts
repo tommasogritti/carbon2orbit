@@ -290,8 +290,12 @@ export function listing(c: C2, scene: Phaser.Scene, part = 7) {
 
 
 // ------------------------------------------------------------------ Rosie the Robot, 2019: the Auckland production floor
-/** One wall, read left to right: the door, the old way by hand, the cure oven, the rocket line, fairings and the clean room, then Rosie's cell. */
-function factory(c: C2) {
+/**
+ * One wall, read left to right: the door, the old way by hand, the cure oven, the rocket line, fairings and the clean room, then Rosie's cell.
+ * `part`: 1 the hall itself, 4 the doorway and the morning outside it, 2 everything on the wall and the floor, 8 what glows (the oven, Rosie's clock).
+ */
+export function factory(real: C2, part = 15) {
+  const pick = parts(real, part); let c = pick(1);
   const W = 760, r = rng(91);
   c.fillStyle = lg(c, 0, 0, 0, 180, [0, '#e4eaf1'], [0.7, '#c9d2de'], [1, '#aeb8c6']); c.fillRect(0, 0, W, 180);
   for (let x = 0; x < W; x += 38) line(c, x, 18, x, 138, 'rgba(60,80,110,.08)', 0.6);
@@ -299,16 +303,18 @@ function factory(c: C2) {
   rr(c, 0, 16.4, W, 1.8, 0, '#b3bdcb'); rr(c, 0, 9, W, 2.6, 0.6, '#f2d14a', OUT, 0.25); // overhead crane rail, the length of the building
   for (let x = 24; x < W; x += 84) { rr(c, x, 21, 40, 2, 1, '#ffffff'); c.fillStyle = lg(c, 0, 23, 0, 120, [0, 'rgba(255,255,255,.28)'], [1, 'rgba(255,255,255,0)']); c.beginPath(); c.moveTo(x, 23); c.lineTo(x + 40, 23); c.lineTo(x + 66, 120); c.lineTo(x - 26, 120); c.closePath(); c.fill(); }
   rr(c, 0, 138, W, 6, 0, '#8f99a8'); rr(c, 0, 137.4, W, 0.8, 0, '#4d9be8');
+  c = pick(2);
   const sign = (x: number, y: number, w: number, a: string, bg = '#15171f', fg = '#fff', size = 4) => { rr(c, x, y, w, 9, 1, bg, OUT, 0.35); text(c, a, x + w / 2, y + 4.8, size, fg, 700); };
 
   // ---- A. the door, open to an Auckland morning, and the year so far on the wall
-  rr(c, 8, 40, 64, 98, 0.6, '#0b1024', '#5b6275', 1.4);
+  c = pick(4); rr(c, 8, 40, 64, 98, 0.6, '#0b1024');
   c.save(); c.beginPath(); c.rect(9, 41, 62, 96); c.clip();
   c.fillStyle = lg(c, 0, 41, 0, 137, [0, '#58a8e8'], [0.7, '#bfe3ff'], [1, '#e8f4ff']); c.fillRect(9, 41, 62, 96);
   c.save(); c.translate(20, 52); cloud(c, 34, 9, 3, '#d6e6f6'); c.restore();
   poly(c, [9, 118, 22, 104, 30, 100, 38, 104, 50, 116, 71, 120, 71, 137, 9, 137], '#5f9468'); // a volcanic cone: the isthmus is built on them
   poly(c, [9, 126, 71, 122, 71, 137, 9, 137], '#7fb07a'); for (let i = 0; i < 9; i++) rr(c, 11 + i * 6.6, 124 - (i % 3), 4.4, 5 + (i % 3), 0.2, i % 2 ? '#f4f2ea' : '#dbe9ff');
   rr(c, 9, 132, 62, 5, 0, '#5b6275'); c.restore();
+  c = pick(2); rr(c, 8, 40, 64, 98, 0.6, undefined, '#5b6275', 1.4);
   for (let y = 41; y < 52; y += 2.6) rr(c, 8, y, 64, 1.8, 0, '#c2c8d2'); // the roller door, mostly up
   sign(6, 26, 92, 'AUCKLAND · PRODUCTION COMPLEX', '#15171f', '#fff', 3.9);
   rr(c, 80, 44, 48, 62, 1, '#f4f6fa', '#8b93a7', 0.8); text(c, '2019', 104, 50, 5, '#c8102e', 700); line(c, 84, 54, 124, 54, '#8b93a7', 0.3);
@@ -328,7 +334,7 @@ function factory(c: C2) {
 
   // ---- C. the cure oven
   rr(c, 276, 50, 60, 88, 2, lg(c, 276, 0, 336, 0, [0, '#dfe5ee'], [1, '#9aa3b5']), OUT, 0.4); rr(c, 282, 58, 48, 76, 1.4, '#3a3f4f', OUT, 0.3);
-  el(c, 306, 92, 13, 13, rg(c, 306, 92, 2, 13, [0, '#ffd27a'], [0.7, '#f28c28'], [1, '#7a2408']), OUT, 0.4); el(c, 306, 92, 15, 15, undefined, '#8b93a7', 1.4);
+  c = pick(8); el(c, 306, 92, 13, 13, rg(c, 306, 92, 2, 13, [0, '#ffd27a'], [0.7, '#f28c28'], [1, '#7a2408']), OUT, 0.4); c = pick(2); el(c, 306, 92, 15, 15, undefined, '#8b93a7', 1.4);
   for (let i = 0; i < 8; i++) el(c, 306 + Math.cos(i * 0.785) * 15, 92 + Math.sin(i * 0.785) * 15, 0.9, 0.9, '#23262f'); rr(c, 326, 86, 3, 12, 0.6, '#f2d14a', OUT, 0.25);
   sign(282, 38, 48, 'CURE OVEN', '#c8102e');
 
@@ -350,7 +356,7 @@ function factory(c: C2) {
   for (let x = 654; x <= 756; x += 17) { rr(c, x, 96, 1.6, 42, 0.3, '#f2d14a', OUT, 0.2); } for (const y of [100, 112, 124]) line(c, 654, y, 757, y, 'rgba(242,209,74,.75)', 0.5);
   rr(c, 690, 18, 12, 30, 1, lg(c, 690, 0, 702, 0, [0, '#dfe5ee'], [1, '#9aa3b5']), OUT, 0.3); poly(c, [684, 54, 708, 54, 702, 48, 690, 48], '#b3bdcb', OUT, 0.3); // dust extraction
   rr(c, 656, 30, 30, 15, 1.2, '#c8102e', OUT, 0.4); text(c, 'ROSIE', 671, 37.8, 6.4, '#fff', 700);
-  rr(c, 712, 30, 42, 15, 1.2, '#07090f', '#8b93a7', 0.6); text(c, '12:00:00', 733, 36.4, 5.4, '#7cf08a', 700); text(c, 'HOURS PER ROCKET', 733, 42, 2.2, '#7cc56b', 700);
+  c = pick(8); rr(c, 712, 30, 42, 15, 1.2, '#07090f', '#8b93a7', 0.6); text(c, '12:00:00', 733, 36.4, 5.4, '#7cf08a', 700); text(c, 'HOURS PER ROCKET', 733, 42, 2.2, '#7cc56b', 700); c = pick(2);
   text(c, '140 m² · SIX AXES', 705, 64, 3, 'rgba(60,70,90,.7)', 700); text(c, 'MARK · CUT · DRILL · MILL · SAND', 705, 69, 2.6, 'rgba(60,70,90,.6)', 700);
   for (let i = 0; i < 30; i++) el(c, 650 + r() * 108, 139 + r() * 4, 0.5 + r() * 0.6, 0.3, 'rgba(20,20,26,.35)'); // a little black dust
 }
@@ -452,7 +458,7 @@ export function makeBackdrops(scene: Phaser.Scene) {
   tex(scene, 'bg_stennis_far', 520, 180, stennisFar);
   tex(scene, 'bg_stennis_mid', 760, 180, (c) => stennisMid(c, scene));
   tex(scene, 'bg_listing', 760, 180, (c) => listing(c, scene));
-  tex(scene, 'bg_factory', 760, 180, factory);
+  tex(scene, 'bg_factory', 760, 180, (c) => factory(c));
   tex(scene, 'bg_workshop', 760, 180, (c) => workshop(c));
   tex(scene, 'bg_mahia_far', 520, 180, (c) => mahiaFar(c));
   tex(scene, 'bg_mahia_mid', 760, 180, mahiaMid);
