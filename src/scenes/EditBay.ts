@@ -1,8 +1,10 @@
 import Phaser from 'phaser';
 import { W, T, held, just, finish, cam, img, panel } from '../core';
 import { snd, music, stopLoops } from '../audio';
-import { P, S, tex, lg, rg, rr, el, line, rng, OUT, type C2 } from '../art';
+import { P, S, tex, lg, rg, rr, el, line, rng, parts, OUT, type C2 } from '../art';
 import type { LevelDef } from '../content';
+import { hifi, HiFi } from '../hifi';
+import { LOOKS } from '../hifiLooks';
 
 const AUTO = new URLSearchParams(location.search).has('auto');
 
@@ -20,13 +22,13 @@ const AUTO = new URLSearchParams(location.search).has('auto');
 interface Chan { name: string; handle: string; chip: string; part: number; due: number; len?: number }
 interface Lane extends Chan { slot: number; clip: number; size: number; prog: number; state: 'empty' | 'up' | 'stall' | 'pause' | 'done' | 'live'; ok?: boolean; late?: boolean; stallDue?: boolean }
 interface Theme {
-  music: string; room: (c: C2) => void; plate: string; plateRole: string;
+  music: string; room: (c: C2) => void; /** The room's hi-fi look (hifiLooks.ts). */ hifi?: string; plate: string; plateRole: string;
   partsTitle: string; fullTitle: string; partsText: (ok: number, n: number, late: number, sloppy: number) => string; fullText: (ok: number, n: number, late: number) => string;
   note: string; stallNote: string;
 }
 const THEMES: Record<string, Theme> = {
   'q2-2024': {
-    music: 'factory', room: roomQ2, plate: 'THE EDIT DESK', plateRole: 'a game role: each creator posted his own videos',
+    music: 'factory', room: (c) => roomQ2(c), hifi: 'edit', plate: 'THE EDIT DESK', plateRole: 'a game role: each creator posted his own videos',
     partsTitle: 'Four parts, four channels', fullTitle: 'The full cuts are up',
     partsText: (ok, n, late, sloppy) => `${ok} of ${n} parts went live on the right channel${late ? `, ${late} of them late` : ', each one on time'}${sloppy ? `, and ${sloppy} cut${sloppy > 1 ? 's' : ''} landed off the break` : ''}.`,
     fullText: (ok, n, late) => `${ok} of ${n} full cuts went up${late ? `, ${late} after their time` : ' on time'}.`,
@@ -53,7 +55,7 @@ export class EditBayScene extends Phaser.Scene {
   turns: { t0: number; t1: number; who: string; q: boolean }[] = [];
   // full mode
   bin: number[] = []; binSel = 0; spliced: number[] = []; render = 0; ready = false;
-  hiccups: [number, number][] = []; botT = 0;
+  hiccups: [number, number][] = []; botT = 0; hf?: HiFi;
   g!: Phaser.GameObjects.Graphics; chips: Phaser.GameObjects.Image[] = []; laneT: Phaser.GameObjects.Text[] = []; laneS: Phaser.GameObjects.Text[] = []; laneChip: Phaser.GameObjects.Image[] = []; laneClip: Phaser.GameObjects.Image[] = [];
   topL!: Phaser.GameObjects.Text; topR!: Phaser.GameObjects.Text; curT!: Phaser.GameObjects.Text; edgeT: Phaser.GameObjects.Text[] = []; trayT!: Phaser.GameObjects.Text; trayChip!: Phaser.GameObjects.Image; msg!: Phaser.GameObjects.Text; clockT: Phaser.GameObjects.Text[] = []; binT: Phaser.GameObjects.Text[] = []; binChip: Phaser.GameObjects.Image[] = [];
   constructor() { super('EditBay'); }
@@ -92,27 +94,41 @@ export class EditBayScene extends Phaser.Scene {
     cam(this); stopLoops(); music.play(this.th.music, 1);
     const key = 'eb_room_' + this.p.theme;
     if (!this.textures.exists(key)) tex(this, key, W, 180, (c) => this.th.room(c));
-    img(this, 0, 0, key).setOrigin(0);
-    panel(this, 4, 3, W - 8, 14, 0.9);
+    const hf = (this.hf = hifi(this, LOOKS[this.th.hifi || ''])); // the room, the panels and everything drawn on them take the look; every word and every face stays on the HUD camera
+    const world: Record<string, Phaser.GameObjects.GameObject> = { room: img(this, 0, 0, hf ? hf.key(key) : key).setOrigin(0) };
+    world.top = panel(this, 4, 3, W - 8, 14, 0.9);
     this.topL = T(this, 8, 5.4, '', '#ffe98a', 6.6, '700'); this.topR = T(this, W - 8, 6.2, '', '#cfd6ea', 4.6, '700').setOrigin(1, 0);
-    panel(this, 4, 20, W - 8, 61, 0.88);
-    this.g = this.add.graphics().setDepth(2);
+    world.tape = panel(this, 4, 20, W - 8, 61, 0.88);
+    world.g = this.g = this.add.graphics().setDepth(2);
     for (let i = 0; i < 40; i++) this.chips.push(img(this, 0, 0, 'peter_chip').setScale(S * 0.26).setDepth(3).setVisible(false));
     this.curT = T(this, CX, 31, '', '#ffe98a', 4.8, '700').setOrigin(0.5, 0).setDepth(4);
     this.edgeT = [T(this, TX, 31, '', '#7483a6', 3.8, '700').setDepth(4), T(this, TX + TW, 31, '', '#7483a6', 3.8, '700').setOrigin(1, 0).setDepth(4)];
     if (this.mode === 'parts') { T(this, TX + 40, 31, 'RED: A CREATOR ASKS', '#ff8a70', 3.6, '700').setDepth(4); T(this, TX + TW - 40, 31, 'BLUE: A GUEST ANSWERS', '#7fb4ff', 3.6, '700').setOrigin(1, 0).setDepth(4); }
-    panel(this, LX, LY - 3, LW, LH * 4 + 4, 0.88);
+    world.lanes = panel(this, LX, LY - 3, LW, LH * 4 + 4, 0.88);
     this.lanes.forEach(() => { this.laneChip.push(img(this, 0, 0, 'peter_chip').setScale(S * 0.56).setDepth(3)); this.laneClip.push(img(this, 0, 0, 'peter_chip').setScale(S * 0.3).setDepth(3).setVisible(false)); this.laneT.push(T(this, 0, 0, '', '#ffffff', 5.4, '700').setDepth(3)); this.laneS.push(T(this, 0, 0, '', '#aab4d4', 4, '700').setDepth(3)); });
-    panel(this, RX, LY - 3, W - RX - 4, 34, 0.9);
+    world.tray = panel(this, RX, LY - 3, W - RX - 4, 34, 0.9);
     this.trayT = T(this, RX + 24, LY, '', '#ffffff', 4.4, '700').setDepth(3).setWordWrapWidth(W - RX - 30);
     this.trayChip = img(this, RX + 12, LY + 13, 'peter_chip').setScale(S * 0.6).setDepth(3).setVisible(false);
     this.msg = T(this, RX + 3, LY + 34, '', '#ffe98a', 4.4, '700').setDepth(5).setWordWrapWidth(W - RX - 8).setShadow(0, 1, '#000000', 2);
     if (!this.textures.exists('eb_clock')) tex(this, 'eb_clock', 22, 22, (c) => { el(c, 11, 11, 10.6, 10.6, '#0b0c12'); el(c, 11, 11, 9.6, 9.6, lg(c, 0, 1, 0, 21, [0, '#f4f1e8'], [1, '#d8d2c2']), OUT, 0.5); for (let k = 0; k < 12; k++) { const a = (k / 12) * Math.PI * 2; line(c, 11 + Math.sin(a) * 7.8, 11 - Math.cos(a) * 7.8, 11 + Math.sin(a) * (k % 3 ? 8.7 : 9.1), 11 - Math.cos(a) * (k % 3 ? 8.7 : 9.1), '#3a3c48', k % 3 ? 0.35 : 0.7); } });
-    (this.p.clock.zones as unknown[]).forEach((_z, i) => img(this, CLX + i * 34, CLY, 'eb_clock').setDepth(1));
+    (this.p.clock.zones as unknown[]).forEach((_z, i) => (world['clock' + i] = img(this, CLX + i * 34, CLY, hf ? hf.key('eb_clock') : 'eb_clock').setDepth(1)));
     (this.p.clock.zones as [string, string, number][]).forEach((_z, i) => this.clockT.push(T(this, CLX + i * 34, CLY + 11, '', '#cfd6ea', 3.4, '700').setOrigin(0.5, 0).setAlign('center').setDepth(3).setShadow(0, 1, '#000000', 2)));
     if (this.mode === 'full') (this.p.parts as unknown[]).forEach(() => { this.binChip.push(img(this, 0, 0, 'peter_chip').setScale(S * 0.42).setDepth(3)); this.binT.push(T(this, 0, 0, '', '#ffffff', 4.2, '700').setOrigin(0.5, 0).setDepth(3)); });
     this.plate();
     this.say(this.mode === 'parts' ? 'The recording is in. Cut it into its parts: ← → scrub, Space cuts at a break.' : 'The parts are live. Now the full cuts: ← → and Space splice the parts in order.');
+    if (hf) { const w = Object.values(world); hf.tag(world); this.tell(); hf.ready({ hud: this.children.list.filter((o) => !w.includes(o)), lateHud: true }); }
+  }
+  /**
+   * What the look animates from: the act (`mode` 1 is the full cuts), how loud the tape is under the cursor (`amp`) and who
+   * is talking there (`q`: 1 a creator, 2 a guest), how fast it is being scrubbed, the cuts made so far, how far the render
+   * has got, and for each channel slot its state (`s0`…: 1 uploading, 2 stalled, 3 paused, 4 scheduled, 5 live, 6 live and wrong or late) and progress (`p0`…).
+   */
+  tell() {
+    if (!this.hf) return;
+    const tn = this.mode === 'parts' ? this.turns.find((q) => this.cur >= q.t0 && this.cur <= q.t1) : undefined, t = this.cur;
+    const st: Record<string, number> = { mode: this.mode === 'full' ? 1 : 0, amp: tn ? Math.min(1, (t - tn.t0) / 0.6, (tn.t1 - t) / 0.6) * (0.3 + 0.7 * Math.abs(Math.sin(t * 2.7) * Math.cos(t * 0.71 + 1.3))) : 0, q: tn ? (tn.q ? 1 : 2) : 0, vel: Math.abs(this.vel), cuts: this.cutAt.filter((c) => c !== undefined).length + this.spliced.length, render: this.spliced.length === this.p.parts.length ? Math.min(1, this.render / (this.p.render || 1)) : 0, sel: this.sel };
+    for (const l of this.lanes) { st['s' + l.slot] = l.state === 'live' ? (l.ok && !l.late ? 5 : 6) : ['empty', 'up', 'stall', 'pause', 'done'].indexOf(l.state); st['p' + l.slot] = l.size ? l.prog / l.size : 0; }
+    this.hf.set(st);
   }
   /** Who the player is: a game role, not a real person. Fades after a few seconds, like every name plate. */
   plate() {
@@ -130,7 +146,7 @@ export class EditBayScene extends Phaser.Scene {
     this.min += (dt / this.rate) * (this.ffwd ? 8 : 1);
     if (this.mode === 'parts') this.parts(dt); else this.full(dt);
     this.lanesStep(dt);
-    this.draw();
+    this.draw(); this.tell();
   }
   // ------------------------------------------------------------ act one: cut and send
   parts(dt: number) {
@@ -342,15 +358,18 @@ export class EditBayScene extends Phaser.Scene {
  * Los Angeles (Pacific time, the times on YouTube's own pages), Amsterdam (where the parts went up at midnight:
  * the time zone the level was proposed in, not a place in the story) and Auckland (already Monday morning). Nothing here is a real person's room.
  */
-function roomQ2(c: C2) {
+export function roomQ2(real: C2, part = 7) { // `part`: 1 the wall, 2 what stands and hangs in the room, 4 what gives off light
+  const pick = parts(real, part); let c = pick(1);
   c.fillStyle = lg(c, 0, 0, 0, 180, [0, '#1a1630'], [0.6, '#120f22'], [1, '#0a0912']); c.fillRect(0, 0, 320, 180);
   // acoustic foam: a grid of wedges in deep red and charcoal
   for (let y = 0; y < 180; y += 10) for (let x = 0; x < 320; x += 10) { const col = (x / 10 + y / 10) % 2 ? '#2a1a2a' : '#1e1626'; rr(c, x + 0.4, y + 0.4, 9.2, 9.2, 1, col); for (let k = 0; k < 3; k++) line(c, x + 1.4, y + 2.4 + k * 2.6, x + 8.6, y + 2.4 + k * 2.6, (x / 10 + y / 10) % 2 ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.25)', 0.8); }
+  c = pick(4);
   // a ring light glowing behind the right-hand column
   c.fillStyle = rg(c, 262, 100, 4, 70, [0, 'rgba(255,240,220,.22)'], [1, 'rgba(255,240,220,0)']); c.fillRect(190, 30, 130, 150);
   c.beginPath(); c.arc(262, 100, 22, 0, Math.PI * 2); c.strokeStyle = 'rgba(255,248,236,.5)'; c.lineWidth = 2.4; c.stroke(); c.beginPath(); c.arc(262, 100, 22, 0, Math.PI * 2); c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = 0.8; c.stroke();
   // an LED strip along the top of the desk and the monitor bezels
   c.fillStyle = lg(c, 0, 0, 320, 0, [0, '#ff3d6e'], [0.5, '#8a5cff'], [1, '#3fd0ff']); c.fillRect(0, 81.6, 320, 0.6);
+  c = pick(2);
   rr(c, 1.6, 18.4, 316.8, 64.4, 2.4, undefined, '#05060a', 1.4); rr(c, 2.2, 80.2, 206, 99, 2.4, undefined, '#05060a', 1.2);
   // sticky notes on the bezel
   for (const [x, y, rot, col] of [[300, 15, 0.12, '#f2d14a'], [292, 16.6, -0.1, '#ff9ad1']] as [number, number, number, string][]) { c.save(); c.translate(x, y); c.rotate(rot); rr(c, -4, -3, 8, 6.4, 0.4, col, 'rgba(0,0,0,.3)', 0.25); for (let k = 0; k < 3; k++) line(c, -2.8, -1.4 + k * 1.6, 2.6, -1.4 + k * 1.6, 'rgba(60,40,30,.5)', 0.35); c.restore(); }
