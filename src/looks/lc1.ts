@@ -159,6 +159,24 @@ const SWARM: Day = {
   flare: 0.9, sunTint: 0xfff6e0, glint: 0xfffbea, glintBox: [5, -2],
 };
 
+// ---- 14 November 2026, 6:30 pm NZDT: "The Mountain God Rises", Electron's hundredth launch. The level's source gives
+// the hour (05:30 UTC in the list of Electron launches), and the level's own words are "the early evening light": late
+// spring, an hour and a half before sunset, the sun some sixteen degrees up. Gold on everything that faces it, and
+// shadows three times as long as what throws them. The fair weather is the game's choice.
+const HUNDRED: Day = {
+  key: 'hf_l1h', seed: 100, sun: [180, 90], disc: [7.2, '#fff4cc'],
+  sky: [[0, '#0b2874'], [0.3, '#2553a8'], [0.47, '#5a86c4'], [0.57, '#9aa9c6'], [0.625, '#e8bd90'], [0.656, '#ffcc88'], [0.74, '#e6b488'], [1, '#a98a8c']],
+  sunRGB: '255,204,130', glow: [130, 0.3, 44, 0.6], rays: 1.25, cirrus: [20, '255,220,180'],
+  sea: [[0, '#ffe2b0'], [0.05, '#a2b0be'], [0.2, '#3f76ac'], [0.6, '#1d4f8c'], [1, '#103468']], swell: ['255,236,204', 'rgba(10,28,76,.22)'],
+  glitter: (k) => `rgba(255,${244 - k * 40},${196 - k * 66},${0.95 - k * 0.5})`, bank: 'rgba(255,214,170,.5)',
+  haze: ['rgba(255,214,170,.3)', 'rgba(255,226,190,.62)'], mist: 'rgba(255,226,180,.4)', grassDark: 'rgba(18,60,36,.25)', grassLight: 'rgba(255,232,120,.24)',
+  slope: [[0, 'rgba(255,214,110,.28)'], [0.35, 'rgba(110,90,60,.07)'], [1, 'rgba(8,28,46,.4)']], cliff: [[0, 'rgba(44,34,56,.32)'], [0.5, 'rgba(255,196,120,.1)'], [1, 'rgba(255,208,140,.42)']],
+  shadow: [1.0, -0.26, 0.5, '#081e24'], thing: [[0, 'rgba(14,22,50,.4)'], [0.6, 'rgba(14,22,50,.1)'], [1, 'rgba(255,206,130,.42)']],
+  tone: { shade: '#b0a6c0', down: [[0, 'rgba(255,244,222,.85)'], [0.4, 'rgba(255,226,186,.25)'], [0.72, 'rgba(255,176,120,.4)'], [1, 'rgba(214,130,110,.62)']], across: [[0, 'rgba(60,64,130,.28)'], [0.6, 'rgba(255,214,160,0)'], [1, 'rgba(255,214,140,.5)']] },
+  grade: { threshold: 0.87, bloom: 0.48, exposure: 1.0, contrast: 1.12, saturation: 1.15, shadows: [0.9, 0.97, 1.15], highs: [1.08, 1.01, 0.91], vignette: 0.4, grain: 0.019, fringe: 0.005 },
+  flare: 0.95, sunTint: 0xffe2b0, glint: 0xffecc0, glintBox: [14, -2],
+};
+
 // ---- Launch Complex 1 after sunset: the same drawing in the dark, under the pad's floodlights (evening.ts). Where the
 // lamps stand is the game's choice; the hangar, the sheep and the fence are the plain drawing's own.
 const PAD: Pad = {
@@ -196,4 +214,5 @@ export const lc1Looks: Record<string, Look> = {
   'lc1-test': look(TEST), 'lc1-still': look(STILL), 'lc1-business': look(BUSINESS),
   'lc1-desert': evening(PAD, DESERT), 'lc1-moongod': look(MOONGOD),
   'lc1-swarm': look(SWARM),
+  'lc1-hundred': look(HUNDRED),
 };
