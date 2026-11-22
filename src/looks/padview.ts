@@ -106,7 +106,7 @@ export const WALLOPS: Pad = {
 
 function shared(scene: Phaser.Scene) {
   if (scene.textures.exists('hf_pv_dawn')) return;
-  texAt(scene, 'hf_pv_dawn', 320, SKH, 1, (c) => { c.fillStyle = lg(c, 0, 0, 0, SKH, [0, 'rgba(255,130,120,0)'], [0.45, 'rgba(255,120,110,.16)'], [0.78, 'rgba(255,150,90,.5)'], [0.95, 'rgba(255,196,110,.85)'], [1, 'rgba(255,210,130,.9)']); c.fillRect(0, 0, 320, SKH); });
+  texAt(scene, 'hf_pv_dawn', 320, SKH, 1, (c) => { c.fillStyle = lg(c, 0, 0, 0, SKH, [0, 'rgba(255,130,120,0)'], [0.4, 'rgba(250,120,120,.14)'], [0.74, 'rgba(255,140,90,.5)'], [0.93, 'rgba(255,186,100,.85)'], [1, 'rgba(255,214,140,.95)']); c.fillRect(0, 0, 320, SKH); });
   texAt(scene, 'hf_pv_dusk', 320, SKH, 1, (c) => { c.fillStyle = lg(c, 0, 0, 0, SKH - 4, [0, 'rgba(255,170,150,0)'], [0.5, 'rgba(255,170,150,.12)'], [0.8, 'rgba(255,150,160,.55)'], [0.9, 'rgba(232,130,160,.6)'], [0.96, 'rgba(110,104,160,.6)'], [1, 'rgba(70,84,140,.66)']); c.fillRect(0, 0, 320, SKH); }); // the pink band opposite a sunset, over the Earth's own shadow
   texAt(scene, 'hf_pv_glit', 70, 68, 2, (c) => { const r = rng(4); for (let i = 0; i < 260; i++) { const k = r(), y = 0.5 + k * k * 66, hw = 2 + y * 0.36, x = 35 + (r() - 0.5) * 2 * hw; line(c, x - 0.5 - r() * 2.2, y, x + 0.5 + r() * 2.2, y, `rgba(255,255,255,${0.95 - k * 0.5})`, 0.4); } });
   texAt(scene, 'hf_pv_moon', 16, 16, 8, (c) => { // a waning moon a little short of half, its lit side down and to the left, toward a sun still under the horizon
@@ -114,6 +114,7 @@ function shared(scene: Phaser.Scene) {
     const r = rng(3); c.globalCompositeOperation = 'source-atop'; for (let i = 0; i < 9; i++) el(c, -4.4 + r() * 4, -3.6 + r() * 7.2, 0.5 + r() * 1.1, 0.4 + r() * 0.9, 'rgba(150,140,130,.25)');
     c.globalCompositeOperation = 'destination-out'; el(c, 0, 0, 0.8, 5, '#000');
   });
+  texAt(scene, 'hf_pv_disc', 8, 8, 8, (c) => el(c, 4, 4, 2.6, 2.6, '#fffdf2'));
   texAt(scene, 'hf_pv_cloud1', 70, 24, 2, puffy(1)); texAt(scene, 'hf_pv_cloud2', 100, 30, 2, puffy(2)); texAt(scene, 'hf_pv_cloud3', 46, 16, 2, puffy(6));
 }
 /** Draws a pad's textures: `hf_pv_<id>_day` (the same size as the plain site texture, to swap for it), its two skies, and what its floodlights pick out. */
@@ -132,7 +133,7 @@ export function padTextures(scene: Phaser.Scene, p: Pad) {
   });
 }
 
-export interface View { p: Pad; ox: number; oy: number; night: Im; day: Im; dawn: Im; dusk: Im; sunGlow: Im; sun: Im; sunGlit: Im; moonGlow?: Im; moon?: Im; moonGlit?: Im; clouds: Im[]; twinkle: Im[]; site: Im; rocket: Im; flame: Em; flood: Im; beam: Im; wash: Im; pool: Im; skyGlow: Im; plume: Im; core: Im; smoke: Em; trail: Em; beacons: Im[]; b: number; y0: number; dark: boolean }
+export interface View { p: Pad; ox: number; oy: number; night: Im; twi: Im; day: Im; dawn: Im; dusk: Im; sunGlow: Im; sun: Im; disc: Im; sunGlit: Im; moonGlow?: Im; moon?: Im; moonGlit?: Im; clouds: Im[]; twinkle: Im[]; site: Im; rocket: Im; flame: Em; flood: Im; beam: Im; wash: Im; pool: Im; skyGlow: Im; plume: Im; core: Im; smoke: Em; trail: Em; beacons: Im[]; b: number; y0: number; dark: boolean }
 const mix = (a: number[], b: number[], k: number) => a.map((v, i) => v + (b[i] - v) * k), rgb = (c: number[]) => Phaser.Display.Color.GetColor(Math.min(255, c[0]), Math.min(255, c[1]), Math.min(255, c[2]));
 const sat = (v: number) => Phaser.Math.Clamp(v, 0, 1);
 
@@ -149,8 +150,9 @@ export function padView(hf: HiFi, p: Pad, o: { ox: number; oy: number; sky: stri
   // behind the site: the two skies, first light, the band opposite a sunset, the sun, the moon, cloud
   const night = back(sheetAt(k + '_night', 2, -UP)), twinkle = [0, 1, 2, 3, 4, 5].map(() => back(puff(20 + r() * 280, -UP + 6 + r() * 70, 0.1, 0.1, 0xffffff)));
   const moonGlow = p.moon && back(puff(0, 0, 1.5, 1.5, 0xffd9a0)), moon = p.moon && back(s.add.image(0, 0, 'hf_pv_moon').setScale(K / 8).setAlpha(0));
-  const day = back(sheetAt(k + '_sky', 2, -UP)).setAlpha(0), dusk = back(sheetAt('hf_pv_dusk', 1, -UP).setScale(K, K * (p.hz + UP) / (SKH - 4))).setAlpha(0), dawn = back(sheetAt('hf_pv_dawn', 1, -UP).setScale(K, K * (p.hz + UP) / SKH)).setBlendMode('ADD').setAlpha(0);
-  const sunGlow = back(puff(0, 0, 3.2, 2.2, 0xffb060)), sun = back(puff(0, 0, 0.5, 0.5, 0xfff6e0));
+  const twi = back(sheetAt(k + '_sky', 2, -UP)).setTint(0x2c3a7a).setAlpha(0); // twilight: the day's sky gone deep blue, which keeps the stars in until it is nearly dark
+  const day = back(sheetAt(k + '_sky', 2, -UP)).setAlpha(0), dusk = back(sheetAt('hf_pv_dusk', 1, -UP).setScale(K, K * (p.hz + UP) / (SKH - 4))).setAlpha(0), dawn = back(sheetAt('hf_pv_dawn', 1, -UP).setScale(K, K * (p.hz + UP) / SKH)).setAlpha(0);
+  const sunGlow = back(puff(0, 0, 3.2, 2.2, 0xffb060)), sun = back(puff(0, 0, 0.5, 0.5, 0xfff6e0)), disc = back(s.add.image(0, 0, 'hf_pv_disc').setScale(K / 8).setAlpha(0));
   const clouds = [[36, 60, 1, 0.5], [150, 66, 2, 0.42], [246, 54, 3, 0.55], [300, 70, 1, 0.34]].map(([x, y, n, k]) => back(s.add.image(X(x), Y(y), 'hf_pv_cloud' + n).setScale(K / 2 * k))); // fair-weather cumulus, far out over the sea
   // on the water and on the ground: glitter under the sun and the moon, the floodlights, the red lights on the masts
   const glit = (x: number, tint: number) => mid(s.add.image(X(x), Y(p.hz + 0.6), 'hf_pv_glit').setOrigin(0.5, 0).setScale(K / 2).setCrop(0, 0, 140, p.rise[2] * 2).setTint(tint).setBlendMode('ADD').setAlpha(0));
@@ -162,7 +164,7 @@ export function padView(hf: HiFi, p: Pad, o: { ox: number; oy: number; sky: stri
   const smoke = mid(s.add.particles(X(p.x), Y(99), 'puff', { x: { min: -2, max: 2 }, speedX: { min: -46, max: 46 }, speedY: { min: -9, max: 1 }, gravityY: -5, lifespan: { min: 1500, max: 3200 }, scale: { start: S * 0.2, end: S * 1.1 }, alpha: { start: 0.55, end: 0 }, frequency: 22, emitting: false }));
   const trail = mid(s.add.particles(0, 0, 'puff', { speedX: { min: -3, max: 3 }, speedY: { min: 2, max: 9 }, lifespan: { min: 900, max: 1700 }, scale: { start: S * 0.12, end: S * 0.6 }, alpha: { start: 0.3, end: 0 }, frequency: 26, emitting: false }));
   const rocket = hf.tags[o.rocket] as Im, plume = hf.above(puff(0, 0, 1.7, 2.3, 0xffa858), o.rocket), core = hf.above(puff(0, 0, 0.5, 0.9, 0xffffff), o.rocket);
-  return { p, ox: o.ox, oy: o.oy, night, day, dawn, dusk, sunGlow, sun, sunGlit, moonGlow, moon, moonGlit, clouds, twinkle, site: hf.tags[o.site] as Im, rocket, flame: hf.tags[o.flame] as Em, flood, beam, wash, pool, skyGlow, plume, core, smoke, trail, beacons, b: 0, y0: Y(100), dark: false };
+  return { p, ox: o.ox, oy: o.oy, night, twi, day, dawn, dusk, sunGlow, sun, disc, sunGlit, moonGlow, moon, moonGlit, clouds, twinkle, site: hf.tags[o.site] as Im, rocket, flame: hf.tags[o.flame] as Em, flood, beam, wash, pool, skyGlow, plume, core, smoke, trail, beacons, b: 0, y0: Y(100), dark: false };
 }
 
 /**
@@ -174,10 +176,11 @@ export function padStep(v: View, hf: HiFi, dt: number, light: number, hour: numb
   const sr = rise + 0.35, ss = set - 0.5, e = (hour - sr) / 1.5; // sunrise and sunset by the scene's daylight, and how far up the sun has come
   const dawn = sat(Math.min((hour - (sr - 0.7)) / 0.8, (sr + 1.7 - hour) / 1.5)), gold = hour < ss ? sat((hour - (ss - 2.6)) / 2.6) : sat(1 - (hour - ss) / 0.9), warm = Math.max(dawn, gold ** 1.5);
   // the sky
-  v.day.setAlpha(light); v.dawn.setAlpha(dawn * 0.9); v.dusk.setAlpha(gold * gold * 0.85 * (0.35 + 0.65 * light));
+  v.twi.setAlpha(sat(light * 3)); v.day.setAlpha(light * (1 - 0.4 * dawn)); v.dawn.setAlpha(dawn * 0.85); v.dusk.setAlpha(gold * gold * 0.85 * (0.35 + 0.65 * light));
   v.twinkle.forEach((q, i) => q.setAlpha(n * (0.5 + 0.5 * Math.sin(t * (2 + i * 0.7) + i * 2))));
   const up = e > -0.2 && e < 1.3, sx = p.rise[0] + p.rise[1] * e * 34, sy = p.hz + 3 - e * 80, sa = up ? sat((e + 0.2) * 4) * sat((1.3 - e) * 4) : 0;
-  v.sun.setPosition(X(sx), Y(sy)).setAlpha(sa).setTint(rgb(mix([255, 150, 70], [255, 250, 232], sat(e * 1.6)))).setScale(S * (0.62 - 0.14 * sat(e)));
+  v.sun.setPosition(X(sx), Y(sy)).setAlpha(sa).setTint(rgb(mix([255, 150, 70], [255, 250, 232], sat(e * 1.6)))).setScale(S * (0.9 - 0.2 * sat(e)));
+  v.disc.setPosition(X(sx), Y(sy)).setAlpha(sa).setTint(rgb(mix([255, 190, 110], [255, 255, 250], sat(e * 1.6))));
   v.sunGlow.setPosition(X(sx), Y(Math.min(sy, p.hz))).setAlpha(sa * (0.7 - 0.4 * sat(e * 2))).setTint(rgb(mix([255, 120, 60], [255, 214, 150], sat(e * 1.4))));
   v.sunGlit.setX(X(sx)).setAlpha(sat(e * 4) * sat((1.2 - e) * 2) * 0.9);
   if (p.moon && v.moon && v.moonGlow && v.moonGlit) {

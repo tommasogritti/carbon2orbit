@@ -14,6 +14,7 @@ import { reviewLook } from './looks/review';
 import { mapLook } from './looks/map';
 import { titleLook } from './looks/title';
 import { twopadsLook } from './looks/twopads';
+import { hazeLook } from './looks/haze';
 import type { HiFi, Look } from './hifi';
 
 // The looks a level's theme can name (see hifi.ts). A look is the art and the numbers; the engine is shared.
@@ -246,4 +247,5 @@ const sat0 = (hf: HiFi) => HX * (1 - (WALL - 320) / (hf.world.LW - 320));
 
 export const LOOKS: Record<string, Look> = { listing: listingLook, workshop: workshopLook, mercury: mercuryLook, stand: standLook, farm: farmLook, mahia: mahiaLook, ...lc1Looks, factory: factoryLook, review: reviewLook, map: mapLook, title: titleLook,
   twopads: twopadsLook,
+  haze: hazeLook,
 };
