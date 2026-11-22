@@ -12,6 +12,7 @@ import { lc1Looks } from './looks/lc1';
 import { factoryLook } from './looks/factory';
 import { reviewLook } from './looks/review';
 import { mapLook } from './looks/map';
+import { titleLook } from './looks/title';
 import type { HiFi, Look } from './hifi';
 
 // The looks a level's theme can name (see hifi.ts). A look is the art and the numbers; the engine is shared.
@@ -242,4 +243,4 @@ const listingLook: Look = {
 let sat: Phaser.GameObjects.Image | undefined;
 const sat0 = (hf: HiFi) => HX * (1 - (WALL - 320) / (hf.world.LW - 320));
 
-export const LOOKS: Record<string, Look> = { listing: listingLook, workshop: workshopLook, mercury: mercuryLook, stand: standLook, farm: farmLook, mahia: mahiaLook, ...lc1Looks, factory: factoryLook, review: reviewLook, map: mapLook };
+export const LOOKS: Record<string, Look> = { listing: listingLook, workshop: workshopLook, mercury: mercuryLook, stand: standLook, farm: farmLook, mahia: mahiaLook, ...lc1Looks, factory: factoryLook, review: reviewLook, map: mapLook, title: titleLook };

@@ -5,20 +5,23 @@ import { music, stopLoops, snd } from '../audio';
 import { VERSION, SEASON } from '../version';
 import { tally, showBoard } from '../leaderboard';
 import { showCredits } from '../contributors';
+import { hifi, HiFi } from '../hifi';
+import { LOOKS } from '../hifiLooks';
 
 /** The title screen: the whole canvas, an Electron climbing past the Earth's limb, and the way in. */
 export class TitleScene extends Phaser.Scene {
-  rocket!: Phaser.GameObjects.Container; flame!: Phaser.GameObjects.Particles.ParticleEmitter; smoke!: Phaser.GameObjects.Particles.ParticleEmitter; t = 0; leaving = false;
+  rocket!: Phaser.GameObjects.Container; flame!: Phaser.GameObjects.Particles.ParticleEmitter; smoke!: Phaser.GameObjects.Particles.ParticleEmitter; t = 0; leaving = false; hf?: HiFi;
   constructor() { super('Title'); }
   create() {
     cam(this); this.t = 0; this.leaving = false;
     stopLoops(); music.play('map');
-    img(this, 0, 0, 'sky_night').setOrigin(0);
-    const stars = img(this, 0, 0, 'stars').setOrigin(0);
+    const hf = (this.hf = hifi(this, LOOKS.title)), K = (k: string) => (hf ? hf.key(k) : k); // the hi-fi look (looks/title.ts) redraws space and lights the rocket
+    const sky = img(this, 0, 0, K('sky_night')).setOrigin(0);
+    const stars = img(this, 0, 0, K('stars')).setOrigin(0);
     this.tweens.add({ targets: stars, alpha: 0.72, duration: 2600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     // a soft glow behind the name, and the Earth's limb along the bottom
     img(this, W / 2 + 6, 62, 'puff').setScale(S * 22, S * 9).setTint(0x3f7fd0).setAlpha(0.3).setBlendMode('ADD');
-    const earth = img(this, W / 2, 118, 'earthlimb').setOrigin(0.5, 0);
+    const earth = img(this, W / 2, 118, K('earthlimb')).setOrigin(0.5, 0);
     this.tweens.add({ targets: earth, x: W / 2 - 14, duration: 30000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     // the Humanity Star, flashing across the top
     const hs = img(this, -12, 26, 'puff').setScale(S * 0.5).setBlendMode('ADD');
@@ -28,8 +31,10 @@ export class TitleScene extends Phaser.Scene {
     this.smoke = this.add.particles(0, 0, 'puff', { speed: { min: 6, max: 20 }, angle: { min: 96, max: 132 }, lifespan: { min: 2200, max: 3800 }, scale: { start: S * 0.7, end: S * 4.2 }, alpha: { start: 0.34, end: 0 }, tint: 0xb8c6e6, frequency: 26 });
     this.flame = this.add.particles(0, 0, 'puff', { speed: { min: 60, max: 120 }, angle: { min: 108, max: 120 }, lifespan: { min: 260, max: 520 }, scale: { start: S * 0.85, end: S * 0.15 }, color: [0xffffff, 0xfff0b0, 0xffb347, 0xff5a1f, 0x7a2408], alpha: { start: 1, end: 0 }, blendMode: 'ADD', frequency: 8, quantity: 2 });
     const rim = img(this, 0, -40, 'puff').setScale(S * 2.6, S * 6).setTint(0x7fb4ff).setAlpha(0.32).setBlendMode('ADD');
-    this.rocket = this.add.container(0, 0, [rim, img(this, 0, 0, 'electron_full').setOrigin(0.5, 1)]).setRotation(24 * Math.PI / 180);
+    const body = img(this, 0, 0, 'electron_full').setOrigin(0.5, 1);
+    this.rocket = this.add.container(0, 0, [rim, body]).setRotation(24 * Math.PI / 180);
     this.fly();
+    const worldN = this.children.length; // everything from here on is words and marks: in hi-fi it goes to the HUD camera
     // the name
     T(this, W / 2, 30, 'AN UNOFFICIAL ROCKET LAB FAN GAME', '#ffe98a', 6, '700').setOrigin(0.5).setLetterSpacing(1.6).setShadow(0, 1, '#000000', 4);
     const name = T(this, W / 2, 55, 'CARBON TO ORBIT', '#ffffff', 31, '700').setOrigin(0.5).setLetterSpacing(1).setShadow(0, 2, '#020409', 10);
@@ -56,6 +61,7 @@ export class TitleScene extends Phaser.Scene {
     hotkeys.KeyC = () => showCredits(this.game);
     this.events.once('shutdown', () => { hotkeys.KeyL = undefined; hotkeys.KeyC = undefined; });
     this.input.on('pointerdown', () => this.start());
+    if (hf) { hf.shade(body, 4, 2); hf.tag({ sky, stars, earth, star: hs, smoke: this.smoke, flame: this.flame, rocket: this.rocket }); hf.set({ x: this.rocket.x, y: this.rocket.y, on: 0 }); hf.ready({ hud: this.children.list.slice(worldN) }); }
   }
   /** One climb, bottom-left to top-right, then again after a pause. */
   fly() {
@@ -66,12 +72,12 @@ export class TitleScene extends Phaser.Scene {
   start() {
     if (this.leaving || overlayOpen()) return;
     this.leaving = true; snd.select();
-    this.cameras.main.fadeOut(350, 5, 6, 12);
+    for (const c of this.cameras.cameras) c.fadeOut(350, 5, 6, 12); // the HUD camera too, when the hi-fi layer has made one
     this.time.delayedCall(360, () => this.scene.start('Map', { title: tally().levels === 0 }));
   }
   update() {
     const r = this.rocket, on = r.y > -20 && r.y < H + 70;
-    this.flame.setPosition(r.x, r.y); this.smoke.setPosition(r.x, r.y); this.flame.emitting = on; this.smoke.emitting = on;
+    this.flame.setPosition(r.x, r.y); this.smoke.setPosition(r.x, r.y); this.flame.emitting = on; this.smoke.emitting = on; this.hf?.set({ x: r.x, y: r.y, on: on ? 1 : 0 });
     if (just('a') || just('b')) this.start();
   }
 }
