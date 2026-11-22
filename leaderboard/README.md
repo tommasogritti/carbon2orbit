@@ -49,3 +49,17 @@ npx wrangler dev
 | --- | --- |
 | `GET /scores?season=0.2&limit=20` | `{ season, scores: [{ name, score, stars, levels, at }] }`, best first |
 | `POST /scores` with `{ season, version, name, score, points, stars, levels, eggs, secrets, people }` | `{ ok, rank, best }`, or `{ error }` with status 400 |
+| `POST /events` with `{ season, level, event, stars }` (`event` is `start`, `finish` or `fail`), sent by the game as a beacon | empty 204; adds one to that day's row in `plays` |
+
+## Play counts
+
+The game counts, without identifying anyone, how often each level is started, finished (with how many stars) and failed (`src/stats.ts`; nothing is sent in developer mode, during bot runs, or when the browser sends Do Not Track or Global Privacy Control). There is no public endpoint for reading them: open the database's console in the Cloudflare dashboard (D1 → carbon2orbit-leaderboard → Console) and run, for example:
+
+```sql
+-- starts, finishes and fails per level this season
+SELECT level, SUM(CASE WHEN event='start' THEN n END) AS starts, SUM(CASE WHEN event='finish' THEN n END) AS finishes, SUM(CASE WHEN event='fail' THEN n END) AS fails FROM plays WHERE season = '0.5' GROUP BY level ORDER BY starts DESC;
+-- levels started per day
+SELECT day, SUM(n) AS starts FROM plays WHERE event = 'start' GROUP BY day ORDER BY day DESC;
+```
+
+Counts are per event, not per person: one player retrying a level five times is five starts.

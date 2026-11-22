@@ -34,6 +34,7 @@ index.html ─ src/main.ts ─ Boot ─┬─ Title ── Map ──(Enter on a
 | `src/soundtracks.ts` | The three alternative soundtracks (`T` in the game): for each, a tune for every song name plus the instruments that play it. `audio.ts` holds the default score and the switch. |
 | `src/leaderboard.ts`, `src/version.ts` | Score, the leaderboard card, the game version and season. |
 | `src/contributors.ts` | The list of contributors, the repository link and the credits card (`C`, or Credits in the footer). |
+| `src/stats.ts` | Anonymous play counts: a beacon to the leaderboard Worker's `POST /events` when a level starts (Map's Start button) and ends (`finish()`). |
 | `leaderboard/` | The optional Cloudflare Worker and the scoring rules it shares with the game. |
 | `public/assets/photos/` | Freely licensed photos for story cards, with `CREDITS.md`. |
 | `docs/PROJECT_SPEC.md` | The brief: requirements, the level table (§9), each mechanic's params (§10), the fan-review log (§12.1). |

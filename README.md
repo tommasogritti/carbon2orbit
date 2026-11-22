@@ -127,6 +127,10 @@ Each level about a Rocket Lab mission shows that mission's official patch on its
 
 Official photos are not in the repository. For your own play, save one as `src/assets/official/<level id>.jpg` (git-ignored) and it shows on that level's cards. Rocket Lab's Flickr asks for credit and marks its photos all rights reserved.
 
+## Privacy
+
+The game sets no cookies and asks for nothing. The public site counts visits with Cloudflare Web Analytics, which is cookie-free and does not track individuals. The game also sends an anonymous count when a level starts and ends (the season, the level, finished or not, and the stars), which the leaderboard Worker adds to a daily total; nothing identifies a player. Nothing is sent when your browser asks sites not to track it (Do Not Track or Global Privacy Control), in developer mode, or from a copy without a leaderboard. The code is [src/stats.ts](src/stats.ts).
+
 ## Licence and credits
 
 - **Code:** MIT, see [LICENSE](LICENSE).

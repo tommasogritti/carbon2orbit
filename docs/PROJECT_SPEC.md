@@ -164,7 +164,7 @@ Must = needed for the first public release. Should = after that. A requirement m
 - **H1 (Must)** The build output is static and can be served by any static host.
 - **H2 (Should)** Merging to `main` builds and deploys automatically; a failed build never deploys *(not built)*.
 - **H3 (Should)** The optional leaderboard costs nothing at this scale and the game works without it (`leaderboard/README.md`).
-- **H4 (Should)** Optional cookie-free analytics, switched off by default *(not built)*.
+- **H4 (Should)** Cookie-free analytics *(built 22 Nov 2026)*: the public site uses Cloudflare Web Analytics, and the game sends anonymous per-level counts (start, finish with stars, fail) to the leaderboard Worker, which keeps daily totals in D1 (`src/stats.ts`, `leaderboard/README.md`). Nothing identifies a player; nothing is sent in developer mode, during bot runs, from a copy without a leaderboard, or when the browser sends Do Not Track or Global Privacy Control.
 
 ### Art and assets
 - **A1 (Must)** 320×180-unit world rendered at 1280×720 (`D = 4` texture pixels per unit), anti-aliased, scaled to fit. Sprites are authored at 4× their size in units (a 20×31-unit character is an 80×124 px image) and shown at scale 1/D. Text uses Chakra Petch, which has the macrons needed for te reo Māori (Ātea, Māhia). Flat fills come from the shared palette; gradients and shading may blend between palette colours.
@@ -624,4 +624,4 @@ Kept from the original brief. Each is independent; none is needed to add levels 
 - **A weekly news digest.** A scheduled job that reads Rocket Lab's press releases and filings, and opens one issue listing what is new, to be triaged into story cards, status changes and level ideas.
 - **Translation.** UI and story strings moved out of the code so the game can be translated.
 - **A phone pass.** Check that every level can be finished on a touch screen.
-- **Analytics.** Optional and cookie-free, off by default.
+- **Analytics.** Cookie-free and anonymous (§H4): Cloudflare Web Analytics for visits, and daily per-level counts in the leaderboard database.
