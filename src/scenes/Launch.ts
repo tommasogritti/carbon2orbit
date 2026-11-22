@@ -30,6 +30,8 @@ interface PlanStep { do: 'circ' | 'raise' | 'lower' | 'deploy'; alt?: number; na
 const STEP_LABEL = (st: PlanStep) => st.do === 'circ' ? `CIRCULARISE AT ${fmt(st.alt!)} km` : st.do === 'raise' ? `RAISE APOGEE TO ${fmt(st.alt!)} km` : st.do === 'lower' ? `DE-ORBIT BURN · PERIGEE ${fmt(st.alt!)} km` : `DEPLOY ${st.name!.toUpperCase()}`;
 /** Launch sites with a hi-fi look (hifiLooks.ts): the day sky, the site, the clouds and space are redrawn, and the consoles move to the HUD camera. */
 const SITE_LOOK: Record<string, string> = { island: 'mercury' };
+/** A flight with its own light at a shared site: Launch Complex 1 on the day and at the hour each mission flew (looks/lc1.ts). */
+const LEVEL_LOOK: Record<string, string> = { 'its-a-test': 'lc1-test' };
 const TIMELINE: [string, string, number][] = [['maxq', 'MAX-Q', -1], ['meco', 'MECO', 1], ['fairing', 'FAIRING', -1], ['swap', 'HOT-SWAP', 1], ['seco', 'SECO', -1]];
 
 /**
@@ -75,7 +77,7 @@ export class LaunchScene extends Phaser.Scene {
     stopLoops(); music.play('launch', 0);
     this.rumble = loop('rumble'); this.sea = loop('sea'); this.sea.set(0.8);
     const night = !!this.p.night, dusk = !!this.p.dusk, two = !this.ung;
-    const hf = (this.hf = night || dusk ? undefined : hifi(this, LOOKS[SITE_LOOK[this.p.site] || ''])), K = (k: string) => (hf ? hf.key(k) : k); // a look redraws these by name
+    const hf = (this.hf = night || dusk ? undefined : hifi(this, LOOKS[LEVEL_LOOK[this.def.id] || SITE_LOOK[this.p.site] || ''])), K = (k: string) => (hf ? hf.key(k) : k); // a look redraws these by name
     const sky = img(this, 0, 0, K(night ? 'sky_night' : dusk ? 'sky_dusk' : 'sky_day')).setOrigin(0);
     this.dark = this.add.rectangle(0, 0, W, H, 0x04050c, 0).setOrigin(0);
     this.stars = img(this, 0, 0, K('stars')).setOrigin(0).setAlpha(0);
