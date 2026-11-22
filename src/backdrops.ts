@@ -382,6 +382,102 @@ export function factory(real: C2, part = 15) {
   for (let i = 0; i < 30; i++) el(c, 650 + r() * 108, 139 + r() * 4, 0.5 + r() * 0.6, 0.3, 'rgba(20,20,26,.35)'); // a little black dust
 }
 
+// ------------------------------------------------------------------ No Time Toulouse, 21 June 2024: Rocket Lab's mission control, Auckland, before dawn
+/** Where the walk's places sit on the 760-unit strip, for the hi-fi look. */
+export const MC = { moon: [44, 84, 8.6], street: 236, portal: [252, 318], model: 350, oculus: 436, gallery: [486, 620], glass: [626, 760] } as const;
+export const MC_MOTTO = 'WE GO TO SPACE TO IMPROVE LIFE ON EARTH'; // glowing in the dark of the entry portal (ArchitectureNow, 2019); which surface it is on is the game's choice
+/**
+ * One strip, read left to right: a Mount Wellington street more than an hour before a winter sunrise, with the Moon all but
+ * full low in the south-west and Maungarei behind; the white entry portal with the motto glowing in its walls; the scale
+ * model Electron in reception, its top through the ceiling; the Oculus, with a rocket nozzle hung in it; the sunken
+ * viewing gallery in the dark, lit by red strip lights on its risers and by big screens; and, beyond it, mission control (the
+ * glass between them, the street's cars and the gate are the game's own).
+ * `part`: 1 the sky and its stars, 16 the Moon, 32 the skyline (the cone, the houses), 2 the street and the building's shell,
+ * 4 the things, 8 what gives off light (lamps, windows, the motto, the strips, the screens).
+ */
+export function control(real: C2, part = 63) {
+  const pick = parts(real, part); let c = pick(1);
+  const W = 760, r = rng(50), [px0, px1] = MC.portal, [g0, g1] = MC.gallery, [w0] = MC.glass;
+  // ---- A. the sky over the street: night still, the first grey in the east behind the building
+  c.fillStyle = lg(c, 0, 0, 0, 140, [0, '#04061a'], [0.55, '#0b1634'], [0.85, '#1b2c56'], [1, '#2f3f68']); c.fillRect(0, 0, MC.street + 4, 144);
+  const rs = rng(61); for (let i = 0; i < 150; i++) { const x = rs() * MC.street, y = rs() * 100, s = rs(); c.globalAlpha = (0.3 + rs() * 0.7) * (1 - y / 130); el(c, x, y, s > 0.94 ? 0.5 : 0.15 + s * 0.2, s > 0.94 ? 0.5 : 0.15 + s * 0.2, s > 0.9 ? '#ffe2b8' : '#ffffff'); } c.globalAlpha = 1;
+  c = pick(16); const [mx, my, mr] = MC.moon; // the Moon, 99.5% lit, half an hour from setting
+  c.fillStyle = rg(c, mx, my, mr, mr * 4, [0, 'rgba(220,228,255,.28)'], [1, 'rgba(220,228,255,0)']); c.fillRect(mx - mr * 4, my - mr * 4, mr * 8, mr * 8);
+  el(c, mx, my, mr, mr, rg(c, mx - 2, my - 2, 1, mr, [0, '#fbfbf4'], [0.8, '#e4e2d6'], [1, '#c9c6b8'])); for (const [dx, dy, q] of [[-2.6, -1.4, 2.2], [1.8, 2, 1.6], [3, -2.6, 1.1], [-0.6, 3.6, 1.2]]) el(c, mx + dx, my + dy, q, q * 0.8, 'rgba(150,150,140,.32)');
+  el(c, mx + 0.6, my, mr, mr, undefined, 'rgba(0,0,0,.08)', 0.6);
+  // ---- the skyline: Maungarei (Mount Wellington), the cone the suburb is named for, and the houses under it
+  c = pick(32);
+  poly(c, [60, 128, 92, 112, 118, 98, 138, 90, 156, 89, 172, 95, 196, 108, 226, 124, 236, 128], lg(c, 0, 88, 0, 128, [0, '#141c30'], [1, '#0c1222']));
+  line(c, 118, 98, 138, 90, 'rgba(150,170,220,.3)', 0.5); line(c, 138, 90, 156, 89, 'rgba(150,170,220,.25)', 0.5);
+  for (let x = 0; x < MC.street; x += 7 + r() * 5) { const h = 6 + r() * 7, y = 128 - h; poly(c, [x, 128, x, y, x + 3.5, y - 3, x + 7, y, x + 7, 128], '#0e1424'); }
+  for (let i = 0; i < 9; i++) { const x = 8 + r() * 220, y = 121 + r() * 4; rr(c, x, y, 1.6, 1.2, 0.2, i % 3 ? '#ffcf7a' : '#bfe0ff'); } // a few kitchens already lit
+  // ---- the street: footpath, kerb, road, a low wall to the car park
+  c = pick(2);
+  rr(c, 0, 128, MC.street, 16, 0, lg(c, 0, 128, 0, 144, [0, '#1a2032'], [1, '#262c40'])); rr(c, 0, 136, MC.street, 1, 0, '#5b6275');
+  for (let x = 4; x < MC.street; x += 18) rr(c, x, 132, 8, 0.6, 0, 'rgba(220,224,235,.35)');
+  // ---- the building: dark cladding outside, white inside, the length of the walk
+  c.fillStyle = lg(c, 0, 0, 0, 144, [0, '#15171f'], [1, '#1f222c']); c.fillRect(MC.street, 0, W - MC.street, 144);
+  rr(c, MC.street, 0, 16, 144, 0, '#2a2e3c'); rr(c, MC.street + 14, 0, 1.2, 144, 0, '#c8102e'); // the corner, with a red line down it
+  // the entry portal: one seamless white surface, floor and ceiling, narrowing and rising as it goes in
+  c.fillStyle = lg(c, px0, 0, px1, 0, [0, '#f4f6fa'], [1, '#c9d0dc']); c.beginPath(); c.moveTo(px0, 14); c.lineTo(px1, 34); c.lineTo(px1, 126); c.lineTo(px0, 144); c.closePath(); c.fill();
+  c.fillStyle = 'rgba(20,24,36,.85)'; c.beginPath(); c.moveTo(px1, 34); c.lineTo(px1 + 30, 40); c.lineTo(px1 + 30, 120); c.lineTo(px1, 126); c.closePath(); c.fill(); // the far end, where it opens into reception
+  // reception, the Oculus, the gallery: the inside walls
+  c.fillStyle = lg(c, 0, 0, 0, 144, [0, '#dfe3ea'], [1, '#b9c0cc']); c.fillRect(px1 + 30, 18, g0 - px1 - 30, 126);
+  rr(c, px1 + 30, 0, g0 - px1 - 30, 18, 0, '#f4f6fa'); line(c, px1 + 30, 18, g0, 18, '#9aa3b5', 0.6);
+  for (let k = 0; k < 6; k++) { c.beginPath(); c.ellipse(MC.oculus, 34, 46 - k * 6, 30 - k * 4, 0, Math.PI * (0.1 + k * 0.03), Math.PI * (0.9 - k * 0.03), true); c.strokeStyle = `rgba(120,130,150,${0.25 + k * 0.08})`; c.lineWidth = 1.6; c.stroke(); } // the Oculus: angled walls spiralling up
+  c.fillStyle = lg(c, 0, 0, 0, 144, [0, '#07080c'], [1, '#101219']); c.fillRect(g0, 0, w0 - g0, 144); // the gallery: near darkness
+  c.fillStyle = lg(c, 0, 0, 0, 144, [0, '#0d1220'], [1, '#141a2a']); c.fillRect(w0, 0, W - w0, 144); // mission control, through glass
+  // below the floor line: the low walls of the gallery's sunken floor and the drain in the street, seen only where the floor drops
+  c.fillStyle = lg(c, 0, 144, 0, 180, [0, '#14171f'], [1, '#07080c']); c.fillRect(0, 144, W, 36); rr(c, g0, 158.6, g1 - g0, 0.8, 0, 'rgba(255,42,42,.7)');
+  // ---- the things
+  c = pick(4);
+  for (const x of [26, 104, 186]) { rr(c, x - 0.8, 62, 1.6, 82, 0.3, '#3a3f4f'); line(c, x, 63, x + 7, 60, '#3a3f4f', 1.2); rr(c, x + 5, 59, 7, 2.2, 1, '#4a5066', OUT, 0.25); } // street lights
+  const car = (x: number, col: string, flip: boolean) => { c.save(); c.translate(x, 0); if (flip) c.scale(-1, 1); c.beginPath(); c.moveTo(0, 141); c.lineTo(0, 135.6); c.quadraticCurveTo(4, 133.8, 8, 133.6); c.quadraticCurveTo(10.6, 129.6, 16, 129.6); c.lineTo(22, 129.8); c.quadraticCurveTo(25, 133.2, 30, 134); c.lineTo(32, 141); c.closePath(); c.fillStyle = col; c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.35; c.stroke(); poly(c, [10, 133.4, 15.4, 130.4, 21.4, 130.4, 24, 133.6], 'rgba(120,150,200,.35)'); for (const wx of [6.4, 25]) { el(c, wx, 141, 2.4, 2.4, '#0b0c12'); el(c, wx, 141, 1, 1, '#5b6275'); } c.restore(); };
+  car(130, '#3a4258', false); car(196, '#5a2a2a', true);
+  rr(c, 210, 122, 24, 16, 1, '#20242f', '#3a3f4f', 0.5); rr(c, 213, 131, 18, 0.6, 0, '#c8102e'); // a plain gate post: no sign, no logo
+  for (let i = 0; i < 4; i++) rr(c, px0 + 6 + i * 13, 134 + i * 0.4, 1.4, 6, 0.3, 'rgba(120,130,150,.5)'); // the portal's floor joints, receding
+  // reception: the scale-model Electron, its top through the ceiling
+  c.save(); c.translate(MC.model - 7, 6); c.scale(1.7, 1.7); electronFull(c, 0, 0); c.restore();
+  rr(c, MC.model - 14, 138, 28, 6, 1, '#c9d0dc', OUT, 0.35); rr(c, px1 + 30, 16, g0 - px1 - 30, 3, 0, '#f4f6fa'); line(c, MC.model - 9, 18.6, MC.model + 9, 18.6, 'rgba(60,70,90,.4)', 0.5); // the ceiling it goes through
+  rr(c, px1 + 48, 118, 30, 20, 1.2, '#f4f6fa', '#9aa3b5', 0.5); rr(c, px1 + 46, 116, 34, 3, 1, '#ffffff', '#9aa3b5', 0.4); // the reception desk
+  // the Oculus: a rocket nozzle hung on cables
+  for (const dx of [-5, 5]) line(c, MC.oculus + dx, 4, MC.oculus + dx * 0.6, 64, 'rgba(60,64,80,.7)', 0.3);
+  rr(c, MC.oculus - 4, 62, 8, 6, 1, lg(c, MC.oculus - 4, 0, MC.oculus + 4, 0, [0, '#5b6275'], [0.5, '#c9ced9'], [1, '#3a3f4f']), OUT, 0.3);
+  c.beginPath(); c.moveTo(MC.oculus - 3, 68); c.lineTo(MC.oculus + 3, 68); c.bezierCurveTo(MC.oculus + 4, 76, MC.oculus + 8, 82, MC.oculus + 10, 88); c.lineTo(MC.oculus - 10, 88); c.bezierCurveTo(MC.oculus - 8, 82, MC.oculus - 4, 76, MC.oculus - 3, 68); c.closePath();
+  c.fillStyle = lg(c, MC.oculus - 10, 0, MC.oculus + 10, 0, [0, '#23262f'], [0.35, '#9aa3b5'], [0.6, '#5b6275'], [1, '#15171f']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.35; c.stroke();
+  // the gallery: steps down, sculptural forms, two big infographic screens
+  for (let i = 0; i < 4; i++) rr(c, g0 + i * 6, 120 + i * 6, 40 - i * 6, 6, 0, '#15171f', '#20242f', 0.3);
+  for (const [x, w] of [[g0 + 4, 62], [g0 + 70, 62]] as number[][]) { rr(c, x, 34, w, 46, 1.2, '#05060a', '#2a2e3c', 1); }
+  poly(c, [g0 + 26, 144, g0 + 34, 92, g0 + 42, 144], '#1a1d26'); poly(c, [g1 - 12, 144, g1 - 4, 100, g1 + 2, 144], '#1a1d26');
+  // mission control behind the glass: the big wall, rows of consoles, people in black at them
+  rr(c, w0 + 14, 22, 112, 52, 1.4, '#05060a', '#2a2e3c', 0.8); for (const x of [w0 + 54, w0 + 90]) line(c, x, 22, x, 74, '#2a2e3c', 0.8);
+  for (const [y, n] of [[100, 5], [120, 4]] as number[][]) for (let i = 0; i < n; i++) {
+    const x = w0 + 18 + i * (104 / n) + (y > 110 ? 8 : 0);
+    el(c, x + 6, y - 9, 2.6, 2.8, '#1a1c24'); rr(c, x + 2.4, y - 6.6, 7.2, 8, 2, '#0b0c10'); // someone in black company merchandise
+    rr(c, x - 2, y, 20, 3, 0.6, '#2a2e3c', OUT, 0.3); rr(c, x + 1, y - 7, 6, 5, 0.4, '#07090f', '#3a3f4f', 0.3); rr(c, x + 9, y - 7, 6, 5, 0.4, '#07090f', '#3a3f4f', 0.3); rr(c, x - 1, y + 3, 18, 8, 0.4, '#1a1d26');
+  }
+  for (let x = w0; x < W; x += 34) line(c, x, 0, x, 144, 'rgba(160,190,230,.18)', 0.6); rr(c, w0, 0, 1.4, 144, 0, '#3a3f4f'); // the glass, in panes
+  // ---- what gives off light
+  c = pick(8);
+  for (const x of [26, 104, 186]) { c.fillStyle = rg(c, x + 8.5, 62, 0.5, 30, [0, 'rgba(225,236,255,.5)'], [1, 'rgba(225,236,255,0)']); c.fillRect(x - 22, 58, 62, 86); rr(c, x + 5.6, 60.8, 5.8, 0.9, 0.4, '#f4f8ff'); }
+  for (const [x, flip] of [[130, false], [196, true]] as [number, boolean][]) { const hx = flip ? x - 31 : x + 31, d = flip ? -1 : 1; el(c, hx, 136, 1, 0.8, '#fff6dc'); c.fillStyle = lg(c, hx, 0, hx + d * 26, 0, [0, 'rgba(255,246,220,.4)'], [1, 'rgba(255,246,220,0)']); c.beginPath(); c.moveTo(hx, 135); c.lineTo(hx + d * 26, 131); c.lineTo(hx + d * 26, 142); c.closePath(); c.fill(); el(c, flip ? x - 1 : x + 1, 136, 0.8, 0.8, '#ff3a2a'); } // staff arriving: headlights, tail lights
+  for (const y of [24, 132]) line(c, px0 + 2, y + (y < 100 ? -8 : 10), px1, y < 100 ? 36 : 124, 'rgba(255,255,255,.9)', 0.6); // recessed LED strips in the portal
+  c.save(); c.translate(px0 + 4, 46); c.rotate(Math.atan2(20, px1 - px0) * 0.6); c.font = `700 3.1px "Chakra Petch"`; c.textAlign = 'left'; c.textBaseline = 'middle'; c.shadowColor = 'rgba(160,200,255,.9)'; c.shadowBlur = 3; c.fillStyle = '#eaf4ff'; c.fillText('WE GO TO SPACE', 0, 0); c.fillText('TO IMPROVE LIFE ON EARTH', 0, 5); c.restore(); // the motto, glowing in the wall
+  c.fillStyle = rg(c, MC.oculus, 40, 2, 52, [0, 'rgba(255,236,200,.35)'], [1, 'rgba(255,236,200,0)']); c.fillRect(MC.oculus - 52, 0, 104, 100); // a light down through the Oculus onto the nozzle
+  for (let i = 0; i < 4; i++) rr(c, g0 + i * 6, 120 + i * 6, 40 - i * 6, 0.7, 0, '#ff2a2a'); rr(c, g0, 142.6, g1 - g0, 0.8, 0, '#ff2a2a'); rr(c, w0 - 6, 0, 0.8, 144, 0, 'rgba(255,42,42,.6)'); // the red LED ribbon round the gallery
+  // the screens: a ground track for 635 km at 98 degrees, and the flight's numbers
+  { const x = g0 + 5, y = 35, w = 60, h = 44; c.fillStyle = '#081426'; c.fillRect(x, y, w, h); for (let k = 0; k < 5; k++) line(c, x, y + 4 + k * 9, x + w, y + 4 + k * 9, 'rgba(80,140,220,.25)', 0.25);
+    c.beginPath(); for (let i = 0; i <= 64; i++) { const t = i / 64, yy = y + h / 2 - Math.sin(t * Math.PI * 2 + 0.4) * 17; i ? c.lineTo(x + t * w, yy) : c.moveTo(x, yy); } c.strokeStyle = '#7fd0ff'; c.lineWidth = 0.6; c.stroke();
+    text(c, '635 KM · 98°', x + w / 2, y + h - 4, 3.2, '#ffe98a', 700); }
+  { const x = g0 + 71, y = 35, w = 60, h = 44; c.fillStyle = '#0a0d18'; c.fillRect(x, y, w, h);
+    [['ELECTRON · FLIGHT 50', '#ffffff'], ['NO TIME TOULOUSE', '#ffe98a'], ['LC-1 · PAD B · MĀHIA', '#9fd6f5'], ['5 × KINÉIS · IoT', '#9fd6f5'], ['LIFT-OFF 06:13 NZST', '#ff8a70']].forEach(([s, col], i) => text(c, s, x + w / 2, y + 6 + i * 8, 3.2, col, 700)); }
+  // the big wall in mission control: the pad on the left screen, the clocks on the right
+  { const x = w0 + 15, y = 23; c.fillStyle = lg(c, 0, y, 0, y + 50, [0, '#060a1c'], [1, '#1a2848']); c.fillRect(x, y, 38, 50); rr(c, x + 6, y + 40, 26, 10, 0, '#11131a'); for (const sx of [x + 12, x + 26]) { rr(c, sx - 0.5, y + 14, 1, 26, 0, '#4a5066'); el(c, sx, y + 14, 1, 1, '#fff6dc'); } rr(c, x + 18, y + 18, 2.6, 22, 0.3, '#15171f', '#5b6275', 0.25); text(c, 'LC-1 · LIVE', x + 19, y + 4.6, 2.6, '#ff8a70', 700); c.fillStyle = 'rgba(255,240,200,.25)'; c.fillRect(x + 6, y + 34, 26, 6); }
+  { const x = w0 + 55, y = 23; c.fillStyle = '#07101e'; c.fillRect(x, y, 34, 50); text(c, 'NZST', x + 17, y + 8, 2.6, '#9aa3b5', 700); text(c, '06:13:00', x + 17, y + 15, 4.6, '#7cf08a', 700); text(c, 'UTC', x + 17, y + 25, 2.6, '#9aa3b5', 700); text(c, '18:13:00', x + 17, y + 32, 4.6, '#7cf08a', 700); text(c, 'FRI 21 JUNE', x + 17, y + 42, 2.6, '#ffe98a', 700); }
+  { const x = w0 + 91, y = 23; c.fillStyle = '#081426'; c.fillRect(x, y, 34, 50); for (let i = 0; i < 6; i++) { line(c, x + 3, y + 8 + i * 7, x + 3 + 8 + r() * 20, y + 8 + i * 7, i % 2 ? '#7fd0ff' : '#7cf08a', 0.8); } text(c, 'TELEMETRY', x + 17, y + 4.4, 2.4, '#9aa3b5', 700); }
+  for (const [y, n] of [[100, 5], [120, 4]] as number[][]) for (let i = 0; i < n; i++) { const x = w0 + 18 + i * (104 / n) + (y > 110 ? 8 : 0); c.fillStyle = 'rgba(127,208,255,.55)'; c.fillRect(x + 1.5, y - 6.5, 5, 4); c.fillRect(x + 9.5, y - 6.5, 5, 4); } // console screens
+}
+
 // ------------------------------------------------------------------ Archimedes and the tank, 2024–2026: Mississippi, Maryland, Virginia
 /** Far layer: Gulf-coast sky, the pine line, the Stennis canal with a LOX barge, then Chesapeake water and the Atlantic. `part`: 1 sky and sun, 4 the clouds, 8 the water, 2 the pines, shores, boats and gulls. */
 export function stennisFar(real: C2, part = 15) {
@@ -705,6 +801,71 @@ export function makeBackdrops(scene: Phaser.Scene) {
   bubble('pw_C', (c) => { c.drawImage(scene.textures.get('peter_chip').getSourceImage() as HTMLCanvasElement, 2.4, 2.4, 13.2, 13.2); });
   // a running mate other than Peter gets a bubble with their own face: pw_C + their texture prefix
   bubble('pw_Cv', (c) => { c.drawImage(scene.textures.get('vpeter_chip').getSourceImage() as HTMLCanvasElement, 2.4, 2.4, 13.2, 13.2); });
+  bubble('pw_Cm', (c) => { c.drawImage(scene.textures.get('mpeter_chip').getSourceImage() as HTMLCanvasElement, 2.4, 2.4, 13.2, 13.2); });
+
+  // ---- No Time Toulouse: mission control before dawn
+  tex(scene, 'bg_control', 760, 180, (c) => control(c));
+  tex(scene, 't_control', 16, 16, (c) => { // dark polished floor, with the red LED ribbon that runs along the skirtings
+    c.fillStyle = lg(c, 0, 0, 0, 16, [0, '#3a3f4f'], [0.25, '#262a36'], [1, '#14161e']); c.fillRect(0, 0, 16, 16); c.fillStyle = '#5b6275'; c.fillRect(0, 0, 16, 0.6);
+    c.fillStyle = '#ff2a2a'; c.fillRect(0, 1.2, 16, 0.6); c.fillStyle = 'rgba(255,80,80,.25)'; c.fillRect(0, 1.8, 16, 1.2);
+    line(c, 0, 9.4, 16, 9.4, 'rgba(0,0,0,.35)', 0.4); line(c, 8, 9.4, 8, 16, 'rgba(0,0,0,.3)', 0.4); const r = rng(23); for (let i = 0; i < 8; i++) el(c, r() * 16, 4 + r() * 12, 0.3, 0.3, 'rgba(255,255,255,.12)');
+  });
+  tex(scene, 't_control_fill', 16, 16, (c) => { c.fillStyle = '#111319'; c.fillRect(0, 0, 16, 16); line(c, 0, 8, 16, 8, 'rgba(255,255,255,.05)', 0.4); line(c, 4, 0, 4, 8, 'rgba(255,255,255,.05)', 0.4); line(c, 12, 8, 12, 16, 'rgba(255,255,255,.05)', 0.4); });
+  tex(scene, 'p_control', 16, 6, (c) => { c.fillStyle = lg(c, 0, 0, 0, 5, [0, '#4a5066'], [1, '#1a1d26']); c.fillRect(0, 0, 16, 4.6); c.fillStyle = '#ff2a2a'; c.fillRect(0, 3.8, 16, 0.8); c.fillStyle = '#8b93a7'; c.fillRect(0, 0, 16, 0.6); c.fillStyle = '#0b0c12'; c.fillRect(0, 4.6, 16, 1.2); }); // a stair landing, its riser lit red
+  for (const up of [0, 1]) tex(scene, 'ruru' + up, 26, 14, (c) => { // ruru, the morepork: a small brown owl, out hunting before dawn
+    el(c, 12, 8, 5.4, 4, lg(c, 0, 4, 0, 12, [0, '#8a6238'], [1, '#5b3d22']), OUT, 0.3); for (let i = 0; i < 5; i++) el(c, 9 + i * 1.6, 9 + (i % 2), 0.6, 0.5, '#e8d2a8');
+    el(c, 18, 6.4, 3.6, 3.4, '#7a5530', OUT, 0.3); for (const x of [16.8, 19.4]) { el(c, x, 6, 1.2, 1.2, '#f2d14a', OUT, 0.2); el(c, x, 6, 0.5, 0.5, '#111'); } poly(c, [18.1, 7, 18.9, 7, 18.5, 8.6], '#c9a66b');
+    poly(c, [6.8, 8, 2.6, 9.6, 6.8, 10.2], '#5b3d22', OUT, 0.2);
+    const wy = up ? 0.6 : 13.2; c.beginPath(); c.moveTo(9, 6.8); c.quadraticCurveTo(10, wy, 3.4, wy + (up ? 0.8 : -0.8)); c.quadraticCurveTo(11, wy + (up ? 3.4 : -3.4), 15, 7.4); c.closePath(); c.fillStyle = '#6b4a2b'; c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.25; c.stroke();
+  });
+  for (const k of [0, 1]) tex(scene, k ? 'alarm1' : 'alarm', 18, 18, (c) => { // a twin-bell alarm clock on the loose, ringing
+    for (const sg of [-1, 1]) { el(c, 9 + sg * 4.6, 3.4, 2.6, 2.2, lg(c, 0, 1, 0, 6, [0, '#ffe98a'], [1, '#b8861c']), OUT, 0.3); line(c, 9 + sg * 2.4, 5.4, 9 + sg * 3.4, 3.6, '#5b6275', 0.5); }
+    line(c, 9, 1.2, 9 + (k ? 2.2 : -2.2), 3, '#5b6275', 0.6); el(c, 9 + (k ? 2.2 : -2.2), 3, 0.7, 0.7, '#5b6275');
+    for (const sg of [-1, 1]) line(c, 9 + sg * 3.6, 14, 9 + sg * 5.4, 17.2, '#23262f', 0.9);
+    el(c, 9, 10, 6.4, 6.4, lg(c, 3, 3, 15, 17, [0, '#e8452e'], [1, '#8a1c12']), OUT, 0.4); el(c, 9, 10, 4.8, 4.8, '#f4f2ea', OUT, 0.3);
+    for (let i = 0; i < 12; i++) { const t = (i / 12) * Math.PI * 2; el(c, 9 + Math.cos(t) * 4, 10 + Math.sin(t) * 4, 0.25, 0.25, '#23262f'); }
+    line(c, 9, 10, 9, 6.6, '#15171f', 0.6); line(c, 9, 10, 11.4, 11.6, '#15171f', 0.5); // hands
+    el(c, 7, 8.8, 0.7, 0.8, '#111'); el(c, 11, 8.8, 0.7, 0.8, '#111'); line(c, 5.8, 7.4, 7.8, 8, '#111', 0.4); line(c, 12.2, 7.4, 10.2, 8, '#111', 0.4);
+    if (k) for (const sg of [-1, 1]) { line(c, 9 + sg * 7.6, 1.2, 9 + sg * 8.6, 0.2, '#ffe98a', 0.4); line(c, 9 + sg * 8, 3.6, 9 + sg * 9, 3.4, '#ffe98a', 0.4); }
+  });
+  for (const open of [0, 1]) tex(scene, open ? 'merch1' : 'merch', 22, 20, (c) => { // a carton of black company tees, out on its own
+    rr(c, 2, 7, 18, 12, 0.6, lg(c, 0, 7, 0, 19, [0, '#c9a66b'], [1, '#8a6238']), OUT, 0.4); line(c, 2, 11, 20, 11, 'rgba(90,60,20,.35)', 0.4);
+    if (open) { poly(c, [2, 7, -0.4, 2.6, 4.6, 4.4, 8, 7], '#b8935a', OUT, 0.3); poly(c, [20, 7, 22.4, 2.6, 17.4, 4.4, 14, 7], '#b8935a', OUT, 0.3); for (const x of [6, 11, 15]) { rr(c, x - 3, 4.4, 6, 3.4, 1, '#15171f', OUT, 0.25); rr(c, x - 4, 4.8, 1.6, 1.6, 0.4, '#15171f'); rr(c, x + 2.4, 4.8, 1.6, 1.6, 0.4, '#15171f'); } }
+    else { rr(c, 2, 6, 18, 1.6, 0.4, '#b8935a', OUT, 0.3); rr(c, 7, 5.4, 8, 3, 0.8, '#15171f', OUT, 0.25); }
+    el(c, 8, 13, 1.1, 1.2, '#fff'); el(c, 14, 13, 1.1, 1.2, '#fff'); el(c, 8.3, 13.2, 0.5, 0.6, '#111'); el(c, 14.3, 13.2, 0.5, 0.6, '#111'); line(c, 6.6, 11.6, 9, 12.2, '#3a2715', 0.5); line(c, 15.4, 11.6, 13, 12.2, '#3a2715', 0.5);
+    for (const x of [5, 17]) el(c, x, 19.4, 1.6, 0.8, '#3a2715');
+  });
+  tex(scene, 'egg_moon', 14, 14, (c) => { // the Moon, all but full
+    c.fillStyle = rg(c, 7, 7, 2, 7, [0, 'rgba(230,236,255,.7)'], [1, 'rgba(230,236,255,0)']); c.fillRect(0, 0, 14, 14);
+    el(c, 7, 7, 4.4, 4.4, rg(c, 6, 6, 0.5, 4.4, [0, '#ffffff'], [1, '#d6d4c8']), OUT, 0.3); el(c, 5.6, 6, 1.2, 1, 'rgba(150,150,140,.35)'); el(c, 8.4, 8.4, 0.9, 0.8, 'rgba(150,150,140,.35)'); el(c, 7.6, 4.8, 0.6, 0.5, 'rgba(150,150,140,.3)');
+  });
+  tex(scene, 'mc_doorframe', 16, 126, (c) => { // an access door: the frame and its header
+    rr(c, 0, 0, 16, 7, 0.6, '#2a2e3c', OUT, 0.35); text(c, 'ACCESS', 8, 3.8, 2.6, '#e8eaf0', 700); for (const x of [0, 13.4]) rr(c, x, 6, 2.6, 120, 0.3, lg(c, x, 0, x + 2.6, 0, [0, '#5b6275'], [1, '#2a2e3c']), OUT, 0.3);
+    rr(c, 13.6, 78, 2.2, 5, 0.4, '#15171f', '#5b6275', 0.25); // the badge reader
+  });
+  tex(scene, 'mc_doorglass', 12, 120, (c) => { rr(c, 0, 0, 12, 120, 0.4, 'rgba(120,160,210,.32)', 'rgba(200,225,255,.7)', 0.5); line(c, 2, 8, 6, 2, 'rgba(255,255,255,.5)', 0.4); line(c, 2, 30, 10, 18, 'rgba(255,255,255,.25)', 0.4); rr(c, 0, 58, 12, 1, 0, 'rgba(200,225,255,.6)'); rr(c, 4, 62, 4, 1.2, 0.4, '#ff2a2a'); });
+  tex(scene, 'mc_desk', 76, 60, (c) => { // your console: three screens, a headset, a chair
+    el(c, 38, 58.6, 34, 1.6, 'rgba(0,0,0,.3)');
+    rr(c, 4, 34, 68, 5, 1, lg(c, 0, 34, 0, 39, [0, '#4a5066'], [1, '#23262f']), OUT, 0.4); rr(c, 8, 39, 60, 19, 0.6, '#15171f', OUT, 0.35); rr(c, 4, 34, 68, 0.8, 0, '#ff2a2a');
+    for (const [x, kind] of [[10, 0], [30, 1], [50, 2]] as number[][]) { rr(c, x, 12, 18, 13, 0.8, '#07090f', '#5b6275', 0.5); rr(c, x + 8, 25, 2, 5, 0, '#3a3f4f'); rr(c, x + 5, 30, 8, 1.6, 0.4, '#3a3f4f');
+      if (kind === 0) for (let i = 0; i < 4; i++) line(c, x + 2, 15 + i * 2.6, x + 6 + i * 2.6, 15 + i * 2.6, '#7cf08a', 0.6);
+      else if (kind === 1) { text(c, 'FLIGHT 50', x + 9, 16, 2.6, '#ffe98a', 700); text(c, 'T−', x + 9, 21, 3.4, '#ff8a70', 700); }
+      else { c.beginPath(); for (let i = 0; i <= 16; i++) { const t = i / 16; i ? c.lineTo(x + 1 + t * 16, 18.5 - Math.sin(t * 6.28) * 4) : c.moveTo(x + 1, 18.5); } c.strokeStyle = '#7fd0ff'; c.lineWidth = 0.5; c.stroke(); } }
+    c.beginPath(); c.arc(40, 32.6, 2.6, Math.PI, 0); c.strokeStyle = '#15171f'; c.lineWidth = 0.8; c.stroke(); el(c, 37.4, 33, 1, 1.3, '#23262f'); el(c, 42.6, 33, 1, 1.3, '#23262f'); // a headset on the desk
+    rr(c, 56, 40, 12, 12, 2, '#23262f', OUT, 0.35); rr(c, 61, 52, 2, 4, 0, '#3a3f4f'); rr(c, 56, 55.6, 12, 1.4, 0.6, '#3a3f4f'); // the chair, pushed in
+  });
+  tex(scene, 'mc_screen', 92, 56, (c) => { // the big screen over the console: the pad at Māhia, live
+    rr(c, 0, 0, 92, 56, 1.4, '#05060a', '#3a3f4f', 1); c.fillStyle = lg(c, 0, 2, 0, 54, [0, '#060a1c'], [0.7, '#162448'], [1, '#26365e']); c.fillRect(2, 2, 88, 52);
+    const r = rng(77); for (let i = 0; i < 40; i++) el(c, 2 + r() * 88, 2 + r() * 30, 0.25, 0.25, 'rgba(255,255,255,.7)');
+    rr(c, 2, 44, 88, 10, 0, '#0d0f16'); poly(c, [2, 44, 30, 40, 60, 42, 90, 39, 90, 44], '#141a2a');
+    rr(c, 38, 40, 16, 4, 0.4, '#2a2e3c'); rr(c, 52, 12, 2.4, 30, 0.2, '#3a3f4f'); for (let y = 14; y < 40; y += 5) line(c, 52, y, 54.4, y + 5, '#5b6275', 0.3); // the launch mount and the strongback
+    for (const x of [20, 72]) { rr(c, x - 0.5, 18, 1, 26, 0, '#3a3f4f'); el(c, x, 18, 1.2, 1.2, '#fff6dc'); c.fillStyle = rg(c, x, 18, 0.5, 14, [0, 'rgba(255,246,220,.4)'], [1, 'rgba(255,246,220,0)']); c.fillRect(x - 14, 4, 28, 28); }
+    rr(c, 4, 4, 34, 6, 0.6, 'rgba(7,9,15,.8)'); el(c, 7.4, 7, 1.1, 1.1, '#ff3a2a'); text(c, 'LIVE · LC-1 · MĀHIA', 22, 7.2, 2.6, '#ffffff', 700, 'center');
+  });
+  tex(scene, 'mc_rocket', 8, 82, (c) => electronFull(c, 1, 1));
+  tex(scene, 'mc_beam', 60, 28, (c) => { c.fillStyle = lg(c, 0, 0, 60, 0, [0, 'rgba(255,250,228,.55)'], [1, 'rgba(255,250,228,0)']); c.beginPath(); c.moveTo(0, 12); c.lineTo(60, 0); c.lineTo(60, 28); c.lineTo(0, 16); c.closePath(); c.fill(); }); // her camera light, thrown ahead
+  bubble('pw_W', (c) => { c.beginPath(); c.moveTo(5, 8.4); c.bezierCurveTo(5, 2.6, 13, 2.6, 13, 8.4); c.closePath(); c.fillStyle = '#b83a2e'; c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.3; c.stroke(); rr(c, 4.4, 7.4, 9.2, 2, 0.8, '#c8463a', OUT, 0.25); rr(c, 5, 10, 8, 5, 2, '#323c52', OUT, 0.3); line(c, 5.4, 12.4, 12.6, 12.4, 'rgba(10,14,24,.7)', 0.4); });
+  bubble('pw_U', (c) => { rr(c, 4.6, 4, 8.8, 7, 1.6, lg(c, 4.6, 0, 13.4, 0, [0, '#fff2b8'], [0.4, '#f2c230'], [1, '#8a6210']), OUT, 0.3); line(c, 4.8, 7.4, 13.2, 7.4, 'rgba(90,60,10,.5)', 0.3); poly(c, [7.6, 11, 10.4, 11, 11.2, 14, 6.8, 14], '#8b93a7', OUT, 0.25); poly(c, [7.6, 14, 10.4, 14, 9, 16.4], '#9fd6f5'); });
   tex(scene, 'secret', 18, 18, (c) => { // a rolled blueprint, glowing
     c.fillStyle = rg(c, 9, 9, 1, 9, [0, 'rgba(255,220,120,.9)'], [1, 'rgba(255,220,120,0)']); c.fillRect(0, 0, 18, 18);
     c.save(); c.translate(9, 9); c.rotate(-0.5); rr(c, -6.4, -3, 12.8, 6, 1, '#2d5fa8', OUT, 0.35); line(c, -4, -1, 3, -1, '#dbe9ff', 0.4); line(c, -4, 1, 1, 1, '#dbe9ff', 0.4); el(c, 4, 0, 1.3, 1.3, undefined, '#dbe9ff', 0.4); el(c, -6.4, 0, 1.2, 3, '#4d7fd0', OUT, 0.3); el(c, 6.4, 0, 1.2, 3, '#4d7fd0', OUT, 0.3); c.restore();

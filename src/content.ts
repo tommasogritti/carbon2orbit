@@ -339,10 +339,31 @@ export const LEVELS: LevelDef[] = [
     id: 'sir-peter', kind: 'card', status: 'flown',
     title: 'Sir Peter', date: '2024-06-03', place: 'Aotearoa New Zealand', map: { x: 187, y: 300 },
     intro: 'In the 2024 King’s Birthday Honours, the apprentice toolmaker from Invercargill is made a Knight Companion of the New Zealand Order of Merit, for services to the aerospace industry, business and education. He is invested on 5 September 2024. In the month of the honours list Electron flies its 50th mission, “No Time Toulouse”.',
-    fact: 'The 50th launch lifted off at 6:13 on a Friday morning, 21 June 2024 in New Zealand, and Rocket Lab let the NZ Herald’s Markets with Madison into its mission control in Auckland to watch it: meet Madison Malone beside this card.',
+    fact: 'Eighteen days after the honours list, Electron flew its 50th mission, “No Time Toulouse”: that morning in Rocket Lab’s mission control in Auckland is the next level, with Madison Malone of the NZ Herald alongside. Meet her beside this card.',
     after: '',
     photo: { file: 'beck_knzm.jpg', caption: 'Sir Peter Beck KNZM at his investiture.', credit: 'New Zealand Government, Office of the Governor-General, CC0', page: C + 'Peter_Beck_KNZM_(cropped).jpg' },
     sources: [WP + 'Peter_Beck', WP + 'List_of_Electron_launches', 'https://www.nzherald.co.nz/hawkes-bay-today/news/behind-rocket-labs-50th-launch-realising-sir-peter-becks-dream/HXA325VFNVGKNOPYIN4ZNRIOHU'],
+  },
+  {
+    id: 'no-time-toulouse', kind: 'platform', mechanic: 'platform', status: 'flown', role: 'Founder and CEO · 2024', unlocks: 'five-for-five',
+    title: 'No Time Toulouse', date: '2024-06-20', place: 'Rocket Lab mission control, Mount Wellington, Auckland', map: { x: 196, y: 201 },
+    intro: 'Friday 21 June 2024, the morning of the June solstice in New Zealand, and more than an hour before sunrise. Electron’s 50th flight, “No Time Toulouse”, is due to lift off from Launch Complex 1 on the Māhia Peninsula at 6:13 a.m., with five satellites for Kinéis, an Internet-of-Things company based in Toulouse. The count runs from Rocket Lab’s mission control in Auckland, and despite the hour the company’s present and past staff and their families are rolling in to watch it. So is the NZ Herald’s investment show <i>Markets with Madison</i>, which Rocket Lab has given exclusive access to the room. Its name is a pun on “no time to lose” and on Toulouse. Walk in from the street, through the building, and be in the room with what the count needs before T−0.',
+    how: 'Arrows to run, Space to jump. Collect the five things the count needs and reach mission control. New here: the access doors. Each one opens only now and then, as somebody badges through: wait for it, or bring Madison Malone, whose access opens every door as you reach it. The clock at the top is the count: be in the room before T−0 for three stars. Jump on the runaway alarm clocks and the boxes of black merch, and keep clear of the ruru, the night owl, out on the street. Power-ups float in bubbles: warm winter layers make you untouchable, and the kick stage gives you a second jump in mid-air (press Space again). The bubble with Madison’s face brings her along for 30 seconds: Enter starts her camera rolling, and whatever is in front of the lens gets out of the shot. A hidden blueprint unlocks a secret on the map.',
+    fact: 'Rocket Lab’s numbers for the day: its 50th Electron launch, seven years after the first in May 2017, which it says is faster than any commercially developed rocket in history; 190 satellites deployed across those 50 launches; and this one, the first of five dedicated launches for Kinéis, carried five satellites to a 635 km circular orbit. The Kinéis satellites connect and locate objects anywhere on Earth, for jobs from detecting forest fires to tracking freight.',
+    after: 'Electron lifted off from Pad B at Launch Complex 1 at 6:13 a.m. NZST on 21 June 2024 (18:13 UTC on the 20th) and deployed all five Kinéis satellites to their 635 km orbit, in singles and in pairs. In mission control, by Madison Malone’s report for the NZ Herald, published on 23 June, the count ended in cheering, applause, handshakes and back pats; the integrated operations manager, Michael Pearson, who had been there for every Electron launch, had been at mission control since 9 p.m. the night before. Her report quotes Peter Beck but does not say where he watched from, so walking him in, and the console he stops at, are the game’s own, and so are the doors, the clock and the camera Madison carries. The satellites were deployed about an hour after lift-off; the big screen in the level runs that hour together. Kinéis’s other four launches followed, the last of them in March 2025.',
+    egg: 'The Moon, all but full. At lift-off it hung low in the south-west over Auckland, 99.5% lit, and it set 27 minutes later, at 6:40; it was full the next afternoon. And the June solstice fell at 8:50 that morning: Electron’s 50th flew on the shortest day of the year.',
+    sources: [RL + 'updates/rocket-lab-successfully-launches-50th-electron-mission-deploys-satellites-for-kineis/', RL + 'missions/launches/no-time-toulouse/', 'https://www.nzherald.co.nz/hawkes-bay-today/news/behind-rocket-labs-50th-launch-realising-sir-peter-becks-dream/HXA325VFNVGKNOPYIN4ZNRIOHU', 'https://www.nzherald.co.nz/business/markets-with-madison-rocket-lab-50th-launch/LCFMUJKIRZCKUGCBJEPMM54WYY', 'https://spaceflightnow.com/2024/06/20/live-coverage-rocket-lab-to-launch-50th-electron-rocket/', WP + 'List_of_Electron_launches', RL + 'updates/the-future-of-rocket-manufacturing-rocket-lab-unveils-new-high-volume-production-facility/', 'https://architecturenow.co.nz/articles/ground-control-rocket-lab', 'https://www.timeanddate.com/sun/new-zealand/auckland?month=6&year=2024', 'https://www.timeanddate.com/moon/new-zealand/auckland?month=6&year=2024', 'https://www.doc.govt.nz/nature/native-animals/birds/birds-a-z/morepork-ruru/', 'https://www.space.com/rocket-lab-50th-mission-launch-kineis-iot-satellites'],
+    params: {
+      theme: 'control', width: 84, buddy: 'madison',
+      ground: [[0, 13, 9], [16, 39, 9], [40, 55, 10], [56, 83, 9]],
+      plats: [[4, 7, 3], [7, 5, 2], [18, 7, 3], [21, 5, 3], [33, 7, 3], [36, 5, 3], [48, 8, 3], [51, 6, 3], [66, 7, 3], [69, 5, 3]],
+      doors: [26, 59],
+      parts: [[5, 6, 'Media access pass'], [22, 4, 'The count: lift-off at 06:13 NZST'], [37, 4, 'Five Kinéis satellites on the manifest'], [52, 5, 'The target: 635 km circular'], [70, 4, 'The feed from Launch Complex 1']],
+      hazards: [], sheep: [], egg: [8, 4], goal: 80,
+      enemies: [['merch', 18, 21], ['ruru', 11, 16], ['alarm', 29, 33], ['alarm', 41, 44], ['merch', 62, 65], ['alarm', 75, 78]],
+      powerups: [['C', 2, 8], ['W', 31, 8], ['U', 40, 8]], secret: [46, 1],
+      signs: [],
+    },
   },
   {
     id: 'wild-wild-space', kind: 'card', status: 'flown',
@@ -580,6 +601,14 @@ export const BONUS: LevelDef[] = [
     sources: [RL + 'updates/hungry-hippo-arrives/', 'https://www.vaspace.org/news-article/hungry-hippo-arrives-at-wallops-major-milestone-to-first-neutron-launch', RL + 'launch/neutron/'],
   },
   {
+    id: 'five-for-five', kind: 'card', status: 'flown', parent: 'no-time-toulouse',
+    title: 'Kinéis: five for five', date: '2024–2025', place: 'Launch Complex 1 → 635 km', map: { x: 212, y: 210 },
+    intro: '“No Time Toulouse” was the first of five dedicated Electron launches for Kinéis, each carrying five satellites. The other four, all from Launch Complex 1, were “Kinéis Killed the RadIOT Star” (September 2024), “Ice AIS Baby” (25 November 2024, New Zealand time: the second count of the Two Hemispheres level), “IOT 4 You and Me” (February 2025) and “High Five” (18 March 2025, 01:31 UTC). With the last of them Rocket Lab had put Kinéis’s whole constellation of 25 satellites in orbit, in less than a year.',
+    fact: 'Rocket Lab says launching the satellites on dedicated flights gave Kinéis more say over the launch schedule, the orbit and the deployment than a larger rideshare would have. Kinéis said it would start its commercial service on 1 June 2025.',
+    after: '',
+    sources: [RL + 'missions/launches/high-five/', RL + 'missions/launches/kineis-killed-the-radiot-star/', RL + 'missions/launches/ice-ais-baby/', RL + 'missions/launches/iot-4-you-and-me/', 'https://satnews.com/2025/03/17/successful-rocket-lab-launch-completes-deployment-of-full-kineis-constellation-in-less-than-a-year/'],
+  },
+  {
     id: 'first-hundred', kind: 'card', status: 'flown', parent: 'find-the-launch-site',
     title: 'Inside the first hundred', date: '2017–2026', place: 'Māhia and Auckland', map: { x: 250, y: 206 },
     intro: 'Some of the people Rocket Lab’s own account of its first hundred launches puts in the room. Sandy Tirtey was Electron’s first launch director and directed its first seven launches. Jane McNicoll, in mission management since 2019, worked on roughly ninety of the hundred. Max Prescott joined vehicle integration in January 2018, in time for the first flight to reach orbit. And Murielle Baker, a former Radio New Zealand journalist, is the voice many fans know from the launch webcasts.',
@@ -594,8 +623,11 @@ export const BONUS: LevelDef[] = [
  */
 export interface Character {
   id: string; pre: string; name: string; role: string; since: number; likeness: string;
-  /** A running mate who does something other than clear the way: 'reporter' walks with you, marks hidden things and takes photos (Platform.ts). */
-  trait?: 'reporter';
+  /**
+   * A running mate who does something other than clear the way (Platform.ts): 'reporter' walks with you, marks hidden things and
+   * takes photos; 'host' walks with you, opens access doors, and films: whatever is in front of her camera gets out of the shot.
+   */
+  trait?: 'reporter' | 'host';
   /** For a running mate: who they are and why they are in this level, shown on the level's intro card. */
   note?: string;
 }
@@ -603,6 +635,7 @@ export const CHARACTERS: Character[] = [
   { id: 'peter', pre: '', name: 'Peter Beck', role: 'Founder and CEO', since: 1995, likeness: 'A tall mop of tight dark curls, a broad face, black top and jeans.' },
   { id: 'adam', pre: 'a', name: 'Adam Spice', role: 'Chief Financial Officer', since: 2018, likeness: 'Shaved head, long face with a heavy jaw, pale brows, navy blazer over an open-collar shirt.' },
   { id: 'vance', pre: 'v', name: 'Ashlee Vance', role: 'Journalist · reporting a book', since: 2015, trait: 'reporter', likeness: 'Short dark-brown hair, close at the sides with the ears showing, the top brushed up; a broad, full face with a wide jaw; light blue eyes; a navy flannel shirt checked with teal and mustard, open over a black tee. Here he carries a reporter’s notebook and a camera.', note: 'A Bloomberg Businessweek journalist and the author of a biography of Elon Musk. In November 2018 he spent a day at Rocket Lab’s main factory in Auckland with Peter Beck, while reporting his book <i>When the Heavens Went on Sale</i>; he had first visited Beck in Auckland in 2015. This level is set a year after that day, so his walk round the floor here is the game’s own.' },
+  { id: 'madison', pre: 'm', name: 'Madison Malone', role: 'NZ Herald · host of Markets with Madison', since: 2023, trait: 'host', likeness: 'Long, straight brown hair parted in the centre and worn loose past the shoulders, darker at the crown and lighter in the lengths; a round, full face with a soft chin; hazel eyes under defined dark brows; a broad smile that shows her teeth; a black crew-neck tee. Here, on a winter morning, she has a black jacket over it and carries a small handheld camera with a light on it.', note: 'In 2024 a senior business journalist at the NZ Herald and the host of its investment show <i>Markets with Madison</i> (she was bylined Madison Reidy when it began, in February 2023). Rocket Lab gave the show exclusive access to its mission control in Auckland for this launch, and her report from inside the room was published on 23 June 2024. She appears with her agreement. Her walk in from the street, her jacket and the camera she carries are the game’s own; the game gives her no words.' },
   { id: 'iglesias', pre: 'ci', name: 'Mrs. Iglesias', role: 'creator of the YouTube channel Space Lab', since: 2026, likeness: 'A big mane of loose, springy curls past the shoulders, dark at the roots and auburn to golden in the lengths; dark sunglasses; a wide smile that shows her teeth; a black tee.' },
   { id: 'shaun', pre: 's', name: 'Shaun D’Mello', role: 'an engineer at Rocket Lab since 2014, today Vice President, Neutron', since: 2014, likeness: 'Short dark hair, close at the sides and brushed up on top; clean-shaven; a rounded face with dark brows; blazer over an open-neck white shirt.' },
 ];

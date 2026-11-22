@@ -64,13 +64,14 @@ function curls(c: C2, cx: number, cy: number, rIn: number, rOut: number, sx: num
 }
 /**
  * Outfits: '' everyday, 'S' yellow suit and helmet, 'J' jet pack, 'H' hi-vis vest and hard hat, 'B' gumboots and a checked bush shirt,
- * 'T' clean-room coverall and safety glasses, 'L' carbon-weave jacket, 'F' face shield, apron and cryogenic gauntlets, 'M' methane-oxygen pack.
+ * 'T' clean-room coverall and safety glasses, 'L' carbon-weave jacket, 'F' face shield, apron and cryogenic gauntlets, 'M' methane-oxygen pack,
+ * 'W' winter layers (a quilted puffer jacket and a knitted beanie), 'U' a kick stage on the back, with its Curie engine.
  */
-export type Fit = '' | 'S' | 'J' | 'H' | 'B' | 'T' | 'L' | 'F' | 'M';
+export type Fit = '' | 'S' | 'J' | 'H' | 'B' | 'T' | 'L' | 'F' | 'M' | 'W' | 'U';
 function peter(c: C2, leg: number, air = false, young = false, fit: Fit = '', adam = false) {
   const limb = (x0: number, y0: number, ang: number, len: number, w: number, col: string) => { const x1 = x0 + Math.sin(ang) * len, y1 = y0 + Math.cos(ang) * len; line(c, x0, y0, x1, y1, OUT, w + 0.7); line(c, x0, y0, x1, y1, col, w); return [x1, y1]; };
   const a = leg * 0.62, skin = '#eebf9f', skinD = '#dba283';
-  const suit = fit === 'S', boots = fit === 'B', clean = fit === 'T', weave = fit === 'L', cryo = fit === 'F';
+  const suit = fit === 'S', boots = fit === 'B', clean = fit === 'T', weave = fit === 'L', cryo = fit === 'F', puffer = fit === 'W';
   const legA = clean ? '#cfd6e2' : suit ? '#d9b93a' : adam ? '#2a2e3c' : young ? '#24406f' : '#263f6b', legB = clean ? '#f2f5fa' : suit ? '#f2d14a' : adam ? '#353a4c' : young ? '#2b4f8a' : '#30508a';
   const shoe = (x: number, y: number) => {
     if (boots) { rr(c, x - 1.9, y - 5, 4, 6.2, 1, '#17181e', OUT, 0.35); rr(c, x - 1.9, y - 0.6, 5.2, 2.4, 1, '#17181e', OUT, 0.35); rr(c, x - 1.9, y - 5, 4, 1.1, 0.4, '#d8452e'); return; } // gumboots with a red band
@@ -83,6 +84,7 @@ function peter(c: C2, leg: number, air = false, young = false, fit: Fit = '', ad
     else if (clean) { const [hx, hy] = limb(x, 18, ang, 5.6, 2.6, back ? '#cfd6e2' : '#f2f5fa'); el(c, hx, hy + 0.5, 1.3, 1.3, '#4d9be8', OUT, 0.3); }
     else if (weave) { const [hx, hy] = limb(x, 18, ang, 5.6, 2.6, back ? '#101116' : '#22242c'); rr(c, hx - 1.3, hy - 1, 2.6, 0.9, 0.3, '#2fd0c0'); el(c, hx, hy + 0.5, 1.2, 1.2, back ? skinD : skin, OUT, 0.3); }
     else if (cryo) { const [hx, hy] = limb(x, 18, ang, 3, 2.5, back ? '#0f1014' : '#1b1c23'); const [gx, gy] = limb(hx, hy, ang, 3.2, 3.3, back ? '#2a5fa8' : '#3f7fd0'); el(c, gx, gy + 0.4, 1.7, 1.6, back ? '#2a5fa8' : '#3f7fd0', OUT, 0.3); }
+    else if (puffer) { const [hx, hy] = limb(x, 18, ang, 5.4, 3.2, back ? '#1f2636' : '#323c52'); line(c, hx - Math.sin(ang) * 2.6 - 1.2, hy - Math.cos(ang) * 2.6, hx - Math.sin(ang) * 2.6 + 1.2, hy - Math.cos(ang) * 2.6, 'rgba(160,180,220,.35)', 0.3); el(c, hx, hy + 0.6, 1.2, 1.2, back ? skinD : skin, OUT, 0.3); }
     else if (boots) { const [hx, hy] = limb(x, 18, ang, 5.6, 2.5, back ? '#8f2a1c' : '#b8342a'); el(c, hx, hy + 0.5, 1.2, 1.2, back ? skinD : skin, OUT, 0.3); }
     else if (adam) { const [hx, hy] = limb(x, 18, ang, 5.6, 2.6, back ? '#141c30' : '#1f2b47'); rr(c, hx - 1.3, hy - 0.9, 2.6, 1, 0.3, '#f4f4f0'); el(c, hx, hy + 0.6, 1.2, 1.2, back ? skinD : skin, OUT, 0.3); }
     else if (young) { limb(x, 18.2, 0, 1.6, 2.6, '#cfd5df'); const [hx, hy] = limb(x, 19, ang, 5, 2.1, back ? skinD : skin); el(c, hx, hy, 1.25, 1.25, back ? skinD : skin, OUT, 0.3); }
@@ -90,6 +92,10 @@ function peter(c: C2, leg: number, air = false, young = false, fit: Fit = '', ad
   };
   if (fit === 'M') for (const [x, col] of [[4.6, '#bfe3ff'], [15.4, '#c8f0c0']] as [number, string][]) { // methane and liquid-oxygen bottles, frosted, with a blue-flame nozzle each
     rr(c, x, 14, 4, 11, 2, lg(c, x, 0, x + 4, 0, [0, '#ffffff'], [0.5, col], [1, '#6f8fb0']), OUT, 0.35); rr(c, x, 16.4, 4, 1, 0, '#1d3a7a'); poly(c, [x + 0.8, 25, x + 3.2, 25, x + 3.8, 27.4, x + 0.2, 27.4], '#3a3c48', OUT, 0.25); el(c, x + 2, 15.2, 1.2, 0.5, 'rgba(255,255,255,.8)');
+  }
+  if (fit === 'U') { // a kick stage on the back: a gold-wrapped drum wider than the shoulders, and the Curie nozzle under it
+    rr(c, 5, 14, 14, 9.6, 2, lg(c, 5, 0, 19, 0, [0, '#fff2b8'], [0.35, '#f2c230'], [0.7, '#b8861c'], [1, '#7a5410']), OUT, 0.35); for (const y of [16.4, 20.6]) line(c, 5.2, y, 18.8, y, 'rgba(90,60,10,.55)', 0.35);
+    poly(c, [10.6, 23.6, 13.4, 23.6, 14.4, 27.6, 9.6, 27.6], lg(c, 9.6, 0, 14.4, 0, [0, '#3a3c48'], [0.4, '#b8c0cc'], [1, '#23262f']), OUT, 0.3); el(c, 6.4, 18.4, 0.6, 0.6, '#ff5a3c');
   }
   if (fit === 'J') for (const x of [4.6, 15.4]) { // jet pack: twin tanks behind the shoulders
     rr(c, x, 14.6, 4, 10.4, 1.8, lg(c, x, 0, x + 4, 0, [0, '#f2f4f8'], [0.5, '#b8c0cc'], [1, '#6f7890']), OUT, 0.35); rr(c, x, 17, 4, 1, 0, '#d8452e'); poly(c, [x + 0.8, 25, x + 3.2, 25, x + 3.8, 27.4, x + 0.2, 27.4], '#3a3c48', OUT, 0.25);
@@ -105,6 +111,10 @@ function peter(c: C2, leg: number, air = false, young = false, fit: Fit = '', ad
   } else if (weave) { // carbon twill, with a bright edge so it reads against dark backgrounds
     rr(c, 7.2, 16.4, 9.6, 9.8, 2.2, '#1b1c23', OUT, 0.4); c.save(); c.beginPath(); c.roundRect(7.2, 16.4, 9.6, 9.8, 2.2); c.clip(); for (let i = -4; i < 10; i++) { line(c, 7 + i * 1.5, 26.4, 12 + i * 1.5, 16.2, 'rgba(120,128,150,.55)', 0.4); line(c, 7 + i * 1.5, 16.2, 12 + i * 1.5, 26.4, 'rgba(60,64,80,.6)', 0.4); } c.restore();
     rr(c, 7.2, 16.4, 9.6, 9.8, 2.2, undefined, '#2fd0c0', 0.5); line(c, 12, 16.6, 12, 26, '#2fd0c0', 0.45);
+  } else if (puffer) { // a quilted puffer jacket, a size bigger than the man, zipped up to the chin
+    rr(c, 6.4, 15.8, 11.2, 10.8, 3, lg(c, 6.4, 0, 17.6, 0, [0, '#46526c'], [0.45, '#323c52'], [1, '#1c2232']), OUT, 0.4);
+    for (const y of [18.6, 21.4, 24.2]) { line(c, 6.8, y, 17.2, y, 'rgba(10,14,24,.7)', 0.45); line(c, 7.2, y - 0.9, 16.8, y - 0.9, 'rgba(170,190,230,.28)', 0.35); }
+    line(c, 12, 15.9, 12, 26.4, '#9aa3b5', 0.35); rr(c, 9.2, 14.8, 5.6, 2, 1, '#323c52', OUT, 0.3);
   } else if (boots) {
     rr(c, 7.4, 16.6, 9.2, 9.4, 2.2, '#b8342a', OUT, 0.4); c.save(); c.beginPath(); c.roundRect(7.4, 16.6, 9.2, 9.4, 2.2); c.clip(); for (let i = 0; i < 4; i++) { c.fillStyle = 'rgba(15,15,20,.55)'; c.fillRect(7.4 + i * 2.6, 16.6, 1.2, 9.4); c.fillRect(7.4, 17.4 + i * 2.6, 9.2, 1.2); } c.restore();
   } else if (adam) { // navy blazer over an open-collar white shirt
@@ -122,6 +132,7 @@ function peter(c: C2, leg: number, air = false, young = false, fit: Fit = '', ad
     rr(c, 8, 16.8, 8, 8.6, 1.4, '#ff7a1a', OUT, 0.35); rr(c, 8, 20.4, 8, 1.1, 0, '#e8eef2'); rr(c, 8, 22.6, 8, 1.1, 0, '#e8eef2'); rr(c, 9.4, 16.8, 1, 8.6, 0, '#ffe98a'); rr(c, 13.6, 16.8, 1, 8.6, 0, '#ffe98a'); poly(c, [10.4, 16.8, 12, 19.4, 13.6, 16.8], '#17181e');
   }
   if (cryo) { rr(c, 8.2, 17.4, 7.6, 10.6, 1, lg(c, 0, 17, 0, 28, [0, '#4d8fdc'], [1, '#2a5fa8']), OUT, 0.35); line(c, 9.4, 17.4, 10.6, 16.6, '#2a5fa8', 0.7); line(c, 14.6, 17.4, 13.4, 16.6, '#2a5fa8', 0.7); rr(c, 10.4, 21, 3.2, 2.4, 0.4, '#2a5fa8', 'rgba(0,0,0,.3)', 0.25); } // long apron
+  if (fit === 'U') { line(c, 9, 16.8, 10, 25.4, '#5b4410', 0.9); line(c, 15, 16.8, 14, 25.4, '#5b4410', 0.9); }
   if (fit === 'J' || fit === 'M') { line(c, 9, 16.8, 10.2, 25.4, '#3a3f4f', 0.9); line(c, 15, 16.8, 13.8, 25.4, '#3a3f4f', 0.9); rr(c, 9.4, 20.4, 5.2, 1.1, 0.3, '#3a3f4f'); }
   rr(c, adam ? 9 : 9.6, 14.6, adam ? 6 : 4.8, 2.6, 0.8, skinD);
   // hair behind, then a broad, square-jawed face
@@ -135,6 +146,11 @@ function peter(c: C2, leg: number, air = false, young = false, fit: Fit = '', ad
   if (fit === 'S') { // open-face helmet: the curls still escape at the sides
     c.beginPath(); c.moveTo(5.2, 9.6); c.bezierCurveTo(4.6, -0.6, 19.4, -0.6, 18.8, 9.6); c.lineTo(17, 9.6); c.bezierCurveTo(17, 5.4, 7, 5.4, 7, 9.6); c.closePath(); c.fillStyle = lg(c, 5, 0, 19, 0, [0, '#ffffff'], [0.6, '#e4e8ee'], [1, '#aab2c0']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.4; c.stroke();
     c.beginPath(); c.moveTo(12, 0.6); c.lineTo(12, 5.6); c.strokeStyle = '#d8452e'; c.lineWidth = 1.6; c.stroke(); rr(c, 6.6, 5.8, 10.8, 1.3, 0.6, 'rgba(160,215,255,.75)', OUT, 0.25);
+  }
+  if (puffer) { // a knitted beanie pulled down over the top of the curls: they still spill out at the sides
+    c.beginPath(); c.moveTo(6.2, 6.6); c.bezierCurveTo(6, -0.6, 18, -0.6, 17.8, 6.6); c.closePath(); c.fillStyle = lg(c, 6, 0, 18, 0, [0, '#c8463a'], [0.6, '#a8322a'], [1, '#7a2018']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.4; c.stroke();
+    for (let x = 7.6; x < 17; x += 1.4) line(c, x, 1.6 + Math.abs(x - 12) * 0.25, x, 5.4, 'rgba(60,10,6,.35)', 0.3);
+    rr(c, 5.6, 5, 12.8, 2.4, 1, '#b83a2e', OUT, 0.35); line(c, 6, 6.2, 18, 6.2, 'rgba(255,200,180,.3)', 0.3);
   }
   if (fit === 'H') { // hard hat perched on the curls
     c.beginPath(); c.moveTo(6.2, 5.6); c.bezierCurveTo(6.2, -0.8, 17.8, -0.8, 17.8, 5.6); c.closePath(); c.fillStyle = lg(c, 6, 0, 18, 0, [0, '#ffffff'], [1, '#c2c8d2']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.4; c.stroke();
@@ -347,6 +363,52 @@ function bustMadison(c: C2) {
   c.beginPath(); c.moveTo(18.2, 32.6); c.quadraticCurveTo(24, 38.6, 29.8, 32.6); c.quadraticCurveTo(24, 33.8, 18.2, 32.6); c.closePath(); c.fillStyle = '#fdfaf4'; c.fill(); c.strokeStyle = '#c87a76'; c.lineWidth = 0.55; c.stroke();
   line(c, 19.4, 33.5, 28.6, 33.5, 'rgba(190,140,130,.4)', 0.3);
   for (const x of [17.2, 30.8]) { c.beginPath(); c.moveTo(x, 30.8); c.quadraticCurveTo(x + (x < 24 ? -0.6 : 0.6), 32.8, x + (x < 24 ? 0.4 : -0.4), 34.6); c.strokeStyle = 'rgba(200,130,110,.35)'; c.lineWidth = 0.35; c.stroke(); } // smile lines
+}
+/**
+ * Madison Malone walking (24 x 34), the running mate of "No Time Toulouse", to the same notes as her portrait: the long, straight,
+ * centre-parted hair past the shoulders and lighter in the lengths, the round face and the broad smile, the black tee (here under a
+ * black jacket, as in her byline photo). The small handheld camera with a light on top is the game's: no source says what she filmed with. `film`: the camera up and rolling.
+ */
+function madison(c: C2, leg: number, air = false, film = false) {
+  const limb = (x0: number, y0: number, ang: number, len: number, w: number, col: string) => { const x1 = x0 + Math.sin(ang) * len, y1 = y0 + Math.cos(ang) * len; line(c, x0, y0, x1, y1, OUT, w + 0.7); line(c, x0, y0, x1, y1, col, w); return [x1, y1]; };
+  const a = leg * 0.6, skin = '#f0c2a6', skinD = '#dca487', MH = ['#4a3220', '#6e4e30', '#a47e56'];
+  const shoe = (x: number, y: number) => { rr(c, x - 1.5, y - 1.1, 4.2, 2.2, 1, '#23262f', OUT, 0.35); rr(c, x - 1.5, y + 0.5, 4.2, 0.6, 0.3, '#e8e6df'); };
+  // the hair behind: long and straight, down past the shoulders
+  c.beginPath(); c.moveTo(6.6, 9); c.bezierCurveTo(6.2, 2.6, 17.8, 2.6, 17.4, 9); c.bezierCurveTo(17.8, 13.6, 18.2, 18, 17.6, 21.4); c.lineTo(6.4, 21.4); c.bezierCurveTo(5.8, 18, 6.2, 13.6, 6.6, 9); c.closePath();
+  c.fillStyle = lg(c, 0, 3, 0, 21.4, [0, MH[0]], [0.5, MH[1]], [1, MH[2]]); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.4; c.stroke();
+  { const [hx, hy] = limb(15.4, 18, a * 0.9 + (air ? -2.2 : 0), 2.4, 2.5, '#17181d'); const [fx, fy] = limb(hx, hy, a * 0.9 + (air ? -2.2 : 0), 3, 2.4, '#101116'); el(c, fx, fy + 0.3, 1.1, 1.1, skinD, OUT, 0.3); } // back arm, in the jacket's sleeve
+  const [l1x, l1y] = limb(13.1, 25, -a, 6.2, 2.8, '#2a2e3c'); shoe(l1x, l1y + 0.6);
+  const [l2x, l2y] = limb(10.9, 25, a + (air ? 0.5 : 0), 6.2, 2.8, '#353a4c'); shoe(l2x, l2y + 0.6);
+  // the black crew-neck tee, and a black jacket open over it for a winter morning
+  rr(c, 7.2, 16.4, 9.6, 9.8, 2.2, lg(c, 7.2, 0, 16.8, 0, [0, '#2c2d36'], [0.5, '#1a1b22'], [1, '#0e0f14']), OUT, 0.4);
+  rr(c, 10.2, 16.8, 3.6, 9.2, 0.6, '#0a0b0e'); line(c, 10.2, 16.8, 10.6, 21, '#3a3b46', 0.35); line(c, 13.8, 16.8, 13.4, 21, '#3a3b46', 0.35);
+  rr(c, 10.2, 14.6, 3.6, 2.6, 0.8, skinD); c.beginPath(); c.moveTo(10, 16.6); c.quadraticCurveTo(12, 18, 14, 16.6); c.strokeStyle = '#2a2b33'; c.lineWidth = 0.5; c.stroke();
+  // a round, full face with a soft chin
+  c.beginPath(); c.moveTo(7.2, 9.2); c.bezierCurveTo(7.2, 3.4, 16.8, 3.4, 16.8, 9.2); c.bezierCurveTo(16.9, 12.6, 15.6, 14.8, 13.8, 15.4); c.quadraticCurveTo(12, 16, 10.2, 15.4); c.bezierCurveTo(8.4, 14.8, 7.1, 12.6, 7.2, 9.2); c.closePath();
+  c.fillStyle = lg(c, 6, 4, 18, 16, [0, '#f8d6bf'], [1, skinD]); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.4; c.stroke();
+  for (const x of [8.8, 15.2]) { c.fillStyle = rg(c, x, 12, 0, 1.6, [0, 'rgba(230,120,110,.28)'], [1, 'rgba(230,120,110,0)']); c.fillRect(x - 2, 10, 4, 4); }
+  // the centre parting, the hair falling straight down both sides of the face, darker at the crown
+  for (const sg of [-1, 1]) {
+    c.beginPath(); c.moveTo(12, 3.6); c.bezierCurveTo(12 + sg * 4, 3.4, 12 + sg * 5.8, 6, 12 + sg * 5.8, 10); c.bezierCurveTo(12 + sg * 6, 14, 12 + sg * 6.2, 17.6, 12 + sg * 6.4, 21.4); c.lineTo(12 + sg * 4.4, 21.4); c.bezierCurveTo(12 + sg * 4.6, 17, 12 + sg * 4.8, 13, 12 + sg * 4.6, 9.6); c.bezierCurveTo(12 + sg * 4.2, 6.6, 12 + sg * 2, 5.2, 12, 5); c.closePath();
+    c.fillStyle = lg(c, 0, 3.4, 0, 21.4, [0, MH[0]], [0.45, MH[1]], [1, MH[2]]); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.35; c.stroke();
+    line(c, 12 + sg * 5, 8, 12 + sg * 5.3, 19, 'rgba(235,205,160,.45)', 0.3);
+  }
+  // defined dark brows, hazel eyes, a broad smile that shows her teeth
+  for (const ex of [10, 14]) { el(c, ex, 9.9, 0.85, 0.52, '#fbfbf8'); el(c, ex + 0.05, 9.95, 0.42, 0.44, '#8a7a4e'); el(c, ex + 0.05, 9.95, 0.2, 0.2, '#111'); }
+  line(c, 8.9, 8.7, 10.9, 8.5, '#4a3020', 0.5); line(c, 13.1, 8.5, 15.1, 8.7, '#4a3020', 0.5);
+  c.beginPath(); c.moveTo(12.2, 10.3); c.quadraticCurveTo(12.8, 11.7, 12.1, 12); c.strokeStyle = '#c98f72'; c.lineWidth = 0.32; c.stroke();
+  c.beginPath(); c.moveTo(10.1, 12.9); c.quadraticCurveTo(12, 14.9, 13.9, 12.9); c.quadraticCurveTo(12, 13.4, 10.1, 12.9); c.closePath(); c.fillStyle = '#fdfaf4'; c.fill(); c.strokeStyle = '#c0706a'; c.lineWidth = 0.35; c.stroke();
+  const cam = (x: number, y: number, on: boolean) => { // a small handheld camera with a light on top
+    rr(c, x - 2.4, y - 1.6, 4.4, 3.2, 0.6, '#23262f', OUT, 0.3); el(c, x + 2.3, y, 0.9, 1.1, '#5b6275', OUT, 0.25); el(c, x + 2.5, y, 0.4, 0.5, '#9fd6f5');
+    rr(c, x - 1.6, y - 3, 2.8, 1.3, 0.3, on ? '#fffbe8' : '#c2c8d2', OUT, 0.25); if (on) el(c, x - 1.6, y - 0.7, 0.4, 0.4, '#ff3a2a');
+  };
+  if (film) { // camera up at arm's length, light on, rolling
+    const [hx, hy] = limb(8.6, 18, Math.PI - 0.95, 2.4, 2.5, '#17181d'); const [fx, fy] = limb(hx, hy, Math.PI - 1.25, 3.6, 2.4, '#1a1b22'); el(c, fx, fy, 1.1, 1.1, skin, OUT, 0.3);
+    cam(fx + 1.4, fy - 0.6, true); c.fillStyle = rg(c, fx + 1, fy - 2.4, 0.2, 4, [0, 'rgba(255,252,230,.95)'], [1, 'rgba(255,252,230,0)']); c.fillRect(fx - 3, fy - 6.4, 8, 8);
+  } else {
+    const [hx, hy] = limb(8.6, 18, -a * 0.9 + (air ? 2.2 : 0) + 0.3, 2.4, 2.5, '#17181d'); const [fx, fy] = limb(hx, hy, -a * 0.9 + (air ? 2.2 : 0) + 0.6, 3, 2.4, '#1a1b22'); el(c, fx, fy + 0.3, 1.1, 1.1, skin, OUT, 0.3);
+    cam(fx + 0.6, fy + 1.6, false);
+  }
 }
 
 // ---------------------------------------------------------------- Electron
@@ -587,7 +649,7 @@ export function makeArt(scene: Phaser.Scene) {
   // Peter: present-day set, and a younger set ('y' prefix) for the 1990s workshop
   // Character sets, by key prefix: '' Peter Beck today, 'y' Peter in the 1990s, 'a' Adam Spice. Each gets the everyday look plus power-up outfits.
   for (const [pre, young, adam] of [['', false, false], ['y', true, false], ['a', false, true]] as [string, boolean, boolean][]) {
-    for (const fit of (adam ? ['', 'S', 'J', 'H', 'B'] : young ? ['', 'S', 'J'] : ['', 'H', 'B', 'T', 'L', 'F', 'M']) as Fit[]) {
+    for (const fit of (adam ? ['', 'S', 'J', 'H', 'B'] : young ? ['', 'S', 'J'] : ['', 'H', 'B', 'T', 'L', 'F', 'M', 'W', 'U']) as Fit[]) {
       [0, 1, 0.5, -0.5, -1, -0.5, 0.5].forEach((l, i) => tex(scene, pre + fit + (i === 0 ? 'peter0' : 'peterw' + (i - 1)), 24, 34, (c) => peter(c, i === 0 ? 0.12 : l, false, young, fit, adam)));
       tex(scene, pre + fit + 'peterj', 24, 34, (c) => peter(c, 0.9, true, young, fit, adam));
     }
@@ -613,6 +675,10 @@ export function makeArt(scene: Phaser.Scene) {
   [0, 1, 0.5, -0.5, -1, -0.5, 0.5].forEach((l, i) => tex(scene, i === 0 ? 'vpeter0' : 'vpeterw' + (i - 1), 24, 34, (c) => vance(c, i === 0 ? 0.12 : l)));
   tex(scene, 'vpeterj', 24, 34, (c) => vance(c, 0.9, true));
   tex(scene, 'vpeterf', 24, 34, (c) => vance(c, 0.12, false, true)); // taking a photo
+  // Madison Malone ('m'), the running mate of No Time Toulouse: the same frames, and 'mpeterf' with her camera up and rolling
+  [0, 1, 0.5, -0.5, -1, -0.5, 0.5].forEach((l, i) => tex(scene, i === 0 ? 'mpeter0' : 'mpeterw' + (i - 1), 24, 34, (c) => madison(c, i === 0 ? 0.12 : l)));
+  tex(scene, 'mpeterj', 24, 34, (c) => madison(c, 0.9, true));
+  tex(scene, 'mpeterf', 24, 34, (c) => madison(c, 0.12, false, true));
   // a small figure for people you can meet on the map
   tex(scene, 'n_person', 18, 18, (c) => { el(c, 9, 15.6, 6, 1.5, 'rgba(0,0,0,.35)'); el(c, 9, 8.6, 7, 7, lg(c, 0, 2, 0, 16, [0, '#d7b8ff'], [1, '#7a4fd0']), '#0b0c12', 0.7); el(c, 9, 6.6, 2.4, 2.4, '#1c1240'); c.beginPath(); c.arc(9, 14, 4.6, Math.PI, 0); c.fillStyle = '#1c1240'; c.fill(); el(c, 7, 4.6, 2.6, 1.2, 'rgba(255,255,255,.3)'); });
   BUST_URL = (scene.textures.get('peter_bust').getSourceImage() as HTMLCanvasElement).toDataURL();

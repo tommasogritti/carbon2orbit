@@ -4,7 +4,7 @@ The hi-fi layer is a cinematic look any level can opt into: deep parallax with h
 
 | Scene | Worked example | Look |
 | --- | --- | --- |
-| Platform | `going-public` (indoors, dawn), `workshop` (indoors, night), `lc-1` (outdoors, storm), `factory` (indoors, a bright hall by day) | `listing` in `src/hifiLooks.ts`, `src/looks/workshop.ts`, `src/looks/mahia.ts`, `src/looks/factory.ts` |
+| Platform | `going-public` (indoors, dawn), `workshop` (indoors, night), `lc-1` (outdoors, storm), `factory` (indoors, a bright hall by day), `no-time-toulouse` (a night street with the Moon, then lit rooms and a dark gallery) | `listing` in `src/hifiLooks.ts`, `src/looks/workshop.ts`, `src/looks/mahia.ts`, `src/looks/factory.ts`, `src/looks/control.ts` |
 | Launch control | `atea-1` (its own site), `its-a-test` (a site shared by many flights: one drawing, a `Day` of light per flight) | `src/looks/mercury.ts`, `src/looks/lc1.ts`; the way up is shared in `src/looks/flight.ts` |
 | A single-screen mini-game | `rutherford`; `return-to-sender` (one fall through three lights: the look moves its own grade and ambient with the altitude) | `src/looks/stand.ts`, `src/looks/reentry.ts` |
 | A scene that is all interface | `pics-or-it-didnt-happen` (panels and graphs stay in the world and glow; words go to the HUD), `four-channels` (the same, with a room lit by its own lamps and faces kept on the HUD), `seven-diaries` (a window that keeps the level's clock), `outback-delivery` (a map: its light is the day and night of the real hour) | `src/looks/groundtrack.ts`, `src/looks/review.ts`, `src/looks/edit.ts`, `src/looks/diary.ts` |

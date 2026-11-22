@@ -10,17 +10,25 @@ import { LOOKS } from '../hifiLooks';
 const TS = 16;
 const AUTO = new URLSearchParams(location.search).has('auto');
 interface Way { x: number; top: number; x0: number; x1: number }
-interface Foe { o: Phaser.Physics.Arcade.Image; kind: string; x0: number; x1: number; dir: number; speed: number; alive: boolean; t: number; baseY: number; vx?: number; charging?: boolean; extra?: Phaser.GameObjects.Image; frozen?: number }
+interface Foe { o: Phaser.Physics.Arcade.Image; kind: string; x0: number; x1: number; dir: number; speed: number; alive: boolean; t: number; baseY: number; vx?: number; charging?: boolean; extra?: Phaser.GameObjects.Image; frozen?: number; shoo?: number }
+/** An access door: a solid you can only pass while it stands open. */
+interface Door { x: number; gy: number; zone: Phaser.GameObjects.Zone; glass: Phaser.GameObjects.Image; lamp: Phaser.GameObjects.Arc; t: number; open: boolean; hold: number; told: boolean }
 /** A reporter running mate (Ashlee Vance): walks with you on his own timer, marks what is hidden, and takes photos. */
-interface Reporter { c: Character; o: Phaser.GameObjects.Image; t: number; max: number; snap: number; cool: number; hud: Phaser.GameObjects.Graphics; icon: Phaser.GameObjects.Image; label: Phaser.GameObjects.Text; marks: { target: Phaser.GameObjects.Image; what: string; ring: Phaser.GameObjects.Arc; tag: Phaser.GameObjects.Text; edge: Phaser.GameObjects.Text }[] }
+interface Reporter { host: boolean; c: Character; o: Phaser.GameObjects.Image; t: number; max: number; snap: number; cool: number; hud: Phaser.GameObjects.Graphics; icon: Phaser.GameObjects.Image; label: Phaser.GameObjects.Text; marks: { target: Phaser.GameObjects.Image; what: string; ring: Phaser.GameObjects.Arc; tag: Phaser.GameObjects.Text; edge: Phaser.GameObjects.Text }[]; beam?: Phaser.GameObjects.Image; lower?: Phaser.GameObjects.GameObject[]; lowerText?: Phaser.GameObjects.Text }
 const MATE_SECS = 20, FLASH_SECS = 3, FLASH_COOL = 2.5;
-const SPEED: Record<string, number> = { scooter: 85, drawerbot: 22, ram: 28, redtape: 44, gull: 55, bear: 24, sander: 64, roll: 30, dust: 46, crab: 72, void: 40 };
+/** Madison Malone ('host'): with you for HOST_SECS; Enter rolls her camera for ROLL_SECS, every ROLL_COOL at most, and what is in front of the lens within ROLL_REACH px gets out of the shot. */
+const HOST_SECS = 30, ROLL_SECS = 2.2, ROLL_COOL = 3, ROLL_REACH = 120;
+/** Access doors: shut for DOOR[0] s, then open for DOOR[1] s as somebody badges through; Madison's access opens one at once within DOOR[2] px. */
+const DOOR = [2.6, 1.8, 46];
+/** Facts for the lower third while Madison's camera rolls (sourced: the level's sources). */
+const LOWER = ['ELECTRON · FLIGHT 50 · NO TIME TOULOUSE', 'LIFT-OFF 06:13 NZST · LAUNCH COMPLEX 1, MĀHIA', '5 KINÉIS SATELLITES · 635 KM CIRCULAR ORBIT', 'MARKETS WITH MADISON · INSIDE MISSION CONTROL, AUCKLAND'];
+const SPEED: Record<string, number> = { ruru: 50, alarm: 70, merch: 22, scooter: 85, drawerbot: 22, ram: 28, redtape: 44, gull: 55, bear: 24, sander: 64, roll: 30, dust: 46, crab: 72, void: 40 };
 /** Behaviour groups: flyers skim overhead on a wave, chargers rush you when you are in front of them, droppers hang from the ceiling, rollers spin. */
-const FLY = new Set(['gull', 'dust', 'void']), CHARGE: Record<string, number> = { ram: 105 }, DROP = new Set(['sparks', 'candles', 'offcuts', 'ice']), ROLL = new Set(['redtape', 'roll']), SLOW = new Set(['drawerbot', 'redtape', 'bear', 'roll']);
+const FLY = new Set(['gull', 'dust', 'void', 'ruru']), CHARGE: Record<string, number> = { ram: 105 }, DROP = new Set(['sparks', 'candles', 'offcuts', 'ice']), ROLL = new Set(['redtape', 'roll']), SLOW = new Set(['drawerbot', 'redtape', 'bear', 'roll', 'merch']);
 const BELT = 48; // conveyor speed, px/s
 /** A test position fires on a cycle: FIRE[0] seconds of flame, quiet until FIRE[1], warning lights until the period FIRE[2] is up. */
 const FIRE = [1.0, 2.8, 3.6];
-const HURT: Record<string, string> = { scooter: 'Run over by your own scooter!', drawerbot: 'Chomped by a DishDrawer!', ram: 'Rammed!', gull: 'Pecked!', redtape: 'Tangled in red tape!', bear: 'Mauled by a bear market!', sander: 'Sanded!', roll: 'Bowled over by a roll of carbon fibre!', dust: 'A faceful of carbon dust!', crab: 'Pinched by a blue crab!', void: 'Caught in a void!' };
+const HURT: Record<string, string> = { ruru: 'Startled by a ruru!', alarm: 'Rung up by an alarm clock!', merch: 'Buried in black merch!', scooter: 'Run over by your own scooter!', drawerbot: 'Chomped by a DishDrawer!', ram: 'Rammed!', gull: 'Pecked!', redtape: 'Tangled in red tape!', bear: 'Mauled by a bear market!', sander: 'Sanded!', roll: 'Bowled over by a roll of carbon fibre!', dust: 'A faceful of carbon dust!', crab: 'Pinched by a blue crab!', void: 'Caught in a void!' };
 const POWER: Record<string, { name: string; secs: number; tip: string }> = {
   J: { name: 'JET PACK', secs: 7, tip: 'Jet pack! Hold SPACE to fly' },
   S: { name: 'SUIT + HELMET', secs: 7, tip: 'Suited up: nothing can touch you' },
@@ -31,21 +39,26 @@ const POWER: Record<string, { name: string; secs: number; tip: string }> = {
   F: { name: 'CRYO KIT', secs: 7, tip: 'Face shield, apron, gauntlets: nothing can touch you' },
   M: { name: 'METHANE + OXYGEN', secs: 7, tip: 'Methane and oxygen! Hold SPACE to fly on a blue flame' },
   L: { name: 'CARBON LIGHT', secs: 10, tip: 'Light as carbon fibre: jump far higher, fall slowly' },
+  W: { name: 'WINTER LAYERS', secs: 7, tip: 'Wrapped up for a winter dawn: nothing can touch you' },
+  U: { name: 'KICK STAGE', secs: 9, tip: 'Kick stage! SPACE again in mid-air for a second burn' },
 };
 /** What changes from one platform setting to the next. */
-const THEMES: Record<string, { music: string; amb: 'hiss' | 'sea'; layers: [string, number][]; hifi?: string; tiles: string; goal: string; egg: string; young?: boolean; pit: string; drop: [string, string, string]; title: string; text: (secs: string) => string }> = {
+const THEMES: Record<string, { music: string; amb: 'hiss' | 'sea'; layers: [string, number][]; hifi?: string; tiles: string; goal: string; egg: string; young?: boolean; pit: string; drop: [string, string, string]; title: string; text: (secs: string) => string; count?: number }> = {
   workshop: { music: 'workshop', amb: 'hiss', layers: [['bg_workshop', 760]], hifi: 'workshop', tiles: 'workshop', goal: 'bike', egg: 'waterrocket', young: true, pit: 'Mind the service pit!', drop: ['welder', 'spark', 'Welding sparks!'], title: 'Rocket bike: assembled', text: (t) => `All five parts in ${t} s. The bike screams off down Princes Street on hydrogen peroxide.` },
   mahia: { music: 'mahia', amb: 'sea', layers: [['bg_mahia_far', 520], ['bg_mahia_mid', 760]], hifi: 'mahia', tiles: 'mahia', goal: 'pad_empty', egg: 'gnome', pit: 'Splash!', drop: ['welder', 'spark', 'Sparks!'], title: 'Pad hardware delivered', text: (t) => `Everything reached the tip of the peninsula in ${t} s. Launch Complex 1 can open.` },
   factory: { music: 'factory', amb: 'hiss', layers: [['bg_factory', 760]], hifi: 'factory', tiles: 'factory', goal: 'rosie', egg: 'engine100', pit: 'Into the cable trench!', drop: ['trimmer', 'offcut', 'Hit by a carbon offcut!'], title: 'Rosie is running', text: (t) => `Everything loaded onto Rosie’s bed in ${t} s. She marks, cuts, drills, mills and sands it: a rocket’s worth of carbon composite in 12 hours, where the hand work took more than 400.` },
+  control: { music: 'launch', amb: 'hiss', layers: [['bg_control', 760]], hifi: 'control', tiles: 'control', goal: 'mc_desk', egg: 'egg_moon', pit: 'Mind the step!', drop: ['welder', 'spark', 'Sparks!'], count: 75, title: 'Lift-off: 06:13 NZST', text: (t) => `${Number(t) < 75 ? `In the room in ${t} s, before T−0.` : `In at ${t} s: Electron was already climbing on the big screen.`} Flight 50 lifts off from Launch Complex 1 and puts five Kinéis satellites into a 635 km orbit, in singles and in pairs.` },
   stennis: { music: 'delta', amb: 'sea', layers: [['bg_stennis_far', 520], ['bg_stennis_mid', 760]], hifi: 'stennis', tiles: 'stennis', goal: 'lc3', egg: 'eureka', pit: 'Splash!', drop: ['cryoline', 'icicle', 'Hit by falling ice!'], title: 'Everything but the rocket', text: (t) => `Delivered to Wallops in ${t} s. The engine runs, the pad is open and a replacement dome is being made. What is left is the part nobody can hurry: assemble the tank, fill it, chill it, and only then name a date.` },
   listing: { music: 'heli', amb: 'hiss', layers: [['bg_listing', 760]], hifi: 'listing', tiles: 'workshop', goal: 'bell', egg: 'blender', pit: 'Fell into a funding gap!', drop: ['tickerbox', 'candle', 'Hit by a red candle!'], title: 'RKLB is trading', text: (t) => `The whole listing delivered in ${t} s. Peter Beck rings the opening bell by video link, and VACQ becomes RKLB.` },
 };
-const BOP: Record<string, string> = { scooter: 'Scooter: kill switch hit', drawerbot: 'Drawer shut', ram: 'Ram sent packing', gull: 'Shoo!', redtape: 'Red tape cut', bear: 'Bear squeezed', sander: 'Sander unplugged', roll: 'Roll stopped', dust: 'Dust cleared', crab: 'Crab back in the bay', void: 'Void closed up' };
+const TH0 = (k: string) => THEMES[k];
+const BOP: Record<string, string> = { ruru: 'Ruru off into the dark', alarm: 'Snoozed', merch: 'Folded flat', scooter: 'Scooter: kill switch hit', drawerbot: 'Drawer shut', ram: 'Ram sent packing', gull: 'Shoo!', redtape: 'Red tape cut', bear: 'Bear squeezed', sander: 'Sander unplugged', roll: 'Roll stopped', dust: 'Dust cleared', crab: 'Crab back in the bay', void: 'Void closed up' };
 export class PlatformScene extends Phaser.Scene {
   def!: LevelDef; p: any; me!: Phaser.Physics.Arcade.Sprite; solids!: Phaser.Physics.Arcade.StaticGroup;
   hf?: HiFi; deco: Phaser.GameObjects.Image[] = []; amb?: Loop; jet?: Loop; power: Fit | 'C' = ''; buddy?: Phaser.GameObjects.Image; buddyPre = ''; powerT = 0; powerMax = 1; dbl = false; secret = false; pwHud!: Phaser.GameObjects.Graphics; pwIcon!: Phaser.GameObjects.Image; pwText!: Phaser.GameObjects.Text; jetFx?: Phaser.GameObjects.Particles.ParticleEmitter; wasDown = true; inv = 0; bopped = 0; belts: { x0: number; x1: number; y: number; dir: number; o: Phaser.GameObjects.TileSprite }[] = []; fires: { x: number; t: number; fx: Phaser.GameObjects.Particles.ParticleEmitter; lamp: Phaser.GameObjects.Arc; on: boolean }[] = []; roar?: Loop; jetFxM?: Phaser.GameObjects.Particles.ParticleEmitter; foes: Foe[] = []; droppers: { x: number; t: number; gy: number; live: Phaser.Physics.Arcade.Image[]; hold?: number }[] = []; mate?: Reporter; eggObj?: Phaser.Physics.Arcade.Image; secretObj?: Phaser.Physics.Arcade.Image; pre = ''; got = 0; egg = false; hud!: Phaser.GameObjects.Text; msg!: Phaser.GameObjects.Text; safe = { x: 24, y: 100 }; done = false; stun = 0; t0 = 0; falls = 0;
+  doors: Door[] = []; clock?: Phaser.GameObjects.Text; lowerI = 0; screen?: { rocket: Phaser.GameObjects.Image; x: number; y: number };
   constructor() { super('Platform'); }
-  init(d: { def: LevelDef }) { this.def = d.def; this.p = d.def.params; this.got = 0; this.egg = false; this.done = false; this.stun = 0; this.falls = 0; this.safe = { x: 24, y: 100 }; this.sheepList = []; this.foes = []; this.droppers = []; this.belts = []; this.fires = []; this.inv = 0; this.bopped = 0; this.hits = []; this.botWait = 0; this.power = ''; this.powerT = 0; this.dbl = false; this.secret = false; this.buddy = undefined; this.mate = undefined; this.eggObj = this.secretObj = undefined; }
+  init(d: { def: LevelDef }) { this.def = d.def; this.p = d.def.params; this.got = 0; this.egg = false; this.done = false; this.stun = 0; this.falls = 0; this.safe = { x: 24, y: 100 }; this.sheepList = []; this.foes = []; this.droppers = []; this.belts = []; this.fires = []; this.doors = []; this.clock = undefined; this.screen = undefined; this.lowerI = 0; this.inv = 0; this.bopped = 0; this.hits = []; this.botWait = 0; this.power = ''; this.powerT = 0; this.dbl = false; this.secret = false; this.buddy = undefined; this.mate = undefined; this.eggObj = this.secretObj = undefined; }
   create() {
     const p = this.p, LW = p.width * TS, th = p.theme as string;
     const TH = THEMES[th];
@@ -79,6 +92,14 @@ export class PlatformScene extends Phaser.Scene {
     });
     if (this.fires.length) this.roar = loop('rumble');
     const groundRow = (tx: number) => (p.ground as number[][]).find(([a, b]) => tx >= a && tx <= b)?.[2] ?? 9;
+    // access doors: shut, and open now and then as somebody badges through; a running mate with access opens one as you reach it
+    ((p.doors || []) as number[]).forEach((tx, i) => {
+      const x = tx * TS + 8, gy = groundRow(tx) * TS;
+      img(this, x, gy, 'mc_doorframe').setOrigin(0.5, 1).setDepth(1.6);
+      const glass = img(this, x - 0.6, gy - 1, 'mc_doorglass').setOrigin(0.5, 1).setDepth(1.5);
+      const zone = this.add.zone(x, gy - 62, 8, 124); this.physics.add.existing(zone, true);
+      this.doors.push({ x, gy, zone, glass, lamp: this.add.circle(x + 7.3, gy - 45.6, 0.8, 0xff3a2a).setDepth(1.7), t: i * 1.7, open: false, hold: 0, told: false });
+    });
     const board = (x: number, y: number, a: string, b?: string, strike = false) => {
       deco.push(img(this, x, y, 'sign').setOrigin(0.5, 1).setDepth(1));
       T(this, x, y - 26.4, a, '#ffffff', b ? 4.6 : 5.6, '700').setOrigin(0.5, 0).setDepth(1); if (b) T(this, x, y - 21, b, '#ffe98a', 4.2).setOrigin(0.5, 0).setDepth(1);
@@ -101,12 +122,17 @@ export class PlatformScene extends Phaser.Scene {
     // goal
     const gx = p.goal * TS, gy = groundRow(p.goal) * TS;
     const goal = img(this, gx, gy, TH.goal).setOrigin(0.5, 1).setDepth(2); hf?.flare(goal);
+    if (th === 'control') { // the big screen over your console: the pad at Māhia, live, with Electron on it
+      const sy = gy - 96; const scr = img(this, gx, sy, 'mc_screen').setDepth(1.8); hf?.flare(scr);
+      this.screen = { rocket: img(this, gx + 1, sy + 12.2, 'mc_rocket').setOrigin(0.5, 1).setScale(S * 0.36).setDepth(1.85), x: gx, y: sy };
+    }
     const goalZone = this.add.zone(gx, gy - 16, 20, 32); this.physics.add.existing(goalZone, true);
     // player
     this.me = this.physics.add.sprite(24, 100, pre + 'peter0').setScale(S).setDepth(5);
     this.me.setSize(8 * D, 23 * D).setOffset(8 * D, 10.5 * D).setCollideWorldBounds(true).setAngle(0);
-    for (const fit of ['', 'S', 'J', 'H', 'B', 'T', 'L', 'F', 'M']) if (this.textures.exists(pre + fit + 'peterw0') && !this.anims.exists(pre + fit + 'walk')) this.anims.create({ key: pre + fit + 'walk', frames: [0, 1, 2, 3, 4, 5].map((i) => ({ key: pre + fit + 'peterw' + i })), frameRate: 12, repeat: -1 });
+    for (const fit of ['', 'S', 'J', 'H', 'B', 'T', 'L', 'F', 'M', 'W', 'U']) if (this.textures.exists(pre + fit + 'peterw0') && !this.anims.exists(pre + fit + 'walk')) this.anims.create({ key: pre + fit + 'walk', frames: [0, 1, 2, 3, 4, 5].map((i) => ({ key: pre + fit + 'peterw' + i })), frameRate: 12, repeat: -1 });
     this.physics.add.collider(this.me, this.solids);
+    for (const d of this.doors) this.physics.add.collider(this.me, d.zone);
     this.cameras.main.startFollow(this.me, false, 0.12, 0.12, -40, 20);
     // parts
     for (const [tx, ty, name] of p.parts as [number, number, string][]) {
@@ -123,7 +149,7 @@ export class PlatformScene extends Phaser.Scene {
       const key = code === 'C' && mateC && this.textures.exists('pw_C' + mateC.pre) ? 'pw_C' + mateC.pre : 'pw_' + code;
       const it = this.physics.add.staticImage(tx * TS + 8, ty * TS + 8, key).setScale(S).refreshBody().setDepth(3);
       this.tweens.add({ targets: it, y: it.y - 3, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); hf?.glow(it, 0x9fe6ff, 2.6);
-      this.physics.add.overlap(this.me, it, () => { this.burst(it.x, it.y, 0x9fe6ff); it.destroy(); if (code === 'C' && mateC?.trait === 'reporter') this.giveMate(mateC); else this.givePower(code); });
+      this.physics.add.overlap(this.me, it, () => { this.burst(it.x, it.y, 0x9fe6ff); it.destroy(); if (code === 'C' && mateC?.trait) this.giveMate(mateC); else this.givePower(code); });
     }
     if (p.secret) {
       const sc = (this.secretObj = this.physics.add.staticImage(p.secret[0] * TS + 8, p.secret[1] * TS + 8, 'secret').setScale(S).refreshBody().setDepth(3));
@@ -159,9 +185,10 @@ export class PlatformScene extends Phaser.Scene {
           const live = [panel(this, goal.x - 37, goal.y - 104, 74, 34, 0.92).setDepth(6), img(this, goal.x - 22, goal.y - 87, 'peter_chip').setScale(S * 0.9).setDepth(7), T(this, goal.x - 6, goal.y - 99, '● LIVE', '#ff6a50', 4.6, '700').setDepth(7), T(this, goal.x - 6, goal.y - 92, 'PETER BECK', '#ffffff', 6, '700').setDepth(7), T(this, goal.x - 6, goal.y - 83.6, 'by video link', '#ffe98a', 4.8).setDepth(7)];
           live.forEach((o) => o.setAlpha(0)); this.tweens.add({ targets: live, alpha: 1, duration: 200 });
         } }
+      if (this.screen) this.liftoff();
       const secs = this.t0;
       const stars = this.falls === 0 && secs < 75 ? 3 : this.falls <= 2 ? 2 : 1;
-      this.time.delayedCall(1400, () => finish(this, this.def, {
+      this.time.delayedCall(this.screen ? 4600 : 1400, () => finish(this, this.def, {
         success: true, stars, egg: this.egg, secret: this.secret,
         title: TH.title, text: TH.text(secs.toFixed(0)) + (this.bopped ? ` Troublemakers seen off: ${this.bopped}.` : ''),
       }));
@@ -170,6 +197,10 @@ export class PlatformScene extends Phaser.Scene {
     this.hud = fix(T(this, 9, 6.5, '', '#ffffff', 7, '700')).setDepth(11);
     this.msg = fix(T(this, W / 2, 34, '', '#ffe98a', 10, '700')).setOrigin(0.5).setDepth(11).setShadow(0, 1, '#000000', 3);
     who(this, this.def, W - 104, 4, !!TH.young, fix);
+    if (TH.count) { // the count: a game clock, so that T−0 falls where three stars stop
+      fix(panel(this, W / 2 - 42, 20, 84, 13)).setDepth(10);
+      this.clock = fix(T(this, W / 2, 22, '', '#7cf08a', 7, '700')).setOrigin(0.5, 0).setDepth(11);
+    }
     this.pwHud = fix(this.add.graphics()).setDepth(10); this.pwIcon = fix(img(this, 13, 30, 'pw_J')).setScale(S * 0.9).setDepth(11).setVisible(false); this.pwText = fix(T(this, 23, 22.6, '', '#bfe9ff', 5.6, '700')).setDepth(11);
     this.jetFxM = this.add.particles(0, 0, 'puff', { speedY: { min: 60, max: 110 }, speedX: { min: -8, max: 8 }, lifespan: 260, scale: { start: S * 0.3, end: S * 0.05 }, color: [0xffffff, 0xbfe3ff, 0x4d9be8], alpha: { start: 1, end: 0 }, blendMode: 'ADD', frequency: 14, emitting: false }).setDepth(4);
     this.jet = loop('hiss');
@@ -185,9 +216,12 @@ export class PlatformScene extends Phaser.Scene {
     if (has('J')) rows.push(['Space', 'With the jet pack: hold to fly while it lasts']);
     if (has('B')) rows.push(['Space', 'With the gumboots: press again in mid-air for a second jump (you also run faster)']);
     if (has('M')) rows.push(['Space', 'With methane and oxygen: hold to fly on a blue flame while it lasts']);
+    if (has('U')) rows.push(['Space', 'With the kick stage: press again in mid-air for a second burn']);
     const rep = has('C') && mate?.trait === 'reporter';
+    const host = has('C') && mate?.trait === 'host';
+    if (host) rows.push(['Enter or X', `With ${mate!.name}: roll her camera for ${ROLL_SECS} s. Troublemakers in front of the lens get out of the shot, and a ruru flies off`]);
     if (rep) rows.push(['Enter or X', `With ${mate!.name}: take a photo. The flash stops every troublemaker in view for ${FLASH_SECS} s (walk into one and it still counts)`]);
-    const notes = [has('S') ? 'The suit and helmet make you untouchable.' : '', has('H') ? 'The hard hat and hi-vis make you untouchable.' : '', has('T') ? 'The clean-room suit makes you untouchable.' : '', has('F') ? 'The cryo kit makes you untouchable.' : '', has('L') ? 'Carbon light lets you jump far higher and fall slowly.' : '', has('C') && mate ? (rep ? `The bubble with ${mate.name.split(' ')[0]}’s face brings ${mate.name} along for ${MATE_SECS} s, as well as any other power-up: his notebook marks where the hidden things are, with an arrow at the edge of the screen when they are out of sight.` : `The bubble with ${mate.name.split(' ')[0]}’s face brings ${mate.name} in to run ahead and clear the way.`) : ''].filter(Boolean).join(' ');
+    const notes = [has('S') ? 'The suit and helmet make you untouchable.' : '', has('H') ? 'The hard hat and hi-vis make you untouchable.' : '', has('T') ? 'The clean-room suit makes you untouchable.' : '', has('F') ? 'The cryo kit makes you untouchable.' : '', has('W') ? 'The winter layers make you untouchable.' : '', (this.p.doors || []).length ? 'Access doors open only now and then: wait for one, or bring someone with access.' : '', TH0(this.p.theme).count ? `Be at the goal before the count at the top reaches T−0 for three stars.` : '', has('L') ? 'Carbon light lets you jump far higher and fall slowly.' : '', has('C') && mate ? (host ? `The bubble with ${mate.name.split(' ')[0]}’s face brings ${mate.name} along for ${HOST_SECS} s, as well as any other power-up: her access opens every door as you reach it.` : rep ? `The bubble with ${mate.name.split(' ')[0]}’s face brings ${mate.name} along for ${MATE_SECS} s, as well as any other power-up: his notebook marks where the hidden things are, with an arrow at the edge of the screen when they are out of sight.` : `The bubble with ${mate.name.split(' ')[0]}’s face brings ${mate.name} in to run ahead and clear the way.`) : ''].filter(Boolean).join(' ');
     return { title: this.def.title, rows, note: `Collect all ${this.p.parts.length} parts, then reach the goal. Bubbles are power-ups; the bar shows how long one lasts. ${notes}` };
   }
   /** Waypoints for the ?auto=1 bot: every pickup in order (via a stepping-stone platform where needed), then the goal. */
@@ -251,6 +285,8 @@ export class PlatformScene extends Phaser.Scene {
       const spark = this.droppers.find((dr) => { const k = (dr.x - x) * d; return k > 2 && k < (jump ? 92 : 40) && (dr.live.length > 0 || dr.t > 0.75); });
       const fire = this.fires.find((f) => { const k = (f.x - x) * d, ph = f.t % FIRE[2]; return k > 13 && k < 48 && !(ph > FIRE[0] + 0.05 && ph < FIRE[2] - 0.8); }); // only start across with time to clear it
       if (fire) return { dir: (fire.x - x) * d < 20 ? -d : 0, jump: false };
+      const door = this.doors.find((q) => { const k = (q.x - x) * d; if (k < 6 || k > 40) return false; return !q.open || (q.hold <= 0 && q.t % (DOOR[0] + DOOR[1]) > DOOR[0] + DOOR[1] - 0.55); }); // wait for an access door
+      if (door) return { dir: (door.x - x) * d < 14 ? -d : 0, jump: false };
       if ((gull && this.botWait < 8) || spark) { dir = spark && (spark.x - x) * d < 14 ? -d : 0; jump = false; this.botWait += this.game.loop.delta / 1000; } else if (!gull) this.botWait = 0;
     }
     return { dir, jump: jump && b.blocked.down };
@@ -263,7 +299,7 @@ export class PlatformScene extends Phaser.Scene {
   say(s: string) { this.msg.setText(s).setAlpha(1); this.tweens.killTweensOf(this.msg); this.tweens.add({ targets: this.msg, alpha: 0, delay: 1100, duration: 400 }); }
   refresh() { this.hud.setText(`PARTS ${this.got}/${this.p.parts.length}   ${this.def.title.toUpperCase()}`); }
   /** Power-ups change how Peter looks and what he can do, for a few seconds. */
-  tough() { return this.power === 'S' || this.power === 'H' || this.power === 'T' || this.power === 'F'; }
+  tough() { return this.power === 'S' || this.power === 'H' || this.power === 'T' || this.power === 'F' || this.power === 'W'; }
   /** Conveyor speed under a point at foot level, signed; 0 when not on a belt. */
   beltAt(x: number, feet: number) { const b = this.belts.find((q) => x >= q.x0 && x <= q.x1 && Math.abs(feet - q.y) < 4); return b ? b.dir * BELT : 0; }
   givePower(code: Exclude<Fit, ''> | 'C') {
@@ -297,35 +333,43 @@ export class PlatformScene extends Phaser.Scene {
     g.fillStyle(0x000000, 0.5).fillRoundedRect(23, 31.5, 72, 4, 2); const w = 72 * Math.max(0, this.powerT / this.powerMax); if (w > 1) g.fillStyle(this.powerT < 2 ? 0xff7a5c : 0x7fd0ff).fillRoundedRect(23, 31.5, Math.max(4, w), 4, 2);
     if (this.powerT <= 0) { this.power = ''; this.buddy?.destroy(); this.buddy = undefined; this.pwIcon.setVisible(false); this.pwText.setText(''); g.clear(); snd.powerEnd(); this.say('Power-up worn off'); this.jetFx!.emitting = false; this.jetFxM!.emitting = false; this.jet?.set(0); }
   }
-  /** Ashlee Vance joins: on his own timer, so an outfit power-up and he can be had at once. */
+  /** A running mate with a trait joins on their own timer, so an outfit power-up and they can be had at once: Ashlee Vance ('reporter') or Madison Malone ('host'). */
   giveMate(m: Character) {
     this.endMate(true);
+    const host = m.trait === 'host', secs = host ? HOST_SECS : MATE_SECS;
     const o = img(this, this.me.x, this.me.y, m.pre + 'peter0').setDepth(5).setAlpha(0);
     this.tweens.add({ targets: o, alpha: 1, duration: 200 }); this.hf?.actor(o); this.burst(this.me.x, this.me.y, 0xffffff);
     // his notebook: a ring round each hidden thing still in the level, and an arrow at the screen edge when it is out of sight
-    const marks = ([[this.eggObj, 'something to see'], [this.secretObj, 'a blueprint']] as [Phaser.Physics.Arcade.Image | undefined, string][]).filter(([t]) => t && t.active).map(([t, what]) => {
+    const marks = host ? [] : ([[this.eggObj, 'something to see'], [this.secretObj, 'a blueprint']] as [Phaser.Physics.Arcade.Image | undefined, string][]).filter(([t]) => t && t.active).map(([t, what]) => {
       const ring = this.add.circle(t!.x, t!.y, 10).setStrokeStyle(0.9, 0xfff3c4, 0.95).setDepth(2);
       this.tweens.add({ targets: ring, scale: 1.3, alpha: 0.3, duration: 650, yoyo: true, repeat: -1 });
       return { target: t!, what, ring, tag: T(this, t!.x, t!.y - 16, '✎ ' + what, '#fff3c4', 4.6, '700').setOrigin(0.5).setDepth(6).setShadow(0, 1, '#000', 2), edge: fix(T(this, 0, 0, '', '#fff3c4', 5.2, '700')).setDepth(11).setShadow(0, 1, '#000', 3) };
     });
-    this.mate = { c: m, o, t: MATE_SECS, max: MATE_SECS, snap: 0, cool: 0, marks, hud: fix(this.add.graphics()).setDepth(10), icon: fix(img(this, 13, 52, 'pw_C' + m.pre)).setScale(S * 0.9).setDepth(11), label: fix(T(this, 23, 44.6, m.name.toUpperCase() + '  ·  ⏎ PHOTO', '#fff3c4', 5.6, '700')).setDepth(11) };
-    // a name plate for him, under the player's, fading like it (spec §7.0)
-    const plate = [fix(panel(this, W - 104, 28, 100, 22, 0.85)).setDepth(48), fix(img(this, W - 93, 39, m.pre + 'peter_chip')).setScale(S * 0.68).setDepth(49), fix(T(this, W - 81, 31.6, m.name.toUpperCase(), '#ffffff', 6.6, '700')).setDepth(49), fix(T(this, W - 81, 40.4, m.role, '#ffe98a', 5)).setDepth(49)];
+    this.mate = { host, c: m, o, t: secs, max: secs, snap: 0, cool: 0, marks, hud: fix(this.add.graphics()).setDepth(10), icon: fix(img(this, 13, 52, 'pw_C' + m.pre)).setScale(S * 0.9).setDepth(11), label: fix(T(this, 23, 44.6, m.name.toUpperCase() + (host ? '  ·  ⏎ ROLL' : '  ·  ⏎ PHOTO'), '#fff3c4', 5.6, '700')).setDepth(11) };
+    if (host) { // her camera light, thrown ahead while she films, and a lower third with the facts of the day
+      this.mate.beam = img(this, o.x, o.y, 'mc_beam').setOrigin(0, 0.5).setBlendMode('ADD').setDepth(5.5).setAlpha(0);
+      const bar = fix(panel(this, 6, H - 30, 196, 20, 0.88)).setDepth(10), rec = fix(T(this, 11, H - 27, '● REC', '#ff5a4a', 5, '700')).setDepth(11), tag = fix(T(this, 31, H - 27, 'MADISON MALONE · NZ HERALD', '#ffe98a', 5, '700')).setDepth(11);
+      this.mate.lowerText = fix(T(this, 11, H - 19.4, '', '#ffffff', 5.6, '700')).setDepth(11);
+      this.mate.lower = [bar, rec, tag, this.mate.lowerText]; for (const q of this.mate.lower as any[]) q.setVisible(false);
+    }
+    // a name plate, under the player's, fading like it (spec §7.0)
+    const plate = [fix(panel(this, W - 104, 28, 100, 22, 0.85)).setDepth(48), fix(img(this, W - 93, 39, m.pre + 'peter_chip')).setScale(S * 0.68).setDepth(49), fix(T(this, W - 81, 31.6, m.name.toUpperCase(), '#ffffff', 6.6, '700')).setDepth(49), fix(T(this, W - 81, 40.4, m.role, '#ffe98a', m.role.length > 34 ? 4.2 : 5)).setDepth(49)];
     plate.forEach((q) => q.setAlpha(0)); this.tweens.add({ targets: plate, alpha: 1, duration: 250 }); this.tweens.add({ targets: plate, alpha: 0, delay: 4200, duration: 600, onComplete: () => plate.forEach((q) => q.destroy()) });
-    snd.power(); this.say(`${m.name} joins you · Enter for a photo`); this.cameras.main.flash(120, 255, 243, 196);
+    snd.power(); this.say(`${m.name} joins you · Enter ${host ? 'to film' : 'for a photo'}`); this.cameras.main.flash(120, 255, 243, 196);
   }
   endMate(quiet = false) {
     const m = this.mate; if (!m) return;
-    m.o.destroy(); m.hud.destroy(); m.icon.destroy(); m.label.destroy(); m.marks.forEach((k) => { k.ring.destroy(); k.tag.destroy(); k.edge.destroy(); });
-    this.mate = undefined; if (!quiet) { snd.powerEnd(); this.say(`${m.c.name} heads off to write it up`); }
+    m.o.destroy(); m.hud.destroy(); m.icon.destroy(); m.label.destroy(); m.beam?.destroy(); m.lower?.forEach((q) => q.destroy()); m.marks.forEach((k) => { k.ring.destroy(); k.tag.destroy(); k.edge.destroy(); });
+    this.mate = undefined; if (!quiet) { snd.powerEnd(); this.say(m.host ? `${m.c.name} goes on ahead to the room` : `${m.c.name} heads off to write it up`); }
   }
   mateStep(dt: number, b: Phaser.Physics.Arcade.Body) {
     const m = this.mate; if (!m) return;
     m.t -= dt; m.cool = Math.max(0, m.cool - dt); m.snap = Math.max(0, m.snap - dt);
     const ahead = this.me.x + (this.me.flipX ? -26 : 26), moving = Math.abs(b.velocity.x) > 5;
     m.o.x += (ahead - m.o.x) * Math.min(1, dt * 7); m.o.y += (this.me.y - m.o.y) * Math.min(1, dt * 14); m.o.setFlipX(this.me.flipX);
-    m.o.setTexture(m.c.pre + (m.snap > 0 ? 'peterf' : !b.blocked.down ? 'peterj' : moving ? 'peterw' + (Math.floor(this.time.now / 85) % 6) : 'peter0')).setAlpha(m.t < 1.5 && Math.floor(this.time.now / 120) % 2 ? 0.4 : 1);
-    if (just('b') && m.cool <= 0) this.photo();
+    m.o.setTexture(m.c.pre + (m.snap > 0 && (!m.host || b.blocked.down) ? 'peterf' : !b.blocked.down ? 'peterj' : moving ? 'peterw' + (Math.floor(this.time.now / 85) % 6) : 'peter0')).setAlpha(m.t < 1.5 && Math.floor(this.time.now / 120) % 2 ? 0.4 : 1);
+    if (just('b') && m.cool <= 0) { if (m.host) this.film(); else this.photo(); }
+    if (m.host) this.rolling(m);
     const v = this.cameras.main.worldView;
     m.marks = m.marks.filter((k) => { if (k.target.active) return true; k.ring.destroy(); k.tag.destroy(); k.edge.destroy(); return false; });
     const stack: Record<number, number> = { [-1]: 0, 1: 0 }; // two arrows on the same edge sit one above the other
@@ -345,6 +389,49 @@ export class PlatformScene extends Phaser.Scene {
     for (const f of this.foes) if (f.alive && seen(f.o.x)) { f.frozen = FLASH_SECS; n++; }
     for (const d of this.droppers) if (seen(d.x)) { d.hold = FLASH_SECS; n++; }
     this.burst(m.o.x + (m.o.flipX ? -6 : 6), m.o.y - 8, 0xffffff); this.say(n ? 'Flash! Caught on camera' : 'Flash!');
+  }
+  /** Enter: Madison Malone rolls her camera, with its light on, and puts a fact of the day in the lower third. */
+  film() {
+    const m = this.mate!; m.cool = ROLL_COOL + ROLL_SECS; m.snap = ROLL_SECS; snd.click();
+    m.lowerText!.setText(LOWER[this.lowerI++ % LOWER.length]); this.say('Camera rolling');
+  }
+  /** While the camera rolls: troublemakers in front of the lens get out of the shot (a ruru flies off for good); the lower third shows. */
+  rolling(m: Reporter) {
+    const on = m.snap > 0, dir = m.o.flipX ? -1 : 1;
+    m.beam!.setPosition(m.o.x + dir * 4, m.o.y - 7.5).setOrigin(dir > 0 ? 0 : 1, 0.5).setFlipX(dir < 0).setAlpha(on ? 0.75 + Math.sin(this.time.now / 60) * 0.08 : 0);
+    for (const q of m.lower || []) (q as any).setVisible(on);
+    if (!on) return;
+    for (const f of this.foes) {
+      if (!f.alive) continue;
+      const k = (f.o.x - m.o.x) * dir; if (k < -6 || k > ROLL_REACH || Math.abs(f.o.y - m.o.y) > 44) continue;
+      if (f.kind === 'ruru') this.bop(f, false); // a night bird, in a camera light: off into the dark
+      else { f.dir = dir; f.shoo = 0.9; }
+    }
+  }
+  /** Access doors: on their cycle, or at once for a running mate with access; never shut on you. */
+  doorStep(dt: number) {
+    const m = this.mate?.host ? this.mate : undefined;
+    for (const d of this.doors) {
+      d.t += dt; d.hold = Math.max(0, d.hold - dt);
+      if (m && (Math.abs(m.o.x - d.x) < DOOR[2] || Math.abs(this.me.x - d.x) < DOOR[2])) { d.hold = 0.9; if (!d.told) { d.told = true; this.say(`${m.c.name}’s access: door open`); } }
+      const cyc = d.t % (DOOR[0] + DOOR[1]), inside = Math.abs(this.me.x - d.x) < 10;
+      const open = d.hold > 0 || cyc > DOOR[0] || (d.open && inside);
+      if (open === d.open) continue;
+      d.open = open; (d.zone.body as Phaser.Physics.Arcade.StaticBody).enable = !open;
+      this.tweens.killTweensOf(d.glass); this.tweens.add({ targets: d.glass, y: d.gy - 1 - (open ? 100 : 0), duration: 220, ease: 'Quad.easeOut' });
+      d.lamp.setFillStyle(open ? 0x7cf08a : 0xff3a2a); if (Math.abs(d.x - this.me.x) < 140) snd.door(open);
+    }
+  }
+  /** The set piece: Electron lifts off on the big screen over the console, and (an hour later, run together here) the five satellites are out. */
+  liftoff() {
+    const sc = this.screen!, r = sc.rocket; snd.liftoff();
+    const fl = this.add.particles(0, 0, 'puff', { follow: r, followOffset: { x: 0, y: 1 }, speedY: { min: 20, max: 50 }, speedX: { min: -6, max: 6 }, lifespan: 360, scale: { start: S * 0.32, end: S * 0.05 }, color: [0xffffff, 0xffd27a, 0xff6b2c], alpha: { start: 1, end: 0 }, blendMode: 'ADD', frequency: 16 }).setDepth(1.84);
+    this.tweens.add({ targets: r, y: r.y - 30, duration: 2300, ease: 'Quad.easeIn' }); this.tweens.add({ targets: r, alpha: 0, delay: 1700, duration: 600, onComplete: () => fl.stop() });
+    const tag = (t: string, dy: number, col: string, at: number) => { const o = T(this, sc.x, sc.y + dy, t, col, 4.6, '700').setOrigin(0.5).setDepth(1.9).setAlpha(0).setShadow(0, 1, '#000', 3); this.tweens.add({ targets: o, alpha: 1, delay: at, duration: 200 }); return o; };
+    tag('LIFT-OFF · 06:13 NZST', -11, '#ffe98a', 600);
+    tag('ABOUT AN HOUR LATER', 2, '#bfe9ff', 2800); tag('KINÉIS: 5 OF 5 DEPLOYED', 9, '#7cf08a', 2800);
+    for (let i = 0; i < 5; i++) { const d = this.add.circle(sc.x - 16 + i * 8, sc.y + 17, 1.4, 0x9fd6f5).setDepth(1.9).setAlpha(0); this.tweens.add({ targets: d, alpha: 1, delay: 3000, duration: 250 }); }
+    this.time.delayedCall(2800, () => snd.pickup());
   }
   /** Enemies. Jumping on one from above sees it off; touching it any other way costs a retry from the last safe spot. */
   spawn(kind: string, a: number, b: number, gy: number) {
@@ -385,9 +472,14 @@ export class PlatformScene extends Phaser.Scene {
         const dx = this.me.x - f.o.x, charge = Math.abs(dx) < 72 && Math.sign(dx) === f.dir && Math.abs(this.me.y - f.o.y) < 30;
         if (charge) { sp = CHARGE[f.kind]; if (!f.charging) snd.snort(); } f.charging = charge;
       }
+      const shoo = !!f.shoo && f.shoo > 0; if (shoo) { f.shoo! -= dt; sp *= 2.6; } // out of the shot: hurry to the far end and wait there
       f.o.x += f.dir * sp * dt; f.vx = f.dir * sp;
-      if (f.o.x > f.x1) { f.o.x = f.x1; f.dir = -1; } else if (f.o.x < f.x0) { f.o.x = f.x0; f.dir = 1; }
+      if (f.o.x > f.x1) { f.o.x = f.x1; if (!shoo) f.dir = -1; } else if (f.o.x < f.x0) { f.o.x = f.x0; if (!shoo) f.dir = 1; }
       f.o.setFlipX(f.dir < 0);
+      const near = Math.abs(f.o.x - this.me.x) < 130, beat = (k: number) => Math.floor(f.t * k) !== Math.floor((f.t - dt) * k);
+      if (f.kind === 'alarm') { f.o.setTexture(Math.floor(f.t * 14) % 2 ? 'alarm1' : 'alarm'); f.o.y = f.baseY + Math.sin(f.t * 50) * 0.4; if (near && beat(0.6)) snd.ring(); }
+      else if (f.kind === 'merch') { f.o.setTexture(Math.floor(f.t * 2.4) % 2 ? 'merch1' : 'merch'); f.o.y = f.baseY - Math.abs(Math.sin(f.t * 4.8)) * 2.4; }
+      else if (f.kind === 'ruru' && near && beat(0.35)) snd.hoot();
       if (FLY.has(f.kind)) { f.o.y = f.baseY + Math.sin(f.t * 2.4) * 18; f.o.setTexture(f.kind + (Math.floor(f.t * 7) % 2)); }
       else if (f.kind === 'drawerbot') { f.o.setTexture('drawerbot' + (Math.floor(f.t * 2.6) % 2)); f.o.y = f.baseY - Math.abs(Math.sin(f.t * 5.2)) * 2; }
       else if (ROLL.has(f.kind)) { f.o.rotation += (f.dir * sp * dt) / 6.6; f.extra?.setPosition(f.o.x - f.dir * 14, f.baseY + 5).setFlipX(f.dir < 0); }
@@ -431,6 +523,11 @@ export class PlatformScene extends Phaser.Scene {
     this.stun = Math.max(0, this.stun - dms / 1000);
     this.inv = Math.max(0, this.inv - dms / 1000); this.me.setAlpha(this.inv > 0 && Math.floor(this.time.now / 80) % 2 ? 0.35 : 1);
     this.foeStep(Math.min(0.05, dms / 1000));
+    this.doorStep(Math.min(0.05, dms / 1000));
+    if (this.clock) { // T− counts down to the three-star time; after it, T+
+      const left = THEMES[this.p.theme].count! - this.t0, a = Math.abs(left), mm = Math.floor(a / 60), ss = Math.floor(a % 60);
+      this.clock.setText(`${left >= 0 ? 'T−' : 'T+'}${mm}:${String(ss).padStart(2, '0')}  ·  06:13 NZST`).setColor(left < 0 ? '#9aa3b5' : left < 10 ? (Math.floor(this.t0 * 4) % 2 ? '#ff6a50' : '#ffe98a') : '#7cf08a');
+    }
     for (const q of this.belts) q.o.tilePositionX -= q.dir * BELT * D * Math.min(0.05, dms / 1000) * (q.dir < 0 ? -1 : 1);
     if (this.stun <= 0) {
       const bot = AUTO ? this.bot() : undefined;
@@ -440,7 +537,7 @@ export class PlatformScene extends Phaser.Scene {
       this.me.setVelocityX(bot && !dir ? 0 : dir * 95 * (this.power === 'B' && !bot ? 1.45 : 1) + belt); // the bot feathers against a belt to hold still
       if (dir) this.me.setFlipX(dir < 0);
       if ((bot ? bot.jump : just('a') || just('up')) && b.blocked.down) { this.me.setVelocityY(this.power === 'L' ? -318 : -245); snd.jump(); this.dbl = false; }
-      else if (this.power === 'B' && !b.blocked.down && !this.dbl && (just('a') || just('up'))) { this.dbl = true; this.me.setVelocityY(-232); snd.jump(); this.burst(this.me.x, this.me.y + 12, 0xffffff); }
+      else if ((this.power === 'B' || this.power === 'U') && !b.blocked.down && !this.dbl && (just('a') || just('up'))) { this.dbl = true; this.me.setVelocityY(-232); snd.jump(); this.burst(this.me.x, this.me.y + 12, this.power === 'U' ? 0x9fd6f5 : 0xffffff); }
       if (!bot && !held('a') && !held('up') && b.velocity.y < -90) this.me.setVelocityY(-90); // variable jump height
       this.powerStep(Math.min(0.05, dms / 1000), b);
       this.mateStep(Math.min(0.05, dms / 1000), b);
