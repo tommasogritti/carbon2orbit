@@ -34,7 +34,7 @@ export function openLevel(scene: Phaser.Scene, def: LevelDef) {
   }
   const diagram = def.diagram ? `<figure class="diagram"><img src="${DIAGRAMS[def.diagram.key]}" alt="${def.kind === 'card' ? 'Drawing for this story' : 'Labelled diagram'}"><figcaption>${def.diagram.caption}</figcaption></figure>` : '';
   if (def.kind === 'card' || locked) {
-    showCard(head + diagram + srcLinks(def.sources), [{ label: locked ? 'Back to map' : 'Continue', fn: () => { if (!locked) { save.done[def.id] = 3; persist(); scene.scene.restart({ title: false }); } } }], cardPhoto(def));
+    showCard(head + diagram + watchLink(def) + srcLinks(def.sources), [{ label: locked ? 'Back to map' : 'Continue', fn: () => { if (!locked) { save.done[def.id] = 3; persist(); scene.scene.restart({ title: false }); } } }], cardPhoto(def));
   } else {
     const lead = CHARACTERS.find((c) => c.id === def.hero); // a level played as someone other than Peter says so up front
     const cast = lead ? `<div class="cast"><img class="toon" src="${BUSTS[lead.pre]}" alt="Cartoon of ${lead.name}"><div><b>In this level you play ${lead.name}</b>, ${lead.role}. ${lead.likeness}<br><span class="src">Drawn likeness; no freely licensed photo is available.</span></div></div>` : '';

@@ -128,9 +128,63 @@ function bustScott(c: C2) {
   c.beginPath(); c.moveTo(12.6, 28); c.bezierCurveTo(11.6, 36, 15, 44, 17.4, 54); c.strokeStyle = '#f4f4f4'; c.lineWidth = 0.4; c.stroke(); el(c, 12.6, 27.6, 0.8, 0.9, '#f4f4f4', '#9aa0aa', 0.25); // earphone and its wire
 }
 
+// ---------------------------------------------------------------- Mrs. Iglesias (Space Lab), Q1 2026
+// Drawn for the game from her X profile picture (@MrsIglesiasRKLB), the reference linked from GitHub issue #12; no photo is
+// shipped. Her YouTube channel picture is the Space Lab logo, not a likeness, so it was not used. Shown in her public role only,
+// as the creator of the Space Lab channel. She appears with her permission, confirmed by the owner on 22 Nov 2026.
+// Likeness notes: a big mane of loose, springy curls past the shoulders, dark brown at the roots and auburn to golden in the
+// lengths, parted on one side and fuller on the viewer's right; dark sunglasses with a straight top; a wide smile that shows
+// her teeth, red lips; warm, light-tan skin; a black tee and a bright green lanyard.
+export const IGLESIAS_PRE = 'ci';
+function bustIglesias(c: C2) {
+  const r = rng(71);
+  // one curl: a small round clump, lit from the top left, darker at the roots and golden towards the ends
+  const curl = (x: number, y: number, rad: number) => {
+    const t = Math.min(1, Math.max(0, y / 54 + (r() - 0.5) * 0.25)), base = t < 0.3 ? '#5a321c' : t < 0.6 ? '#86492a' : t < 0.85 ? '#a8673a' : '#c48a52';
+    el(c, x, y, rad, rad * 0.92, rg(c, x - rad * 0.35, y - rad * 0.4, 0, rad * 1.2, [0, t < 0.3 ? '#8a5432' : '#e0a868'], [0.55, base], [1, '#3a1e10']));
+    c.beginPath(); c.arc(x, y, rad * 0.55, Math.PI * 0.9, Math.PI * 1.9); c.strokeStyle = 'rgba(255,220,160,.45)'; c.lineWidth = 0.3; c.stroke();
+  };
+  const inFace = (x: number, y: number, m = 0) => (x - 24) ** 2 / (11 + m) ** 2 + (y - 25) ** 2 / (16.4 + m) ** 2 < 1 && y > 12;
+  // the mane behind the head and shoulders: a dark mass, then curls all over it, wide and past the shoulders, fuller on her right (the viewer's left)
+  c.beginPath(); c.moveTo(44, 53); c.bezierCurveTo(47.6, 34, 45.6, 10, 30, 4.4); c.bezierCurveTo(18, 0.8, 5, 6, 3.6, 22); c.bezierCurveTo(2.4, 34, 4, 46, 5.6, 53); c.closePath(); c.fillStyle = '#3a2012'; c.fill();
+  const back: [number, number, number][] = [];
+  for (let i = 0; i < 420 && back.length < 190; i++) {
+    const a = r() * Math.PI * 2, d = Math.sqrt(r()), x = 24.6 + Math.cos(a) * d * (a > Math.PI / 2 && a < Math.PI * 1.5 ? 20.6 : 22), y = 27 + Math.sin(a) * d * 26.6;
+    if (y > 54 || y < 1.4 || inFace(x, y, -1) || (y > 43 && x > 15.6 && x < 32.4)) continue;
+    back.push([x, y, 1.9 + r() * 1.6]);
+  }
+  back.sort((p, q) => p[1] - q[1]).forEach(([x, y, rad]) => curl(x, y, rad));
+  // black tee
+  shoulders(c, lg(c, 0, 0, 48, 0, [0, '#26272d'], [0.5, '#141519'], [1, '#0a0a0d']));
+  c.beginPath(); c.arc(24, 45.2, 5, 0.12, Math.PI - 0.12); c.fillStyle = '#e2ad8a'; c.fill(); c.beginPath(); c.arc(24, 45.2, 5, 0.12, Math.PI - 0.12); c.strokeStyle = '#0a0a0d'; c.lineWidth = 0.8; c.stroke(); // the round neckline
+  // curls falling over both shoulders, in front of the tee
+  for (const [x0, x1] of [[3.6, 15.4], [33, 43.6]] as [number, number][]) for (let y = 38; y < 55; y += 2.4) for (let x = x0 + 1.6; x < x1 - (y > 48 ? 0 : 1); x += 2.8) curl(x + (r() - 0.5) * 1.2, y + (r() - 0.5), 1.7 + r() * 0.9);
+  c.fillStyle = lg(c, 0, 38, 0, 48, [0, '#c98f6e'], [1, '#e2ad8a']); c.fillRect(19.4, 35, 9.2, 10.6); // neck
+  for (const sg of [-1, 1]) poly(c, [24 + sg * 4.2, 41, 24 + sg * 5.6, 41, 24 + sg * 4.4, 54, 24 + sg * 2.8, 54], '#34c25a', OUT, 0.3); // the bright green lanyard in her profile picture (no badge text)
+  // a rounded face with full cheeks
+  c.beginPath(); c.moveTo(13, 21); c.bezierCurveTo(13, 7.4, 35, 7.4, 35, 21); c.bezierCurveTo(35.2, 30, 32.4, 39, 24, 41); c.bezierCurveTo(15.6, 39, 12.8, 30, 13, 21); c.closePath();
+  c.fillStyle = rg(c, 21.5, 22, 2, 25, [0, '#f2c8a6'], [0.65, '#e6b08a'], [1, '#cc9068']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.5; c.stroke();
+  for (const x of [16.8, 31.2]) { c.fillStyle = rg(c, x, 30.4, 0, 4.8, [0, 'rgba(225,110,95,.26)'], [1, 'rgba(225,110,95,0)']); c.fillRect(x - 5, 25, 10, 11); }
+  // the hairline: curls over the crown and down both sides of the face, parted on her right, the bigger sweep across her forehead
+  for (let k = 0; k <= 22; k++) {
+    const t = k / 22, a = Math.PI * (1.08 - t * 1.16), x = 24 + Math.cos(a) * 12.6, y = 22 - Math.sin(a) * 14 + (t > 0.85 ? (t - 0.85) * 30 : t < 0.15 ? (0.15 - t) * 30 : 0);
+    curl(x + (r() - 0.5) * 0.8, y + (r() - 0.5) * 0.8, 2.2 + r() * 0.9);
+  }
+  for (const [x, y, rad] of [[17.6, 11.6, 2.6], [20.6, 10.4, 2.4], [23.6, 10.8, 2.2], [26.6, 11.8, 2], [15.2, 14, 2.4], [29.2, 9.6, 2.2], [32.4, 11.4, 2.3]] as [number, number, number][]) curl(48 - x, y, rad);
+  // brows, nose, and dark sunglasses with a straight top
+  line(c, 15.8, 19.6, 21.6, 19.2, '#3a2216', 0.9); line(c, 26.4, 19.2, 32.2, 19.6, '#3a2216', 0.9);
+  for (const ex of [18.7, 29.3]) { c.beginPath(); c.moveTo(ex - 4.4, 20.6); c.lineTo(ex + 4.2, 20.6); c.quadraticCurveTo(ex + 4.4, 26.6, ex, 26.4); c.quadraticCurveTo(ex - 4.6, 26.4, ex - 4.4, 20.6); c.closePath(); c.fillStyle = lg(c, 0, 20.6, 0, 26.4, [0, '#17181d'], [0.6, '#2c2e36'], [1, '#3e3a3a']); c.fill(); c.strokeStyle = '#08080a'; c.lineWidth = 0.6; c.stroke(); line(c, ex - 3, 21.6, ex - 1, 21.6, 'rgba(255,255,255,.35)', 0.4); }
+  line(c, 22.9, 21.4, 25.1, 21.4, '#08080a', 0.7); line(c, 14.4, 21, 12.8, 21.8, '#08080a', 0.6); line(c, 33.6, 21, 35.2, 21.8, '#08080a', 0.6);
+  c.beginPath(); c.moveTo(24.6, 26.4); c.quadraticCurveTo(26, 29.4, 25.6, 30); c.quadraticCurveTo(24.2, 31, 22.4, 30.2); c.strokeStyle = 'rgba(170,105,80,.85)'; c.lineWidth = 0.5; c.stroke();
+  // a wide smile that shows her teeth, with a warm lip colour
+  c.beginPath(); c.moveTo(17.8, 33); c.quadraticCurveTo(24, 39.6, 30.2, 33); c.quadraticCurveTo(24, 34.2, 17.8, 33); c.closePath(); c.fillStyle = '#fdfaf4'; c.fill(); c.strokeStyle = '#c8303a'; c.lineWidth = 1; c.stroke();
+  line(c, 19.2, 33.9, 28.8, 33.9, 'rgba(190,140,130,.4)', 0.3);
+  for (const x of [16.6, 31.4]) { c.beginPath(); c.moveTo(x, 31); c.quadraticCurveTo(x + (x < 24 ? -0.6 : 0.6), 33, x + (x < 24 ? 0.4 : -0.4), 34.8); c.strokeStyle = 'rgba(190,120,96,.4)'; c.lineWidth = 0.35; c.stroke(); }
+}
+
 /** Draw the four portraits and their round chips, and register them for the DOM cards (BUSTS). Called once at boot. */
 export function makeCreators(scene: Phaser.Scene) {
-  const all: [string, (c: C2) => void][] = [[CREATOR_PRE.vince, bustVince], [CREATOR_PRE.dave, bustDave], [CREATOR_PRE.matt, bustMatt], [CREATOR_PRE.scott, bustScott]];
+  const all: [string, (c: C2) => void][] = [[CREATOR_PRE.vince, bustVince], [CREATOR_PRE.dave, bustDave], [CREATOR_PRE.matt, bustMatt], [CREATOR_PRE.scott, bustScott], [IGLESIAS_PRE, bustIglesias]];
   for (const [pre, draw] of all) {
     tex(scene, pre + 'peter_bust', 48, 54, (c) => draw(c));
     tex(scene, pre + 'peter_chip', 30, 30, (c) => { c.save(); el(c, 15, 15, 13.4, 13.4); c.clip(); c.fillStyle = lg(c, 0, 0, 0, 30, [0, '#d8452e'], [1, '#6a1a12']); c.fillRect(0, 0, 30, 30); c.translate(15 - 24 * 0.6, 0.6); c.scale(0.6, 0.6); draw(c); c.restore(); el(c, 15, 15, 13.4, 13.4, undefined, '#ffffff', 1.1); el(c, 15, 15, 14.2, 14.2, undefined, '#0b0c12', 0.5); });
@@ -153,4 +207,20 @@ export function makeCreators(scene: Phaser.Scene) {
     text(c, 'FOUR CREATORS ASK', 62, 57.6, 2.6, 'rgba(255,233,138,.8)', 700); text(c, 'TWO GUESTS ANSWER', 157, 57.6, 2.6, 'rgba(127,180,255,.8)', 700);
   });
   DIAGRAMS.cast_q2_2024 = (scene.textures.get('cast_q2_2024').getSourceImage() as HTMLCanvasElement).toDataURL();
+  // the cast of the Q1 2026 interview: the five creators who posted it, then the two guests
+  tex(scene, 'cast_q1_2026', 188, 62, (c) => {
+    c.fillStyle = lg(c, 0, 0, 0, 62, [0, '#16243a'], [1, '#0a0f18']); c.fillRect(0, 0, 188, 62);
+    const who: [string, string, string, string][] = [[IGLESIAS_PRE, 'MRS. IGLESIAS', 'Space Lab', 'ARRANGED IT'], [CREATOR_PRE.vince, 'VINCE', 'Vince is Bullish', 'ANNOUNCED IT'], [CREATOR_PRE.dave, 'DAVE G', 'Dave G Investing', 'CREATOR'], [CREATOR_PRE.matt, 'MATT FARLEY', 'MattMoney', 'CREATOR'], [CREATOR_PRE.scott, 'SCOTT O', '@scotto2050', 'RECORDED IT'], ['', 'SIR PETER BECK', 'CEO', 'GUEST'], ['a', 'ADAM SPICE', 'CFO', 'GUEST']];
+    who.forEach(([pre, name, sub, tag], i) => {
+      const guest = tag === 'GUEST', x = 3 + i * 25.8 + (guest ? 3 : 0);
+      rr(c, x, 6, 23.4, 27, 2, lg(c, 0, 6, 0, 33, guest ? [0, '#3f7fd0'] : [0, '#d8452e'], guest ? [1, '#16305f'] : [1, '#6a1a12']));
+      c.save(); c.beginPath(); c.roundRect(x, 6, 23.4, 27, 2); c.clip(); c.drawImage(bust(pre), x + 0.2, 6.6, 23, 25.9); c.restore();
+      rr(c, x, 6, 23.4, 27, 2, undefined, i === 0 ? '#ffe98a' : '#ffffff', i === 0 ? 0.8 : 0.4);
+      text(c, name, x + 11.7, 38.2, 2.2, '#ffffff', 700); text(c, sub, x + 11.7, 42, 2, guest ? '#7fb4ff' : '#ff9a8a', 600);
+      text(c, tag, x + 11.7, 46.4, 1.9, '#ffe98a', 700);
+    });
+    line(c, 130.4, 8, 130.4, 50, 'rgba(255,255,255,.25)', 0.4);
+    text(c, 'FIVE CREATORS', 66, 56.6, 2.6, 'rgba(255,233,138,.8)', 700); text(c, 'TWO GUESTS', 158, 56.6, 2.6, 'rgba(127,180,255,.8)', 700);
+  });
+  DIAGRAMS.cast_q1_2026 = (scene.textures.get('cast_q1_2026').getSourceImage() as HTMLCanvasElement).toDataURL();
 }

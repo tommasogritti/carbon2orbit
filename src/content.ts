@@ -4,7 +4,7 @@ export type Kind = 'platform' | 'launch' | 'minigame' | 'card' | 'person';
 export interface LevelDef {
   id: string;
   kind: Kind;
-  mechanic?: 'platform' | 'launch' | 'hotfire' | 'heli-catch' | 'orbit-raise' | 'sprint' | 'fault-finder' | 'splashdown' | 'cruise' | 'countdown-race' | 'ride' | 'orbit-ops' | 'dual-count' | 'arc-lab' | 'edit-bay';
+  mechanic?: 'platform' | 'launch' | 'hotfire' | 'heli-catch' | 'orbit-raise' | 'sprint' | 'fault-finder' | 'splashdown' | 'cruise' | 'countdown-race' | 'ride' | 'orbit-ops' | 'dual-count' | 'arc-lab' | 'edit-bay' | 'slot-finder';
   parent?: string; // bonus nodes only: the map node they branch from
   unlocks?: string; // platform levels: the bonus node opened by finding this level's hidden blueprint
   status: 'flown' | 'in-progress' | 'announced';
@@ -453,6 +453,46 @@ export const LEVELS: LevelDef[] = [
     sources: ['https://science.nasa.gov/mission/escapade/', 'https://science.nasa.gov/science-research/heliophysics/nasas-escapade-completes-powered-earth-flybys-now-en-route-to-mars/', RL + 'updates/the-burns-that-sent-rocket-lab-built-spacecraft-to-mars-and-nbsp/', 'https://escapade.ssl.berkeley.edu/timeline/escapade-launch', 'https://news.berkeley.edu/2026/11/09/berkeleys-escapade-spacecraft-say-goodbye-to-earth-next-stop-mars/', 'https://spaceflightnow.com/2025/11/13/blue-origin-launches-twin-mars-probes-for-nasa-as-new-glenn-makes-first-landing/'],
   },
   {
+    id: 'seven-diaries', kind: 'minigame', mechanic: 'slot-finder', status: 'flown', hero: 'iglesias', role: 'Space Lab · arranging the interview',
+    title: 'Seven diaries, one slot', date: '2026-05-07', place: 'YouTube · five channels', map: { x: 536, y: 290 },
+    intro: 'On 7 May 2026 Rocket Lab reports its first-quarter results and holds its call for investors at 2 p.m. Pacific. The next day five YouTube creators who follow the company post the same interview with Sir Peter Beck and the chief financial officer, Adam Spice: the four from the Q2 2024 interview (Vince of Vince is Bullish, Dave G, Matt Farley of MattMoney and Scott O) and, with them, Mrs. Iglesias of the Space Lab channel. On the day of the release Vince thanked her on X “for arranging the interview”, and Scott O for recording and editing it. This level is hers: seven diaries, two days, and one hour that suits everyone.',
+    how: 'You play Mrs. Iglesias. The grid runs from Thursday afternoon to Friday afternoon, Pacific time, one row per person, and at the start only your own diary is known. ← → slide the meeting, ↑ ↓ make it longer or shorter, Space sends the invitation. Every reply shows a little more: a decline shows the block in the way, a yes shows a clear stretch in green. Enter opens the group chat: ask one person for their whole diary (two asks). An invitation needs an hour’s notice and the clock keeps running (the white line is now), so slots slip into the past while you think. After the meeting Scott O needs five hours to edit it (the bar under the grid), and that has to be done by the 3 p.m. release on Friday. Watch the striped TENTATIVE entry: later in the day it turns into a real meeting. Three stars for a meeting of an hour or more, edited in time, in three invitations or fewer. Stuck? I or the 💡 button gives a hint, for half an hour of clock. Every busy block is a game value: nobody’s real diary is known, and neither is when the interview was really recorded. In the game you send the invitations; the sources say only that she arranged it.',
+    fact: 'Vince’s post on X, at 2:42 p.m. Pacific on 8 May, said the interview would go out on all five channels at the same time, 6 p.m. Eastern, “in 20 min”. YouTube dates Vince’s, Scott O’s and Dave G’s cuts to within a minute of 3 p.m. Pacific, Matt’s to 3:48 and Space Lab’s to 4:19.',
+    after: 'Five cuts of the interview went up on Friday 8 May 2026, Pacific time (around midnight in central Europe, and Saturday morning in New Zealand): Vince is Bullish at 2:59 p.m., Scott O and Dave G Investing at 3:00, MattMoney at 3:48 and Space Lab at 4:19, each just under an hour long. Vince’s and Dave G’s descriptions link the other four channels; Scott O’s links her X account beside the other three creators’. (When the interview was really recorded is not published. The diaries, the edit time, the notice, the tentative meeting and the group chat are the game’s own, and in the game she sends the invitations; the sources say only that she arranged it.)',
+    egg: 'Seven yeses the hard way: three stars without the group chat or a hint. And from the results release the interview followed, dated 7 May 2026: Rocket Lab had signed an agreement to acquire Motiv Space Systems, a maker of space robotics and precision mechanisms for spacecraft, and had introduced Gauss, an electric thruster for satellites designed for high-volume production. Both have chapters in her video.',
+    diagram: { key: 'cast_q1_2026', caption: 'Drawn for the game; no photos are used. The five creators who posted the interview, and their two guests. Vince credited Mrs. Iglesias with arranging the interview and Scott O with recording and editing it. Meet her beside this node; the other four are beside “Four channels, one call”.' },
+    watch: { url: 'https://www.youtube.com/watch?v=koo3ah18Idk', label: '“2026 Q1 Exclusive Retail Q&amp;A with Rocket Lab\'s CEO Sir Peter Beck and CFO Adam Spice”, on Mrs. Iglesias’s channel Space Lab (YouTube). The other four cuts are in the sources.' },
+    sources: ['https://investors.rocketlabcorp.com/events/event-details/first-quarter-2026-financial-results-update-and-conference-call', 'https://www.sec.gov/Archives/edgar/data/1819994/000181999426000027/rklb-05072026ex991.htm', 'https://x.com/vinceisbullish/status/2052866834748063753', 'https://www.youtube.com/watch?v=koo3ah18Idk', 'https://www.youtube.com/watch?v=Y_f651VUDeE', 'https://www.youtube.com/watch?v=g_sYNlRrs8Q', 'https://www.youtube.com/watch?v=1gp76KjXkjc', 'https://www.youtube.com/watch?v=JGTKjh2GR4c'],
+    params: {
+      theme: 'q1-2026', clock: { date: '2026-05-07', start: 15, rate: 8, zone: 'PT' }, // hours after midnight on 7 May, Pacific; rate = real seconds per clock hour
+      grid: [14, 40.5], step: 0.25, lengths: [0.75, 1, 1.25, 1.5], need: 1, startAt: 18, notice: 1, chats: 2, par: 3,
+      tail: { hours: 5, label: 'SCOTT O EDITS IT', doing: 'Scott O is editing it' }, release: 39, // 3 p.m. Pacific on 8 May: the release Vince announced for 6 p.m. Eastern
+      cues: [[38 + 42 / 60, '14:42 · Vince posts on X: the interview goes out on all five channels at 6 p.m. Eastern, “in 20 min”.']], // his real post, 21:42 UTC
+      marks: [[14, ''], [39, ''], [40 + 19 / 60, 'RELEASES: FIRST CUTS 3 PM · SPACE LAB 4:19', 'top']], // green lines at the real times
+      // Every busy block here is a game value, drawn so that only a few slots work. Only the call is real (its length is not: the game gives it an hour).
+      rows: [
+        { name: 'Mrs. Iglesias', chip: 'ci', lead: true, known: true, busy: [[15, 15.5], [23, 29], [34.5, 35], [37.5, 38.5]] },
+        { name: 'Sir Peter Beck', chip: '', busy: [[14, 15, 'RESULTS CALL'], [15, 17.5], [21, 23.5], [32.25, 34], [37, 39]] },
+        { name: 'Adam Spice', chip: 'a', busy: [[14, 15, 'RESULTS CALL'], [15.5, 17], [18.25, 19.25], [20.75, 22], [24, 31.25], [33, 35], [36.25, 37.5]] },
+        { name: 'Vince', chip: 'cv', busy: [[14, 16], [18.25, 19.5], [22, 30.5], [32.25, 33], [38, 40.5]] },
+        { name: 'Dave G', chip: 'cd', busy: [[14.5, 16], [20.75, 23], [25, 29.5], [33.5, 35], [39, 40.5]] },
+        { name: 'Matt Farley', chip: 'cm', busy: [[17, 17.5], [18.75, 19.5], [23, 27], [29.5, 31.25], [32.25, 33.25], [36.25, 37]] },
+        { name: 'Scott O', chip: 'cs', busy: [[16.5, 17.5], [21.5, 26], [28, 31.25], [34, 35], [36.25, 38]] },
+      ],
+      clashes: [{ row: 2, from: 20, to: 21.5, at: 17.5, label: 'TENTATIVE' }], // a game element: a late meeting that firms up at 5:30 p.m. on Thursday
+    },
+  },
+  {
+    id: 'q1-2026-qa', kind: 'card', status: 'flown',
+    title: 'Five channels, one Q&A', date: '2026-05-08', place: 'YouTube · five channels', map: { x: 506, y: 314 },
+    intro: 'On Friday 8 May 2026, Pacific time, the day after Rocket Lab’s first-quarter results, one interview with Sir Peter Beck and Adam Spice goes up on five YouTube channels in under an hour and a half. Mrs. Iglesias’s cut on Space Lab, the last of the five at 4:19 p.m. (1:19 a.m. on Saturday 9 May in central Europe, 11:19 a.m. on Saturday in New Zealand), describes it as an exclusive Q&amp;A for the retail community. The chapter list YouTube shows on it runs from the quarter’s performance, Electron and launch strategy and space systems, through the Motiv Space acquisition, solar power, propulsion, Neutron and human flight, to company culture, Europe and debt.',
+    fact: 'It is the earliest of the group’s joint interviews with Beck and Spice that includes her, as far as their own videos show: under his Q3 2024 and Q1 2025 interviews Scott O links the X accounts of the original four only, under Q1 2026 he adds hers, and her channel has no earlier one. Her channel also has the group’s interviews after the Q2 and Q3 2026 results.',
+    after: '',
+    watch: { url: 'https://www.youtube.com/watch?v=koo3ah18Idk', label: '“2026 Q1 Exclusive Retail Q&amp;A with Rocket Lab\'s CEO Sir Peter Beck and CFO Adam Spice”, on Space Lab (YouTube).' },
+    diagram: { key: 'cast_q1_2026', caption: 'Drawn for the game; no photos are used. The five creators and their two guests.' },
+    sources: ['https://www.youtube.com/watch?v=koo3ah18Idk', 'https://www.youtube.com/watch?v=Y_f651VUDeE', 'https://www.youtube.com/watch?v=g_sYNlRrs8Q', 'https://www.youtube.com/watch?v=1gp76KjXkjc', 'https://www.youtube.com/watch?v=JGTKjh2GR4c', 'https://www.youtube.com/watch?v=-Og4I_aP4DU', 'https://www.youtube.com/watch?v=9nLS-gN3l8o', 'https://www.youtube.com/@spacelabRKLB/videos', 'https://www.youtube.com/watch?v=AHQLGGvcHUQ', 'https://www.youtube.com/watch?v=D2QDxLmaYoI'],
+  },
+  {
     id: 'victus-haze', kind: 'minigame', mechanic: 'countdown-race', status: 'flown',
     title: 'VICTUS HAZE', date: '2026-06-19', place: 'LC-1, Māhia', map: { x: 222, y: 304 },
     intro: 'A test set by the US Space Force: can a company keep a rocket and a spacecraft on standby, and then, when the order comes, launch into an orbit it was only told about in that order, inside 24 hours? Rocket Lab has built its spacecraft, a Pioneer, as well as the rocket; a second company, True Anomaly, already has its own spacecraft, Jackal, in orbit for the two to meet. The record for this kind of mission, set by Firefly and Millennium on VICTUS NOX in 2023, stands at 27 hours. In June 2026, at Māhia, the notice arrives before dawn. The clock is running.',
@@ -563,6 +603,7 @@ export const CHARACTERS: Character[] = [
   { id: 'peter', pre: '', name: 'Peter Beck', role: 'Founder and CEO', since: 1995, likeness: 'A tall mop of tight dark curls, a broad face, black top and jeans.' },
   { id: 'adam', pre: 'a', name: 'Adam Spice', role: 'Chief Financial Officer', since: 2018, likeness: 'Shaved head, long face with a heavy jaw, pale brows, navy blazer over an open-collar shirt.' },
   { id: 'vance', pre: 'v', name: 'Ashlee Vance', role: 'Journalist · reporting a book', since: 2015, trait: 'reporter', likeness: 'Shaggy mid-brown hair parted on one side, the fringe swept across the forehead and the sides over the ears; a broad, smiling face with laughter lines and a little stubble; a green shirt checked with blue and white, open over a dark tee. Here he carries a reporter’s notebook and a camera.', note: 'A Bloomberg Businessweek journalist and the author of a biography of Elon Musk. In November 2018 he spent a day at Rocket Lab’s main factory in Auckland with Peter Beck, while reporting his book <i>When the Heavens Went on Sale</i>; he had first visited Beck in Auckland in 2015. This level is set a year after that day, so his walk round the floor here is the game’s own.' },
+  { id: 'iglesias', pre: 'ci', name: 'Mrs. Iglesias', role: 'creator of the YouTube channel Space Lab', since: 2026, likeness: 'A big mane of loose, springy curls past the shoulders, dark at the roots and auburn to golden in the lengths; dark sunglasses; a wide smile that shows her teeth; a black tee.' },
   { id: 'shaun', pre: 's', name: 'Shaun D’Mello', role: 'an engineer at Rocket Lab since 2014, today Vice President, Neutron', since: 2014, likeness: 'Short dark hair, close at the sides and brushed up on top; clean-shaven; a rounded face with dark brows; blazer over an open-neck white shirt.' },
 ];
 
@@ -634,36 +675,46 @@ export const PEOPLE: LevelDef[] = [
     portraitCredit: 'Drawn from his YouTube channel picture; no freely licensed photo is available.',
     title: 'Vince is Bullish', date: '2024-08', place: 'YouTube · @vinceisbullish', map: { x: 390, y: 228 },
     intro: 'A YouTube creator who goes by Vince, on the channel Vince is Bullish (@vinceisbullish on YouTube and X). He asked the first questions in the four-part interview with Sir Peter Beck and Adam Spice after the Q2 2024 results, and posted it as part 1. His description lists the Q2 earnings, Rocket Lab’s competition and Neutron’s propulsive landing among the subjects.',
-    fact: 'It was not his first time talking to Beck: his channel has “A Conversation With Rocket Lab CEO Peter Beck About The Future”, posted on 8 May 2024, two days after the Q1 2024 results.',
+    fact: 'It was not his first time talking to Beck: his channel has “A Conversation With Rocket Lab CEO Peter Beck About The Future”, posted on 8 May 2024, two days after the Q1 2024 results. Two years later, on 8 May 2026, he posted the group’s joint interview with Beck and Spice after the Q1 2026 results, with Mrs. Iglesias of Space Lab joining the four; his post on X that day thanked her for arranging it and Scott O for recording and editing it.',
     after: '',
-    sources: ['https://www.youtube.com/watch?v=nYirK_3WRYA', 'https://www.youtube.com/watch?v=BKIOvo_jYC8', 'https://www.youtube.com/watch?v=T__1ubfs_iE', 'https://www.youtube.com/@vinceisbullish'],
+    sources: ['https://www.youtube.com/watch?v=nYirK_3WRYA', 'https://www.youtube.com/watch?v=BKIOvo_jYC8', 'https://www.youtube.com/watch?v=T__1ubfs_iE', 'https://www.youtube.com/@vinceisbullish', 'https://www.youtube.com/watch?v=Y_f651VUDeE', 'https://x.com/vinceisbullish/status/2052866834748063753'],
   },
   {
     id: 'dave-g', kind: 'person', status: 'flown', parent: 'four-channels', portrait: 'cd',
     portraitCredit: 'Drawn from his YouTube channel picture; no freely licensed photo is available.',
     title: 'Dave G', date: '2024-08', place: 'YouTube · Dave G Investing', map: { x: 404, y: 266 },
     intro: 'The YouTube creator behind Dave G Investing (@daveginvesting). Part 2 of the Q2 2024 interview, “Talking Space &amp; Rocket Lab With Sir Peter Beck!”, went up on his channel. Two days later he posted the “Complete Interview”, noting that its four sections had first been posted on the individual channels.',
-    fact: 'Three months earlier, on 8 May 2024, he had posted “The Future of Rocket Lab: Interview With CEO Peter Beck &amp; CFO Adam Spice!”, after the Q1 2024 results.',
+    fact: 'Three months earlier, on 8 May 2024, he had posted “The Future of Rocket Lab: Interview With CEO Peter Beck &amp; CFO Adam Spice!”, after the Q1 2024 results. His cut of the Q1 2026 interview, posted on 8 May 2026, lists the other participants: Space Lab, Scott O, MattMoney and Vince.',
     after: '',
-    sources: ['https://www.youtube.com/watch?v=dfIHhLd9Wjs', 'https://www.youtube.com/watch?v=JEOcyOo77Po', 'https://www.youtube.com/watch?v=kldLGQHMU98', 'https://www.youtube.com/@daveginvesting'],
+    sources: ['https://www.youtube.com/watch?v=dfIHhLd9Wjs', 'https://www.youtube.com/watch?v=JEOcyOo77Po', 'https://www.youtube.com/watch?v=kldLGQHMU98', 'https://www.youtube.com/@daveginvesting', 'https://www.youtube.com/watch?v=1gp76KjXkjc'],
   },
   {
     id: 'matt-farley', kind: 'person', status: 'flown', parent: 'four-channels', portrait: 'cm',
     portraitCredit: 'Drawn from his YouTube channel picture; no freely licensed photo is available.',
     title: 'Matt Farley', date: '2024-08', place: 'YouTube · MattMoney', map: { x: 428, y: 262 },
     intro: 'A YouTube creator whose channel is MattMoney (@RealMattMoney); on it he describes himself as an engineer. He also writes about Rocket Lab on Seeking Alpha under his own name. Part 3 of the Q2 2024 interview went up on his channel, and its description sets out the order to watch in: Vince’s channel first, then Dave G, then his, then Scott.',
-    fact: 'His full cut, posted on 13 August, is called “The ENTIRE Sir Peter Beck and Adam Spice Interview”.',
+    fact: 'His full cut, posted on 13 August, is called “The ENTIRE Sir Peter Beck and Adam Spice Interview”. The same four, with Mrs. Iglesias of Space Lab, interviewed Beck and Spice again after the Q1 2026 results, and his cut went up on 8 May 2026.',
     after: '',
-    sources: ['https://www.youtube.com/watch?v=WAoYVU3pnXY', 'https://www.youtube.com/watch?v=LpUnlXgn4dw', 'https://www.youtube.com/@RealMattMoney/about', 'https://seekingalpha.com/article/4664134-rocket-lab-the-future-is-bright'],
+    sources: ['https://www.youtube.com/watch?v=WAoYVU3pnXY', 'https://www.youtube.com/watch?v=LpUnlXgn4dw', 'https://www.youtube.com/@RealMattMoney/about', 'https://seekingalpha.com/article/4664134-rocket-lab-the-future-is-bright', 'https://www.youtube.com/watch?v=JGTKjh2GR4c'],
   },
   {
     id: 'scott-o', kind: 'person', status: 'flown', parent: 'four-channels', portrait: 'cs',
     portraitCredit: 'Drawn from a frame of the full interview on his channel; his channel picture is a graphic, and no freely licensed photo is available.',
     title: 'Scott O', date: '2024-08', place: 'YouTube · @scotto2050', map: { x: 436, y: 240 },
     intro: 'A YouTube creator on the channel Scott O (@scotto2050). He asked the last questions of the Q2 2024 interview and posted them as part 4, “Post-Q2 Q&amp;A with Sir Peter Beck &amp; Adam Spice of Rocket Lab”, whose chapters run from new launch timeframes and merchant components to Neutron spending and Electron capacity and recovery plans.',
-    fact: 'His full cut is the one whose title names the quarter, “FULL INTERVIEW | Sir Peter Beck &amp; Adam Spice of Rocket Lab (Q2 2024)”, and its chapters mark where each creator’s turn begins.',
+    fact: 'His full cut is the one whose title names the quarter, “FULL INTERVIEW | Sir Peter Beck &amp; Adam Spice of Rocket Lab (Q2 2024)”, and its chapters mark where each creator’s turn begins. After the Q1 2026 results it was Scott O who recorded and edited the group’s interview, as Vince said on X when it went out on 8 May 2026.',
     after: '',
-    sources: ['https://www.youtube.com/watch?v=fzIBsEy4BU8', 'https://www.youtube.com/watch?v=QIIcZ0MK0_A', 'https://www.youtube.com/@scotto2050'],
+    sources: ['https://www.youtube.com/watch?v=fzIBsEy4BU8', 'https://www.youtube.com/watch?v=QIIcZ0MK0_A', 'https://www.youtube.com/@scotto2050', 'https://www.youtube.com/watch?v=g_sYNlRrs8Q', 'https://x.com/vinceisbullish/status/2052866834748063753'],
+  },
+  // Mrs. Iglesias, who arranged the Q1 2026 interview: her public role as a YouTube creator, from her own channel and X account.
+  {
+    id: 'mrs-iglesias', kind: 'person', status: 'flown', parent: 'seven-diaries', portrait: 'ci',
+    portraitCredit: 'Drawn from her X profile picture; her channel picture is the Space Lab logo, and no freely licensed photo is available.',
+    title: 'Mrs. Iglesias', date: '2026-05', place: 'YouTube · Space Lab', map: { x: 564, y: 312 },
+    intro: 'The creator of the YouTube channel Space Lab (@spacelabRKLB), which describes itself as a small creator dedicated to Rocket Lab; on X she is @MrsIglesiasRKLB. After Rocket Lab’s Q1 2026 results she joined Vince, Dave G, Matt Farley and Scott O for their interview with Sir Peter Beck and Adam Spice, and on the day it went out Vince thanked her on X for arranging it. Her cut is the Watch link on the level next door.',
+    fact: 'Her channel also has an unboxing of an Electron model, posted in November 2025: that is why one stands boxed on the shelf in her level.',
+    after: '',
+    sources: ['https://www.youtube.com/@spacelabRKLB', 'https://x.com/MrsIglesiasRKLB', 'https://x.com/vinceisbullish/status/2052866834748063753', 'https://www.youtube.com/watch?v=koo3ah18Idk', 'https://www.youtube.com/watch?v=GN9yQDkoetM'],
   },
   {
     id: 'adam-spice', kind: 'person', status: 'flown', parent: 'going-public', portrait: 'a',
