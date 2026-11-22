@@ -4,10 +4,13 @@ The hi-fi layer is a cinematic look any level can opt into: deep parallax with h
 
 | Scene | Worked example | Look |
 | --- | --- | --- |
-| Platform | `going-public` (indoors, dawn), `workshop` (indoors, night), `lc-1` (outdoors, storm) | `listing` in `src/hifiLooks.ts`, `src/looks/workshop.ts`, `src/looks/mahia.ts` |
-| Launch control | `atea-1` | `src/looks/mercury.ts` |
+| Platform | `going-public` (indoors, dawn), `workshop` (indoors, night), `lc-1` (outdoors, storm), `factory` (indoors, a bright hall by day) | `listing` in `src/hifiLooks.ts`, `src/looks/workshop.ts`, `src/looks/mahia.ts`, `src/looks/factory.ts` |
+| Launch control | `atea-1` (its own site), `its-a-test` (a site shared by many flights: one drawing, a `Day` of light per flight) | `src/looks/mercury.ts`, `src/looks/lc1.ts`; the way up is shared in `src/looks/flight.ts` |
 | A single-screen mini-game | `rutherford` | `src/looks/stand.ts` |
+| A scene that is all interface | `pics-or-it-didnt-happen` (panels and graphs stay in the world and glow; words go to the HUD) | `src/looks/review.ts` |
 | Ride | `find-the-launch-site` | `src/looks/farm.ts` |
+| The title screen | `Title.ts` (space redrawn, the rocket lit by Light2D, every word on the HUD camera) | `src/looks/title.ts` |
+| The world map | `Map.ts` (sea and land on separate layers; names, pins, nodes and tags untouched) | `src/looks/map.ts` |
 
 The look changes how a level looks, never what it says or how it plays.
 
@@ -17,7 +20,7 @@ The look changes how a level looks, never what it says or how it plays.
 
 2. **Choose the light.** Pick a time of day and weather the chapter really had (`going-public` is dawn because the bell rang at 9:30 a.m. New York, 6:30 a.m. in Long Beach). Done when the choice has a source or follows from one.
 
-3. **Write the look.** Write it in `src/looks/<name>.ts`, list it in `LOOKS` (`src/hifiLooks.ts`) and name it from the scene (a platform or ride theme's `hifi: '<name>'`; `SITE_LOOK` in `Launch.ts`; `LOOK` in `Hotfire.ts`). Build the backdrop from the same drawing code as the plain one, so every object and word stays: give the plain function a `part` argument with `parts()` (`art.ts`) and draw its shell, its things and its lights separately, back to front. Keep text-bearing layers in front of light shafts. Done when the level's plain objects and text all appear in the after shot.
+3. **Write the look.** Write it in `src/looks/<name>.ts`, list it in `LOOKS` (`src/hifiLooks.ts`) and name it from the scene (a platform or ride theme's `hifi: '<name>'`; `SITE_LOOK` or `LEVEL_LOOK` in `Launch.ts`; `LOOK` in `Hotfire.ts` or `FaultFinder.ts`). Build the backdrop from the same drawing code as the plain one, so every object and word stays: give the plain function a `part` argument with `parts()` (`art.ts`) and draw its shell, its things and its lights separately, back to front. Keep text-bearing layers in front of light shafts. Done when the level's plain objects and text all appear in the after shot.
 
    **A scene the layer has not met yet** opts in with a few lines, never a second engine: call `hifi(this, LOOKS[…])` first in `create()`; ask for each backdrop texture through `hf.key()` so the look can redraw it; `hf.tag()` the objects a look needs to slot its own between; `hf.set()` the numbers the look animates from, each step; end `create()` with `hf.ready({ hud: [...] })`, naming everything that must stay crisp. Then add the scene to the table in the architecture doc.
 

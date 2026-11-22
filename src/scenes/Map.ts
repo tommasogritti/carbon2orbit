@@ -6,6 +6,8 @@ import { snd, music, stopLoops } from '../audio';
 import { tally, showBoard } from '../leaderboard';
 import { count } from '../stats';
 import { showCredits } from '../contributors';
+import { hifi, HiFi } from '../hifi';
+import { LOOKS } from '../hifiLooks';
 
 const ZOOM = 2.5; // the map is shown wider than gameplay scenes so the geography reads at a glance
 /** Only announced things are locked. A chapter that is still unfolding (in-progress) can be played up to where the story has got to. */
@@ -52,35 +54,37 @@ function arc(a: { x: number; y: number }, b: { x: number; y: number }, t: number
 }
 
 export class MapScene extends Phaser.Scene {
-  cur: LevelDef = LEVELS[0]; pre = ''; lastStep = 0; tag!: Phaser.GameObjects.Container; marker!: Phaser.GameObjects.Image; ring!: Phaser.GameObjects.Image; moving = false; banner!: Phaser.GameObjects.Text; sub!: Phaser.GameObjects.Text; badge!: Phaser.GameObjects.Image;
+  cur: LevelDef = LEVELS[0]; pre = ''; lastStep = 0; tag!: Phaser.GameObjects.Container; marker!: Phaser.GameObjects.Image; ring!: Phaser.GameObjects.Image; moving = false; hf?: HiFi; banner!: Phaser.GameObjects.Text; sub!: Phaser.GameObjects.Text; badge!: Phaser.GameObjects.Image;
   constructor() { super('Map'); }
   create(data: { title?: boolean }) {
     this.moving = false;
     stopLoops(); music.play('map');
     const cam = this.cameras.main; cam.setZoom(ZOOM).setBounds(0, 0, MAPW, MAPH);
-    img(this, 0, 0, 'map').setOrigin(0);
+    // the hi-fi look (looks/map.ts) redraws the map and the clouds, and lights what the scene tags; the HUD camera below is the scene's own
+    const hf = (this.hf = hifi(this, LOOKS.map, { LW: MAPW, ownHud: true })), K = (k: string) => (hf ? hf.key(k) : k);
+    const map = img(this, 0, 0, K('map')).setOrigin(0); hf?.tag({ map });
     // drifting clouds and their shadows on the sea
     for (let i = 0; i < 7; i++) {
       const y = 170 + ((i * 97) % 240), x0 = (i * 173) % MAPW;
-      const c = img(this, x0, y, 'cloud' + (1 + (i % 3))).setAlpha(0.55).setDepth(8);
+      const c = img(this, x0, y, K('cloud' + (1 + (i % 3)))).setAlpha(0.55).setDepth(8); hf?.tag({ ['cloud' + i]: c });
       this.tweens.add({ targets: c, x: x0 + 140, duration: 60000 + i * 9000, yoyo: true, repeat: -1 });
     }
     // path
-    const pg = this.add.graphics();
+    const lit = hf ? this.add.graphics().setBlendMode('ADD') : undefined, pg = this.add.graphics(); // hi-fi: a soft light under every open trail
     LEVELS.forEach((d, i) => {
       if (!i) return; const a = LEVELS[i - 1].map, b = d.map, open = isOpen(i);
       const n = Math.ceil(Phaser.Math.Distance.Between(a.x, a.y, b.x, b.y) / 5);
-      for (let k = 1; k < n; k++) { const p = arc(a, b, k / n); pg.fillStyle(0x0b0c12, 0.5).fillCircle(p.x, p.y + 0.5, 1.3); pg.fillStyle(open ? 0xffe98a : 0x8fa3c8, open ? 1 : 0.7).fillCircle(p.x, p.y, 0.95); }
+      for (let k = 1; k < n; k++) { const p = arc(a, b, k / n); pg.fillStyle(0x0b0c12, 0.5).fillCircle(p.x, p.y + 0.5, 1.3); pg.fillStyle(open ? 0xffe98a : 0x8fa3c8, open ? 1 : 0.7).fillCircle(p.x, p.y, 0.95); if (open) lit?.fillStyle(0xffc84a, 0.11).fillCircle(p.x, p.y, 2); }
     });
     LEVELS.forEach((d, i) => {
       const open = isOpen(i);
       const n = img(this, d.map.x, d.map.y, playable(d) ? 'n_' + d.kind : 'n_locked').setDepth(3);
-      if (!open) n.setTint(0x8f9bb5).setAlpha(0.85);
+      if (!open) n.setTint(0x8f9bb5).setAlpha(0.85); else hf?.glow(n, 0xbfdcff, 2.3, 0.2);
       if (save.done[d.id]) img(this, d.map.x + 6.5, d.map.y - 6.5, 'check').setDepth(4);
     });
     for (const b of found()) { // secret branches: a blue trail off the parent node, and a glow
       const a = parentOf(b).map, n = Math.ceil(Phaser.Math.Distance.Between(a.x, a.y, b.map.x, b.map.y) / 5);
-      for (let k = 1; k < n; k++) { const p = arc(a, b.map, k / n); pg.fillStyle(0x0b0c12, 0.5).fillCircle(p.x, p.y + 0.5, 1.3); pg.fillStyle(0x7fd0ff).fillCircle(p.x, p.y, 0.95); }
+      for (let k = 1; k < n; k++) { const p = arc(a, b.map, k / n); pg.fillStyle(0x0b0c12, 0.5).fillCircle(p.x, p.y + 0.5, 1.3); pg.fillStyle(0x7fd0ff).fillCircle(p.x, p.y, 0.95); lit?.fillStyle(0x4aa8ff, 0.14).fillCircle(p.x, p.y, 2); }
       const glow = img(this, b.map.x, b.map.y, 'puff').setScale(S * 2.2).setTint(0x7fd0ff).setBlendMode('ADD').setDepth(2);
       this.tweens.add({ targets: glow, alpha: 0.35, scale: S * 2.8, duration: 900, yoyo: true, repeat: -1 });
       img(this, b.map.x, b.map.y, 'n_' + b.kind).setDepth(3);
@@ -89,9 +93,13 @@ export class MapScene extends Phaser.Scene {
     }
     for (const p of folk()) { // people: a violet trail and a small figure
       const a = parentOf(p).map, n = Math.ceil(Phaser.Math.Distance.Between(a.x, a.y, p.map.x, p.map.y) / 5);
-      for (let k = 1; k < n; k++) { const q = arc(a, p.map, k / n); pg.fillStyle(0x0b0c12, 0.4).fillCircle(q.x, q.y + 0.5, 1.1); pg.fillStyle(0xc9a8ff, 0.9).fillCircle(q.x, q.y, 0.75); }
+      for (let k = 1; k < n; k++) { const q = arc(a, p.map, k / n); pg.fillStyle(0x0b0c12, 0.4).fillCircle(q.x, q.y + 0.5, 1.1); pg.fillStyle(0xc9a8ff, 0.9).fillCircle(q.x, q.y, 0.75); lit?.fillStyle(0x9a6aff, 0.12).fillCircle(q.x, q.y, 1.8); }
       if (p.portrait !== undefined) img(this, p.map.x, p.map.y, p.portrait + 'peter_chip').setScale(S * 0.62).setDepth(3); else img(this, p.map.x, p.map.y, 'n_person').setDepth(3);
       if (save.met[p.id]) img(this, p.map.x + 6.5, p.map.y - 6.5, 'check').setDepth(4);
+    }
+    if (lit) for (const g of [lit, pg]) { // hi-fi: the trails are thousands of dots, which cost a good part of a frame every time they are drawn; so they are drawn once, into a texture
+      const rt = this.add.renderTexture(0, 0, MAPW * 3, MAPH * 3).setOrigin(0).setScale(1 / 3); if (g === lit) rt.setBlendMode('ADD');
+      rt.draw(g.setScale(3)); g.destroy();
     }
     this.cur = nodes().find((d) => d.id === save.at) || LEVELS[0];
     const m = this.cur.map;
@@ -102,14 +110,13 @@ export class MapScene extends Phaser.Scene {
     this.tweens.add({ targets: this.marker, scaleY: S * 1.0, duration: 420, yoyo: true, repeat: -1 });
     const tg = this.add.graphics(); tg.fillStyle(0x0b0e18, 0.85).fillRoundedRect(-21, -5.5, 42, 11, 5.5); tg.lineStyle(0.5, 0xffffff, 0.4).strokeRoundedRect(-21, -5.5, 42, 11, 5.5);
     this.tag = this.add.container(m.x, m.y - 48, [tg, T(this, 0, 0, me.name, '#ffffff', 6.4, '700').setOrigin(0.5)]).setDepth(7);
-    cam.startFollow(this.marker, false, 0.12, 0.12, 0, -26);
+    cam.startFollow(this.marker, false, 0.12, 0.12, 0, -26); hf?.tag({ marker: this.marker, ring: this.ring });
     if (save.done['still-testing']) { // the Humanity Star crosses the sky once you have put it there
       const hs = img(this, -10, 126, 'puff').setScale(S * 0.5).setBlendMode('ADD');
       this.tweens.add({ targets: hs, x: MAPW + 10, y: 92, duration: 14000, repeat: -1, repeatDelay: 3000 });
       this.tweens.add({ targets: hs, alpha: 0.15, duration: 330, yoyo: true, repeat: -1 });
     }
     // HUD lives on its own fixed camera, so the map camera can zoom and scroll freely
-    const world = [...this.children.list];
     const hud: Phaser.GameObjects.GameObject[] = [];
     const h = <G extends Phaser.GameObjects.GameObject>(o: G) => { hud.push(o); return o; };
     h(panel(this, 4, H - 36, W - 8, 32, 0.86));
@@ -129,14 +136,14 @@ export class MapScene extends Phaser.Scene {
       this.tweens.add({ targets: tagN, y: tagN.y - 3, duration: 420, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
       const halo = img(this, nxt.map.x, nxt.map.y, 'puff').setScale(S * 1.8).setTint(0xffe98a).setBlendMode('ADD').setDepth(2).setAlpha(0.7);
       this.tweens.add({ targets: halo, alpha: 0.2, scale: S * 2.5, duration: 800, yoyo: true, repeat: -1 });
-      world.push(tagN, halo);
     }
     hotkeys.KeyL = () => showBoard();
     hotkeys.KeyC = () => showCredits(this.game);
     hotkeys.KeyN = () => { const n = this.nextUp(); if (n && n !== this.cur && !this.moving) this.walkTo(n); };
     this.events.once('shutdown', () => { hotkeys.KeyN = undefined; hotkeys.KeyL = undefined; hotkeys.KeyC = undefined; });
+    hf?.set({ moving: 0 }); hf?.ready();
     cam.ignore(hud);
-    this.cameras.add(0, 0, W * D, H * D).setZoom(D).centerOn(W / 2, H / 2).ignore(world);
+    this.cameras.add(0, 0, W * D, H * D).setZoom(D).centerOn(W / 2, H / 2).ignore(this.children.list.filter((o) => !hud.includes(o))); // everything that is not HUD is the map's
     this.refresh();
     if (data?.title) this.titleCard();
   }
@@ -212,7 +219,7 @@ export class MapScene extends Phaser.Scene {
     });
   }
   update() {
-    this.tag.setPosition(this.marker.x, this.marker.y - 43);
+    this.tag.setPosition(this.marker.x, this.marker.y - 43); this.hf?.set({ moving: this.moving ? 1 : 0 });
     if (this.moving) return;
     const dx = (just('right') ? 1 : 0) - (just('left') ? 1 : 0), dy = (just('down') ? 1 : 0) - (just('up') ? 1 : 0);
     if (dx || dy) { const to = this.pick(dx, dy); if (to) this.walkTo(to); }

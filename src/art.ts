@@ -496,9 +496,9 @@ export const MAPW = 860, MAPH = 450;
 export const nz = (lon: number, lat: number): [number, number] => [60 + (lon - 166.5) * 13.6, 165 + (-lat - 34.4) * 18];
 export const us = (lon: number, lat: number): [number, number] => [580 + (lon + 124.7) * 4.16, 195 + (49 - lat) * 5.2];
 const proj = (pts: number[], f: (a: number, b: number) => [number, number]) => { const o: number[] = []; for (let i = 0; i < pts.length; i += 2) o.push(...f(pts[i], pts[i + 1])); return o; };
-function landmass(c: C2, pts: number[], g0: string, g1: string) {
+function landmass(c: C2, pts: number[], g0: string, g1: string, sea: C2 = c) {
   const ys = pts.filter((_, i) => i % 2), y0 = Math.min(...ys), y1 = Math.max(...ys);
-  c.save(); c.shadowColor = 'rgba(120,200,255,.55)'; c.shadowBlur = 26; poly(c, pts, '#3c86c9'); c.restore(); // shallows
+  sea.save(); sea.shadowColor = 'rgba(120,200,255,.55)'; sea.shadowBlur = 26; poly(sea, pts, '#3c86c9'); sea.restore(); // shallows
   poly(c, pts, '#e6d9a8', '#e6d9a8', 1.6); // beach
   poly(c, pts, lg(c, 0, y0, 0, y1, [0, g0], [1, g1]), 'rgba(20,50,30,.55)', 0.4);
 }
@@ -506,7 +506,12 @@ function pin(c: C2, x: number, y: number, label: string, dx = 3, align: CanvasTe
   el(c, x, y, 1.6, 1.6, '#fff', '#17301f', 0.5); el(c, x, y, 0.7, 0.7, '#d8452e');
   c.save(); c.shadowColor = 'rgba(0,10,30,.7)'; c.shadowBlur = 6; text(c, label, x + dx, y + 0.2, 5.4, col, 600, align); c.restore();
 }
-function drawMap(c: C2, w: number, h: number) {
+/**
+ * The world map, MAPW x MAPH. `part`: 1 space and the ocean, 2 the Moon and Mars, 16 the shallows round the land,
+ * 8 the land itself, 4 every name, pin and the compass.
+ */
+export function drawMap(real: C2, w: number, h: number, part = 31) {
+  const pick = parts(real, part), sea = pick(16); let c = pick(1);
   // space, upper atmosphere, ocean
   c.fillStyle = lg(c, 0, 0, 0, 150, [0, '#04050c'], [0.55, '#0a1030'], [0.8, '#1b3f86'], [1, '#2f6fc0']); c.fillRect(0, 0, w, 150);
   c.fillStyle = rg(c, 620, 40, 5, 150, [0, 'rgba(120,80,200,.22)'], [1, 'rgba(120,80,200,0)']); c.fillRect(0, 0, w, 150);
@@ -516,28 +521,29 @@ function drawMap(c: C2, w: number, h: number) {
   const r = rng(21);
   for (let i = 0; i < 520; i++) { const x = r() * w, y = 165 + r() * (h - 165), l = 3 + r() * 6; c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + l / 2, y - 0.9, x + l, y); c.strokeStyle = `rgba(160,205,255,${0.1 + r() * 0.2})`; c.lineWidth = 0.35; c.stroke(); }
   // Moon and Mars
-  c.save(); c.shadowColor = 'rgba(220,225,255,.7)'; c.shadowBlur = 40; el(c, 430, 60, 16, 16, '#c3c6cf'); c.restore(); planet(c, 430, 60, 16, 'moon');
-  text(c, 'THE MOON', 430, 82, 4.4, '#aab4d4', 600);
-  c.save(); c.shadowColor = 'rgba(255,140,90,.7)'; c.shadowBlur = 26; el(c, 764, 32, 9, 9, '#c8623a'); c.restore(); el(c, 764, 32, 9, 9, rg(c, 761, 29, 1, 12, [0, '#f0a070'], [0.6, '#c8623a'], [1, '#6a2a18'])); el(c, 761, 34, 3.6, 1.8, 'rgba(110,50,30,.45)'); el(c, 767, 29, 2.2, 1.2, 'rgba(110,50,30,.4)'); el(c, 764, 24.2, 3, 1, 'rgba(255,255,255,.8)'); text(c, 'MARS', 764, 46.4, 4.4, '#c9a090', 600);
+  c = pick(2); c.save(); c.shadowColor = 'rgba(220,225,255,.7)'; c.shadowBlur = 40; el(c, 430, 60, 16, 16, '#c3c6cf'); c.restore(); planet(c, 430, 60, 16, 'moon');
+  text(pick(4), 'THE MOON', 430, 82, 4.4, '#aab4d4', 600);
+  c.save(); c.shadowColor = 'rgba(255,140,90,.7)'; c.shadowBlur = 26; el(c, 764, 32, 9, 9, '#c8623a'); c.restore(); el(c, 764, 32, 9, 9, rg(c, 761, 29, 1, 12, [0, '#f0a070'], [0.6, '#c8623a'], [1, '#6a2a18'])); el(c, 761, 34, 3.6, 1.8, 'rgba(110,50,30,.45)'); el(c, 767, 29, 2.2, 1.2, 'rgba(110,50,30,.4)'); el(c, 764, 24.2, 3, 1, 'rgba(255,255,255,.8)'); text(pick(4), 'MARS', 764, 46.4, 4.4, '#c9a090', 600);
   // a corner of Australia at the map's western edge (the Tasman is squeezed, like the Pacific)
-  landmass(c, [-6, 180, 14, 184, 28, 198, 36, 220, 38, 246, 32, 272, 22, 292, 8, 306, -6, 310], '#d9b877', '#b8935a'); text(c, 'AUSTRALIA', 15, 228, 3.8, 'rgba(70,50,20,.7)', 700); pin(c, 13, 258, 'Koonibba', 3, 'left', '#fff6e0');
+  const land = pick(8), ink = pick(4); c = land;
+  landmass(c, [-6, 180, 14, 184, 28, 198, 36, 220, 38, 246, 32, 272, 22, 292, 8, 306, -6, 310], '#d9b877', '#b8935a', sea); text(ink, 'AUSTRALIA', 15, 228, 3.8, 'rgba(70,50,20,.7)', 700); pin(ink, 13, 258, 'Koonibba', 3, 'left', '#fff6e0');
   // Aotearoa
-  landmass(c, proj(SI, nz), '#5fae62', '#2f7a47'); landmass(c, proj(NI, nz), '#6cb968', '#3a8a4c'); landmass(c, proj(STEWART, nz), '#4f9d55', '#2f7a47');
+  landmass(c, proj(SI, nz), '#5fae62', '#2f7a47', sea); landmass(c, proj(NI, nz), '#6cb968', '#3a8a4c', sea); landmass(c, proj(STEWART, nz), '#4f9d55', '#2f7a47', sea);
   poly(c, [...nz(175.75, -36.56), ...nz(175.9, -36.58), ...nz(175.85, -36.68)], '#6cb968', '#e6d9a8', 0.5); // Great Mercury Island
   // Southern Alps and central plateau
   for (let i = 0; i < 26; i++) { const t = i / 25, [x, y] = nz(167.6 + t * 5.0, -45.1 + t * 3.6); const j = (r() - 0.5) * 3; poly(c, [x - 2.2 + j, y + 1.6, x + j, y - 2.4, x + 2.2 + j, y + 1.6], '#6f8f7a'); poly(c, [x - 0.9 + j, y - 0.8, x + j, y - 2.4, x + 0.9 + j, y - 0.8], '#f4f6f8'); }
   for (const [lo, la] of [[175.57, -39.28], [174.06, -39.3], [175.65, -39.16]]) { const [x, y] = nz(lo, la); poly(c, [x - 2.6, y + 1.8, x, y - 2.8, x + 2.6, y + 1.8], '#6f8f7a'); poly(c, [x - 1, y - 1, x, y - 2.8, x + 1, y - 1], '#f4f6f8'); }
   const ni = proj(NI, nz), si = proj(SI, nz);
   for (let i = 0; i < 260; i++) { const x = 60 + r() * 180, y = 165 + r() * 240; if (inside(ni, x, y) || inside(si, x, y)) el(c, x, y, 0.9 + r() * 1.2, 0.6 + r(), 'rgba(30,80,45,.22)'); }
-  text(c, 'AOTEAROA', 96, 238, 9, 'rgba(210,240,255,.75)', 700); text(c, 'NEW ZEALAND', 96, 247, 4.2, 'rgba(210,240,255,.6)', 600);
+  c = ink; text(c, 'AOTEAROA', 96, 238, 9, 'rgba(210,240,255,.75)', 700); text(c, 'NEW ZEALAND', 96, 247, 4.2, 'rgba(210,240,255,.6)', 600);
   pin(c, ...nz(174.76, -36.85), 'Auckland', -3, 'right', '#eaf6ff'); pin(c, ...nz(177.87, -39.26), 'Māhia · LC-1', 4, 'left', '#eaf6ff');
   pin(c, ...nz(174.78, -41.29), 'Wellington', -3, 'right', '#eaf6ff'); pin(c, ...nz(170.5, -45.87), 'Dunedin', 4, 'left', '#eaf6ff');
   pin(c, ...nz(168.35, -46.41), 'Invercargill', -3, 'right', '#eaf6ff'); pin(c, ...nz(175.82, -36.6), 'Great Mercury Is.', 4, 'left', '#eaf6ff');
   pin(c, ...nz(172.75, -43.8), 'Kaitorete Spit', 4, 'left', '#eaf6ff');
   // USA
-  landmass(c, proj(USA, us), '#c9b877', '#8f9a58');
+  c = land; landmass(c, proj(USA, us), '#c9b877', '#8f9a58', sea);
   for (let i = 0; i < 16; i++) { const [x, y] = us(-112 + (r() - 0.5) * 10, 34 + i * 0.9); poly(c, [x - 2, y + 1.4, x, y - 2, x + 2, y + 1.4], '#8f8660'); poly(c, [x - 0.8, y - 0.7, x, y - 2, x + 0.8, y - 0.7], '#f4f6f8'); }
-  text(c, 'UNITED STATES', 700, 245, 7, 'rgba(60,50,25,.6)', 700);
+  c = ink; text(c, 'UNITED STATES', 700, 245, 7, 'rgba(60,50,25,.6)', 700);
   pin(c, ...us(-118.2, 33.8), 'Long Beach HQ', -3, 'right', '#eaf6ff'); pin(c, ...us(-89.6, 30.4), 'Stennis', 0, 'center', '#eaf6ff');
   pin(c, ...us(-74, 40.7), 'New York', -3, 'right', '#eaf6ff'); pin(c, ...us(-75.45, 37.9), 'Wallops · LC-2, LC-3', 4, 'left', '#eaf6ff');
   // ocean dressing

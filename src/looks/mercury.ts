@@ -1,14 +1,15 @@
-import Phaser from 'phaser';
-import { D, S, C2, el, line, poly, lg, rg, rng, cloud, drawSite } from '../art';
+import { D, C2, el, line, poly, lg, rg, rng, drawSite } from '../art';
 import { texAt, soft, add, halo, sheet } from '../hifi';
-import type { HiFi, Look } from '../hifi';
+import type { Look } from '../hifi';
+import { spaceTextures, SPACE, puffy, ascentLive, ascentStep } from './flight';
 
 // ------------------------------------------------------------------ Ātea-1: Great Mercury Island, 30 November 2009, 14:23
 // The level's own account gives the time: 14:23 local, on the last day of spring, which on New Zealand summer time is a
 // little over an hour after the sun's highest point. So this is hard early-afternoon light: a deep sky, a white sun, short
 // shadows falling away from it, glitter on the water under it, and the shallows round the island showing turquoise.
 // Launch control places its own backdrop, so this look has no layer stack: it redraws the textures the scene asks for
-// (`swap`), by the same site code as the plain one (`drawSite`), and adds what moves from the scene's `state`.
+// (`swap`), by the same site code as the plain one (`drawSite`); what moves on the way up is shared with the other
+// launch looks (flight.ts).
 const SUN = [208, 80], HZ = 82; // where the plain sky has its sun, moved clear of the consoles; the horizon of the site drawing
 
 function sky(c: C2) {
@@ -46,75 +47,14 @@ function site(c: C2) {
   for (let i = 0; i < 40; i++) { const k = r(), x = 40 + k * 246, y = (1 - k) * (1 - k) * 112.4 + 2 * (1 - k) * k * 134.6 + k * k * 114.4 + 0.5 + r() * 1.4; line(c, x, y, x + 1.5 + r() * 3, y, 'rgba(255,255,255,.5)', 0.3); }
   c.drawImage(sheet(320, 150, D, (t) => { t.drawImage(things, 0, 0, 320, 150); t.globalCompositeOperation = 'source-atop'; t.fillStyle = lg(t, 0, 104, 30, 62, [0, 'rgba(6,30,34,.30)'], [0.55, 'rgba(6,30,34,0)'], [1, 'rgba(255,250,210,.30)']); t.fillRect(0, 0, 320, 150); }), 0, 0, 320, 150);
 }
-/** A cloud of the plain shape, lit from above: bright crown, blue-grey base. */
-const puffy = (seed: number) => (c: C2, w: number, h: number) => {
-  cloud(c, w, h, seed, '#c6d8ec'); c.globalCompositeOperation = 'source-atop';
-  c.fillStyle = lg(c, 0, 0, 0, h, [0, 'rgba(255,255,255,.95)'], [0.42, 'rgba(255,255,255,.15)'], [0.7, 'rgba(120,150,196,.25)'], [1, 'rgba(84,116,170,.62)']); c.fillRect(0, 0, w, h);
-  c.fillStyle = lg(c, 0, 0, w, 0, [0, 'rgba(70,100,160,.18)'], [0.6, 'rgba(255,250,228,0)'], [1, 'rgba(255,248,220,.34)']); c.fillRect(0, 0, w, h);
-};
-function stars(c: C2) {
-  const r = rng(5);
-  soft(c, 6); for (let i = 0; i < 26; i++) el(c, 40 + i * 10 + r() * 14, 150 - i * 4.6 + (r() - 0.5) * 22, 14 + r() * 16, 5 + r() * 6, `rgba(${120 + r() * 60},${120 + r() * 50},${220},${0.035 + r() * 0.04})`); soft(c, 0); // the Milky Way, faintly
-  for (let i = 0; i < 620; i++) { const x = r() * 320, y = r() * 180, s = r(), q = r(); c.globalAlpha = 0.3 + q * 0.7; el(c, x, y, s > 0.97 ? 0.6 : 0.13 + s * 0.2, s > 0.97 ? 0.6 : 0.13 + s * 0.2, s > 0.9 ? '#ffd9a8' : s > 0.8 ? '#a8ccff' : '#ffffff'); if (s > 0.97) { c.globalAlpha = 0.5; line(c, x - 2, y, x + 2, y, '#ffffff', 0.12); line(c, x, y - 2, x, y + 2, '#ffffff', 0.12); } }
-  c.globalAlpha = 1;
-}
-function limb(c: C2) {
-  // the edge of the Earth from the edge of space: ocean, cloud bands, and the thin blue line of the air
-  const cx = 200, cy = 830, R = 800, r = rng(31);
-  c.save(); c.shadowColor = 'rgba(90,180,255,.95)'; c.shadowBlur = 90; el(c, cx, cy, R, R, '#2f86e6'); c.shadowBlur = 26; c.shadowColor = 'rgba(170,225,255,.9)'; el(c, cx, cy, R, R, '#2f86e6'); c.restore();
-  c.save(); el(c, cx, cy, R, R); c.clip();
-  c.fillStyle = rg(c, cx, cy, R - 96, R, [0, '#0c2f6e'], [0.55, '#1756a6'], [0.9, '#3f97e6'], [1, '#bfe6ff']); c.fillRect(0, 0, 400, 130);
-  soft(c, 1.2); for (let i = 0; i < 9; i++) { const x = r() * 400, y = 58 + r() * 66; c.beginPath(); for (let k = 0; k < 10; k++) { const t = (k / 10) * 6.283, d = 12 + r() * 22; k ? c.lineTo(x + Math.cos(t) * d * 2, y + Math.sin(t) * d * 0.5) : c.moveTo(x + Math.cos(t) * d * 2, y + Math.sin(t) * d * 0.5); } c.closePath(); c.fillStyle = i % 2 ? 'rgba(70,140,90,.8)' : 'rgba(136,160,104,.8)'; c.fill(); }
-  soft(c, 2); for (let i = 0; i < 70; i++) el(c, r() * 400, 36 + r() * 94, 12 + r() * 34, 1.2 + r() * 2.8, `rgba(255,255,255,${0.25 + r() * 0.4})`); soft(c, 0);
-  halo(c, 250, 70, 70, '255,250,230', 0.35); // the sun's glint off the Pacific
-  c.restore();
-  c.save(); c.beginPath(); c.arc(cx, cy, R, Math.PI * 1.3, Math.PI * 1.7); c.strokeStyle = 'rgba(214,240,255,.95)'; c.lineWidth = 0.9; c.stroke(); c.restore();
-}
-
-let o: { pad: Phaser.GameObjects.Image; plume: Phaser.GameObjects.Image; core: Phaser.GameObjects.Image; glint: Phaser.GameObjects.Particles.ParticleEmitter; trail: Phaser.GameObjects.Particles.ParticleEmitter; dust: Phaser.GameObjects.Particles.ParticleEmitter; flares: Phaser.GameObjects.Image[]; twinkle: Phaser.GameObjects.Image[]; night: Phaser.GameObjects.Rectangle; sun: Phaser.GameObjects.Image; air: Phaser.GameObjects.Image } | undefined;
 export const mercuryLook: Look = {
   build(scene) {
-    texAt(scene, 'hf_mc_sky', 320, 180, D, sky); texAt(scene, 'hf_mc_site', 320, 150, D, site); texAt(scene, 'hf_mc_stars', 320, 180, D, stars); texAt(scene, 'hf_mc_limb', 400, 130, D, limb);
-    texAt(scene, 'hf_mc_air', 320, 80, 2, (c) => { // the planet below, seen from the edge of space: the glow of the air along a horizon that has begun to curve
-      const cy = 2460, R = 2400, top = (x: number) => cy - Math.sqrt(R * R - (x - 160) ** 2), r = rng(12);
-      c.fillStyle = rg(c, 160, cy, R, R + 14, [0, 'rgba(214,240,255,.95)'], [0.07, 'rgba(120,190,255,.8)'], [0.3, 'rgba(50,120,235,.36)'], [1, 'rgba(30,80,200,0)']); c.fillRect(0, 0, 320, 80);
-      c.fillStyle = rg(c, 160, cy, R - 26, R, [0, '#0a2a62'], [0.7, '#1858aa'], [1, '#74baf2']); c.beginPath(); c.arc(160, cy, R, 0, 6.3); c.fill();
-      soft(c, 1.4); for (let i = 0; i < 40; i++) { const x = r() * 320; el(c, x, top(x) + 2 + r() * r() * 16, 8 + r() * 26, 0.5 + r() * 1.3, `rgba(255,255,255,${0.16 + r() * 0.3})`); } soft(c, 0);
-    });
+    texAt(scene, 'hf_mc_sky', 320, 180, D, sky); texAt(scene, 'hf_mc_site', 320, 150, D, site); spaceTextures(scene);
     texAt(scene, 'hf_mc_cloud1', 70, 24, D, puffy(1)); texAt(scene, 'hf_mc_cloud2', 100, 30, D, puffy(2)); texAt(scene, 'hf_mc_cloud3', 46, 16, D, puffy(6));
   },
   layers: [],
-  swap: { sky_day: 'hf_mc_sky', site_island: 'hf_mc_site', stars: 'hf_mc_stars', earthlimb: 'hf_mc_limb', cloud1: 'hf_mc_cloud1', cloud2: 'hf_mc_cloud2', cloud3: 'hf_mc_cloud3' },
+  swap: { ...SPACE, sky_day: 'hf_mc_sky', site_island: 'hf_mc_site', cloud1: 'hf_mc_cloud1', cloud2: 'hf_mc_cloud2', cloud3: 'hf_mc_cloud3' },
   grade: { threshold: 0.9, bloom: 0.42, exposure: 1.0, contrast: 1.12, saturation: 1.16, shadows: [0.92, 1.0, 1.12], highs: [1.05, 1.02, 0.95], vignette: 0.36, grain: 0.018, fringe: 0.005 },
-  live(hf) {
-    const s = hf.scene, [sx, sy] = SUN, puff = (x: number, y: number, k: number, tint: number, a: number) => s.add.image(x, y, 'puff').setScale(S * k).setTint(tint).setBlendMode('ADD').setAlpha(a);
-    // the lens: ghosts strung along the line from the sun through the middle of the frame
-    const flares = ([[0.5, 1.2, 0x9fd0ff, 0.2], [0.95, 0.5, 0xffe2b0, 0.3], [1.5, 2.2, 0x8fffd8, 0.1], [2.1, 3.6, 0xffb0a0, 0.08]] as number[][]).map(([k, size, tint, a]) => hf.above(puff(sx + (160 - sx) * k * 2, sy + (90 - sy) * k * 2, size, tint, a), 'sky'));
-    s.tweens.add({ targets: hf.above(puff(sx, sy, 2, 0xfff6dc, 0.26), 'sky'), scale: S * 2.4, alpha: 0.36, duration: 2400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-    // space is black by day too: the sky goes out as the air thins, and the sun stays, small and hard
-    const night = hf.above(s.add.rectangle(0, 0, 320, 180, 0x02030a).setOrigin(0).setAlpha(0), 'dark'), sun = hf.above(puff(sx, sy, 1.5, 0xffffff, 0), 'stars');
-    // stars that twinkle, once the sky is dark enough to show them
-    const r = rng(8), twinkle = Array.from({ length: 14 }, () => hf.above(puff(r() * 320, r() * 150, 0.2 + r() * 0.2, 0xdfe8ff, 0), 'stars'));
-    const glint = hf.above(s.add.particles(0, 0, 'puff', { x: { min: sx - 26, max: sx + 26 }, y: { min: -17, max: 30 }, lifespan: { min: 180, max: 420 }, scale: { start: S * 0.16, end: 0 }, alpha: { start: 1, end: 0 }, tint: 0xfffbe6, blendMode: 'ADD', frequency: 26 }), 'ground'); // the glitter moves
-    const pad = hf.above(puff(0, 0, 4, 0xffa850, 0), 'ground'), dust = hf.above(s.add.particles(0, 0, 'puff', { speedX: { min: -120, max: 120 }, speedY: { min: -9, max: 2 }, lifespan: { min: 700, max: 1500 }, scale: { start: S * 0.5, end: S * 2.4 }, alpha: { start: 0.22, end: 0 }, color: [0xffc890, 0xe8d8b8, 0xf4f2ea], frequency: 30, emitting: false }), 'ground');
-    const trail = hf.below(s.add.particles(0, 0, 'puff', { speedY: { min: 150, max: 230 }, speedX: { min: -10, max: 10 }, lifespan: { min: 700, max: 1300 }, scale: { start: S * 0.34, end: S * 1.7 }, alpha: { start: 0.34, end: 0 }, tint: 0xf4f2ea, frequency: 14, emitting: false }), 'rocket');
-    const plume = hf.below(puff(0, 0, 2, 0xffb060, 0), 'rocket'), core = hf.below(puff(0, 0, 0.7, 0xfff4d8, 0), 'rocket');
-    const air = hf.above(s.add.image(0, 190, 'hf_mc_air').setOrigin(0).setScale(0.5).setAlpha(0), 'stars');
-    o = { pad, plume, core, glint, trail, dust, flares, twinkle, night, sun, air };
-  },
-  step(hf) {
-    if (!o) return;
-    const st = hf.state, rx = st.rx, low = Phaser.Math.Clamp(1 - st.alt / 0.5, 0, 1), day = Phaser.Math.Clamp(1 - (st.alt - 8) / 60, 0, 1), fl = 0.9 + 0.1 * Math.sin(hf.t * 53) * Math.sin(hf.t * 31);
-    const tx = rx - 7 * Math.sin(st.rot), ty = st.ry + 7 * Math.cos(st.rot), burn = st.up ? 0 : st.burn; // the tail of the booster
-    o.glint.setPosition(0, st.base).emitting = st.base < 200;
-    o.pad.setPosition(rx, st.base + 1).setAlpha(burn * low * 0.5 * fl).setScale(S * 4.4, S * 1.5);
-    o.dust.setPosition(rx, st.base).emitting = burn > 0 && st.alt < 0.3;
-    o.plume.setPosition(tx, ty).setAlpha(burn * 0.6 * fl).setScale(S * (0.8 + fl), S * (1.5 + fl));
-    o.core.setPosition(rx - 2 * Math.sin(st.rot), st.ry + 2 * Math.cos(st.rot)).setAlpha(burn * fl);
-    o.trail.setPosition(tx, ty).emitting = burn > 0 && st.alt >= 0.25;    hf.heat(tx, ty + 6, 30, burn * 0.8);
-    o.night.setAlpha(1 - day); o.sun.setAlpha(1 - day);
-    o.air.setAlpha(1 - day).setY(142 - 34 * Phaser.Math.Clamp((st.alt - 30) / 70, 0, 1)); // the horizon drops away and curves as the dart climbs
-    o.flares.forEach((f, i) => f.setAlpha([0.2, 0.3, 0.1, 0.08][i] * (0.4 + 0.6 * day)));
-    o.twinkle.forEach((t, i) => t.setAlpha((1 - day) * (0.5 + 0.5 * Math.sin(hf.t * (2 + i * 0.37) + i))));
-  },
+  live(hf) { ascentLive(hf, { sun: SUN as [number, number], glint: { x: SUN[0], y0: -17, y1: 30 } }); },
+  step: ascentStep,
 };
