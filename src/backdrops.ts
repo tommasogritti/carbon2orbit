@@ -289,6 +289,27 @@ export function listing(c: C2, scene: Phaser.Scene, part = 7) {
 }
 
 
+// ------------------------------------------------------------------ Pics Or It Didn't Happen, 2020: the review room
+/**
+ * Mission control in Auckland the morning flight 13 was lost: dark room, live consoles.
+ * `part`: 1 the room, 2 the consoles and what stands on the desks, 4 what the screens show and the light they give.
+ */
+export function review(real: C2, part = 7) {
+  const pick = parts(real, part); let c = pick(1);
+  c.fillStyle = lg(c, 0, 0, 0, 180, [0, '#0a0f20'], [0.7, '#141c36'], [1, '#1c2646']); c.fillRect(0, 0, 320, 180);
+  for (let x = 0; x < 320; x += 40) line(c, x, 0, x, 150, 'rgba(255,255,255,.03)', 0.6);
+  rr(c, 0, 146, 320, 34, 0, '#0c1226'); line(c, 0, 146, 320, 146, 'rgba(127,208,255,.25)', 0.5);
+  const r = rng(13);
+  for (let i = 0; i < 7; i++) {
+    const x = 112 + i * 30; c = pick(2); rr(c, x, 152, 20, 12, 1, '#0b1020', '#3a4a70', 0.5);
+    c = pick(4); c.fillStyle = `rgba(${i % 3 ? '127,208,255' : '255,138,112'},.5)`; c.fillRect(x + 2, 154, 16, 8); for (let k = 0; k < 4; k++) line(c, x + 3, 156 + k * 1.6, x + 6 + r() * 11, 156 + k * 1.6, 'rgba(10,15,32,.7)', 0.5);
+    c = pick(2); rr(c, x + 8, 164, 4, 3, 0, '#3a4a70'); rr(c, x - 3, 167, 26, 2, 0.5, '#26304c');
+    c = pick(4); c.fillStyle = rg(c, x + 10, 158, 1, 22, [0, 'rgba(127,208,255,.12)'], [1, 'rgba(127,208,255,0)']); c.fillRect(x - 12, 140, 44, 40);
+  }
+  c = pick(2); rr(c, 274, 168, 5, 6, 0.6, '#e8e6df', OUT, 0.25); c.beginPath(); c.arc(280, 171, 1.6, -1.2, 1.2); c.strokeStyle = '#e8e6df'; c.lineWidth = 0.5; c.stroke(); // a cold cup of coffee
+}
+
+
 // ------------------------------------------------------------------ Rosie the Robot, 2019: the Auckland production floor
 /**
  * One wall, read left to right: the door, the old way by hand, the cure oven, the rocket line, fairings and the clean room, then Rosie's cell.
@@ -463,15 +484,7 @@ export function makeBackdrops(scene: Phaser.Scene) {
   tex(scene, 'bg_mahia_far', 520, 180, (c) => mahiaFar(c));
   tex(scene, 'bg_mahia_mid', 760, 180, mahiaMid);
 
-  // Mission control in Auckland the morning flight 13 was lost: dark room, live consoles, a wall clock on New Zealand time
-  tex(scene, 'bg_review', 320, 180, (c) => {
-    c.fillStyle = lg(c, 0, 0, 0, 180, [0, '#0a0f20'], [0.7, '#141c36'], [1, '#1c2646']); c.fillRect(0, 0, 320, 180);
-    for (let x = 0; x < 320; x += 40) line(c, x, 0, x, 150, 'rgba(255,255,255,.03)', 0.6);
-    rr(c, 0, 146, 320, 34, 0, '#0c1226'); line(c, 0, 146, 320, 146, 'rgba(127,208,255,.25)', 0.5);
-    const r = rng(13);
-    for (let i = 0; i < 7; i++) { const x = 112 + i * 30; rr(c, x, 152, 20, 12, 1, '#0b1020', '#3a4a70', 0.5); c.fillStyle = `rgba(${i % 3 ? '127,208,255' : '255,138,112'},.5)`; c.fillRect(x + 2, 154, 16, 8); for (let k = 0; k < 4; k++) line(c, x + 3, 156 + k * 1.6, x + 6 + r() * 11, 156 + k * 1.6, 'rgba(10,15,32,.7)', 0.5); rr(c, x + 8, 164, 4, 3, 0, '#3a4a70'); rr(c, x - 3, 167, 26, 2, 0.5, '#26304c'); c.fillStyle = rg(c, x + 10, 158, 1, 22, [0, 'rgba(127,208,255,.12)'], [1, 'rgba(127,208,255,0)']); c.fillRect(x - 12, 140, 44, 40); }
-    rr(c, 274, 168, 5, 6, 0.6, '#e8e6df', OUT, 0.25); c.beginPath(); c.arc(280, 171, 1.6, -1.2, 1.2); c.strokeStyle = '#e8e6df'; c.lineWidth = 0.5; c.stroke(); // a cold cup of coffee
-  });
+  tex(scene, 'bg_review', 320, 180, (c) => review(c));
   // ESCAPADE: Mars, and the twins (same spacecraft, one trimmed blue and one gold)
   tex(scene, 'mars', 20, 20, (c) => { c.save(); c.shadowColor = 'rgba(255,140,90,.8)'; c.shadowBlur = 14; el(c, 10, 10, 6.4, 6.4, '#c8623a'); c.restore(); el(c, 10, 10, 6.4, 6.4, rg(c, 8, 8, 1, 9, [0, '#f0a070'], [0.6, '#c8623a'], [1, '#6a2a18'])); el(c, 8, 11.4, 2.6, 1.4, 'rgba(110,50,30,.5)'); el(c, 12.4, 8, 1.6, 1, 'rgba(110,50,30,.45)'); el(c, 10, 4.3, 2.2, 0.8, 'rgba(255,255,255,.8)'); });
   for (const [key, col] of [['esc_blue', '#4d9be8'], ['esc_gold', '#f2c230']] as [string, string][]) tex(scene, key, 14, 12, (c) => {

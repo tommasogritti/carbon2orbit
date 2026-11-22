@@ -3,8 +3,11 @@ import { W, H, T, held, just, finish, cam, img, panel, who } from '../core';
 import { snd, music, stopLoops, loop, Loop } from '../audio';
 import { P } from '../art';
 import type { LevelDef } from '../content';
+import { hifi, HiFi } from '../hifi';
+import { LOOKS } from '../hifiLooks';
 
 const AUTO = new URLSearchParams(location.search).has('auto');
+const LOOK = 'review'; // the review room's hi-fi look (hifiLooks.ts)
 const T0 = -120, T1 = 6; // seconds around the engine shutdown shown on the strips
 const X0 = 70, XW = 240, Y0 = 22, RH = 18.4; // chart geometry
 const nz = (t: number, k: number) => Math.sin(t * 3.1 + k) * 0.5 + Math.sin(t * 7.7 + k * 2.3) * 0.3 + Math.sin(t * 17.3 + k * 5) * 0.2;
@@ -27,7 +30,7 @@ const TESTS: [string, number][] = [['VIBRATION', 2], ['THERMAL VACUUM', 4], ['TH
 export class FaultFinderScene extends Phaser.Scene {
   def!: LevelDef; g!: Phaser.GameObjects.Graphics; call!: Phaser.GameObjects.Text; dayT!: Phaser.GameObjects.Text; head!: Phaser.GameObjects.Text; labels: Phaser.GameObjects.Text[] = []; aux: Phaser.GameObjects.Text[] = [];
   order: number[] = []; on: number[] = []; marks: { c: number; t: number; ok: boolean }[] = []; ct = -20; cc = 0; days = 3; wrong = 0; phase: 1 | 2 | 3 = 1; ended = false; hum!: Loop;
-  bad = 0; test = 0; running = -1; prog = 0; ran: number[] = []; joint = 0; shown = false; botT = 0;
+  bad = 0; test = 0; running = -1; prog = 0; ran: number[] = []; joint = 0; shown = false; botT = 0; hf?: HiFi;
   constructor() { super('FaultFinder'); }
   /** The controls panel (H or the ? button): what the keys do right now, in this level and this phase. Shape agreed with core's showHelp. */
   help(): { title: string; rows: [keys: string, does: string][]; note?: string } {
@@ -44,16 +47,20 @@ export class FaultFinderScene extends Phaser.Scene {
   }
   create() {
     cam(this); stopLoops(); music.play('space'); this.hum = loop('whine'); this.hum.set(0.12, 0.05);
-    img(this, 0, 0, 'bg_review').setOrigin(0);
-    panel(this, 4, 4, 196, 14, 0.9); this.head = T(this, 9, 6.5, 'ACCIDENT INVESTIGATION · FLIGHT 13 · TELEMETRY', '#ffffff', 6.2, '700');
-    panel(this, W - 116, 4, 112, 14, 0.9); this.dayT = T(this, W - 9, 6.5, '', '#ffe98a', 6.2, '700').setOrigin(1, 0);
-    panel(this, 4, 20, W - 8, 116, 0.88);
+    const hf = (this.hf = hifi(this, LOOKS[LOOK])); // the room, the wall display and its traces take the look; every word stays on the HUD camera
+    const world: Phaser.GameObjects.GameObject[] = [img(this, 0, 0, hf ? hf.key('bg_review') : 'bg_review').setOrigin(0)];
+    world.push(panel(this, 4, 4, 196, 14, 0.9)); this.head = T(this, 9, 6.5, 'ACCIDENT INVESTIGATION · FLIGHT 13 · TELEMETRY', '#ffffff', 6.2, '700');
+    world.push(panel(this, W - 116, 4, 112, 14, 0.9)); this.dayT = T(this, W - 9, 6.5, '', '#ffe98a', 6.2, '700').setOrigin(1, 0);
+    const screen = panel(this, 4, 20, W - 8, 116, 0.88);
     for (let i = 0; i < 6; i++) this.labels.push(T(this, 8, Y0 + i * RH + 3, '', '#aab4d4', 4.6, '700'));
-    this.g = this.add.graphics();
+    this.g = this.add.graphics(); world.push(screen, this.g);
     this.call = T(this, W / 2, 138.5, '', '#ffe98a', 6.2, '700').setOrigin(0.5, 0).setAlign('center').setShadow(0, 1, '#000000', 3).setWordWrapWidth(300);
     who(this, { ...this.def, role: this.def.role || 'CEO · with the investigation board' }, 4, H - 24);
     this.say('← → move through time · ↑ ↓ change channel · SPACE flag the FIRST sign of trouble');
+    if (hf) { hf.tag({ room: world[0], screen, traces: this.g }); this.tell(); hf.ready({ hud: this.children.list.filter((o) => !world.includes(o)), lateHud: true }); }
   }
+  /** What the look animates from: the phase, where the cursor is, which test is running and how far, and whether the fault has shown. */
+  tell() { this.hf?.set({ phase: this.phase, cx: this.X(this.ct), cy: Y0 + this.cc * RH + (RH - 2) / 2, run: this.running, prog: this.prog, shown: this.shown ? 1 : 0, bad: this.bad, wrong: this.wrong }); }
   say(s: string) { this.call.setText(s); }
   date() { const d = 4 + Math.floor(this.days); return d <= 31 ? `${d} JULY 2020` : d <= 62 ? `${d - 31} AUGUST 2020` : `${d - 62} SEPTEMBER 2020`; }
   X(t: number) { return X0 + ((t - T0) / (T1 - T0)) * XW; }
@@ -63,6 +70,7 @@ export class FaultFinderScene extends Phaser.Scene {
     this.days += dt * 0.25; this.botT += dt;
     this.dayT.setText(`DAY ${Math.floor(this.days)} · ${this.date()}`).setColor(this.days > 27 ? '#ff8a70' : '#ffe98a');
     if (this.phase === 1) this.trace(dt); else if (this.phase === 2) this.bench(dt);
+    this.tell();
     if (this.days > 90) { this.ended = true; finish(this, this.def, { success: false, title: 'Still grounded', text: 'Three months on and the cause is still open. Start from the end of the flight and work backwards: each symptom points at something that began earlier.' }); }
   }
 
