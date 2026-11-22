@@ -3,6 +3,8 @@ import { W, H, T, held, just, finish, cam, img, panel, who } from '../core';
 import { snd, music, stopLoops, loop, Loop } from '../audio';
 import { P, S } from '../art';
 import type { LevelDef } from '../content';
+import { hifi, HiFi } from '../hifi';
+import { LOOKS } from '../hifiLooks';
 
 const AUTO = new URLSearchParams(location.search).has('auto');
 const G = 9.81, MACH = 300; // a round figure for the speed of sound in the upper air
@@ -11,6 +13,7 @@ const DROGUE_V = 2 * MACH, MAIN_V = 110; // deploy limits, m/s
 /** Drag terms (g over terminal speed squared at sea level): bare stage, under the drogue, under the main. */
 const DRAG = [G / 85 ** 2, G / 60 ** 2, G / 9 ** 2];
 const BX = 112, BY = 84; // where the booster sits on screen
+const LOOK = 'reentry'; // the hi-fi look (looks/reentry.ts)
 
 /**
  * Return To Sender: bring Electron's first stage back through the atmosphere. Flip it engines-first with cold-gas
@@ -21,7 +24,7 @@ export class SplashdownScene extends Phaser.Scene {
   def!: LevelDef; h = 78e3; v = 2150; th = 180; om = 4; gas = 1; dmg = 0; chute = 0; ripped = false; t = 0; ended = false; splashV = 0; lateFlip = false;
   boo!: Phaser.GameObjects.Container; stage!: Phaser.GameObjects.Image; canopy!: Phaser.GameObjects.Image; glow!: Phaser.GameObjects.Image; stars!: Phaser.GameObjects.Image; sky!: Phaser.GameObjects.Image; limb!: Phaser.GameObjects.Image; sea!: Phaser.GameObjects.Image; ship!: Phaser.GameObjects.Image;
   clouds: Phaser.GameObjects.Image[] = []; g!: Phaser.GameObjects.Graphics; tele!: Phaser.GameObjects.Text; call!: Phaser.GameObjects.Text; prompt!: Phaser.GameObjects.Text; puff!: Phaser.GameObjects.Particles.ParticleEmitter; plasma!: Phaser.GameObjects.Particles.ParticleEmitter;
-  wind!: Loop; hiss!: Loop; said: Record<string, boolean> = {};
+  wind!: Loop; hiss!: Loop; said: Record<string, boolean> = {}; hf?: HiFi;
   constructor() { super('Splashdown'); }
   /** The controls panel (H or the ? button): what the keys do right now, in this level and this phase. Shape agreed with core's showHelp. */
   help(): { title: string; rows: [keys: string, does: string][]; note?: string } {
@@ -34,11 +37,12 @@ export class SplashdownScene extends Phaser.Scene {
   create() {
     cam(this); stopLoops(); music.play('heli'); this.wind = loop('rumble'); this.hiss = loop('hiss');
     this.cameras.main.setBackgroundColor('#04050c');
-    this.stars = img(this, 0, 0, 'stars').setOrigin(0);
-    this.sky = img(this, 0, 0, 'sky_day').setOrigin(0).setAlpha(0);
-    this.limb = img(this, W / 2, 96, 'earthlimb').setOrigin(0.5, 0);
-    [[40, 1], [150, 2], [226, 3], [96, 3]].forEach(([x, k]) => this.clouds.push(img(this, x, -40, 'cloud' + k).setAlpha(0.95)));
-    this.sea = img(this, 0, H + 40, 'sea').setOrigin(0); this.ship = img(this, W + 60, 0, 'ship').setScale(S * 0.8);
+    const hf = (this.hf = hifi(this, LOOKS[LOOK])), K = (k: string) => (hf ? hf.key(k) : k); // the look redraws space, the sky, the clouds and the sea
+    this.stars = img(this, 0, 0, K('stars')).setOrigin(0);
+    this.sky = img(this, 0, 0, K('sky_day')).setOrigin(0).setAlpha(0);
+    this.limb = img(this, W / 2, 96, K('earthlimb')).setOrigin(0.5, 0);
+    [[40, 1], [150, 2], [226, 3], [96, 3]].forEach(([x, k]) => this.clouds.push(img(this, x, -40, K('cloud' + k)).setAlpha(0.95)));
+    this.sea = img(this, 0, H + 40, K('sea')).setOrigin(0); this.ship = img(this, W + 60, 0, 'ship').setScale(S * 0.8);
     // the kick stage carries on to orbit with thirty satellites and a gnome
     const ks = this.add.container(BX - 22, BY - 30, [img(this, 0, 0, 'curie').setScale(S * 1.2), img(this, 0.4, -4.6, 'gnome').setScale(S * 0.42)]);
     const kt = T(this, BX - 30, BY - 36, 'Stage 2, the kick stage,\nthe satellites and one gnome:\non their way to orbit', '#aab4d4', 4.4, '700').setOrigin(1, 0).setAlign('right');
@@ -49,6 +53,7 @@ export class SplashdownScene extends Phaser.Scene {
     this.stage = img(this, 0, 0, 'electron_s1').setScale(S * 0.74);
     this.boo = this.add.container(BX, BY, [this.glow, this.canopy, this.stage]);
     this.puff = this.add.particles(0, 0, 'puff', { speed: { min: 30, max: 60 }, lifespan: 260, scale: { start: S * 0.3, end: 0 }, alpha: { start: 0.9, end: 0 }, emitting: false });
+    const worldN = this.children.length; // everything from here on is HUD
     panel(this, W - 108, 4, 104, 172, 0.86);
     T(this, W - 102, 7, 'STAGE 1 · COMING HOME', '#aab4d4', 4.8, '700');
     this.tele = T(this, W - 102, 15, '', '#ffffff', 6.2, '700');
@@ -58,6 +63,7 @@ export class SplashdownScene extends Phaser.Scene {
     this.prompt = T(this, BX, 26, '', '#ffffff', 8, '700').setOrigin(0.5).setShadow(0, 1, '#000000', 4).setAlign('center');
     this.call = T(this, BX, H - 10, 'Over the top of its arc · the booster is falling back', '#ffe98a', 6.6, '700').setOrigin(0.5).setShadow(0, 1, '#000000', 3);
     who(this, { ...this.def, role: this.def.role || 'CEO · in Mission Control' }, 4, 4);
+    if (hf) { hf.shade(this.stage, 3, 2); hf.shade(this.canopy); hf.shade(this.ship); hf.tag({ stars: this.stars, sky: this.sky, sea: this.sea, ship: this.ship, ks, boo: this.boo }); hf.set({ km: 78, day: 0, hot: 0, th: this.th, chute: 0, v: this.v, seaY: H + 40, x: BX, y: BY, down: 0 }); hf.ready({ hud: [kt, ...this.children.list.slice(worldN)] }); }
   }
   say(k: string, s: string) { if (this.said[k]) return; this.said[k] = true; this.call.setText(s); }
   update(_t: number, dms: number) {
@@ -116,6 +122,7 @@ export class SplashdownScene extends Phaser.Scene {
     const seaY = 150 + Math.min(this.h, 1200) * 0.05; this.sea.setY(seaY); this.ship.setPosition(this.ship.x + (this.h < 900 ? (W - 96 - this.ship.x) * 0.02 : 0), seaY - 1);
     const hot = !this.chute && this.v > 900 ? air : 0;
     this.glow.setAlpha(hot * 0.85); this.plasma.emitting = hot > 0.25; this.plasma.setPosition(BX, BY + 16);
+    this.hf?.set({ km, day, hot, th: this.th, chute: this.chute, v: this.v, seaY, x: this.boo.x, y: this.boo.y });
     this.wind.set(Math.min(1, air * 0.9 + (this.chute ? 0.15 : 0)), 0.3 + air * 0.6);
     this.tele.setText(`ALT   ${km >= 10 ? km.toFixed(0) : km.toFixed(1)} km\nSPEED ${this.v >= 100 ? Math.round(this.v / 10) * 10 : this.v.toFixed(0)} m/s\nMACH  ${(this.v / MACH).toFixed(1)}\n${this.chute === 2 ? 'UNDER MAIN CHUTE' : this.chute === 1 ? 'UNDER DROGUE' : km > WALL[0] ? 'COASTING · NO AIR YET' : km > WALL[1] ? 'THE WALL' : 'FREE FALL'}`);
     const g = this.g; g.clear();
@@ -135,9 +142,9 @@ export class SplashdownScene extends Phaser.Scene {
     g.fillStyle(0x000000, 0.5).fillRoundedRect(ax, 157, aw, 5, 2); g.fillStyle(P.red, 0.55).fillRect(AX(WALL[0]), 157, AX(WALL[1]) - AX(WALL[0]), 5);
     g.fillStyle(0xffffff).fillTriangle(AX(km) - 2, 155, AX(km) + 2, 155, AX(km), 158.5); g.fillStyle(0x2f7fd0).fillRect(ax + aw - 1.5, 157, 1.5, 5);
   }
-  lose(text: string) { this.ended = true; this.wind.set(0); this.hiss.set(0); snd.boom(); this.cameras.main.shake(350, 0.01); this.boo.setVisible(false); this.plasma.emitting = false; this.prompt.setText(''); this.time.delayedCall(900, () => finish(this, this.def, { success: false, title: 'Lost on the way down', text })); }
+  lose(text: string) { this.ended = true; this.wind.set(0); this.hiss.set(0); snd.boom(); this.cameras.main.shake(350, 0.01); this.boo.setVisible(false); this.plasma.emitting = false; this.hf?.set({ hot: 0, v: 0 }); this.prompt.setText(''); this.time.delayedCall(900, () => finish(this, this.def, { success: false, title: 'Lost on the way down', text })); }
   splash() {
-    this.ended = true; this.wind.set(0); this.hiss.set(0); this.prompt.setText(''); this.splashV = this.v; snd.splash();
+    this.ended = true; this.wind.set(0); this.hiss.set(0); this.prompt.setText(''); this.splashV = this.v; snd.splash(); this.hf?.set({ down: 1 });
     this.add.particles(BX, 152, 'puff', { speedY: { min: -120, max: -40 }, speedX: { min: -60, max: 60 }, gravityY: 240, lifespan: 800, scale: { start: S * 0.6, end: S * 0.1 }, alpha: { start: 0.9, end: 0 }, emitting: false }).explode(36);
     this.tweens.add({ targets: this.boo, y: BY + 46, rotation: 1.35, duration: 1500, ease: 'Sine.easeOut' }); this.tweens.add({ targets: this.ship, x: BX + 62, duration: 2600 });
     const v = this.splashV, gasLeft = Math.round(this.gas * 100);
