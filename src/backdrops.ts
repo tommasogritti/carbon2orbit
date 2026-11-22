@@ -486,7 +486,7 @@ export function makeBackdrops(scene: Phaser.Scene) {
 
   tex(scene, 'bg_review', 320, 180, (c) => review(c));
   // ESCAPADE: Mars, and the twins (same spacecraft, one trimmed blue and one gold)
-  tex(scene, 'mars', 20, 20, (c) => { c.save(); c.shadowColor = 'rgba(255,140,90,.8)'; c.shadowBlur = 14; el(c, 10, 10, 6.4, 6.4, '#c8623a'); c.restore(); el(c, 10, 10, 6.4, 6.4, rg(c, 8, 8, 1, 9, [0, '#f0a070'], [0.6, '#c8623a'], [1, '#6a2a18'])); el(c, 8, 11.4, 2.6, 1.4, 'rgba(110,50,30,.5)'); el(c, 12.4, 8, 1.6, 1, 'rgba(110,50,30,.45)'); el(c, 10, 4.3, 2.2, 0.8, 'rgba(255,255,255,.8)'); });
+  tex(scene, 'mars', 20, 20, (c) => mars(c));
   for (const [key, col] of [['esc_blue', '#4d9be8'], ['esc_gold', '#f2c230']] as [string, string][]) tex(scene, key, 14, 12, (c) => {
     for (const y of [0.4, 8.2]) { rr(c, 4.6, y, 4.8, 3.4, 0.3, '#1d3a7a', OUT, 0.25); line(c, 7, y, 7, y + 3.4, 'rgba(160,200,255,.6)', 0.25); line(c, 4.6, y + 1.7, 9.4, y + 1.7, 'rgba(160,200,255,.6)', 0.25); }
     rr(c, 4, 3.6, 6, 4.8, 0.8, lg(c, 0, 3.6, 0, 8.4, [0, '#f4f6fa'], [1, '#9aa3b5']), OUT, 0.3); rr(c, 4, 5.2, 6, 1.6, 0, col); poly(c, [4, 4.8, 1.6, 4, 1.6, 8, 4, 7.2], '#5b6275', OUT, 0.25); el(c, 11.2, 6, 1.5, 2.2, '#dfe5ee', OUT, 0.25);
@@ -726,3 +726,6 @@ export function worldmap(real: C2, part = 15) {
   c = pick(8); c.fillStyle = '#e8eef4'; c.fillRect(0, py(-72), 300, 112 - py(-72)); c = pick(4); text(c, 'AUSTRALIA', px(134), py(-25), 3.2, 'rgba(60,40,10,.8)', 700);
   c = pick(8); c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 0.5; c.strokeRect(0.25, 0.25, 299.5, 111.5);
 }
+
+/** Mars, 20 x 20. `sun` is where its light comes from, in units from the centre (the plain art lights it from the upper left). */
+export function mars(c: C2, sun = [-2, -2]) { c.save(); c.shadowColor = 'rgba(255,140,90,.8)'; c.shadowBlur = 14; el(c, 10, 10, 6.4, 6.4, '#c8623a'); c.restore(); el(c, 10, 10, 6.4, 6.4, rg(c, 10 + sun[0], 10 + sun[1], 1, 9, [0, '#f0a070'], [0.6, '#c8623a'], [1, '#6a2a18'])); el(c, 8, 11.4, 2.6, 1.4, 'rgba(110,50,30,.5)'); el(c, 12.4, 8, 1.6, 1, 'rgba(110,50,30,.45)'); el(c, 10, 4.3, 2.2, 0.8, 'rgba(255,255,255,.8)'); }

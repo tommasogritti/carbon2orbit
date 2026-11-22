@@ -13,11 +13,12 @@ import type { Look } from '../hifi';
 // Earth's weather turning under it. The Earth and the Moon are the plain drawings (`planet`), given that sun.
 const SUN = [0.82, -0.57], EX = 70, EY = 122, ER = 14 * 0.85, MX = 262, MY = 46;
 
-function sky(c: C2) {
-  const r = rng(23);
+/** Deep space, for any look that is out in it (the Mars cruise uses it too): the stars, and the Milky Way through the point (mx, my) at the angle `rot`. */
+export const deepSky = (seed: number, mx: number, my: number, rot: number) => (c: C2) => {
+  const r = rng(seed);
   c.fillStyle = '#020308'; c.fillRect(0, 0, 320, 180);
   c.fillStyle = rg(c, 220, 60, 4, 140, [0, 'rgba(110,90,200,.13)'], [1, 'rgba(110,90,200,0)']); c.fillRect(0, 0, 320, 180); // the plain sky's violet cloud, kept
-  c.save(); c.translate(124, 92); c.rotate(0.52); // the Milky Way, from the upper left to the lower right: glow, dust lanes, its crowd of faint stars
+  c.save(); c.translate(mx, my); c.rotate(rot); // the Milky Way: glow, dust lanes, its crowd of faint stars
   soft(c, 9); for (let i = 0; i < 46; i++) { const x = -230 + i * 10 + r() * 10, k = 1 - Math.abs(i - 23) / 34; el(c, x, (r() - 0.5) * 16, 16 + r() * 18, (5 + r() * 9) * k, `rgba(${110 + r() * 70},${120 + r() * 50},${220 + r() * 30},${0.016 + r() * 0.026})`); }
   for (let i = 0; i < 12; i++) el(c, -160 + r() * 320, (r() - 0.5) * 12, 10 + r() * 16, 3 + r() * 4, `rgba(255,${170 + r() * 50},${150 + r() * 40},${0.025 + r() * 0.03})`);
   soft(c, 4); for (let i = 0; i < 18; i++) el(c, -190 + r() * 380, (r() - 0.5) * 9, 10 + r() * 22, 1 + r() * 2.2, 'rgba(2,3,10,.36)'); soft(c, 0);
@@ -25,35 +26,36 @@ function sky(c: C2) {
   c.globalAlpha = 1; c.restore();
   for (let i = 0; i < 520; i++) { const x = r() * 320, y = r() * 180, s = r(), q = r(); c.globalAlpha = 0.3 + q * 0.7; el(c, x, y, s > 0.975 ? 0.55 : 0.12 + s * 0.2, s > 0.975 ? 0.55 : 0.12 + s * 0.2, s > 0.9 ? '#ffd9a8' : s > 0.8 ? '#a8ccff' : '#ffffff'); if (s > 0.975) { c.globalAlpha = 0.5; line(c, x - 2.2, y, x + 2.2, y, '#ffffff', 0.12); line(c, x, y - 2.2, x, y + 2.2, '#ffffff', 0.12); } }
   c.globalAlpha = 1;
-}
-/** The night side of a world lit from SUN, laid over the plain drawing of it: `k` is how dark the dark gets. */
-function night(c: C2, cx: number, cy: number, r: number, k: number, tint: string) {
-  const [sx, sy] = SUN;
+};
+/** The night side of a world lit from `sun`, laid over the plain drawing of it: `k` is how dark the dark gets. */
+export function night(c: C2, cx: number, cy: number, r: number, k: number, tint: string, sun = SUN) {
+  const [sx, sy] = sun;
   c.fillStyle = lg(c, cx - sx * r * 0.8, cy - sy * r * 0.8, cx - sx * r * 0.05, cy - sy * r * 0.05, [0, `rgba(${tint},${k})`], [0.5, `rgba(${tint},${k * 0.75})`], [1, `rgba(${tint},0)`]); c.fillRect(cx - r - 1, cy - r - 1, r * 2 + 2, r * 2 + 2);
 }
-function earth(c: C2) {
-  const cx = 20, cy = 20, r = 14, [sx, sy] = SUN;
+/** The plain Earth (`planet`), lit from `sun`, with its air. */
+export const earthLit = (sun = SUN) => (c: C2) => {
+  const cx = 20, cy = 20, r = 14, [sx, sy] = sun;
   halo(c, cx + sx * 2, cy + sy * 2, 21, '90,170,255', 0.5); // the air, seen edge-on all the way round, brighter toward the Sun
   planet(c, cx, cy, r, 'earth', [sx * 0.4, sy * 0.4]);
   c.save(); el(c, cx, cy, r, r); c.clip();
   c.fillStyle = rg(c, cx, cy, r * 0.72, r, [0, 'rgba(150,210,255,0)'], [1, 'rgba(150,210,255,.42)']); c.fillRect(cx - r, cy - r, r * 2, r * 2); // the air thickening toward the limb
   halo(c, cx + sx * r * 0.42, cy + sy * r * 0.42, r * 0.5, '255,250,236', 0.34); // the Sun's glint off the ocean
   c.restore();
-}
-function clouds(c: C2) { // weather for the Earth to turn under: bands and a few spirals, drawn to wrap from one side to the other
+};
+export function clouds(c: C2) { // weather for the Earth to turn under: bands and a few spirals, drawn to wrap from one side to the other
   const r = rng(19); soft(c, 0.5);
   for (let i = 0; i < 46; i++) { const x = r() * 60, y = 2 + r() * 24, w = 2 + r() * 6, h = 0.3 + r() * 0.8, a = 0.3 + r() * 0.45; for (const dx of [-60, 0, 60]) el(c, x + dx, y, w, h, `rgba(255,255,255,${a})`); }
   for (let i = 0; i < 5; i++) { const x = r() * 60, y = 5 + r() * 18; for (const dx of [-60, 0, 60]) { c.beginPath(); c.arc(x + dx, y, 1.6 + r() * 1.4, r() * 6, r() * 6 + 4); c.strokeStyle = 'rgba(255,255,255,.6)'; c.lineWidth = 0.6; c.stroke(); } }
   soft(c, 0);
 }
-function shade(c: C2) { // what goes over the turning cloud: the night, the towns in it, and the bright line of air on the sunward limb
-  const cx = 20, cy = 20, r = 14, [sx, sy] = SUN, q = rng(40);
+export const earthShade = (sun = SUN) => (c: C2) => { // what goes over the turning cloud: the night, the towns in it, and the bright line of air on the sunward limb
+  const cx = 20, cy = 20, r = 14, [sx, sy] = sun, q = rng(40);
   c.save(); el(c, cx, cy, r + 0.1, r + 0.1); c.clip();
-  night(c, cx, cy, r, 0.9, '2,4,14');
+  night(c, cx, cy, r, 0.9, '2,4,14', sun);
   for (let i = 0; i < 60; i++) { const a = q() * 6.283, d = Math.sqrt(q()) * r * 0.94, x = cx + Math.cos(a) * d, y = cy + Math.sin(a) * d; if ((x - cx) * sx + (y - cy) * sy < -r * 0.5) halo(c, x, y, 0.5 + q() * 0.7, '255,206,140', 0.5 + q() * 0.4); }
   c.restore();
   const a0 = Math.atan2(sy, sx); c.beginPath(); c.arc(cx, cy, r + 0.15, a0 - 1.5, a0 + 1.5); c.strokeStyle = lg(c, cx - sx * r, cy - sy * r, cx + sx * r, cy + sy * r, [0, 'rgba(190,230,255,0)'], [0.5, 'rgba(190,230,255,.25)'], [1, 'rgba(226,244,255,.95)']); c.lineWidth = 0.5; c.stroke();
-}
+};
 function moon(c: C2) {
   const cx = 15, cy = 15, r = 10, [sx, sy] = SUN, q = rng(8);
   halo(c, cx + sx * 1.5, cy + sy * 1.5, 14.5, '226,230,255', 0.3);
@@ -67,15 +69,15 @@ function moon(c: C2) {
 function glare(c: C2) { // the Sun is out of frame, up and to the right: what reaches the lens is its glare and a streak
   add(c, () => { c.fillStyle = rg(c, 216, -16, 0, 152, [0, 'rgba(255,236,204,.34)'], [0.3, 'rgba(255,214,170,.12)'], [1, 'rgba(255,200,150,0)']); c.fillRect(0, 0, 200, 140); const r = rng(4); for (let i = 0; i < 9; i++) { const a = Math.PI * (0.56 + i * 0.045 + r() * 0.02), len = 70 + r() * 80, w = 0.008 + r() * 0.012; c.fillStyle = rg(c, 216, -16, 10, len, [0, 'rgba(255,236,204,.07)'], [1, 'rgba(255,236,204,0)']); c.beginPath(); c.moveTo(216, -16); c.arc(216, -16, len, a - w, a + w); c.closePath(); c.fill(); } });
 }
-function plume(c: C2) { soft(c, 0.8); c.fillStyle = lg(c, 0, 0, 0, 22, [0, 'rgba(255,255,255,.95)'], [0.25, 'rgba(184,220,255,.7)'], [1, 'rgba(110,168,255,0)']); c.beginPath(); c.moveTo(3, 0); c.lineTo(5, 0); c.lineTo(7.4, 22); c.lineTo(0.6, 22); c.closePath(); c.fill(); soft(c, 0); } // HyperCurie in vacuum: a pale cone that spreads at once
-function glint(c: C2) { add(c, () => { for (const [dx, dy] of [[1, 0], [0, 1]]) { c.fillStyle = lg(c, 8 - dx * 8, 8 - dy * 8, 8 + dx * 8, 8 + dy * 8, [0, 'rgba(255,255,255,0)'], [0.5, 'rgba(255,255,255,.95)'], [1, 'rgba(255,255,255,0)']); c.fillRect(dx ? 0 : 7.7, dy ? 0 : 7.7, dx ? 16 : 0.6, dy ? 16 : 0.6); } }); halo(c, 8, 8, 2.4, '255,255,255', 1); }
+export function plume(c: C2) { soft(c, 0.8); c.fillStyle = lg(c, 0, 0, 0, 22, [0, 'rgba(255,255,255,.95)'], [0.25, 'rgba(184,220,255,.7)'], [1, 'rgba(110,168,255,0)']); c.beginPath(); c.moveTo(3, 0); c.lineTo(5, 0); c.lineTo(7.4, 22); c.lineTo(0.6, 22); c.closePath(); c.fill(); soft(c, 0); } // HyperCurie in vacuum: a pale cone that spreads at once
+export function glint(c: C2) { add(c, () => { for (const [dx, dy] of [[1, 0], [0, 1]]) { c.fillStyle = lg(c, 8 - dx * 8, 8 - dy * 8, 8 + dx * 8, 8 + dy * 8, [0, 'rgba(255,255,255,0)'], [0.5, 'rgba(255,255,255,.95)'], [1, 'rgba(255,255,255,0)']); c.fillRect(dx ? 0 : 7.7, dy ? 0 : 7.7, dx ? 16 : 0.6, dy ? 16 : 0.6); } }); halo(c, 8, 8, 2.4, '255,255,255', 1); }
 
 type Im = Phaser.GameObjects.Image; type Em = Phaser.GameObjects.Particles.ParticleEmitter;
 let o: { weather: Phaser.GameObjects.TileSprite; plume: Im; flash: Im; trail: Em; lamp?: Phaser.GameObjects.Light; glint: Im; satGlint: Im; fired: number; hot: number } | undefined;
 
 export const cislunarLook: Look = {
   build(scene) {
-    texAt(scene, 'hf_cl_sky', 320, 180, D, sky); texAt(scene, 'hf_cl_earth', 40, 40, D, earth); texAt(scene, 'hf_cl_moon', 30, 30, D, moon); texAt(scene, 'hf_cl_clouds', 60, 28, 8, clouds); texAt(scene, 'hf_cl_shade', 40, 40, 8, shade);
+    texAt(scene, 'hf_cl_sky', 320, 180, D, deepSky(23, 124, 92, 0.52)); texAt(scene, 'hf_cl_earth', 40, 40, D, earthLit()); texAt(scene, 'hf_cl_moon', 30, 30, D, moon); texAt(scene, 'hf_cl_clouds', 60, 28, 8, clouds); texAt(scene, 'hf_cl_shade', 40, 40, 8, earthShade());
     texAt(scene, 'hf_cl_glare', 200, 140, 1, glare); texAt(scene, 'hf_cl_plume', 8, 22, D, plume); texAt(scene, 'hf_cl_glint', 16, 16, D, glint);
   },
   layers: [],
