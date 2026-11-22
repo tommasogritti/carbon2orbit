@@ -40,3 +40,11 @@ export function showCredits(game: Phaser.Game) {
     [{ label: 'Back to the game', fn: () => sc?.scene.resume() }],
   );
 }
+
+/** Pause whatever is running and show the page's own text about the game (`#about` in index.html, also what search engines read). */
+export function showAbout(game: Phaser.Game) {
+  if (overlayOpen()) return;
+  const sc = game.scene.getScenes(true)[0];
+  sc?.scene.pause(); snd.select();
+  showCard(`<div class="about"><div class="kicker">ABOUT · GAME v${VERSION}</div>${document.getElementById('about')?.innerHTML ?? ''}</div>`, [{ label: 'Back to the game', fn: () => sc?.scene.resume() }]);
+}

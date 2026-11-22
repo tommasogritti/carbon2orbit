@@ -3,8 +3,48 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>Carbon to Orbit — an unofficial Rocket Lab fan game</title>
-    <meta name="description" content="Play the story of Rocket Lab, one level at a time: platform levels, launch control and mini-games. An unofficial, open-source fan game, not affiliated with Rocket Lab." />
+    <title>Carbon to Orbit: a free Rocket Lab fan game in your browser</title>
+    <meta name="description" content="A free, unofficial Rocket Lab game you play in the browser: 25 levels from a Dunedin workshop to Electron and Neutron, with platforming, launch control and mini-games. Open-source fan project." />
+    <link rel="canonical" href="https://carbon2orbit.com/" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#0b0d14" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Carbon to Orbit" />
+    <meta property="og:url" content="https://carbon2orbit.com/" />
+    <meta property="og:title" content="Carbon to Orbit: a free Rocket Lab fan game in your browser" />
+    <meta property="og:description" content="The story of Rocket Lab, one level at a time: from a rocket bike in a Dunedin workshop to the hundredth Electron, and on to Neutron. Unofficial, open source, not affiliated with Rocket Lab." />
+    <meta property="og:image" content="https://carbon2orbit.com/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Carbon to Orbit title screen: an Electron rocket climbing past the Earth, drawn in code" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Carbon to Orbit: a free Rocket Lab fan game in your browser" />
+    <meta name="twitter:description" content="The story of Rocket Lab, one level at a time. Unofficial, open source, free in the browser." />
+    <meta name="twitter:image" content="https://carbon2orbit.com/og-image.jpg" />
+    <meta name="twitter:image:alt" content="Carbon to Orbit title screen: an Electron rocket climbing past the Earth, drawn in code" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": "Carbon to Orbit",
+        "alternateName": "Carbon to Orbit: an unofficial Rocket Lab fan game",
+        "url": "https://carbon2orbit.com/",
+        "image": "https://carbon2orbit.com/og-image.jpg",
+        "description": "An unofficial, open-source Rocket Lab fan game, free in the browser and not affiliated with or endorsed by Rocket Lab. It tells the story of Rocket Lab one level at a time, from a rocket bike in a Dunedin workshop to the hundredth Electron and on to Neutron, through platform levels, launch control, mini-games and story cards.",
+        "genre": ["Platform game", "Space flight simulation", "Educational game"],
+        "gamePlatform": "Web browser",
+        "applicationCategory": "Game",
+        "operatingSystem": "Any",
+        "playMode": "SinglePlayer",
+        "inLanguage": "en",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock", "url": "https://carbon2orbit.com/" },
+        "author": { "@type": "Organization", "name": "Carbon to Orbit contributors", "url": "https://github.com/tommasogritti/carbon2orbit" },
+        "sameAs": ["https://github.com/tommasogritti/carbon2orbit"],
+        "license": "https://opensource.org/licenses/MIT"
+      }
+    </script>
+    <noscript><style>html, body { overflow: auto !important; height: auto !important; } #stage, footer { display: none !important; } #about { display: block !important; }</style></noscript>
   </head>
   <body>
     <div id="stage">
@@ -21,7 +61,21 @@
         <div class="tgroup"><button data-k="b">B</button><button data-k="a">A</button></div>
       </div>
     </div>
-    <footer>Fan project, not affiliated with Rocket Lab. Code MIT · content CC BY-SA 4.0 · photo credits on each card. <button id="credits" title="Who made the game, and where the source is (C on the title screen and the map)">Credits</button><button id="dev" title="Developer mode opens every level and lets K skip one">Developer mode: off</button></footer>
+    <footer>Fan project, not affiliated with Rocket Lab.<span class="lic"> Code MIT · content CC BY-SA 4.0 · photo credits on each card.</span> <button id="about-btn" title="What this game is">About</button><button id="credits" title="Who made the game, and where the source is (C on the title screen and the map)">Credits</button><button id="dev" title="Developer mode opens every level and lets K skip one">Developer mode: off</button></footer>
+    <!-- The page's own words about the game. The About button in the footer shows them on a card; without JavaScript they are the page. -->
+    <main id="about">
+      <h1>Carbon to Orbit: an unofficial Rocket Lab fan game</h1>
+      <p><strong>The story of Rocket Lab, one level at a time.</strong> From a rocket bike in a Dunedin workshop to the hundredth Electron, and on to Neutron. Carbon to Orbit is a free, open-source browser game with 25 playable levels and 14 kinds of play. It is a fan project, not affiliated with or endorsed by Rocket Lab.</p>
+      <p>You walk a world map through thirty years of Rocket Lab history. Every stop is a real moment, and each one plays differently:</p>
+      <ul>
+        <li><strong>Platform levels.</strong> Build the rocket bike after hours at the appliance factory, haul pad hardware down the coast road to Māhia, carry the Nasdaq listing across Long Beach.</li>
+        <li><strong>Launch control.</strong> A real ascent simulation: call the go/no-go poll, fly the pitch program, throttle through Max-Q, command staging and fairing separation, and circularise with the kick stage.</li>
+        <li><strong>Mini-games.</strong> Catch a booster with a helicopter, stretch an orbit to the Moon, find the fault on flight 13, bring a capsule down in the outback, run two launch counts in two hemispheres at once.</li>
+        <li><strong>Story cards and people.</strong> The founding, the knighthood and the people who were there, each with sources.</li>
+      </ul>
+      <p>Every level ends with what really happened, hides an easter egg, and links its sources. All art and sound are generated in code. It runs in any modern browser, on a computer or a phone, with nothing to install.</p>
+      <p><a href="https://github.com/tommasogritti/carbon2orbit">Source code on GitHub</a>: add a level, fix a fact or report a bug. Code MIT, story text and artwork CC BY-SA 4.0. Rocket Lab, Electron, Neutron and the mission names belong to Rocket Lab.</p>
+    </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
