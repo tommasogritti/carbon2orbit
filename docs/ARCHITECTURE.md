@@ -70,13 +70,14 @@ The first six, and `edit-bay`, are **reusable**: a second level can use them wit
 
 Any level can opt into a cinematic look without changing how it plays. `going-public` was the first: Long Beach at first light through a glass wall, with every object and word the plain backdrop had. There is one engine (`src/hifi.ts`) for every kind of scene; a scene uses the parts that fit it.
 
-- **Opting in.** The scene names a look, the same way it picks its plain art. A platform theme: `hifi: '<name>'` in `THEMES` (`Platform.ts`). Launch control: by site, in `SITE_LOOK` (`Launch.ts`). A look is an entry in `LOOKS` (`src/hifiLooks.ts`), written in its own file in `src/looks/` (`listing`, the first, is still in `hifiLooks.ts`): its layers or redrawn textures, tile set, lights, colour grade, and its own moving parts. A scene without a look renders exactly as before.
+- **Opting in.** The scene names a look, the same way it picks its plain art. A platform theme: `hifi: '<name>'` in `THEMES` (`Platform.ts`). Launch control: by site, in `SITE_LOOK` (`Launch.ts`). The hot-fire stand: `LOOK` in `Hotfire.ts`. A look is an entry in `LOOKS` (`src/hifiLooks.ts`), written in its own file in `src/looks/` (`listing`, the first, is still in `hifiLooks.ts`): its layers or redrawn textures, tile set, lights, colour grade, and its own moving parts. A scene without a look renders exactly as before.
 - **What every scene calls.** `hifi(scene, look, world?)` first in `create()`; it returns nothing when there is no look or the player chose standard graphics, so every later call is `hf?.…`. Last, `ready({...})`. The layer steps itself on the scene's `postupdate` event and cleans up on `shutdown`.
 
   | Scene | `world` | Hooks it uses |
   | --- | --- | --- |
   | Platform | `{ LW, TS, ground, plats }` | `backdrop()` in place of the plain layers, `tiles`, `actor(sprite)` for enemies and running mates, `glow(sprite, tint)` for pickups, `flare(sprite)` for things that give off light, `ready({ hero, solids, props, deco })` |
   | Launch control (single screen) | none | `key('sky_day')` for each texture the look may have redrawn (`Look.swap`), `tag({ sky, ground, rocket, … })` so the look can slip its own sprites between the scene's, `set({ alt, base, burn, … })` each step, `ready({ hud, lateHud: true })` |
+  | Hot-fire (single screen) | none | `backdrop()` (layers marked `lit` are lit by Light2D), `shade(engine)`, `tag({ glow, flame, engine })`, `set({ pc, on })` each step, `ready({ hud, lateHud: true })` |
 
 - **The HUD stays out of the post pass** on a camera of its own. A scrolling scene's HUD is found by scroll factor 0. A single-screen scene has no scroll factors, so it names its HUD: `ready({ hud: [...] })`, and `lateHud: true` when whatever it adds later is HUD too.
 - **Scene state.** `hf.set({...})` hands the look the numbers it animates from (altitude, throttle, chamber pressure); the look reads `hf.state` in `step()`. This keeps looks out of the scene's fields. `hf.heat(x, y, r, amount)` bends the picture over a flame; `hf.power(i, k)` turns one of the look's lights up or down.

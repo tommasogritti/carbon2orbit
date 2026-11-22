@@ -6,6 +6,7 @@ The hi-fi layer is a cinematic look any level can opt into: deep parallax with h
 | --- | --- | --- |
 | Platform | `going-public`, `workshop` | `listing` in `src/hifiLooks.ts`, `src/looks/workshop.ts` |
 | Launch control | `atea-1` | `src/looks/mercury.ts` |
+| A single-screen mini-game | `rutherford` | `src/looks/stand.ts` |
 
 The look changes how a level looks, never what it says or how it plays.
 

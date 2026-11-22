@@ -425,6 +425,29 @@ export function starfield(c: C2, w: number, h: number, n: number, seed: number) 
   c.globalAlpha = 1;
 }
 
+// ---------------------------------------------------------------- the engine test stand
+/** The Rutherford test stand at night, 320 x 180. `part`: 1 the sky, hills and apron, 2 the stand and everything on it, 4 the floodlight's glow. */
+export function drawStand(real: C2, part = 7) {
+  const pick = parts(real, part); let c = pick(1);
+  c.fillStyle = lg(c, 0, 0, 0, 180, [0, '#0b1024'], [0.7, '#1c2a52'], [1, '#2c3f70']); c.fillRect(0, 0, 320, 180); starfield(c, 320, 110, 120, 12);
+  poly(c, [0, 132, 50, 112, 110, 124, 180, 108, 260, 122, 320, 112, 320, 140, 0, 140], '#0f1a36');
+  c.fillStyle = lg(c, 0, 134, 0, 180, [0, '#3a4057'], [1, '#22273a']); c.fillRect(0, 134, 320, 46);
+  for (let x = -20; x < 340; x += 26) line(c, x, 180, x + 30, 134, 'rgba(255,255,255,.04)', 0.5);
+  c = pick(2);
+  // stand
+  for (const x of [58, 152]) { rr(c, x, 26, 6, 108, 0.5, lg(c, x, 0, x + 6, 0, [0, '#6f7890'], [1, '#3a3f4f']), OUT, 0.3); }
+  rr(c, 52, 22, 112, 7, 1, lg(c, 0, 22, 0, 29, [0, '#8b93a7'], [1, '#4a5066']), OUT, 0.3);
+  for (let y = 34; y < 130; y += 16) { line(c, 64, y, 152, y + 16, 'rgba(120,130,150,.35)', 0.6); line(c, 152, y, 64, y + 16, 'rgba(120,130,150,.35)', 0.6); }
+  for (let x = 52; x < 164; x += 8) poly(c, [x, 22, x + 4, 22, x + 2, 25, x - 2, 25], '#f2d14a');
+  poly(c, [84, 134, 132, 134, 124, 120, 92, 120], lg(c, 0, 120, 0, 134, [0, '#5b6275'], [1, '#2a2e3c']), OUT, 0.3); // flame deflector
+  // battery cart and tanks
+  rr(c, 14, 100, 30, 30, 2, lg(c, 14, 0, 44, 0, [0, '#ffe98a'], [1, '#c8961c']), OUT, 0.4); rr(c, 18, 104, 22, 8, 1, '#23262f'); for (let i = 0; i < 4; i++) rr(c, 20 + i * 5, 106, 3.4, 4, 0.4, '#7cc56b'); text(c, 'BATT', 29, 121, 4.4, '#5b4410', 700); el(c, 20, 132, 3, 3, '#15171f'); el(c, 38, 132, 3, 3, '#15171f');
+  c.beginPath(); c.moveTo(44, 110); c.bezierCurveTo(70, 118, 80, 60, 96, 52); c.strokeStyle = '#f2d14a'; c.lineWidth = 1; c.stroke();
+  rr(c, 176, 70, 18, 64, 8, lg(c, 176, 0, 194, 0, [0, '#f2f4f8'], [1, '#8b93a7']), OUT, 0.35); text(c, 'LOX', 185, 100, 4, '#4a5066', 700);
+  rr(c, 198, 84, 14, 50, 6, lg(c, 198, 0, 212, 0, [0, '#e8b796'], [1, '#a8603c']), OUT, 0.35); text(c, 'RP-1', 205, 110, 3, '#4a2a18', 700);
+  c = pick(4); c.fillStyle = rg(c, 108, 26, 2, 60, [0, 'rgba(255,240,200,.22)'], [1, 'rgba(255,240,200,0)']); c.fillRect(40, 0, 140, 100);
+}
+
 // ---------------------------------------------------------------- launch sites
 /**
  * A launch site, 320 x 150 with the ground line at y = 100: Great Mercury Island (`island`) or the pad at Māhia.
@@ -852,24 +875,7 @@ export function makeArt(scene: Phaser.Scene) {
     c.fillStyle = lg(c, 7, 0, 33, 0, [0, '#3a3c48'], [0.3, '#9aa3b5'], [0.55, '#5b6275'], [1, '#23262f']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.4; c.stroke();
     for (let i = 1; i < 7; i++) { const y = 23 + i * 4, w = 3.4 + i * 1.5; line(c, 20 - w, y, 20 + w, y, 'rgba(0,0,0,.2)', 0.25); }
   });
-  tex(scene, 'bg_stand', 320, 180, (c) => {
-    c.fillStyle = lg(c, 0, 0, 0, 180, [0, '#0b1024'], [0.7, '#1c2a52'], [1, '#2c3f70']); c.fillRect(0, 0, 320, 180); starfield(c, 320, 110, 120, 12);
-    poly(c, [0, 132, 50, 112, 110, 124, 180, 108, 260, 122, 320, 112, 320, 140, 0, 140], '#0f1a36');
-    c.fillStyle = lg(c, 0, 134, 0, 180, [0, '#3a4057'], [1, '#22273a']); c.fillRect(0, 134, 320, 46);
-    for (let x = -20; x < 340; x += 26) line(c, x, 180, x + 30, 134, 'rgba(255,255,255,.04)', 0.5);
-    // stand
-    for (const x of [58, 152]) { rr(c, x, 26, 6, 108, 0.5, lg(c, x, 0, x + 6, 0, [0, '#6f7890'], [1, '#3a3f4f']), OUT, 0.3); }
-    rr(c, 52, 22, 112, 7, 1, lg(c, 0, 22, 0, 29, [0, '#8b93a7'], [1, '#4a5066']), OUT, 0.3);
-    for (let y = 34; y < 130; y += 16) { line(c, 64, y, 152, y + 16, 'rgba(120,130,150,.35)', 0.6); line(c, 152, y, 64, y + 16, 'rgba(120,130,150,.35)', 0.6); }
-    for (let x = 52; x < 164; x += 8) poly(c, [x, 22, x + 4, 22, x + 2, 25, x - 2, 25], '#f2d14a');
-    poly(c, [84, 134, 132, 134, 124, 120, 92, 120], lg(c, 0, 120, 0, 134, [0, '#5b6275'], [1, '#2a2e3c']), OUT, 0.3); // flame deflector
-    // battery cart and tanks
-    rr(c, 14, 100, 30, 30, 2, lg(c, 14, 0, 44, 0, [0, '#ffe98a'], [1, '#c8961c']), OUT, 0.4); rr(c, 18, 104, 22, 8, 1, '#23262f'); for (let i = 0; i < 4; i++) rr(c, 20 + i * 5, 106, 3.4, 4, 0.4, '#7cc56b'); text(c, 'BATT', 29, 121, 4.4, '#5b4410', 700); el(c, 20, 132, 3, 3, '#15171f'); el(c, 38, 132, 3, 3, '#15171f');
-    c.beginPath(); c.moveTo(44, 110); c.bezierCurveTo(70, 118, 80, 60, 96, 52); c.strokeStyle = '#f2d14a'; c.lineWidth = 1; c.stroke();
-    rr(c, 176, 70, 18, 64, 8, lg(c, 176, 0, 194, 0, [0, '#f2f4f8'], [1, '#8b93a7']), OUT, 0.35); text(c, 'LOX', 185, 100, 4, '#4a5066', 700);
-    rr(c, 198, 84, 14, 50, 6, lg(c, 198, 0, 212, 0, [0, '#e8b796'], [1, '#a8603c']), OUT, 0.35); text(c, 'RP-1', 205, 110, 3, '#4a2a18', 700);
-    c.fillStyle = rg(c, 108, 26, 2, 60, [0, 'rgba(255,240,200,.22)'], [1, 'rgba(255,240,200,0)']); c.fillRect(40, 0, 140, 100);
-  });
+  tex(scene, 'bg_stand', 320, 180, (c) => drawStand(c));
 
   // world map and its nodes
   tex(scene, 'map', MAPW, MAPH, drawMap);

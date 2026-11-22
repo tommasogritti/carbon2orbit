@@ -20,7 +20,7 @@ import { D, S, C2, lg, rg } from './art';
 export interface Grade { threshold: number; bloom: number; exposure: number; contrast: number; saturation: number; shadows: [number, number, number]; highs: [number, number, number]; vignette: number; grain: number; fringe: number }
 type Obj = Phaser.GameObjects.GameObject;
 /** `w` is the width in units of the parallax layer a thing rides on (as for a level's own layers); leave it out for world space. */
-export interface LayerDef { key: string; w: number; add?: boolean; alpha?: number; depth?: number; y?: number }
+export interface LayerDef { key: string; w: number; add?: boolean; alpha?: number; depth?: number; y?: number; /** Light it with Light2D, with a normal map from its outline. */ lit?: boolean }
 export interface LightDef { x: number; y: number; r: number; color: number; i: number; w?: number; flicker?: number }
 /** A light the scene's own things give off, by texture: where it sits on the sprite, its colour and reach; `arc` flashes like a welder. */
 export interface FlareDef { dx: number; dy: number; color: number; r: number; i: number; size: number; arc?: boolean }
@@ -255,7 +255,7 @@ export class HiFi {
   }
   /** Builds the parallax stack, in place of a theme's plain layers. */
   backdrop() {
-    this.look.layers.forEach((l, i) => { const o = this.on(l.w, 0, l.y || 0, l.key).setOrigin(0).setDepth(l.depth ?? -10 + i * 0.5).setAlpha(l.alpha ?? 1); if (l.add) o.setBlendMode('ADD'); });
+    this.look.layers.forEach((l, i) => { const o = this.on(l.w, 0, l.y || 0, l.key).setOrigin(0).setDepth(l.depth ?? -10 + i * 0.5).setAlpha(l.alpha ?? 1); if (l.add) o.setBlendMode('ADD'); if (l.lit) this.shade(o); });
   }
   private lit(o: Sprite) { if (this.gl && this.look.ambient !== undefined) o.setPipeline('Light2D'); return o; }
   /** A soft glow that follows a small bright thing (a pickup, a falling spark) until it is gone. */
