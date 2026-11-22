@@ -34,7 +34,7 @@ const POWER: Record<string, { name: string; secs: number; tip: string }> = {
 };
 /** What changes from one platform setting to the next. */
 const THEMES: Record<string, { music: string; amb: 'hiss' | 'sea'; layers: [string, number][]; hifi?: string; tiles: string; goal: string; egg: string; young?: boolean; pit: string; drop: [string, string, string]; title: string; text: (secs: string) => string }> = {
-  workshop: { music: 'workshop', amb: 'hiss', layers: [['bg_workshop', 760]], tiles: 'workshop', goal: 'bike', egg: 'waterrocket', young: true, pit: 'Mind the service pit!', drop: ['welder', 'spark', 'Welding sparks!'], title: 'Rocket bike: assembled', text: (t) => `All five parts in ${t} s. The bike screams off down Princes Street on hydrogen peroxide.` },
+  workshop: { music: 'workshop', amb: 'hiss', layers: [['bg_workshop', 760]], hifi: 'workshop', tiles: 'workshop', goal: 'bike', egg: 'waterrocket', young: true, pit: 'Mind the service pit!', drop: ['welder', 'spark', 'Welding sparks!'], title: 'Rocket bike: assembled', text: (t) => `All five parts in ${t} s. The bike screams off down Princes Street on hydrogen peroxide.` },
   mahia: { music: 'mahia', amb: 'sea', layers: [['bg_mahia_far', 520], ['bg_mahia_mid', 760]], tiles: 'mahia', goal: 'pad_empty', egg: 'gnome', pit: 'Splash!', drop: ['welder', 'spark', 'Sparks!'], title: 'Pad hardware delivered', text: (t) => `Everything reached the tip of the peninsula in ${t} s. Launch Complex 1 can open.` },
   factory: { music: 'factory', amb: 'hiss', layers: [['bg_factory', 760]], tiles: 'factory', goal: 'rosie', egg: 'engine100', pit: 'Into the cable trench!', drop: ['trimmer', 'offcut', 'Hit by a carbon offcut!'], title: 'Rosie is running', text: (t) => `Everything loaded onto Rosie’s bed in ${t} s. She marks, cuts, drills, mills and sands it: a rocket’s worth of carbon composite in 12 hours, where the hand work took more than 400.` },
   stennis: { music: 'delta', amb: 'sea', layers: [['bg_stennis_far', 520], ['bg_stennis_mid', 760]], tiles: 'stennis', goal: 'lc3', egg: 'eureka', pit: 'Splash!', drop: ['cryoline', 'icicle', 'Hit by falling ice!'], title: 'Everything but the rocket', text: (t) => `Delivered to Wallops in ${t} s. The engine runs, the pad is open and a replacement dome is being made. What is left is the part nobody can hurry: assemble the tank, fill it, chill it, and only then name a date.` },
@@ -43,7 +43,7 @@ const THEMES: Record<string, { music: string; amb: 'hiss' | 'sea'; layers: [stri
 const BOP: Record<string, string> = { scooter: 'Scooter: kill switch hit', drawerbot: 'Drawer shut', ram: 'Ram sent packing', gull: 'Shoo!', redtape: 'Red tape cut', bear: 'Bear squeezed', sander: 'Sander unplugged', roll: 'Roll stopped', dust: 'Dust cleared', crab: 'Crab back in the bay', void: 'Void closed up' };
 export class PlatformScene extends Phaser.Scene {
   def!: LevelDef; p: any; me!: Phaser.Physics.Arcade.Sprite; solids!: Phaser.Physics.Arcade.StaticGroup;
-  hf?: HiFi; amb?: Loop; jet?: Loop; power: Fit | 'C' = ''; buddy?: Phaser.GameObjects.Image; buddyPre = ''; powerT = 0; powerMax = 1; dbl = false; secret = false; pwHud!: Phaser.GameObjects.Graphics; pwIcon!: Phaser.GameObjects.Image; pwText!: Phaser.GameObjects.Text; jetFx?: Phaser.GameObjects.Particles.ParticleEmitter; wasDown = true; inv = 0; bopped = 0; belts: { x0: number; x1: number; y: number; dir: number; o: Phaser.GameObjects.TileSprite }[] = []; fires: { x: number; t: number; fx: Phaser.GameObjects.Particles.ParticleEmitter; lamp: Phaser.GameObjects.Arc; on: boolean }[] = []; roar?: Loop; jetFxM?: Phaser.GameObjects.Particles.ParticleEmitter; foes: Foe[] = []; droppers: { x: number; t: number; gy: number; live: Phaser.Physics.Arcade.Image[]; hold?: number }[] = []; mate?: Reporter; eggObj?: Phaser.Physics.Arcade.Image; secretObj?: Phaser.Physics.Arcade.Image; pre = ''; got = 0; egg = false; hud!: Phaser.GameObjects.Text; msg!: Phaser.GameObjects.Text; safe = { x: 24, y: 100 }; done = false; stun = 0; t0 = 0; falls = 0;
+  hf?: HiFi; deco: Phaser.GameObjects.Image[] = []; amb?: Loop; jet?: Loop; power: Fit | 'C' = ''; buddy?: Phaser.GameObjects.Image; buddyPre = ''; powerT = 0; powerMax = 1; dbl = false; secret = false; pwHud!: Phaser.GameObjects.Graphics; pwIcon!: Phaser.GameObjects.Image; pwText!: Phaser.GameObjects.Text; jetFx?: Phaser.GameObjects.Particles.ParticleEmitter; wasDown = true; inv = 0; bopped = 0; belts: { x0: number; x1: number; y: number; dir: number; o: Phaser.GameObjects.TileSprite }[] = []; fires: { x: number; t: number; fx: Phaser.GameObjects.Particles.ParticleEmitter; lamp: Phaser.GameObjects.Arc; on: boolean }[] = []; roar?: Loop; jetFxM?: Phaser.GameObjects.Particles.ParticleEmitter; foes: Foe[] = []; droppers: { x: number; t: number; gy: number; live: Phaser.Physics.Arcade.Image[]; hold?: number }[] = []; mate?: Reporter; eggObj?: Phaser.Physics.Arcade.Image; secretObj?: Phaser.Physics.Arcade.Image; pre = ''; got = 0; egg = false; hud!: Phaser.GameObjects.Text; msg!: Phaser.GameObjects.Text; safe = { x: 24, y: 100 }; done = false; stun = 0; t0 = 0; falls = 0;
   constructor() { super('Platform'); }
   init(d: { def: LevelDef }) { this.def = d.def; this.p = d.def.params; this.got = 0; this.egg = false; this.done = false; this.stun = 0; this.falls = 0; this.safe = { x: 24, y: 100 }; this.sheepList = []; this.foes = []; this.droppers = []; this.belts = []; this.fires = []; this.inv = 0; this.bopped = 0; this.hits = []; this.botWait = 0; this.power = ''; this.powerT = 0; this.dbl = false; this.secret = false; this.buddy = undefined; this.mate = undefined; this.eggObj = this.secretObj = undefined; }
   create() {
@@ -84,6 +84,7 @@ export class PlatformScene extends Phaser.Scene {
       T(this, x, y - 26.4, a, '#ffffff', b ? 4.6 : 5.6, '700').setOrigin(0.5, 0).setDepth(1); if (b) T(this, x, y - 21, b, '#ffe98a', 4.2).setOrigin(0.5, 0).setDepth(1);
       if (strike) this.add.rectangle(x, y - 22.4, 44, 1.2, 0xd8452e).setAngle(-14).setDepth(1);
     };
+    const deco = (this.deco = []) as Phaser.GameObjects.Image[]; // standing props a look may light
     for (const [tx, kind] of p.signs as [number, string][]) {
       const x = tx * TS + 8, y = groundRow(tx) * TS;
       if (kind === 'sign') board(x, y, 'ONENUI STATION', 'Launch Complex 1 →');
@@ -92,7 +93,7 @@ export class PlatformScene extends Phaser.Scene {
       else if (kind === 'princes') board(x, y, 'PRINCES ST');
       else if (kind.startsWith('board:')) { const [a, b] = kind.slice(6).split('|'); board(x, y, a, b); }
       else {
-        const s = img(this, x, y, kind).setOrigin(0.5, 1).setDepth(1);
+        const s = img(this, x, y, kind).setOrigin(0.5, 1).setDepth(1); deco.push(s);
         if (kind === 'jetpack') s.y -= 22;
         if (kind === 'washer') T(this, x, y - 32, 'DISHDRAWER', '#aab2c0', 4, '700').setOrigin(0.5, 0);
       }
@@ -133,7 +134,7 @@ export class PlatformScene extends Phaser.Scene {
     // hazards and sheep
     for (const tx of p.hazards as number[]) {
       const x = tx * TS + 8, y = groundRow(tx) * TS;
-      const s = this.physics.add.staticImage(x, y - 4, 'vent').setScale(S).refreshBody(); (s.body as Phaser.Physics.Arcade.StaticBody).setSize(8, 14);
+      const s = this.physics.add.staticImage(x, y - 4, 'vent').setScale(S).refreshBody(); (s.body as Phaser.Physics.Arcade.StaticBody).setSize(8, 14); deco.push(s); hf?.flare(s);
       this.add.particles(x, y - 6, 'puff', { speedY: { min: -46, max: -26 }, speedX: { min: -5, max: 5 }, lifespan: 520, scale: { start: S * 0.35, end: S * 1.1 }, alpha: { start: 0.75, end: 0 }, frequency: 45 }).setDepth(3);
       this.physics.add.overlap(this.me, s, () => { if (this.inv <= 0 && !this.tough()) this.respawn('Steam burn!'); });
     }
@@ -174,7 +175,7 @@ export class PlatformScene extends Phaser.Scene {
     this.jet = loop('hiss');
     this.plan();
     this.refresh();
-    hf?.ready({ hero: this.me, solids: this.solids.getChildren(), props: [goal] });
+    hf?.ready({ hero: this.me, solids: this.solids.getChildren(), props: [goal], deco });
   }
   /** For the controls panel: the keys, plus what this level's own power-ups do. */
   help() {
@@ -348,7 +349,7 @@ export class PlatformScene extends Phaser.Scene {
   /** Enemies. Jumping on one from above sees it off; touching it any other way costs a retry from the last safe spot. */
   spawn(kind: string, a: number, b: number, gy: number) {
     const x0 = a * TS + 8, x1 = b * TS + 8;
-    if (DROP.has(kind)) { img(this, x0, 19, THEMES[this.p.theme].drop[0]).setOrigin(0.5, 0).setDepth(1); this.droppers.push({ x: x0 + 1, t: Math.random(), gy, live: [] }); return; }
+    if (DROP.has(kind)) { const arm = img(this, x0, 19, THEMES[this.p.theme].drop[0]).setOrigin(0.5, 0).setDepth(1); this.deco.push(arm); this.hf?.flare(arm); this.droppers.push({ x: x0 + 1, t: Math.random(), gy, live: [] }); return; }
     const o = this.physics.add.image(x0, 0, kind === 'drawerbot' ? 'drawerbot0' : FLY.has(kind) ? kind + '0' : kind).setScale(S).setDepth(4);
     const body = o.body as Phaser.Physics.Arcade.Body; body.setAllowGravity(false); body.setSize(o.width * 0.76, o.height * 0.8);
     const baseY = FLY.has(kind) ? gy - 49 : gy - o.displayHeight / 2; // gulls skim just over your head: only a jump brings you into them
