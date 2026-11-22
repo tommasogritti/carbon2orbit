@@ -1,7 +1,7 @@
 import { D, C2, el, line, poly, lg, rg, rng, drawSite } from '../art';
 import { texAt, soft, add, halo, sheet } from '../hifi';
 import type { Grade, Look } from '../hifi';
-import { spaceTextures, SPACE, puffy, ascentLive, ascentStep, CloudTone } from './flight';
+import { spaceTextures, SPACE, puffy, ascentLive, ascentStep, CloudTone, NOON } from './flight';
 
 // ------------------------------------------------------------------ Launch Complex 1, Māhia: one pad, a different day each flight
 // Every Electron in the story leaves the same cliff-top pad, so the site is one drawing (`drawSite`, the plain one's code)
@@ -78,6 +78,23 @@ const TEST: Day = {
   flare: 0.9, sunTint: 0xffd9a0, glint: 0xffe2b0,
 };
 
+// ---- 21 January 2018, 14:43 NZDT: "Still Testing". High summer, an hour and a half after the sun's highest point, so it
+// stands some sixty degrees up: out of the top of the frame, with only its glare coming in. Hard light, a deep sky,
+// short shadows. (The hour is 01:43 UTC in the level's source, the list of Electron launches; the fair weather is the game's choice.)
+const STILL: Day = {
+  key: 'hf_l1s', seed: 9, sun: [214, -12], disc: [7, '#fffef8'],
+  sky: [[0, '#0a3f9e'], [0.35, '#1f6fd0'], [0.62, '#62aeea'], [0.86, '#a9d6f4'], [1, '#d4ecfa']],
+  sunRGB: '255,251,236', glow: [190, 0.3, 80, 0.5], rays: 2.3, cirrus: [12, '255,255,255'],
+  sea: [[0, '#8fc6e8'], [0.04, '#4ba3d6'], [0.2, '#1675c2'], [0.6, '#0c54a4'], [1, '#073878']], swell: ['226,244,255', 'rgba(6,36,92,.22)'],
+  glitter: (k) => `rgba(255,${254 - k * 20},${240 - k * 40},${0.7 - k * 0.45})`,
+  haze: ['rgba(176,208,234,.30)', 'rgba(196,224,244,.66)'], mist: 'rgba(214,236,250,.2)', grassDark: 'rgba(18,84,44,.22)', grassLight: 'rgba(224,250,150,.22)',
+  slope: [[0, 'rgba(255,250,190,.24)'], [0.45, 'rgba(8,44,48,0)'], [1, 'rgba(8,44,48,.30)']], cliff: [[0, 'rgba(70,56,40,.22)'], [0.5, 'rgba(255,250,220,.06)'], [1, 'rgba(255,250,224,.30)']],
+  shadow: [0.14, -0.12, 0.5, '#04201a'], thing: [[0, 'rgba(6,30,34,.22)'], [0.55, 'rgba(6,30,34,0)'], [1, 'rgba(255,250,210,.26)']],
+  tone: NOON,
+  grade: { threshold: 0.9, bloom: 0.42, exposure: 1.0, contrast: 1.12, saturation: 1.18, shadows: [0.92, 1.0, 1.12], highs: [1.05, 1.02, 0.95], vignette: 0.36, grain: 0.018, fringe: 0.005 },
+  flare: 0.8, sunTint: 0xfff6dc, glint: 0xfffbe6,
+};
+
 const look = (d: Day): Look => ({
   build(scene) {
     texAt(scene, d.key + '_sky', 320, 180, D, sky(d)); texAt(scene, d.key + '_site', 320, 150, D, site(d)); spaceTextures(scene);
@@ -89,4 +106,4 @@ const look = (d: Day): Look => ({
   live(hf) { ascentLive(hf, { sun: d.sun, glint: { x: d.sun[0], y0: -17, y1: 2, tint: d.glint }, flare: d.flare, sunTint: d.sunTint, plume: 1.5 }); },
   step: ascentStep,
 });
-export const lc1Looks: Record<string, Look> = { 'lc1-test': look(TEST) };
+export const lc1Looks: Record<string, Look> = { 'lc1-test': look(TEST), 'lc1-still': look(STILL) };
