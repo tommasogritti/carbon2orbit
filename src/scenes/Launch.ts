@@ -34,6 +34,7 @@ const SITE_LOOK: Record<string, string> = { island: 'mercury' };
 const LEVEL_LOOK: Record<string, string> = {
   'its-a-test': 'lc1-test', 'still-testing': 'lc1-still', 'its-business-time': 'lc1-business',
   'paschens-law': 'lc1-moongod',
+  'beginning-of-the-swarm': 'lc1-swarm',
 };
 /** Flights that left after sunset, each with the evening it had (looks/evening.ts); any other dusk or night flight keeps the plain look. */
 const EVE_LOOK: Record<string, string> = {

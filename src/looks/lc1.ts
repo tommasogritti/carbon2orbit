@@ -141,6 +141,24 @@ const MOONGOD: Day = {
   flare: 0.9, sunTint: 0xfff4dc, glint: 0xfffbe6,
 };
 
+// ---- 24 April 2024, 10:32 am NZST: "Beginning Of The Swarm" (22:32 UTC on the 23rd, in the level's account). The only
+// morning flight in the story: mid-autumn, the sun about thirty degrees up and still climbing, on the other side of the
+// frame from the afternoon flights, so the light and the shadows fall the other way. Cool, clear light with a little
+// mist left lying on the sea; the mist and the fair weather are the game's choice.
+const SWARM: Day = {
+  key: 'hf_l1w', seed: 27, sun: [100, 70], disc: [6.6, '#fffef4'],
+  sky: [[0, '#0c3f98'], [0.35, '#2b74cc'], [0.6, '#7ab6e6'], [0.8, '#c2ddf0'], [1, '#eef0e8']],
+  sunRGB: '255,248,228', glow: [140, 0.3, 48, 0.58], rays: 1.3, cirrus: [12, '255,255,255'],
+  sea: [[0, '#d4e6ec'], [0.05, '#6aaed2'], [0.2, '#2376b8'], [0.6, '#12559c'], [1, '#0a3874']], swell: ['236,246,252', 'rgba(8,36,88,.2)'],
+  glitter: (k) => `rgba(255,${253 - k * 22},${238 - k * 40},${0.9 - k * 0.5})`, bank: 'rgba(250,250,246,.7)',
+  haze: ['rgba(196,214,230,.36)', 'rgba(226,234,238,.7)'], mist: 'rgba(240,244,244,.42)', grassDark: 'rgba(14,74,44,.24)', grassLight: 'rgba(222,246,150,.22)',
+  slope: [[0, 'rgba(250,246,180,.22)'], [0.4, 'rgba(30,60,50,.03)'], [1, 'rgba(6,36,52,.34)']], cliff: [[0, 'rgba(255,240,200,.16)'], [0.4, 'rgba(40,50,80,.2)'], [1, 'rgba(20,30,70,.42)']],
+  shadow: [-0.62, -0.2, 0.5, '#06201e'], thing: [[0, 'rgba(255,246,214,.3)'], [0.4, 'rgba(10,26,44,.04)'], [1, 'rgba(10,24,48,.36)']],
+  tone: { shade: '#b4c6de', down: [[0, 'rgba(255,255,250,.95)'], [0.42, 'rgba(250,250,240,.2)'], [0.7, 'rgba(124,146,190,.26)'], [1, 'rgba(88,112,166,.6)']], across: [[0, 'rgba(255,244,214,.4)'], [0.4, 'rgba(255,244,214,0)'], [1, 'rgba(60,84,150,.24)']] },
+  grade: { threshold: 0.89, bloom: 0.44, exposure: 1.0, contrast: 1.12, saturation: 1.12, shadows: [0.9, 0.98, 1.16], highs: [1.04, 1.02, 0.97], vignette: 0.38, grain: 0.018, fringe: 0.005 },
+  flare: 0.9, sunTint: 0xfff6e0, glint: 0xfffbea, glintBox: [5, -2],
+};
+
 // ---- Launch Complex 1 after sunset: the same drawing in the dark, under the pad's floodlights (evening.ts). Where the
 // lamps stand is the game's choice; the hangar, the sheep and the fence are the plain drawing's own.
 const PAD: Pad = {
@@ -177,4 +195,5 @@ const DESERT: Eve = {
 export const lc1Looks: Record<string, Look> = {
   'lc1-test': look(TEST), 'lc1-still': look(STILL), 'lc1-business': look(BUSINESS),
   'lc1-desert': evening(PAD, DESERT), 'lc1-moongod': look(MOONGOD),
+  'lc1-swarm': look(SWARM),
 };
