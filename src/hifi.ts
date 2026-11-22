@@ -44,8 +44,8 @@ export interface Look {
   mirror?: number;
   /** The shade laid into the pits between ground spans: 'hf_pit' unless given; null when the look fills them itself (the sea). */
   pit?: string | null;
-  /** A soft light that follows the hero, so the lead always reads. */
-  heroLight?: { r: number; color: number; i: number };
+  /** A soft light that follows the hero, so the lead always reads; `dx`, `dy` set it off to one side (a low sun). */
+  heroLight?: { r: number; color: number; i: number; dx?: number; dy?: number };
   /** A strip of the scene mirrored into the top of the floor: a texture drawn for the layer `w` wide. */
   reflect?: { key: string; w: number; alpha: number };
   /** Dust in the air: tint and how many motes are alive at once. */
@@ -300,7 +300,7 @@ export class HiFi {
     if (o.hero) this.dust = s.add.particles(0, 0, 'puff', { speedX: { min: -16, max: 16 }, speedY: { min: -14, max: -3 }, lifespan: { min: 260, max: 460 }, scale: { start: S * 0.22, end: S * 0.6 }, alpha: { start: 0.32, end: 0 }, tint: 0xb8c0dc, emitting: false }).setDepth(4.5);
     if (this.gl) {
       if (look.ambient !== undefined) for (const d of look.lights || []) this.lamps.push({ l: s.lights.addLight(d.x, d.y, d.r, d.color, d.i), def: d, f: d.w ? this.f(d.w) : 1, k: 1 });
-      if (look.heroLight && o.hero) this.heroLamp = s.lights.addLight(o.hero.x, o.hero.y, look.heroLight.r, look.heroLight.color, look.heroLight.i);
+      if (look.heroLight && look.ambient !== undefined) this.heroLamp = s.lights.addLight(o.hero?.x || 0, o.hero?.y || 0, look.heroLight.r, look.heroLight.color, look.heroLight.i);
       // everything pinned to the screen is HUD: it leaves the play camera for the HUD camera
       for (const c of s.children.list as any[]) if (c.scrollFactorX === 0 && !this.own.has(c)) c.cameraFilter = cam.id;
       this.hud(...(o.hud || []));
@@ -319,7 +319,7 @@ export class HiFi {
   private step(_t: number, dms: number) {
     const dt = Math.min(0.05, dms / 1000), s = this.scene, view = s.cameras.main.scrollX + HX; this.t += dt;
     for (const { l, def, f, k } of this.lamps) { l.x = def.x + view * (1 - f); l.intensity = def.i * k * (def.flicker ? 1 + def.flicker * (Math.sin(this.t * 13 + def.x) * 0.5 + Math.sin(this.t * 31 + def.y) * 0.5) : 1); }
-    if (this.heroLamp && this.hero) this.heroLamp.setPosition(this.hero.x, this.hero.y - 8);
+    if (this.heroLamp) { const hl = this.look.heroLight!; if (this.hero) this.heroLamp.setPosition(this.hero.x + (hl.dx || 0), this.hero.y + (hl.dy ?? -8)); else if (this.state.x !== undefined) this.heroLamp.setPosition(this.state.x + (hl.dx || 0), this.state.y + (hl.dy || 0)); } // a scene without a hero sprite gives the lead's place as state x, y
     for (const { g, l, d, ph } of this.flaring) { // an arc spits in bursts; anything else breathes
       const k = d.arc ? Math.max(0, Math.sin(this.t * 2.1 + ph)) * (0.35 + 0.65 * Math.abs(Math.sin(this.t * 47 + ph) * Math.sin(this.t * 29 + ph * 2))) : 0.85 + 0.15 * Math.sin(this.t * 3 + ph);
       g.setAlpha(k * 0.9).setScale(S * d.size * (0.7 + 0.5 * k)); if (l) l.intensity = d.i * k;

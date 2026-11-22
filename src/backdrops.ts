@@ -412,20 +412,21 @@ function stennisMid(c: C2, scene: Phaser.Scene) {
 }
 
 // ------------------------------------------------------------------ Go Find the Launch Site, about 2015: the far end of the Māhia Peninsula before there was a road
-/** Far layer: a big sky, the Pacific to the horizon on every side but one, and nothing on it. */
-function rideFar(c: C2) {
+/** Far layer: a big sky, the Pacific to the horizon on every side but one, and nothing on it. `part`: 1 sky and sea, 4 the clouds, 2 land, birds and boats. */
+export function rideFar(real: C2, part = 7) {
+  const pick = parts(real, part); let c = pick(1);
   const W = 520, r = rng(71);
   c.fillStyle = lg(c, 0, 0, 0, 104, [0, '#3a86d6'], [0.7, '#a6d2f2'], [1, '#e6f2fb']); c.fillRect(0, 0, W, 104);
-  for (const [x, y, w, k] of [[40, 22, 120, 2], [210, 40, 80, 5], [330, 18, 130, 8]]) { c.save(); c.translate(x, y); cloud(c, w, w * 0.24, k, '#d0e0f0'); c.restore(); }
-  c.fillStyle = lg(c, 0, 100, 0, 180, [0, '#9fd0ee'], [0.06, '#2f7fd0'], [1, '#143c78']); c.fillRect(0, 100, W, 80);
+  c = pick(4); for (const [x, y, w, k] of [[40, 22, 120, 2], [210, 40, 80, 5], [330, 18, 130, 8]]) { c.save(); c.translate(x, y); cloud(c, w, w * 0.24, k, '#d0e0f0'); c.restore(); }
+  c = pick(1); c.fillStyle = lg(c, 0, 100, 0, 180, [0, '#9fd0ee'], [0.06, '#2f7fd0'], [1, '#143c78']); c.fillRect(0, 100, W, 80);
   for (let i = 0; i < 190; i++) { const x = r() * W, y = 104 + r() * 74; line(c, x, y, x + 3 + r() * 9, y, `rgba(220,240,255,${0.1 + r() * 0.26})`, 0.4); }
-  poly(c, [0, 101, 0, 82, 40, 76, 84, 86, 120, 101], lg(c, 0, 76, 0, 101, [0, '#7fa8b8'], [1, '#6a96aa'])); // the mainland, falling behind
+  c = pick(2); poly(c, [0, 101, 0, 82, 40, 76, 84, 86, 120, 101], lg(c, 0, 76, 0, 101, [0, '#7fa8b8'], [1, '#6a96aa'])); // the mainland, falling behind
   for (const [gx, gy, k] of [[150, 52, 1], [164, 58, 0.8], [300, 46, 0.9], [420, 60, 0.7]] as number[][]) { c.beginPath(); c.moveTo(gx - 5 * k, gy); c.quadraticCurveTo(gx - 2 * k, gy - 3 * k, gx, gy); c.quadraticCurveTo(gx + 2 * k, gy - 3 * k, gx + 5 * k, gy); c.strokeStyle = '#f4f2ea'; c.lineWidth = 0.7; c.stroke(); }
   c.beginPath(); c.moveTo(440, 101); c.quadraticCurveTo(462, 88, 488, 90); c.lineTo(510, 94); c.lineTo(518, 101); c.closePath(); c.fillStyle = '#6f9f7a'; c.fill(); // Portland Island off the tip
   for (const x of [250, 380]) { poly(c, [x, 108, x + 9, 108, x + 7.6, 110.4, x + 1.4, 110.4], '#e8e6df', OUT, 0.25); line(c, x + 4.5, 108, x + 4.5, 103, '#3a3f4f', 0.35); } // fishing boats, a long way out
 }
 /** Middle layer, transparent above the hills: farm country getting emptier, then the last headland. */
-function rideMid(c: C2) {
+export function rideMid(c: C2) {
   const W = 760, r = rng(83);
   const ridge = (x: number) => 112 + 12 * Math.sin(x * 0.011 + 1) + 6 * Math.sin(x * 0.033) - (x > 600 ? (x - 600) * 0.05 : 0);
   c.beginPath(); c.moveTo(0, 180); for (let x = 0; x <= W; x += 4) c.lineTo(x, ridge(x)); c.lineTo(W, 180); c.closePath(); c.fillStyle = lg(c, 0, 96, 0, 180, [0, '#8acb72'], [0.5, '#62a85c'], [1, '#4a8a4c']); c.fill();
@@ -444,7 +445,7 @@ function rideMid(c: C2) {
 }
 
 export function makeBackdrops(scene: Phaser.Scene) {
-  tex(scene, 'bg_ride_far', 520, 180, rideFar);
+  tex(scene, 'bg_ride_far', 520, 180, (c) => rideFar(c));
   tex(scene, 'bg_ride_mid', 760, 180, rideMid);
   tex(scene, 'bg_stennis_far', 520, 180, stennisFar);
   tex(scene, 'bg_stennis_mid', 760, 180, (c) => stennisMid(c, scene));
