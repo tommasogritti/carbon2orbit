@@ -383,14 +383,16 @@ export function factory(real: C2, part = 15) {
 }
 
 // ------------------------------------------------------------------ Archimedes and the tank, 2024–2026: Mississippi, Maryland, Virginia
-/** Far layer: Gulf-coast sky, the pine line, the Stennis canal with a LOX barge, then Chesapeake water and the Atlantic. */
-function stennisFar(c: C2) {
+/** Far layer: Gulf-coast sky, the pine line, the Stennis canal with a LOX barge, then Chesapeake water and the Atlantic. `part`: 1 sky and sun, 4 the clouds, 8 the water, 2 the pines, shores, boats and gulls. */
+export function stennisFar(real: C2, part = 15) {
+  const pick = parts(real, part); let c = pick(1);
   const W = 520, r = rng(33);
   c.fillStyle = lg(c, 0, 0, 0, 122, [0, '#3f8fd8'], [0.6, '#9fd0f0'], [1, '#f2ecd2']); c.fillRect(0, 0, W, 122);
   c.fillStyle = rg(c, 90, 30, 2, 70, [0, 'rgba(255,250,220,.95)'], [0.14, 'rgba(255,245,200,.5)'], [1, 'rgba(255,245,200,0)']); c.fillRect(0, 0, 220, 120); el(c, 90, 30, 6.4, 6.4, '#fffbe6');
-  for (const [x, y, w, k] of [[150, 30, 90, 3], [270, 52, 70, 5], [380, 26, 110, 7], [30, 62, 60, 9]]) { c.save(); c.translate(x, y); cloud(c, w, w * 0.3, k, '#d2e2f0'); c.restore(); } // towering afternoon cumulus
-  c.fillStyle = lg(c, 0, 110, 0, 180, [0, '#7fb7c9'], [0.1, '#3f7f9a'], [1, '#1f4f66']); c.fillRect(0, 110, W, 70);
+  c = pick(4); for (const [x, y, w, k] of [[150, 30, 90, 3], [270, 52, 70, 5], [380, 26, 110, 7], [30, 62, 60, 9]]) { c.save(); c.translate(x, y); cloud(c, w, w * 0.3, k, '#d2e2f0'); c.restore(); } // towering afternoon cumulus
+  c = pick(8); c.fillStyle = lg(c, 0, 110, 0, 180, [0, '#7fb7c9'], [0.1, '#3f7f9a'], [1, '#1f4f66']); c.fillRect(0, 110, W, 70);
   for (let i = 0; i < 150; i++) { const x = r() * W, y = 114 + r() * 62; line(c, x, y, x + 3 + r() * 8, y, `rgba(220,240,245,${0.1 + r() * 0.22})`, 0.4); }
+  c = pick(2);
   // the pine line behind Stennis, thinning out as the road goes north and east
   for (let x = 0; x < 250; x += 3.2) { const hgt = 10 + r() * 9, y = 112; poly(c, [x, y, x + 1.6, y - hgt, x + 3.2, y], x % 2 > 1 ? '#2f6b4a' : '#3a7a55'); }
   rr(c, 0, 110, 250, 3, 0, '#2a5a40');
@@ -404,11 +406,13 @@ function stennisFar(c: C2) {
   // open Atlantic off Virginia
   for (const [gx, gy] of [[440, 60], [452, 66], [470, 58]] as number[][]) { c.beginPath(); c.moveTo(gx - 4, gy); c.quadraticCurveTo(gx - 1.6, gy - 2.4, gx, gy); c.quadraticCurveTo(gx + 1.6, gy - 2.4, gx + 4, gy); c.strokeStyle = '#f4f2ea'; c.lineWidth = 0.6; c.stroke(); }
 }
-/** Middle layer, transparent above the ground: the test complex at Stennis, the composites works at Middle River, the test yard, Wallops. */
-function stennisMid(c: C2, scene: Phaser.Scene) {
+/** Middle layer, transparent above the ground: the test complex at Stennis, the composites works at Middle River, the test yard, Wallops. `part`: 1 the ground, 2 what stands on it. */
+export function stennisMid(real: C2, scene: Phaser.Scene, part = 3) {
+  const pick = parts(real, part); let c = pick(1);
   const W = 760, r = rng(47);
   c.fillStyle = lg(c, 0, 118, 0, 144, [0, '#7fb56a'], [1, '#4f8a4c']); c.fillRect(0, 122, 420, 22); c.fillStyle = lg(c, 0, 118, 0, 144, [0, '#dccf9c'], [1, '#b9ab78']); c.fillRect(560, 122, 200, 22); c.fillStyle = lg(c, 420, 0, 560, 0, [0, '#5f9a56'], [1, '#cfc28c']); c.fillRect(420, 122, 140, 22);
   for (let i = 0; i < 70; i++) el(c, r() * 560, 124 + r() * 18, 2 + r() * 3, 0.8 + r(), 'rgba(40,100,55,.25)');
+  c = pick(2);
   const sign = (x: number, y: number, w: number, a: string, b?: string, bg = '#f4f2ea', fg = '#15171f') => { line(c, x + 4, y + 9, x + 4, 138, '#5b6275', 0.8); line(c, x + w - 4, y + 9, x + w - 4, 138, '#5b6275', 0.8); rr(c, x, y, w, b ? 13 : 9, 1, bg, OUT, 0.35); text(c, a, x + w / 2, y + 4.6, 3.6, fg, 700); if (b) text(c, b, x + w / 2, y + 9.6, 2.8, fg, 600); };
   const pine = (x: number, hgt: number) => { line(c, x, 138, x, 138 - hgt, '#5b3d22', 1); for (let k = 0; k < 4; k++) poly(c, [x - 5 + k, 138 - hgt * (0.3 + k * 0.17), x, 138 - hgt * (0.62 + k * 0.17), x + 5 - k, 138 - hgt * (0.3 + k * 0.17)], k % 2 ? '#2f6b4a' : '#3a7a55'); };
   // ---- A. Stennis: the gate, the A-3 stand, tanks, the canal
@@ -434,7 +438,8 @@ function stennisMid(c: C2, scene: Phaser.Scene) {
     line(c, x + 52, 138, x + 52, 100, '#f2d14a', 1.2); line(c, x + 52, 100, x + 30, 106, '#f2d14a', 1); rr(c, x + 26, 105, 6, 4, 0.6, '#f4f6fa', OUT, 0.25); c.fillStyle = 'rgba(124,240,138,.35)'; c.beginPath(); c.moveTo(x + 29, 109); c.lineTo(x + 22, 122); c.lineTo(x + 34, 122); c.closePath(); c.fill();
     sign(x + 2, 80, 44, 'REPLACEMENT DOME', 'in manufacture', '#1f5a34', '#fff'); }
   // ---- D. Wallops Island: dunes, the assembly building, and a fairing that never lets go
-  for (let i = 0; i < 26; i++) el(c, 606 + r() * 150, 126 + r() * 14, 2 + r() * 4, 0.8 + r(), i % 3 ? 'rgba(95,130,70,.5)' : 'rgba(150,160,90,.45)');
+  c = pick(1); for (let i = 0; i < 26; i++) el(c, 606 + r() * 150, 126 + r() * 14, 2 + r() * 4, 0.8 + r(), i % 3 ? 'rgba(95,130,70,.5)' : 'rgba(150,160,90,.45)');
+  c = pick(2);
   rr(c, 604, 84, 52, 54, 0.6, '#e9edf2', OUT, 0.4); rr(c, 604, 80, 52, 5, 0.4, '#30508a', OUT, 0.3); rr(c, 612, 94, 36, 44, 0.3, '#1b2236', OUT, 0.3); text(c, 'ASSEMBLY & INTEGRATION', 630, 89.6, 2.4, '#30508a', 700);
   { const x = 630; for (const sg of [-1, 1]) { c.save(); c.translate(x, 137); c.rotate(sg * 0.2); c.beginPath(); c.moveTo(0, 0); c.lineTo(sg * 7, 0); c.lineTo(sg * 7, -20); c.quadraticCurveTo(sg * 6, -34, 0, -40); c.closePath(); c.fillStyle = lg(c, -7, 0, 7, 0, [0, '#101116'], [0.5, '#4a4c5a'], [1, '#101116']); c.fill(); c.strokeStyle = 'rgba(200,210,230,.5)'; c.lineWidth = 0.35; c.stroke(); c.restore(); } sign(x - 23, 60, 46, 'HUNGRY HIPPO', 'arrived January 2026'); } // the fairing that never lets go, in the assembly building door
   void scene;
@@ -473,10 +478,29 @@ export function rideMid(c: C2) {
   for (let i = 0; i < 12; i++) line(c, 706 + r() * 50, 100 + r() * 70, 708 + r() * 50, 106 + r() * 70, 'rgba(90,70,40,.3)', 0.4);
 }
 
+// ------------------------------------------------------------------ Princes Street Sprint, about 2000
+/** Princes Street at night, one tile 320 wide, scrolled fast. `part`: 1 the sky, 2 the buildings, 4 the street lamps, 8 bunting, crowd and barriers, 16 the road. */
+export function street(real: C2, part = 31) {
+  const pick = parts(real, part); let c = pick(1);
+  c.fillStyle = lg(c, 0, 0, 0, 130, [0, '#050818'], [1, '#1c2f66']); c.fillRect(0, 0, 320, 130);
+  const r = rng(77); for (let i = 0; i < 60; i++) el(c, r() * 320, r() * 60, 0.2 + r() * 0.2, 0.2 + r() * 0.2, '#fff');
+  c = pick(2);
+  let x = 0; while (x < 320) { const w = 26 + Math.floor(r() * 30), h = 44 + Math.floor(r() * 46), y = 128 - h; rr(c, x, y, w - 1, h, 0.4, ['#141b33', '#182040', '#1c2548'][Math.floor(r() * 3)]); if (r() > 0.6) poly(c, [x, y, x + w / 2, y - 6, x + w - 1, y], '#10162b'); for (let wy = y + 5; wy < 116; wy += 8) for (let wx = x + 3; wx < x + w - 5; wx += 6) if (r() > 0.45) rr(c, wx, wy, 2.6, 3.6, 0, r() > 0.3 ? '#ffe98a' : '#bfe3ff'); rr(c, x, 116, w - 1, 3, 0, '#2a3358'); x += w; }
+  c = pick(4);
+  for (const lx of [40, 150, 262]) { line(c, lx, 128, lx, 96, '#5b6275', 1); line(c, lx, 96, lx + 7, 94, '#5b6275', 1); el(c, lx + 7, 94.6, 2.4, 1.2, '#fff3c4'); c.fillStyle = rg(c, lx + 7, 100, 0.5, 22, [0, 'rgba(255,235,170,.45)'], [1, 'rgba(255,235,170,0)']); c.fillRect(lx - 16, 92, 46, 40); }
+  c = pick(8);
+  for (let i = 0; i < 46; i++) poly(c, [i * 7, 100, i * 7 + 7, 100, i * 7 + 3.5, 106], i % 2 ? '#f4f2ea' : '#d8452e'); line(c, 0, 100, 320, 100, '#8b93a7', 0.3); // bunting
+  for (let i = 0; i < 64; i++) { const px = i * 5 + r() * 2; el(c, px, 122 - r() * 3, 1.5, 1.6, '#0c1226'); rr(c, px - 1.6, 123, 3.2, 6, 1, '#0c1226'); if (r() > 0.8) line(c, px, 121, px + 2, 116, '#0c1226', 0.7); } // the crowd
+  rr(c, 0, 128, 320, 2.4, 0, '#8b93a7'); for (let bx = 0; bx < 320; bx += 16) { rr(c, bx, 124, 15, 4, 0.3, bx % 32 ? '#f4f2ea' : '#d8452e'); } // barriers
+  c = pick(16);
+  c.fillStyle = lg(c, 0, 130, 0, 180, [0, '#2a2e3c'], [1, '#15171f']); c.fillRect(0, 130, 320, 50);
+  for (let dx = 0; dx < 320; dx += 40) rr(c, dx, 153, 20, 1.6, 0, '#e8e6df'); rr(c, 0, 132, 320, 0.8, 0, '#f2d14a'); rr(c, 0, 176, 320, 0.8, 0, '#f2d14a');
+}
+
 export function makeBackdrops(scene: Phaser.Scene) {
   tex(scene, 'bg_ride_far', 520, 180, (c) => rideFar(c));
   tex(scene, 'bg_ride_mid', 760, 180, rideMid);
-  tex(scene, 'bg_stennis_far', 520, 180, stennisFar);
+  tex(scene, 'bg_stennis_far', 520, 180, (c) => stennisFar(c));
   tex(scene, 'bg_stennis_mid', 760, 180, (c) => stennisMid(c, scene));
   tex(scene, 'bg_listing', 760, 180, (c) => listing(c, scene));
   tex(scene, 'bg_factory', 760, 180, (c) => factory(c));
@@ -686,18 +710,7 @@ export function makeBackdrops(scene: Phaser.Scene) {
     c.save(); c.translate(9, 9); c.rotate(-0.5); rr(c, -6.4, -3, 12.8, 6, 1, '#2d5fa8', OUT, 0.35); line(c, -4, -1, 3, -1, '#dbe9ff', 0.4); line(c, -4, 1, 1, 1, '#dbe9ff', 0.4); el(c, 4, 0, 1.3, 1.3, undefined, '#dbe9ff', 0.4); el(c, -6.4, 0, 1.2, 3, '#4d7fd0', OUT, 0.3); el(c, 6.4, 0, 1.2, 3, '#4d7fd0', OUT, 0.3); c.restore();
     poly(c, [13.4, 1.6, 14.2, 3.6, 16.2, 4.4, 14.2, 5.2, 13.4, 7.2, 12.6, 5.2, 10.6, 4.4, 12.6, 3.6], '#fff3c4');
   });
-  // Princes Street at night, for the bonus sprint: one tile, scrolled fast
-  tex(scene, 'street', 320, 180, (c) => {
-    c.fillStyle = lg(c, 0, 0, 0, 130, [0, '#050818'], [1, '#1c2f66']); c.fillRect(0, 0, 320, 130);
-    const r = rng(77); for (let i = 0; i < 60; i++) el(c, r() * 320, r() * 60, 0.2 + r() * 0.2, 0.2 + r() * 0.2, '#fff');
-    let x = 0; while (x < 320) { const w = 26 + Math.floor(r() * 30), h = 44 + Math.floor(r() * 46), y = 128 - h; rr(c, x, y, w - 1, h, 0.4, ['#141b33', '#182040', '#1c2548'][Math.floor(r() * 3)]); if (r() > 0.6) poly(c, [x, y, x + w / 2, y - 6, x + w - 1, y], '#10162b'); for (let wy = y + 5; wy < 116; wy += 8) for (let wx = x + 3; wx < x + w - 5; wx += 6) if (r() > 0.45) rr(c, wx, wy, 2.6, 3.6, 0, r() > 0.3 ? '#ffe98a' : '#bfe3ff'); rr(c, x, 116, w - 1, 3, 0, '#2a3358'); x += w; }
-    for (const lx of [40, 150, 262]) { line(c, lx, 128, lx, 96, '#5b6275', 1); line(c, lx, 96, lx + 7, 94, '#5b6275', 1); el(c, lx + 7, 94.6, 2.4, 1.2, '#fff3c4'); c.fillStyle = rg(c, lx + 7, 100, 0.5, 22, [0, 'rgba(255,235,170,.45)'], [1, 'rgba(255,235,170,0)']); c.fillRect(lx - 16, 92, 46, 40); }
-    for (let i = 0; i < 46; i++) poly(c, [i * 7, 100, i * 7 + 7, 100, i * 7 + 3.5, 106], i % 2 ? '#f4f2ea' : '#d8452e'); line(c, 0, 100, 320, 100, '#8b93a7', 0.3); // bunting
-    for (let i = 0; i < 64; i++) { const px = i * 5 + r() * 2; el(c, px, 122 - r() * 3, 1.5, 1.6, '#0c1226'); rr(c, px - 1.6, 123, 3.2, 6, 1, '#0c1226'); if (r() > 0.8) line(c, px, 121, px + 2, 116, '#0c1226', 0.7); } // the crowd
-    rr(c, 0, 128, 320, 2.4, 0, '#8b93a7'); for (let bx = 0; bx < 320; bx += 16) { rr(c, bx, 124, 15, 4, 0.3, bx % 32 ? '#f4f2ea' : '#d8452e'); } // barriers
-    c.fillStyle = lg(c, 0, 130, 0, 180, [0, '#2a2e3c'], [1, '#15171f']); c.fillRect(0, 130, 320, 50);
-    for (let dx = 0; dx < 320; dx += 40) rr(c, dx, 153, 20, 1.6, 0, '#e8e6df'); rr(c, 0, 132, 320, 0.8, 0, '#f2d14a'); rr(c, 0, 176, 320, 0.8, 0, '#f2d14a');
-  });
+  tex(scene, 'street', 320, 180, (c) => street(c)); // for the bonus sprint
   tex(scene, 'viper', 60, 20, (c) => { // a low red American sports car, the kind the bike is said to have beaten
     el(c, 30, 18.6, 27, 1.4, 'rgba(0,0,0,.4)');
     c.beginPath(); c.moveTo(2, 14); c.lineTo(3, 10.6); c.quadraticCurveTo(12, 8.6, 20, 8.2); c.quadraticCurveTo(26, 3.6, 34, 4); c.lineTo(41, 8.4); c.quadraticCurveTo(52, 8.6, 57, 11); c.lineTo(58, 14.4); c.lineTo(2, 15); c.closePath();

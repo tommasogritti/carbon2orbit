@@ -3,27 +3,32 @@ import { W, H, T, held, finish, cam, img, panel, who, hero } from '../core';
 import { D, P, S } from '../art';
 import type { LevelDef } from '../content';
 import { snd, music, stopLoops, loop, Loop } from '../audio';
+import { hifi, HiFi } from '../hifi';
+import { LOOKS } from '../hifiLooks';
 
 const AUTO = new URLSearchParams(location.search).has('auto');
 const COURSE = 330; // metres to the chequered flag
 const PPM = 6; // world units per metre
+const LOOK = 'sprint'; // the street's hi-fi look (hifiLooks.ts)
 
 /** Secret level: the rocket bike's street sprint. Open the valve, keep it upright, beat the sports car. */
 export class SprintScene extends Phaser.Scene {
   def!: LevelDef; v = 0; dist = 0; fuel = 1; w = 0; wv = 0; top = 0; rival = 0; rv = 0; t = 0; go = 2.6; ended = false; steerHeld = 0;
   street!: Phaser.GameObjects.TileSprite; bike!: Phaser.GameObjects.Container; car!: Phaser.GameObjects.Image; flag!: Phaser.GameObjects.Image; steam!: Phaser.GameObjects.Particles.ParticleEmitter;
-  hud!: Phaser.GameObjects.Text; big!: Phaser.GameObjects.Text; call!: Phaser.GameObjects.Text; g!: Phaser.GameObjects.Graphics; hiss!: Loop; roar!: Loop;
+  hud!: Phaser.GameObjects.Text; big!: Phaser.GameObjects.Text; call!: Phaser.GameObjects.Text; g!: Phaser.GameObjects.Graphics; hiss!: Loop; roar!: Loop; hf?: HiFi;
   constructor() { super('Sprint'); }
   init(d: { def: LevelDef }) { this.def = d.def; this.v = 0; this.dist = 0; this.fuel = 1; this.w = 0; this.wv = 0; this.top = 0; this.rival = 0; this.rv = 0; this.t = 0; this.go = 2.6; this.ended = false; }
   create() {
     cam(this);
     stopLoops(); music.play('heli'); this.hiss = loop('hiss'); this.roar = loop('rumble');
-    this.street = this.add.tileSprite(0, 0, W * D, H * D, 'street').setOrigin(0).setScale(S);
+    const hf = (this.hf = hifi(this, LOOKS[LOOK]));
+    this.street = this.add.tileSprite(0, 0, W * D, H * D, hf ? hf.key('street') : 'street').setOrigin(0).setScale(S);
     this.flag = img(this, 0, 150, 'finish').setOrigin(0.5, 1);
     this.car = img(this, 70, 147, 'viper').setOrigin(0.5, 1).setScale(S * 0.9);
     this.steam = this.add.particles(0, 0, 'puff', { speedX: { min: -190, max: -110 }, speedY: { min: -14, max: 14 }, lifespan: { min: 300, max: 600 }, scale: { start: S * 0.5, end: S * 2.2 }, alpha: { start: 0.9, end: 0 }, frequency: 12, quantity: 2, emitting: false });
     const rider = img(this, -1, -13, hero(this.def, true).pre + 'Speter0').setAngle(78); // lying along the frame, in the suit and helmet
     this.bike = this.add.container(92, 168, [img(this, 0, 0, 'bike').setOrigin(0.5, 1), rider]);
+    const worldN = this.children.length; // everything from here on is HUD
     panel(this, 4, 4, 92, 40);
     this.big = T(this, 9, 6, '0 km/h', '#ffe98a', 12, '700');
     this.hud = T(this, 9, 23, '', '#ffffff', 6);
@@ -31,6 +36,7 @@ export class SprintScene extends Phaser.Scene {
     T(this, W / 2, 54, 'BALANCE', '#aab4d4', 5, '700').setOrigin(0.5);
     this.call = T(this, W / 2, H - 9, 'Get ready…', '#ffe98a', 8, '700').setOrigin(0.5).setShadow(0, 1, '#000000', 3);
     who(this, this.def, W - 104, 4, true);
+    if (hf) { hf.tag({ street: this.street, flag: this.flag, car: this.car, bike: this.bike }); hf.set({ dist: 0, v: 0, thr: 0 }); hf.ready({ hud: this.children.list.slice(worldN) }); }
   }
   update(_t: number, dms: number) {
     if (this.ended) return;
@@ -62,7 +68,7 @@ export class SprintScene extends Phaser.Scene {
     this.draw(thrust);
   }
   draw(thrust: boolean) {
-    const kmh = this.v * 3.6;
+    const kmh = this.v * 3.6; this.hf?.set({ dist: this.dist, v: this.v, thr: thrust ? 1 : 0 });
     this.street.tilePositionX = this.dist * PPM * D;
     this.flag.x = 92 + (COURSE - this.dist) * PPM; this.flag.setVisible(this.flag.x < W + 40);
     this.car.x = 70 + (this.rival - this.dist) * PPM; this.car.setVisible(this.car.x > -40 && this.car.x < W + 40);
