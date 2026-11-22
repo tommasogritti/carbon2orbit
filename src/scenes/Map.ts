@@ -189,7 +189,13 @@ export class MapScene extends Phaser.Scene {
     return pts;
   }
   walkTo(dest: LevelDef) {
-    const pts = this.route(this.cur, dest), len = [0];
+    // Follow the trails, unless they wander far round (the story path zigzags across the map by date): then the
+    // marker walks straight to the node the arrow pointed at, instead of passing every stop in between.
+    let pts = this.route(this.cur, dest);
+    const direct = Phaser.Math.Distance.Between(this.cur.map.x, this.cur.map.y, dest.map.x, dest.map.y);
+    let trail = 0; for (let k = 1; k < pts.length; k++) trail += Phaser.Math.Distance.Between(pts[k - 1].x, pts[k - 1].y, pts[k].x, pts[k].y);
+    if (trail > Math.max(direct * 2.5, direct + 60)) { pts = []; for (let k = 0; k <= 16; k++) pts.push(arc(this.cur.map, dest.map, k / 16)); }
+    const len = [0];
     for (let k = 1; k < pts.length; k++) len.push(len[k - 1] + Phaser.Math.Distance.Between(pts[k - 1].x, pts[k - 1].y, pts[k].x, pts[k].y));
     const total = len[len.length - 1] || 1, o = { t: 0 };
     this.moving = true; snd.move(); this.ring.setVisible(false);
