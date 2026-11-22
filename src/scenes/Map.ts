@@ -25,18 +25,20 @@ export function openLevel(scene: Phaser.Scene, def: LevelDef) {
   const head = `${patchImg(def.id)}<div class="kicker"><span class="badge k-${kind}">${locked ? 'COMING ' + def.date.toUpperCase() : KIND_LABEL[def.kind]}</span>${def.status === 'in-progress' ? '<span class="badge k-locked">STORY STILL UNFOLDING</span>' : ''}${def.date} · ${def.place}</div><h1>${def.title}</h1><p>${def.intro}</p><p class="fact"><b>Did you know?</b> ${def.fact}</p>`;
   const back = { label: 'Back to map', fn: () => {}, alt: true };
   if (def.kind === 'person') { // meeting someone: facts and a picture, never invented speech
-    const pic = def.photo || (def.portrait !== undefined ? { file: '', page: '', src: BUSTS[def.portrait], caption: def.title + ', as drawn in the game.', credit: 'Likeness from the photo on Rocket Lab’s team page; no freely licensed photo is available.' } : undefined);
+    const pic = def.photo || (def.portrait !== undefined ? { file: '', page: '', src: BUSTS[def.portrait], caption: def.title + ', as drawn in the game.', credit: def.portraitCredit || 'Likeness from the photo on Rocket Lab’s team page; no freely licensed photo is available.' } : undefined);
     showCard(head + srcLinks(def.sources), [{ label: 'Good to meet you', fn: () => { save.met[def.id] = true; save.done[def.id] = 3; persist(); scene.scene.restart({ title: false }); } }], pic);
     return;
   }
+  const diagram = def.diagram ? `<figure class="diagram"><img src="${DIAGRAMS[def.diagram.key]}" alt="${def.kind === 'card' ? 'Drawing for this story' : 'Labelled diagram'}"><figcaption>${def.diagram.caption}</figcaption></figure>` : '';
   if (def.kind === 'card' || locked) {
-    showCard(head + srcLinks(def.sources), [{ label: locked ? 'Back to map' : 'Continue', fn: () => { if (!locked) { save.done[def.id] = 3; persist(); scene.scene.restart({ title: false }); } } }], cardPhoto(def));
+    showCard(head + diagram + srcLinks(def.sources), [{ label: locked ? 'Back to map' : 'Continue', fn: () => { if (!locked) { save.done[def.id] = 3; persist(); scene.scene.restart({ title: false }); } } }], cardPhoto(def));
   } else {
     const lead = CHARACTERS.find((c) => c.id === def.hero); // a level played as someone other than Peter says so up front
     const cast = lead ? `<div class="cast"><img class="toon" src="${BUSTS[lead.pre]}" alt="Cartoon of ${lead.name}"><div><b>In this level you play ${lead.name}</b>, ${lead.role}. ${lead.likeness}<br><span class="src">Drawn likeness; no freely licensed photo is available.</span></div></div>` : '';
-    const diagram = def.diagram ? `<figure class="diagram"><img src="${DIAGRAMS[def.diagram.key]}" alt="Labelled diagram"><figcaption>${def.diagram.caption}</figcaption></figure>` : '';
+    const mate = CHARACTERS.find((c) => c.id === def.params?.buddy && c.id !== 'peter'); // a running mate from the story is introduced too
+    const mateCast = mate ? `<div class="cast"><img class="toon" src="${BUSTS[mate.pre]}" alt="Cartoon of ${mate.name}"><div><b>Running mate: ${mate.name}.</b> ${mate.note || mate.role} ${mate.likeness}<br><span class="src">Drawn likeness; no photo is used.</span></div></div>` : '';
     const skip = { label: 'Skip (dev)', alt: true, fn: () => { save.done[def.id] = save.done[def.id] || 1; save.at = def.id; persist(); scene.scene.restart({ title: false }); } };
-    showCard(head + cast + diagram + `<p class="how">How to play: ${def.how}</p>` + watchLink(def) + srcLinks(def.sources), [{ label: 'Start', fn: () => scene.scene.start(SCENE_FOR[def.mechanic!], { def }) }, back, ...(DEV ? [skip] : [])], cardPhoto(def));
+    showCard(head + cast + mateCast + diagram + `<p class="how">How to play: ${def.how}</p>` + watchLink(def) + srcLinks(def.sources), [{ label: 'Start', fn: () => scene.scene.start(SCENE_FOR[def.mechanic!], { def }) }, back, ...(DEV ? [skip] : [])], cardPhoto(def));
   }
 }
 

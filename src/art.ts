@@ -213,6 +213,145 @@ function bust(c: C2, young = false, adam = false, shaun = false) {
   }
 }
 
+// ---------------------------------------------------------------- Ashlee Vance (running mate in Rosie the Robot)
+// Likeness notes, from the captioned Commons photo of him at a signing for his Elon Musk biography (2015): shaggy mid-brown
+// hair, parted on his right (the viewer's left), the fringe swept across the forehead and the sides long enough to cover the ears
+// and reach the jaw; a broad-cheeked face with a wide, open, squinting smile and laughter lines; a little stubble; a green shirt
+// checked with blue and white, worn open over a dark V-neck tee. In the game he also carries a reporter's notebook and a camera
+// on a strap, because he was at the factory reporting a book. (Revised after the fan review of 22 Nov 2026: the parting had been
+// mirrored and the hair was too short.)
+const VH = ['#3e2a1a', '#5a3d26', '#80603e']; // hair: dark, mid, light
+const plaid = (c: C2, x: number, y: number, w: number, h: number, r: number, base = '#3f6b3a', step = 2.2) => {
+  rr(c, x, y, w, h, r, base, OUT, 0.4); c.save(); c.beginPath(); c.roundRect(x, y, w, h, r); c.clip();
+  for (let i = 0; i * step < Math.max(w, h) + step; i++) { c.fillStyle = 'rgba(40,70,150,.5)'; c.fillRect(x + 0.4 + i * step, y, step * 0.4, h); c.fillRect(x, y + 0.6 + i * step, w, step * 0.4); c.fillStyle = 'rgba(240,245,255,.4)'; c.fillRect(x + step * 0.72 + i * step, y, step * 0.14, h); c.fillRect(x, y + step * 0.82 + i * step, w, step * 0.12); }
+  c.restore();
+};
+function vance(c: C2, leg: number, air = false, flash = false) {
+  const limb = (x0: number, y0: number, ang: number, len: number, w: number, col: string) => { const x1 = x0 + Math.sin(ang) * len, y1 = y0 + Math.cos(ang) * len; line(c, x0, y0, x1, y1, OUT, w + 0.7); line(c, x0, y0, x1, y1, col, w); return [x1, y1]; };
+  const a = leg * 0.62, skinD = '#d69f80';
+  const shoe = (x: number, y: number) => { rr(c, x - 1.6, y - 1.2, 4.4, 2.4, 1, '#5b3d22', OUT, 0.35); rr(c, x - 1.6, y + 0.5, 4.4, 0.7, 0.3, '#2a1c10'); };
+  { const [hx, hy] = limb(15.6, 18, a * 0.9 + (air ? -2.2 : 0), 5.6, 2.6, '#2f5530'); el(c, hx, hy + 0.5, 1.2, 1.2, skinD, OUT, 0.3); }
+  const [l1x, l1y] = limb(13.3, 25, -a, 6.2, 3.0, '#33527f'); shoe(l1x, l1y + 0.6);
+  const [l2x, l2y] = limb(10.7, 25, a + (air ? 0.5 : 0), 6.2, 3.0, '#3f6396'); shoe(l2x, l2y + 0.6);
+  // dark V-neck tee, and the checked shirt open over it
+  rr(c, 8.4, 16.6, 7.2, 9.6, 2, '#2f3340', OUT, 0.35); poly(c, [10.6, 16.6, 12, 18.8, 13.4, 16.6], '#d69f80');
+  plaid(c, 7.2, 16.4, 3.8, 10.2, 1.6); plaid(c, 13, 16.4, 3.8, 10.2, 1.6);
+  poly(c, [9.4, 16.4, 11.4, 19, 10.8, 16.4], '#2f5530', OUT, 0.2); poly(c, [14.6, 16.4, 12.6, 19, 13.2, 16.4], '#2f5530', OUT, 0.2);
+  if (!flash) { line(c, 8.2, 17, 15.4, 24.4, '#15171f', 0.6); rr(c, 13.4, 22.6, 4.6, 3.2, 0.6, '#23262f', OUT, 0.3); el(c, 15.7, 24.2, 1.15, 1.15, '#5b6275', OUT, 0.25); el(c, 15.7, 24.2, 0.5, 0.5, '#9fd6f5'); } // the camera at his hip
+  rr(c, 10, 14.6, 4, 2.6, 0.8, skinD);
+  el(c, 12, 8.6, 6.8, 6.8, VH[0]);
+  // a broad-cheeked face, and a little stubble
+  c.beginPath(); c.moveTo(6.8, 9.2); c.bezierCurveTo(6.8, 3.4, 17.2, 3.4, 17.2, 9.2); c.bezierCurveTo(17.3, 12.8, 15.4, 15.6, 12, 16.2); c.bezierCurveTo(8.6, 15.6, 6.7, 12.8, 6.8, 9.2); c.closePath();
+  c.fillStyle = lg(c, 6, 4, 18, 16, [0, '#f6cbad'], [1, skinD]); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.4; c.stroke();
+  c.fillStyle = 'rgba(96,66,42,.22)'; c.beginPath(); c.moveTo(8.2, 12); c.bezierCurveTo(9, 14.6, 15, 14.6, 15.8, 12); c.lineTo(15.3, 13.6); c.bezierCurveTo(14, 16.2, 10, 16.2, 8.7, 13.6); c.closePath(); c.fill();
+  // shaggy hair: drawn with the parting on the viewer's left, the fringe swept to the right, the sides down over the ears
+  c.save(); c.translate(24, 0); c.scale(-1, 1);
+  c.beginPath(); c.moveTo(5.4, 13.4); c.bezierCurveTo(4.2, 4, 8, 1.1, 12.6, 1.3); c.bezierCurveTo(17.4, 1.5, 20, 5, 18.8, 13.2); c.lineTo(17.4, 12.6); c.lineTo(17.2, 9.6); c.bezierCurveTo(16.8, 7.4, 15.2, 6.2, 13.6, 6.4); c.quadraticCurveTo(11, 8, 8.2, 7.4); c.quadraticCurveTo(7.2, 8.8, 6.9, 10.6); c.lineTo(6.6, 12.8); c.closePath();
+  c.fillStyle = lg(c, 5, 1, 19, 10, [0, VH[2]], [0.5, VH[1]], [1, VH[0]]); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.4; c.stroke();
+  for (let i = 0; i < 6; i++) { c.beginPath(); c.moveTo(9.6 + i * 1.3, 2.3 + i * 0.2); c.quadraticCurveTo(8.4 + i * 1.1, 5, 6.6 + i * 1.2, 7.4); c.strokeStyle = 'rgba(170,130,90,.45)'; c.lineWidth = 0.3; c.stroke(); }
+  line(c, 14, 1.7, 14.6, 5.8, 'rgba(30,20,12,.6)', 0.3);
+  c.restore();
+  el(c, 9.9, 10, 0.8, 0.42, '#fbfbf8'); el(c, 14.1, 10, 0.8, 0.42, '#fbfbf8'); for (const ex of [10, 14.2]) { el(c, ex, 10.05, 0.38, 0.36, '#6a6650'); el(c, ex, 10.05, 0.2, 0.2, '#111'); } // narrowed by the smile
+  line(c, 8.9, 9.0, 10.9, 8.8, '#4a3220', 0.38); line(c, 13.1, 8.8, 15.1, 9.0, '#4a3220', 0.38);
+  c.beginPath(); c.moveTo(12.2, 10.4); c.quadraticCurveTo(12.9, 12, 12.1, 12.3); c.strokeStyle = '#c98f72'; c.lineWidth = 0.35; c.stroke();
+  c.beginPath(); c.moveTo(9.5, 13.0); c.quadraticCurveTo(12, 15.6, 14.5, 13.0); c.closePath(); c.fillStyle = '#fbf6ee'; c.fill(); c.strokeStyle = '#8a4b3c'; c.lineWidth = 0.4; c.stroke(); // a wide, open smile
+  if (flash) { // camera up to his eye, flash going off
+    const [hx, hy] = limb(8.4, 18, Math.PI - 0.32, 7.2, 2.6, '#3f6b3a'); el(c, hx, hy, 1.2, 1.2, '#efc09f', OUT, 0.3);
+    rr(c, 4.6, 8.2, 6.4, 4.2, 0.8, '#23262f', OUT, 0.35); el(c, 6.4, 10.3, 1.7, 1.7, '#5b6275', OUT, 0.3); el(c, 6.4, 10.3, 0.8, 0.8, '#9fd6f5'); rr(c, 8.2, 7.4, 2.4, 1, 0.3, '#f4f6fa', OUT, 0.2);
+    c.fillStyle = rg(c, 9.4, 7.6, 0.2, 5, [0, 'rgba(255,255,255,1)'], [0.4, 'rgba(255,250,210,.7)'], [1, 'rgba(255,250,210,0)']); c.fillRect(4, 2, 11, 11);
+    poly(c, [9.4, 3.4, 10, 6.8, 13.6, 7.6, 10, 8.4, 9.4, 11.8, 8.8, 8.4, 5.2, 7.6, 8.8, 6.8], 'rgba(255,255,255,.95)');
+  } else { // the notebook in his hand
+    const [hx, hy] = limb(8.4, 18, -a * 0.9 + (air ? 2.2 : 0) + 0.5, 5.2, 2.6, '#3f6b3a');
+    rr(c, hx - 2, hy - 3.6, 3.6, 4.6, 0.4, '#f4f2ea', OUT, 0.3); for (let k = 0; k < 3; k++) line(c, hx - 1.4, hy - 2.2 + k * 1.1, hx + 1, hy - 2.2 + k * 1.1, 'rgba(60,90,160,.6)', 0.25); line(c, hx - 2, hy - 3.6, hx + 1.6, hy - 3.6, '#8b93a7', 0.5);
+    el(c, hx, hy + 0.4, 1.2, 1.2, '#efc09f', OUT, 0.3);
+  }
+}
+/** Ashlee Vance, head and shoulders (48 x 54), to the notes above. */
+function bustVance(c: C2) {
+  // shoulders: the checked shirt open over a dark V-neck tee
+  c.save(); c.beginPath(); c.moveTo(0, 54); c.quadraticCurveTo(3, 46.8, 15, 45.4); c.lineTo(33, 45.4); c.quadraticCurveTo(45, 46.8, 48, 54); c.closePath(); c.clip(); plaid(c, 0, 44, 48, 10, 0, '#3f6b3a', 4); c.restore();
+  c.beginPath(); c.moveTo(0, 54); c.quadraticCurveTo(3, 46.8, 15, 45.4); c.lineTo(33, 45.4); c.quadraticCurveTo(45, 46.8, 48, 54); c.closePath(); c.strokeStyle = OUT; c.lineWidth = 0.5; c.stroke();
+  el(c, 24, 20, 16, 17.5, VH[0]); // hair behind, down to the jaw
+  rr(c, 17.6, 35, 12.8, 13, 3, lg(c, 0, 38, 0, 48, [0, '#c08a6e'], [1, '#e0aa8b']));
+  poly(c, [16.6, 45, 31.4, 45, 28.6, 54, 19.4, 54], '#2f3340', OUT, 0.35); poly(c, [19.6, 45, 28.4, 45, 24, 51.4], '#e0aa8b'); // the V-neck
+  poly(c, [15, 45.2, 19.2, 46, 18.4, 54, 13.4, 54], '#2f5530', OUT, 0.35); poly(c, [33, 45.2, 28.8, 46, 29.6, 54, 34.6, 54], '#2f5530', OUT, 0.35); // collar and placket
+  line(c, 14.6, 45.4, 20.4, 54, '#15171f', 0.9); // camera strap
+  // a broad-cheeked face
+  c.beginPath(); c.moveTo(12.4, 21); c.bezierCurveTo(12.4, 6, 35.6, 6, 35.6, 21); c.bezierCurveTo(35.8, 29, 32, 38.4, 24, 42); c.bezierCurveTo(16, 38.4, 12.2, 29, 12.4, 21); c.closePath();
+  c.fillStyle = rg(c, 21.5, 22, 2, 25, [0, '#f6cfb3'], [0.65, '#ecb999'], [1, '#d49b7c']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.5; c.stroke();
+  for (const x of [16.6, 31.4]) { c.fillStyle = rg(c, x, 30, 0, 4.6, [0, 'rgba(222,120,100,.2)'], [1, 'rgba(222,120,100,0)']); c.fillRect(x - 5, 25, 10, 10); }
+  c.fillStyle = 'rgba(96,66,42,.2)'; c.beginPath(); c.moveTo(15.4, 30); c.bezierCurveTo(17, 38.4, 31, 38.4, 32.6, 30); c.lineTo(31.6, 33.6); c.bezierCurveTo(29, 41.4, 19, 41.4, 16.4, 33.6); c.closePath(); c.fill(); // stubble
+  const r = rng(61); c.fillStyle = 'rgba(80,54,34,.3)'; for (let i = 0; i < 70; i++) { const t = r() * Math.PI, d = r(); el(c, 24 + Math.cos(t) * (6 + d * 7), 33 + Math.sin(t) * (3 + d * 6), 0.18, 0.18); }
+  // the sides: long enough to cover the ears and reach the jaw
+  for (const sg of [-1, 1]) {
+    c.beginPath(); c.moveTo(24 + sg * 11.4, 14); c.bezierCurveTo(24 + sg * 15, 18, 24 + sg * 15.4, 28, 24 + sg * 14, 37.4); c.quadraticCurveTo(24 + sg * 12.4, 36.8, 24 + sg * 11.2, 33.6); c.bezierCurveTo(24 + sg * 12.6, 29, 24 + sg * 12.2, 22, 24 + sg * 11.6, 18); c.closePath();
+    c.fillStyle = lg(c, 0, 14, 0, 38, [0, VH[1]], [1, VH[0]]); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.45; c.stroke();
+    for (let k = 0; k < 3; k++) { c.beginPath(); c.moveTo(24 + sg * (12.4 + k * 0.7), 17 + k * 2); c.quadraticCurveTo(24 + sg * (14 + k * 0.4), 26, 24 + sg * (12.8 + k * 0.4), 35 - k); c.strokeStyle = k % 2 ? 'rgba(170,130,90,.4)' : 'rgba(30,20,12,.4)'; c.lineWidth = 0.4; c.stroke(); }
+  }
+  // the top, drawn mirrored so the parting sits on the viewer's left and the fringe sweeps right
+  c.save(); c.translate(48, 0); c.scale(-1, 1);
+  c.beginPath(); c.moveTo(9.4, 30); c.bezierCurveTo(7.4, 10, 15, 2.2, 25, 2.4); c.bezierCurveTo(35.6, 2.6, 41, 10, 38.6, 30); c.lineTo(35.4, 24); c.bezierCurveTo(35, 18, 32.6, 14.4, 29, 14.6); c.quadraticCurveTo(22, 19.4, 15.4, 17.4); c.quadraticCurveTo(13.4, 20.4, 13.2, 25.4); c.closePath();
+  c.fillStyle = lg(c, 8, 2, 40, 26, [0, VH[2]], [0.45, VH[1]], [1, VH[0]]); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.5; c.stroke();
+  for (let i = 0; i < 12; i++) { c.beginPath(); c.moveTo(17 + i * 1.6, 4 + Math.abs(i - 6) * 0.3); c.quadraticCurveTo(15 + i * 1.3, 11, 12 + i * 1.5, 17 + (i > 7 ? -1 : 0)); c.strokeStyle = i % 3 ? 'rgba(170,130,90,.4)' : 'rgba(40,26,14,.4)'; c.lineWidth = 0.4; c.stroke(); }
+  line(c, 28.6, 3, 29.6, 13.6, 'rgba(30,20,12,.55)', 0.45); // the parting
+  c.restore();
+  // eyes narrowed by the smile, with laughter lines
+  for (const ex of [18.9, 29.1]) {
+    const out = ex < 24 ? -1 : 1;
+    el(c, ex, 23.5, 2.3, 0.8, '#fbfbf8'); el(c, ex + 0.1, 23.5, 0.9, 0.78, '#6a6650', '#3e3a2a', 0.28); el(c, ex + 0.1, 23.5, 0.42, 0.42, '#0e0e12');
+    c.beginPath(); c.moveTo(ex - 2.6, 23.6); c.quadraticCurveTo(ex, 21.9, ex + 2.6, 23.4); c.strokeStyle = '#2e2016'; c.lineWidth = 0.6; c.stroke();
+    c.beginPath(); c.moveTo(ex - 2.2, 24.4); c.quadraticCurveTo(ex, 25.6, ex + 2.3, 24.3); c.strokeStyle = 'rgba(175,115,92,.7)'; c.lineWidth = 0.4; c.stroke(); // the cheek pushes the lower lid up
+    for (const dy of [-0.8, 0.4, 1.6]) line(c, ex + out * 2.9, 23.4 + dy * 0.5, ex + out * 4.3, 23.4 + dy, 'rgba(170,110,88,.55)', 0.3); // crow's feet
+  }
+  line(c, 15.8, 20.4, 21.6, 20.0, '#4a3220', 0.85); line(c, 26.4, 20.0, 32.2, 20.4, '#4a3220', 0.85);
+  c.beginPath(); c.moveTo(25, 23.4); c.quadraticCurveTo(26.8, 28.8, 26.4, 29.8); c.quadraticCurveTo(24.4, 31.4, 21.8, 30); c.strokeStyle = 'rgba(180,115,92,.85)'; c.lineWidth = 0.55; c.stroke();
+  // a wide, open smile with teeth
+  c.beginPath(); c.moveTo(18.2, 33.2); c.quadraticCurveTo(24, 39.6, 29.8, 33.2); c.quadraticCurveTo(24, 34.4, 18.2, 33.2); c.closePath(); c.fillStyle = '#fbf6ee'; c.fill(); c.strokeStyle = '#8a4338'; c.lineWidth = 0.6; c.stroke();
+  line(c, 19.4, 34.3, 28.6, 34.3, 'rgba(170,120,100,.35)', 0.3);
+  for (const x of [17, 31]) { c.beginPath(); c.moveTo(x, 30.6); c.quadraticCurveTo(x + (x < 24 ? -0.9 : 0.9), 33.2, x + (x < 24 ? 0.6 : -0.6), 35.6); c.strokeStyle = 'rgba(180,120,98,.5)'; c.lineWidth = 0.45; c.stroke(); }
+}
+
+// ---------------------------------------------------------------- Madison Malone (someone to meet, 2024)
+// Likeness notes, from her captioned byline photo on her NZ Herald articles: long hair parted in the centre and worn loose past the
+// shoulders, darker at the crown and lighter, honey-brown, in the lengths, with a slight wave; a round, full face with wide cheeks
+// and a soft chin; defined dark brows; blue-grey eyes; a broad smile that shows her teeth; a black blazer. (Revised after the fan
+// review of 22 Nov 2026: the chin had been drawn too pointed and the hair too flat.)
+function bustMadison(c: C2) {
+  const hair = (x0: number) => lg(c, x0, 0, x0 + 14, 0, [0, '#6a4a2e'], [0.5, '#a07a52'], [1, '#c9a57a']);
+  // hair behind: long, past the shoulders
+  c.beginPath(); c.moveTo(8, 54); c.bezierCurveTo(6, 36, 7, 12, 24, 5.6); c.bezierCurveTo(41, 12, 42, 36, 40, 54); c.closePath(); c.fillStyle = lg(c, 0, 6, 0, 54, [0, '#4a3220'], [1, '#8a6642']); c.fill();
+  // black blazer, open neck
+  c.beginPath(); c.moveTo(0, 54); c.quadraticCurveTo(3, 46.8, 15, 45.6); c.lineTo(33, 45.6); c.quadraticCurveTo(45, 46.8, 48, 54); c.closePath();
+  c.fillStyle = lg(c, 0, 0, 48, 0, [0, '#2a2b33'], [0.5, '#15161b'], [1, '#0b0c10']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.5; c.stroke();
+  rr(c, 19.4, 35, 9.2, 13, 3, lg(c, 0, 38, 0, 48, [0, '#d8a58a'], [1, '#efc3a8'])); poly(c, [17.6, 45.4, 30.4, 45.4, 24, 53.6], '#efc3a8'); // neck and the open collar
+  poly(c, [17, 45.4, 24, 54, 15.4, 54, 12.6, 47.4], '#25262e', OUT, 0.35); poly(c, [31, 45.4, 24, 54, 32.6, 54, 35.4, 47.4], '#25262e', OUT, 0.35); // lapels
+  // a round, full face with wide cheeks and a soft chin
+  c.beginPath(); c.moveTo(12.8, 21); c.bezierCurveTo(12.8, 7, 35.2, 7, 35.2, 21); c.bezierCurveTo(35.4, 30.4, 32, 39.6, 24, 40.8); c.bezierCurveTo(16, 39.6, 12.6, 30.4, 12.8, 21); c.closePath();
+  c.fillStyle = rg(c, 21.5, 22, 2, 24, [0, '#f8d6bf'], [0.65, '#f0c2a6'], [1, '#dca487']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.5; c.stroke();
+  for (const x of [16.6, 31.4]) { c.fillStyle = rg(c, x, 30, 0, 4.8, [0, 'rgba(230,120,110,.26)'], [1, 'rgba(230,120,110,0)']); c.fillRect(x - 5, 25, 10, 11); }
+  // centre parting; the hair falls down both sides of the face, darker at the crown, with a slight wave in the lengths
+  for (const sg of [-1, 1]) {
+    c.beginPath(); c.moveTo(24, 6.4); c.bezierCurveTo(24 + sg * 10, 6.6, 24 + sg * 14.8, 14, 24 + sg * 14.6, 26); c.bezierCurveTo(24 + sg * 15.8, 36, 24 + sg * 14.6, 44, 24 + sg * 17.4, 54); c.lineTo(24 + sg * 11.8, 54); c.bezierCurveTo(24 + sg * 12.6, 46, 24 + sg * 11, 38, 24 + sg * 11.4, 28); c.bezierCurveTo(24 + sg * 10.8, 16, 24 + sg * 6, 10.4, 24, 8.6); c.closePath();
+    c.fillStyle = hair(sg < 0 ? 6 : 28); c.fill();
+    c.fillStyle = lg(c, 0, 6, 0, 26, [0, 'rgba(58,38,22,.7)'], [1, 'rgba(58,38,22,0)']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.45; c.stroke();
+    for (let k = 0; k < 5; k++) { c.beginPath(); c.moveTo(24 + sg * (2 + k * 2), 7.4 + k * 0.4); c.bezierCurveTo(24 + sg * (9 + k), 10, 24 + sg * (12.6 + k * 0.4), 22, 24 + sg * (13 + k * 0.6), 30); c.bezierCurveTo(24 + sg * (14.6 + k * 0.6), 38, 24 + sg * (12.6 + k * 0.6), 44, 24 + sg * (14 + k * 0.8), 52); c.strokeStyle = k % 2 ? 'rgba(235,205,160,.5)' : 'rgba(80,54,30,.35)'; c.lineWidth = 0.4; c.stroke(); }
+  }
+  // defined dark brows, blue-grey eyes
+  for (const ex of [18.9, 29.1]) {
+    el(c, ex, 23.2, 2.3, 1.15, '#fbfbf8'); el(c, ex + 0.1, 23.25, 1.05, 1.05, '#6f8aa0', '#46606f', 0.28); el(c, ex + 0.1, 23.25, 0.48, 0.5, '#0e0e12');
+    c.beginPath(); c.moveTo(ex - 2.6, 23.2); c.quadraticCurveTo(ex, 21.4, ex + 2.6, 23); c.strokeStyle = '#2a1c12'; c.lineWidth = 0.75; c.stroke();
+    line(c, ex + (ex < 24 ? -2.4 : 2.4), 22.6, ex + (ex < 24 ? -3.2 : 3.2), 22, '#2a1c12', 0.4); // lashes
+    c.beginPath(); c.moveTo(ex - 1.8, 24.7); c.quadraticCurveTo(ex, 25.6, ex + 2, 24.5); c.strokeStyle = 'rgba(190,120,100,.5)'; c.lineWidth = 0.35; c.stroke();
+  }
+  c.beginPath(); c.moveTo(15.8, 20.6); c.quadraticCurveTo(18.6, 18.8, 21.8, 19.8); c.strokeStyle = '#4a3020'; c.lineWidth = 1.0; c.stroke();
+  c.beginPath(); c.moveTo(26.2, 19.8); c.quadraticCurveTo(29.4, 18.8, 32.2, 20.6); c.strokeStyle = '#4a3020'; c.lineWidth = 1.0; c.stroke();
+  c.beginPath(); c.moveTo(24.8, 23.6); c.quadraticCurveTo(26.2, 28.2, 25.8, 29.2); c.quadraticCurveTo(24.2, 30.4, 22.2, 29.4); c.strokeStyle = 'rgba(190,120,98,.8)'; c.lineWidth = 0.5; c.stroke();
+  // a broad smile that shows her teeth
+  c.beginPath(); c.moveTo(18.2, 32.6); c.quadraticCurveTo(24, 38.6, 29.8, 32.6); c.quadraticCurveTo(24, 33.8, 18.2, 32.6); c.closePath(); c.fillStyle = '#fdfaf4'; c.fill(); c.strokeStyle = '#c87a76'; c.lineWidth = 0.55; c.stroke();
+  line(c, 19.4, 33.5, 28.6, 33.5, 'rgba(190,140,130,.4)', 0.3);
+  for (const x of [17.2, 30.8]) { c.beginPath(); c.moveTo(x, 30.8); c.quadraticCurveTo(x + (x < 24 ? -0.6 : 0.6), 32.8, x + (x < 24 ? 0.4 : -0.4), 34.6); c.strokeStyle = 'rgba(200,130,110,.35)'; c.lineWidth = 0.35; c.stroke(); } // smile lines
+}
+
 // ---------------------------------------------------------------- Electron
 /** Draws Electron parts in a 8-unit-wide column starting at (x, y). Heights: fairing 12, stage 2 10, stage 1 (with interstage and engines) 58. */
 const carbon = (c: C2, x: number) => lg(c, x, 0, x + 6, 0, [0, '#060608'], [0.22, '#2c2d37'], [0.42, '#191a21'], [1, '#040405']);
@@ -367,6 +506,15 @@ export function makeArt(scene: Phaser.Scene) {
   tex(scene, 'speter_bust', 48, 54, (c) => bust(c, false, false, true));
   tex(scene, 'speter_chip', 30, 30, (c) => { c.save(); el(c, 15, 15, 13.4, 13.4); c.clip(); c.fillStyle = lg(c, 0, 0, 0, 30, [0, '#3f7fd0'], [1, '#16305f']); c.fillRect(0, 0, 30, 30); c.translate(15 - 24 * 0.6, 0.6); c.scale(0.6, 0.6); bust(c, false, false, true); c.restore(); el(c, 15, 15, 13.4, 13.4, undefined, '#ffffff', 1.1); el(c, 15, 15, 14.2, 14.2, undefined, '#0b0c12', 0.5); });
   BUSTS.s = (scene.textures.get('speter_bust').getSourceImage() as HTMLCanvasElement).toDataURL();
+  // portraits drawn by their own functions: Ashlee Vance ('v', who also walks, as a running mate) and Madison Malone ('m', met on the map)
+  for (const [pre, draw] of [['v', bustVance], ['m', bustMadison]] as [string, (c: C2) => void][]) {
+    tex(scene, pre + 'peter_bust', 48, 54, (c) => draw(c));
+    tex(scene, pre + 'peter_chip', 30, 30, (c) => { c.save(); el(c, 15, 15, 13.4, 13.4); c.clip(); c.fillStyle = lg(c, 0, 0, 0, 30, [0, '#3f7fd0'], [1, '#16305f']); c.fillRect(0, 0, 30, 30); c.translate(15 - 24 * 0.6, 0.6); c.scale(0.6, 0.6); draw(c); c.restore(); el(c, 15, 15, 13.4, 13.4, undefined, '#ffffff', 1.1); el(c, 15, 15, 14.2, 14.2, undefined, '#0b0c12', 0.5); });
+    BUSTS[pre] = (scene.textures.get(pre + 'peter_bust').getSourceImage() as HTMLCanvasElement).toDataURL();
+  }
+  [0, 1, 0.5, -0.5, -1, -0.5, 0.5].forEach((l, i) => tex(scene, i === 0 ? 'vpeter0' : 'vpeterw' + (i - 1), 24, 34, (c) => vance(c, i === 0 ? 0.12 : l)));
+  tex(scene, 'vpeterj', 24, 34, (c) => vance(c, 0.9, true));
+  tex(scene, 'vpeterf', 24, 34, (c) => vance(c, 0.12, false, true)); // taking a photo
   // a small figure for people you can meet on the map
   tex(scene, 'n_person', 18, 18, (c) => { el(c, 9, 15.6, 6, 1.5, 'rgba(0,0,0,.35)'); el(c, 9, 8.6, 7, 7, lg(c, 0, 2, 0, 16, [0, '#d7b8ff'], [1, '#7a4fd0']), '#0b0c12', 0.7); el(c, 9, 6.6, 2.4, 2.4, '#1c1240'); c.beginPath(); c.arc(9, 14, 4.6, Math.PI, 0); c.fillStyle = '#1c1240'; c.fill(); el(c, 7, 4.6, 2.6, 1.2, 'rgba(255,255,255,.3)'); });
   BUST_URL = (scene.textures.get('peter_bust').getSourceImage() as HTMLCanvasElement).toDataURL();
@@ -398,6 +546,77 @@ export function makeArt(scene: Phaser.Scene) {
     text(c, 'SHOCK WAVE · MACH 5', 150, 19.6, 3.4, '#7fd0ff', 700);
   });
   DIAGRAMS.atea = (scene.textures.get('atea_diagram').getSourceImage() as HTMLCanvasElement).toDataURL();
+
+  // Story-card scenes: each card is its own place. Drawn for the game; no publisher, broadcaster or magazine artwork.
+  const bustImg = (pre: string) => scene.textures.get(pre + 'peter_bust').getSourceImage() as HTMLCanvasElement;
+  const chipAt = (pre: string, x: number, y: number, r: number) => { c0.save(); el(c0, x, y, r, r); c0.clip(); c0.fillStyle = lg(c0, 0, y - r, 0, y + r, [0, '#3f7fd0'], [1, '#16305f']); c0.fillRect(x - r, y - r, r * 2, r * 2); c0.drawImage(bustImg(pre), x - r * 0.95, y - r * 0.92, r * 1.9, r * 2.14); c0.restore(); el(c0, x, y, r, r, undefined, '#ffffff', 0.6); };
+  let c0!: C2;
+  const card = (key: string, fn: (c: C2) => void) => { tex(scene, key, 188, 84, (c) => { c0 = c; fn(c); }); DIAGRAMS[key] = (scene.textures.get(key).getSourceImage() as HTMLCanvasElement).toDataURL(); };
+  const vtext = (c: C2, s: string, x: number, y: number, size: number, col: string) => { c.save(); c.translate(x, y); c.rotate(-Math.PI / 2); text(c, s, 0, 0, size, col, 700); c.restore(); };
+  // the book: a shelf, its spine, and a reporter's notebook open at the four companies it follows
+  card('card_heavens', (c) => {
+    c.fillStyle = lg(c, 0, 0, 0, 84, [0, '#2a1e16'], [1, '#140e0a']); c.fillRect(0, 0, 188, 84);
+    c.fillStyle = rg(c, 150, 6, 2, 70, [0, 'rgba(255,214,150,.35)'], [1, 'rgba(255,214,150,0)']); c.fillRect(0, 0, 188, 84); // a desk lamp
+    rr(c, 4, 60, 92, 4, 0.6, '#6b4a2b', OUT, 0.3); const r = rng(5);
+    for (let x = 8, i = 0; x < 88; i++) { const w = 4 + r() * 3, h = 28 + r() * 14; if (i === 5) { rr(c, x, 60 - 50, 11, 50, 0.8, lg(c, x, 0, x + 11, 0, [0, '#10264f'], [0.5, '#1d3a7a'], [1, '#0b1a38']), OUT, 0.35); for (const y of [14, 54]) line(c, x + 1, y, x + 10, y, '#e2b85a', 0.4); vtext(c, 'WHEN THE HEAVENS WENT ON SALE', x + 4.4, 34, 2.4, '#f2e6c4'); vtext(c, 'ASHLEE VANCE', x + 8.2, 34, 1.9, '#e2b85a'); text(c, 'ECCO', x + 5.5, 57, 1.8, '#e2b85a', 700); x += 13; continue; } rr(c, x, 60 - h, w, h, 0.5, ['#6a2a24', '#2f5530', '#5b6275', '#8a6238', '#3a3f4f'][i % 5], OUT, 0.3); line(c, x + 0.8, 60 - h + 3, x + w - 0.8, 60 - h + 3, 'rgba(255,255,255,.2)', 0.3); x += w + 0.6; }
+    rr(c, 0, 66, 188, 18, 0, lg(c, 0, 66, 0, 84, [0, '#7a5636'], [1, '#4a321e'])); line(c, 0, 66, 188, 66, 'rgba(255,230,190,.3)', 0.4);
+    // the notebook, open
+    c.save(); c.translate(140, 40); c.rotate(-0.06);
+    rr(c, -38, -26, 76, 48, 1.4, '#f4f2ea', OUT, 0.4); line(c, 0, -26, 0, 22, '#cfc8b6', 0.6); for (let i = -36; i < 38; i += 3.2) el(c, i, -26.6, 0.7, 0.9, undefined, '#8b93a7', 0.35);
+    for (let y = -19; y < 20; y += 4.4) { line(c, -35, y, -3, y, 'rgba(70,110,180,.35)', 0.25); line(c, 3, y, 35, y, 'rgba(70,110,180,.35)', 0.25); }
+    text(c, 'FOUR COMPANIES', -19, -21, 3, '#1d3a7a', 700); text(c, 'ROCKET LAB', -19, -12.2, 3.8, '#c8102e', 700); text(c, 'ASTRA', -19, -3.4, 3.8, '#2a2e3c', 700); text(c, 'FIREFLY', -19, 5.4, 3.8, '#2a2e3c', 700); text(c, 'PLANET', -19, 14.2, 3.8, '#2a2e3c', 700);
+    text(c, 'AUCKLAND', 19, -12.2, 3.2, '#1d3a7a', 600); text(c, 'NOV 2018', 19, -7.4, 2.8, '#1d3a7a', 600); text(c, 'the factory floor', 19, 1, 2.6, '#5b6275', 600); text(c, 'with Peter Beck', 19, 5.4, 2.6, '#5b6275', 600);
+    c.restore(); line(c, 108, 72, 132, 64, '#23262f', 1.4); line(c, 132, 64, 134, 63.2, '#d8b25a', 1.2); // a pen
+  });
+  // Markets with Madison, May 2023: an Auckland studio, and Peter Beck on the line from California
+  card('card_mwm', (c) => {
+    c.fillStyle = lg(c, 0, 0, 0, 84, [0, '#101626'], [1, '#1a2238']); c.fillRect(0, 0, 188, 84);
+    for (let x = 4; x < 188; x += 14) rr(c, x, 4, 11, 52, 1, 'rgba(255,255,255,.035)');
+    rr(c, 8, 8, 26, 8, 1.4, '#3a0e0e', '#ff5a4a', 0.6); c.fillStyle = rg(c, 21, 12, 1, 16, [0, 'rgba(255,90,74,.35)'], [1, 'rgba(255,90,74,0)']); c.fillRect(0, 0, 50, 30); text(c, 'ON AIR', 21, 12.2, 4.2, '#ff8a70', 700);
+    // the monitor: two windows
+    rr(c, 52, 8, 92, 48, 2, '#07090f', '#5b6275', 0.8); rr(c, 94, 56, 8, 6, 0, '#3a3f4f'); rr(c, 84, 61, 28, 2, 0.6, '#3a3f4f');
+    for (const [x, pre, place] of [[55, 'm', 'AUCKLAND'], [99, '', 'CALIFORNIA']] as [number, string, string][]) { rr(c, x, 11, 42, 36, 1, lg(c, 0, 11, 0, 47, [0, '#3f7fd0'], [1, '#16305f'])); c.save(); c.beginPath(); c.rect(x, 11, 42, 36); c.clip(); c.drawImage(bustImg(pre), x + 7, 12, 28, 31.5); c.restore(); rr(c, x, 41, 42, 6, 0, 'rgba(7,9,15,.8)'); text(c, place, x + 21, 44.2, 3, '#ffe98a', 700); }
+    text(c, 'MARKETS WITH MADISON · 18 MAY 2023', 98, 51.6, 3, '#dfe6f7', 700);
+    // the microphone on its arm, headphones
+    line(c, 30, 30, 44, 50, '#3a3f4f', 1.4); line(c, 44, 50, 40, 66, '#3a3f4f', 1.4); rr(c, 24, 20, 10, 14, 4, lg(c, 24, 0, 34, 0, [0, '#5b6275'], [0.5, '#aab2c0'], [1, '#3a3f4f']), OUT, 0.4); for (let y = 23; y < 32; y += 2) line(c, 25.4, y, 32.6, y, 'rgba(0,0,0,.35)', 0.3);
+    rr(c, 0, 64, 188, 20, 0, lg(c, 0, 64, 0, 84, [0, '#2a3048'], [1, '#141a2c'])); line(c, 0, 64, 188, 64, 'rgba(127,208,255,.3)', 0.5);
+    c.beginPath(); c.arc(170, 68, 8, Math.PI, 0); c.strokeStyle = '#23262f'; c.lineWidth = 1.4; c.stroke(); el(c, 162, 69, 2.6, 3.4, '#23262f', OUT, 0.3); el(c, 178, 69, 2.6, 3.4, '#23262f', OUT, 0.3);
+    // what they talked about, as cards on the desk
+    for (const [x, s, col] of [[12, 'NEUTRON vs FALCON 9', '#ffe98a'], [62, 'STARSHIP · APRIL 2023', '#ff8a70'], [112, 'ELECTRON: RELIABILITY', '#7fd0ff']] as [number, string, string][]) { rr(c, x, 69, 44, 10, 1, '#f4f2ea', OUT, 0.35); rr(c, x, 69, 2, 10, 0, col); text(c, s, x + 23, 74.2, 2.9, '#1d2438', 700); }
+  });
+  // Wild Wild Space: a clapperboard and a can of film; three companies on the strip
+  card('card_wws', (c) => {
+    c.fillStyle = lg(c, 0, 0, 0, 84, [0, '#0a0a10'], [1, '#18141c']); c.fillRect(0, 0, 188, 84);
+    c.fillStyle = rg(c, 60, 0, 4, 80, [0, 'rgba(255,240,200,.22)'], [1, 'rgba(255,240,200,0)']); c.fillRect(0, 0, 188, 84);
+    for (let i = 0; i < 60; i++) { const r = rng(i + 3); el(c, r() * 188, r() * 40, 0.25, 0.25, 'rgba(255,255,255,.5)'); }
+    // the clapperboard
+    rr(c, 10, 30, 84, 46, 1.4, '#15161c', OUT, 0.5);
+    c.save(); c.translate(10, 30); c.rotate(-0.16); rr(c, 0, -9, 84, 8, 0.8, '#f4f4f0', OUT, 0.4); c.save(); c.beginPath(); c.rect(0, -9, 84, 8); c.clip(); for (let x = -6; x < 90; x += 10) poly(c, [x, -1, x + 5, -1, x + 10, -9, x + 5, -9], '#15161c'); c.restore(); c.restore();
+    rr(c, 10, 30, 84, 7, 0, '#f4f4f0'); c.save(); c.beginPath(); c.rect(10, 30, 84, 7); c.clip(); for (let x = 4; x < 100; x += 10) poly(c, [x, 37, x + 5, 37, x + 10, 30, x + 5, 30], '#15161c'); c.restore();
+    text(c, 'WILD WILD SPACE', 52, 45, 6.6, '#f4f4f0', 700);
+    for (const [y, a, b] of [[54, 'DIRECTOR', 'ROSS KAUFFMAN'], [61, 'PREMIERE', 'DC/DOX · 14 JUNE 2024'], [68, 'ON TV', 'HBO AND MAX · 17 JULY 2024']] as [number, string, string][]) { text(c, a, 14, y, 2.8, '#8b93a7', 700, 'left'); text(c, b, 38, y, 3.2, '#f4f4f0', 700, 'left'); line(c, 14, y + 3, 90, y + 3, 'rgba(255,255,255,.18)', 0.3); }
+    // the can and the strip
+    el(c, 158, 40, 24, 24, lg(c, 134, 16, 182, 64, [0, '#e4e8ee'], [0.5, '#9aa3b5'], [1, '#5b6275']), OUT, 0.5); el(c, 158, 40, 19, 19, undefined, 'rgba(0,0,0,.25)', 0.6); el(c, 158, 40, 4, 4, '#3a3f4f', OUT, 0.3); for (let k = 0; k < 3; k++) { const t = k * 2.09; el(c, 158 + Math.cos(t) * 11, 40 + Math.sin(t) * 11, 4.4, 4.4, '#5b6275', OUT, 0.3); }
+    rr(c, 98, 52, 66, 20, 0.6, '#2a1c10', OUT, 0.35); for (let x = 100; x < 162; x += 4) { rr(c, x, 53, 2, 1.6, 0.3, '#f4e6c4'); rr(c, x, 69.4, 2, 1.6, 0.3, '#f4e6c4'); }
+    for (const [i, lab] of [[0, 'ROCKET LAB'], [1, 'ASTRA'], [2, 'PLANET']] as [number, string][]) {
+      const x = 101 + i * 21; rr(c, x, 55.6, 18, 12.8, 0.4, '#1d3a7a');
+      if (i === 0) rr(c, x + 7.6, 57, 2.8, 10, 1, '#0b0c12', '#5b6275', 0.25); // a black carbon rocket
+      else if (i === 1) { rr(c, x + 7.8, 57.4, 2.4, 9.6, 1, '#f4f4f0', OUT, 0.25); poly(c, [x + 7.8, 58.6, x + 9, 56.4, x + 10.2, 58.6], '#f4f4f0'); }
+      else { rr(c, x + 7.6, 59.6, 2.8, 4.4, 0.3, '#c9ced9', OUT, 0.25); rr(c, x + 2, 60.8, 5.4, 2, 0.2, '#3f6fd0'); rr(c, x + 10.6, 60.8, 5.4, 2, 0.2, '#3f6fd0'); } // a small Earth-imaging satellite
+      text(c, lab, x + 9, 77.6, 2.8, '#dfe6f7', 700);
+    }
+  });
+  // Forbes, November 2024: a list with a new name on it, and what Forbes counted
+  card('card_forbes', (c) => {
+    c.fillStyle = lg(c, 0, 0, 0, 84, [0, '#f4f2ea'], [1, '#dcd6c6']); c.fillRect(0, 0, 188, 84);
+    rr(c, 8, 8, 110, 68, 1.4, '#ffffff', '#b8b2a2', 0.5); rr(c, 8, 8, 110, 10, 1.4, '#15171f'); text(c, 'BILLIONAIRES · FORBES ESTIMATES', 63, 13.2, 3.6, '#ffffff', 700); text(c, '15 NOVEMBER 2024', 63, 22.4, 2.8, '#5b6275', 700);
+    const r = rng(77); for (let i = 0; i < 6; i++) { const y = 27 + i * 7.6; if (i === 3) continue; rr(c, 14, y, 6, 4.4, 1, '#d6d2c6'); rr(c, 24, y + 0.8, 36 + r() * 24, 2.8, 1.2, '#d6d2c6'); rr(c, 96, y + 0.8, 16, 2.8, 1.2, '#d6d2c6'); }
+    const y = 27 + 3 * 7.6; rr(c, 11, y - 2, 104, 8.4, 1, '#fff3c4', '#e2b85a', 0.5); chipAt('', 17, y + 2.2, 3.4); text(c, 'PETER BECK', 24, y + 2.2, 3.6, '#15171f', 700, 'left'); text(c, 'NEW ZEALAND', 62, y + 2.2, 3, '#5b6275', 700, 'left'); text(c, 'US$1 BILLION', 113, y + 2.2, 3.2, '#15171f', 700, 'right');
+    rr(c, 98, y - 6.8, 15, 4.4, 1, '#c8102e'); text(c, 'NEW', 105.5, y - 4.6, 2.8, '#ffffff', 700);
+    // what the estimate counted
+    el(c, 150, 34, 18, 18, '#d6d2c6', OUT, 0.4); c.beginPath(); c.moveTo(150, 34); c.arc(150, 34, 18, -Math.PI / 2, -Math.PI / 2 + Math.PI * 0.2); c.closePath(); c.fillStyle = '#c8102e'; c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.4; c.stroke();
+    text(c, 'HIS STAKE IN ROCKET LAB', 150, 58, 3.2, '#15171f', 700); text(c, 'ABOUT 10%', 150, 63.4, 3.6, '#c8102e', 700); text(c, '+ MONEY FROM EARLIER SHARE SALES', 150, 71, 2.8, '#5b6275', 700);
+  });
 
   // animals and pickups
   tex(scene, 'sheep', 24, 17, (c) => {

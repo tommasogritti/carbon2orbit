@@ -62,11 +62,11 @@ A touch pad appears on phones.
 
 | Kind | Levels |
 | --- | --- |
-| Platform | The Rocket Bike · Road to Māhia · Rosie the Robot · RKLB rings the bell (played as Adam Spice) · Archimedes and the tank |
+| Platform | The Rocket Bike · Road to Māhia · Rosie the Robot (with Ashlee Vance as a running mate) · RKLB rings the bell (played as Adam Spice) · Archimedes and the tank |
 | Launch control | Ātea-1 · It's a Test · Still Testing · It's Business Time · Virginia Is For Launch Lovers · Scout's Arrow (HASTE) · Paschen's Law · Beginning Of The Swarm · The Mountain God Rises |
 | Mini-game | Rutherford hot-fire · Go Find the Launch Site (played as Shaun D'Mello) · Pics Or It Didn't Happen · Return To Sender · There And Back Again · CAPSTONE to the Moon · Two Hemispheres · Outback Delivery · ESCAPADE · VICTUS HAZE |
-| Story | Rocket Lab is founded · Sir Peter · Neutron (locked until it flies) |
-| People to meet | Mark Rocket and Sir Stephen Tindall · Ky Michaelson · Sir Michael Fay · Dava Newman · Gabe Newell · Adam Spice · Rob Lillis |
+| Story | Rocket Lab is founded · When the Heavens Went on Sale · Markets with Madison · Sir Peter · Wild Wild Space · Forbes counts a billionaire · Neutron (locked until it flies) |
+| People to meet | Mark Rocket and Sir Stephen Tindall · Ky Michaelson · Sir Michael Fay · Dava Newman · Gabe Newell · Adam Spice · Rob Lillis · Madison Malone |
 | Secrets | Princes Street Sprint · Kaitorete Spit · Inside the first hundred · Photon · The Hungry Hippo |
 
 ## Contribute, with or without an agent
