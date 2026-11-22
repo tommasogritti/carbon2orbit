@@ -220,131 +220,122 @@ function bust(c: C2, young = false, adam = false, shaun = false) {
 }
 
 // ---------------------------------------------------------------- Ashlee Vance (running mate in Rosie the Robot)
-// Likeness notes, from the captioned Commons photo of him at a signing for his Elon Musk biography (2015): shaggy mid-brown
-// hair, parted on his right (the viewer's left), the fringe swept across the forehead and the sides long enough to cover the ears
-// and reach the jaw; a broad-cheeked face with a wide, open, squinting smile and laughter lines; a little stubble; a green shirt
-// checked with blue and white, worn open over a dark V-neck tee. In the game he also carries a reporter's notebook and a camera
-// on a strap, because he was at the factory reporting a book. (Revised after the fan review of 22 Nov 2026: the parting had been
-// mirrored and the hair was too short.)
-const VH = ['#3e2a1a', '#5a3d26', '#80603e']; // hair: dark, mid, light
-const plaid = (c: C2, x: number, y: number, w: number, h: number, r: number, base = '#3f6b3a', step = 2.2) => {
+// Likeness notes, from a recent interview still supplied by the project owner (23 Nov 2026), which replaced the 2015 Commons
+// photo the first drawing used: short dark-brown hair, close at the sides with the ears showing, the top brushed up and a little
+// to one side; a broad, full face with a wide jaw; light blue eyes; a closed-mouth half smile; a navy flannel shirt checked with
+// teal and mustard, worn open over a black crew-neck tee. In the game he also carries a reporter's notebook and a camera on a
+// strap, because he was at the factory reporting a book.
+const VH = ['#2a1c12', '#3f2b1c', '#5c412a']; // hair: dark, mid, light
+const VS = '#2b3a5c', VC = '#22304d'; // the flannel's navy, and its collar in shadow
+const plaid = (c: C2, x: number, y: number, w: number, h: number, r: number, base = VS, step = 2.2) => {
   rr(c, x, y, w, h, r, base, OUT, 0.4); c.save(); c.beginPath(); c.roundRect(x, y, w, h, r); c.clip();
-  for (let i = 0; i * step < Math.max(w, h) + step; i++) { c.fillStyle = 'rgba(40,70,150,.5)'; c.fillRect(x + 0.4 + i * step, y, step * 0.4, h); c.fillRect(x, y + 0.6 + i * step, w, step * 0.4); c.fillStyle = 'rgba(240,245,255,.4)'; c.fillRect(x + step * 0.72 + i * step, y, step * 0.14, h); c.fillRect(x, y + step * 0.82 + i * step, w, step * 0.12); }
+  for (let i = 0; i * step < Math.max(w, h) + step; i++) { c.fillStyle = 'rgba(80,146,146,.5)'; c.fillRect(x + 0.4 + i * step, y, step * 0.4, h); c.fillRect(x, y + 0.6 + i * step, w, step * 0.4); c.fillStyle = 'rgba(214,174,82,.55)'; c.fillRect(x + step * 0.74 + i * step, y, step * 0.11, h); c.fillRect(x, y + step * 0.84 + i * step, w, step * 0.1); }
   c.restore();
 };
 function vance(c: C2, leg: number, air = false, flash = false) {
   const limb = (x0: number, y0: number, ang: number, len: number, w: number, col: string) => { const x1 = x0 + Math.sin(ang) * len, y1 = y0 + Math.cos(ang) * len; line(c, x0, y0, x1, y1, OUT, w + 0.7); line(c, x0, y0, x1, y1, col, w); return [x1, y1]; };
   const a = leg * 0.62, skinD = '#d69f80';
   const shoe = (x: number, y: number) => { rr(c, x - 1.6, y - 1.2, 4.4, 2.4, 1, '#5b3d22', OUT, 0.35); rr(c, x - 1.6, y + 0.5, 4.4, 0.7, 0.3, '#2a1c10'); };
-  { const [hx, hy] = limb(15.6, 18, a * 0.9 + (air ? -2.2 : 0), 5.6, 2.6, '#2f5530'); el(c, hx, hy + 0.5, 1.2, 1.2, skinD, OUT, 0.3); }
+  { const [hx, hy] = limb(15.6, 18, a * 0.9 + (air ? -2.2 : 0), 5.6, 2.6, VC); el(c, hx, hy + 0.5, 1.2, 1.2, skinD, OUT, 0.3); }
   const [l1x, l1y] = limb(13.3, 25, -a, 6.2, 3.0, '#33527f'); shoe(l1x, l1y + 0.6);
   const [l2x, l2y] = limb(10.7, 25, a + (air ? 0.5 : 0), 6.2, 3.0, '#3f6396'); shoe(l2x, l2y + 0.6);
-  // dark V-neck tee, and the checked shirt open over it
-  rr(c, 8.4, 16.6, 7.2, 9.6, 2, '#2f3340', OUT, 0.35); poly(c, [10.6, 16.6, 12, 18.8, 13.4, 16.6], '#d69f80');
+  // black crew-neck tee, and the checked flannel open over it
+  rr(c, 8.4, 16.6, 7.2, 9.6, 2, '#17181d', OUT, 0.35); c.beginPath(); c.moveTo(10.4, 16.6); c.quadraticCurveTo(12, 17.9, 13.6, 16.6); c.closePath(); c.fillStyle = skinD; c.fill();
   plaid(c, 7.2, 16.4, 3.8, 10.2, 1.6); plaid(c, 13, 16.4, 3.8, 10.2, 1.6);
-  poly(c, [9.4, 16.4, 11.4, 19, 10.8, 16.4], '#2f5530', OUT, 0.2); poly(c, [14.6, 16.4, 12.6, 19, 13.2, 16.4], '#2f5530', OUT, 0.2);
+  poly(c, [9.4, 16.4, 11.2, 18.6, 10.6, 16.4], VC, OUT, 0.2); poly(c, [14.6, 16.4, 12.8, 18.6, 13.4, 16.4], VC, OUT, 0.2);
   if (!flash) { line(c, 8.2, 17, 15.4, 24.4, '#15171f', 0.6); rr(c, 13.4, 22.6, 4.6, 3.2, 0.6, '#23262f', OUT, 0.3); el(c, 15.7, 24.2, 1.15, 1.15, '#5b6275', OUT, 0.25); el(c, 15.7, 24.2, 0.5, 0.5, '#9fd6f5'); } // the camera at his hip
-  rr(c, 10, 14.6, 4, 2.6, 0.8, skinD);
-  el(c, 12, 8.6, 6.8, 6.8, VH[0]);
-  // a broad-cheeked face, and a little stubble
-  c.beginPath(); c.moveTo(6.8, 9.2); c.bezierCurveTo(6.8, 3.4, 17.2, 3.4, 17.2, 9.2); c.bezierCurveTo(17.3, 12.8, 15.4, 15.6, 12, 16.2); c.bezierCurveTo(8.6, 15.6, 6.7, 12.8, 6.8, 9.2); c.closePath();
+  rr(c, 9.8, 14.6, 4.4, 2.6, 0.8, skinD);
+  for (const ex of [6.9, 17.1]) el(c, ex, 10.4, 0.9, 1.4, '#e4ad8e', OUT, 0.3); // the ears show
+  // a broad, full face with a wide jaw
+  c.beginPath(); c.moveTo(6.8, 9.2); c.bezierCurveTo(6.8, 3.4, 17.2, 3.4, 17.2, 9.2); c.bezierCurveTo(17.5, 12.8, 16.7, 15, 14.6, 15.8); c.quadraticCurveTo(12, 16.7, 9.4, 15.8); c.bezierCurveTo(7.3, 15, 6.5, 12.8, 6.8, 9.2); c.closePath();
   c.fillStyle = lg(c, 6, 4, 18, 16, [0, '#f6cbad'], [1, skinD]); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.4; c.stroke();
-  c.fillStyle = 'rgba(96,66,42,.22)'; c.beginPath(); c.moveTo(8.2, 12); c.bezierCurveTo(9, 14.6, 15, 14.6, 15.8, 12); c.lineTo(15.3, 13.6); c.bezierCurveTo(14, 16.2, 10, 16.2, 8.7, 13.6); c.closePath(); c.fill();
-  // shaggy hair: drawn with the parting on the viewer's left, the fringe swept to the right, the sides down over the ears
-  c.save(); c.translate(24, 0); c.scale(-1, 1);
-  c.beginPath(); c.moveTo(5.4, 13.4); c.bezierCurveTo(4.2, 4, 8, 1.1, 12.6, 1.3); c.bezierCurveTo(17.4, 1.5, 20, 5, 18.8, 13.2); c.lineTo(17.4, 12.6); c.lineTo(17.2, 9.6); c.bezierCurveTo(16.8, 7.4, 15.2, 6.2, 13.6, 6.4); c.quadraticCurveTo(11, 8, 8.2, 7.4); c.quadraticCurveTo(7.2, 8.8, 6.9, 10.6); c.lineTo(6.6, 12.8); c.closePath();
-  c.fillStyle = lg(c, 5, 1, 19, 10, [0, VH[2]], [0.5, VH[1]], [1, VH[0]]); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.4; c.stroke();
-  for (let i = 0; i < 6; i++) { c.beginPath(); c.moveTo(9.6 + i * 1.3, 2.3 + i * 0.2); c.quadraticCurveTo(8.4 + i * 1.1, 5, 6.6 + i * 1.2, 7.4); c.strokeStyle = 'rgba(170,130,90,.45)'; c.lineWidth = 0.3; c.stroke(); }
-  line(c, 14, 1.7, 14.6, 5.8, 'rgba(30,20,12,.6)', 0.3);
-  c.restore();
-  el(c, 9.9, 10, 0.8, 0.42, '#fbfbf8'); el(c, 14.1, 10, 0.8, 0.42, '#fbfbf8'); for (const ex of [10, 14.2]) { el(c, ex, 10.05, 0.38, 0.36, '#6a6650'); el(c, ex, 10.05, 0.2, 0.2, '#111'); } // narrowed by the smile
-  line(c, 8.9, 9.0, 10.9, 8.8, '#4a3220', 0.38); line(c, 13.1, 8.8, 15.1, 9.0, '#4a3220', 0.38);
+  // short dark hair, close at the sides, the top brushed up and a little to one side
+  c.beginPath(); c.moveTo(6.8, 9.4); c.bezierCurveTo(6.1, 3.6, 8.8, 1.4, 12.4, 1.5); c.bezierCurveTo(15.6, 1.6, 18.1, 3.6, 17.2, 9.4); c.lineTo(16.6, 8.2); c.quadraticCurveTo(16, 6.2, 14.4, 6.2); c.quadraticCurveTo(12.4, 6.8, 10.4, 6.1); c.quadraticCurveTo(8.2, 5.9, 7.6, 7.8); c.closePath();
+  c.fillStyle = lg(c, 6, 1, 18, 9, [0, VH[2]], [0.5, VH[1]], [1, VH[0]]); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.4; c.stroke();
+  for (let i = 0; i < 5; i++) { c.beginPath(); c.moveTo(8.6 + i * 1.6, 6.2); c.quadraticCurveTo(9 + i * 1.6, 3.6, 10.6 + i * 1.5, 2.2); c.strokeStyle = 'rgba(140,104,70,.45)'; c.lineWidth = 0.3; c.stroke(); }
+  el(c, 9.9, 10, 0.8, 0.5, '#fbfbf8'); el(c, 14.1, 10, 0.8, 0.5, '#fbfbf8'); for (const ex of [10, 14.2]) { el(c, ex, 10.05, 0.4, 0.42, '#6f95bd'); el(c, ex, 10.05, 0.2, 0.2, '#111'); } // light blue eyes
+  line(c, 8.9, 8.9, 10.9, 8.8, '#2a1c12', 0.42); line(c, 13.1, 8.8, 15.1, 8.9, '#2a1c12', 0.42);
   c.beginPath(); c.moveTo(12.2, 10.4); c.quadraticCurveTo(12.9, 12, 12.1, 12.3); c.strokeStyle = '#c98f72'; c.lineWidth = 0.35; c.stroke();
-  c.beginPath(); c.moveTo(9.5, 13.0); c.quadraticCurveTo(12, 15.6, 14.5, 13.0); c.closePath(); c.fillStyle = '#fbf6ee'; c.fill(); c.strokeStyle = '#8a4b3c'; c.lineWidth = 0.4; c.stroke(); // a wide, open smile
+  c.beginPath(); c.moveTo(10.2, 13.4); c.quadraticCurveTo(12, 14.3, 13.8, 13.2); c.strokeStyle = '#8a4b3c'; c.lineWidth = 0.4; c.stroke(); // a closed-mouth half smile
   if (flash) { // camera up to his eye, flash going off
-    const [hx, hy] = limb(8.4, 18, Math.PI - 0.32, 7.2, 2.6, '#3f6b3a'); el(c, hx, hy, 1.2, 1.2, '#efc09f', OUT, 0.3);
+    const [hx, hy] = limb(8.4, 18, Math.PI - 0.32, 7.2, 2.6, VS); el(c, hx, hy, 1.2, 1.2, '#efc09f', OUT, 0.3);
     rr(c, 4.6, 8.2, 6.4, 4.2, 0.8, '#23262f', OUT, 0.35); el(c, 6.4, 10.3, 1.7, 1.7, '#5b6275', OUT, 0.3); el(c, 6.4, 10.3, 0.8, 0.8, '#9fd6f5'); rr(c, 8.2, 7.4, 2.4, 1, 0.3, '#f4f6fa', OUT, 0.2);
     c.fillStyle = rg(c, 9.4, 7.6, 0.2, 5, [0, 'rgba(255,255,255,1)'], [0.4, 'rgba(255,250,210,.7)'], [1, 'rgba(255,250,210,0)']); c.fillRect(4, 2, 11, 11);
     poly(c, [9.4, 3.4, 10, 6.8, 13.6, 7.6, 10, 8.4, 9.4, 11.8, 8.8, 8.4, 5.2, 7.6, 8.8, 6.8], 'rgba(255,255,255,.95)');
   } else { // the notebook in his hand
-    const [hx, hy] = limb(8.4, 18, -a * 0.9 + (air ? 2.2 : 0) + 0.5, 5.2, 2.6, '#3f6b3a');
+    const [hx, hy] = limb(8.4, 18, -a * 0.9 + (air ? 2.2 : 0) + 0.5, 5.2, 2.6, VS);
     rr(c, hx - 2, hy - 3.6, 3.6, 4.6, 0.4, '#f4f2ea', OUT, 0.3); for (let k = 0; k < 3; k++) line(c, hx - 1.4, hy - 2.2 + k * 1.1, hx + 1, hy - 2.2 + k * 1.1, 'rgba(60,90,160,.6)', 0.25); line(c, hx - 2, hy - 3.6, hx + 1.6, hy - 3.6, '#8b93a7', 0.5);
     el(c, hx, hy + 0.4, 1.2, 1.2, '#efc09f', OUT, 0.3);
   }
 }
 /** Ashlee Vance, head and shoulders (48 x 54), to the notes above. */
 function bustVance(c: C2) {
-  // shoulders: the checked shirt open over a dark V-neck tee
-  c.save(); c.beginPath(); c.moveTo(0, 54); c.quadraticCurveTo(3, 46.8, 15, 45.4); c.lineTo(33, 45.4); c.quadraticCurveTo(45, 46.8, 48, 54); c.closePath(); c.clip(); plaid(c, 0, 44, 48, 10, 0, '#3f6b3a', 4); c.restore();
-  c.beginPath(); c.moveTo(0, 54); c.quadraticCurveTo(3, 46.8, 15, 45.4); c.lineTo(33, 45.4); c.quadraticCurveTo(45, 46.8, 48, 54); c.closePath(); c.strokeStyle = OUT; c.lineWidth = 0.5; c.stroke();
-  el(c, 24, 20, 16, 17.5, VH[0]); // hair behind, down to the jaw
-  rr(c, 17.6, 35, 12.8, 13, 3, lg(c, 0, 38, 0, 48, [0, '#c08a6e'], [1, '#e0aa8b']));
-  poly(c, [16.6, 45, 31.4, 45, 28.6, 54, 19.4, 54], '#2f3340', OUT, 0.35); poly(c, [19.6, 45, 28.4, 45, 24, 51.4], '#e0aa8b'); // the V-neck
-  poly(c, [15, 45.2, 19.2, 46, 18.4, 54, 13.4, 54], '#2f5530', OUT, 0.35); poly(c, [33, 45.2, 28.8, 46, 29.6, 54, 34.6, 54], '#2f5530', OUT, 0.35); // collar and placket
+  const skin = '#ecb999';
+  // shoulders: the checked flannel open over a black crew-neck tee
+  const sh = () => { c.beginPath(); c.moveTo(0, 54); c.quadraticCurveTo(3, 46.8, 15, 45.4); c.lineTo(33, 45.4); c.quadraticCurveTo(45, 46.8, 48, 54); c.closePath(); };
+  c.save(); sh(); c.clip(); plaid(c, 0, 44, 48, 10, 0, VS, 4); c.restore(); sh(); c.strokeStyle = OUT; c.lineWidth = 0.5; c.stroke();
+  rr(c, 17, 34.6, 14, 13.4, 3, lg(c, 0, 38, 0, 48, [0, '#c08a6e'], [1, '#e0aa8b']));
+  c.beginPath(); c.moveTo(16.4, 45.2); c.quadraticCurveTo(24, 50.2, 31.6, 45.2); c.lineTo(29.6, 54); c.lineTo(18.4, 54); c.closePath(); c.fillStyle = '#16171c'; c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.35; c.stroke(); // the tee
+  c.beginPath(); c.moveTo(17.2, 45.6); c.quadraticCurveTo(24, 50.6, 30.8, 45.6); c.strokeStyle = '#2c2e37'; c.lineWidth = 0.9; c.stroke(); // its ribbed collar
+  poly(c, [15, 45.2, 18.4, 46, 18.4, 54, 13.4, 54], VC, OUT, 0.35); poly(c, [33, 45.2, 29.6, 46, 29.6, 54, 34.6, 54], VC, OUT, 0.35); // collar and placket
   line(c, 14.6, 45.4, 20.4, 54, '#15171f', 0.9); // camera strap
-  // a broad-cheeked face
-  c.beginPath(); c.moveTo(12.4, 21); c.bezierCurveTo(12.4, 6, 35.6, 6, 35.6, 21); c.bezierCurveTo(35.8, 29, 32, 38.4, 24, 42); c.bezierCurveTo(16, 38.4, 12.2, 29, 12.4, 21); c.closePath();
-  c.fillStyle = rg(c, 21.5, 22, 2, 25, [0, '#f6cfb3'], [0.65, '#ecb999'], [1, '#d49b7c']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.5; c.stroke();
-  for (const x of [16.6, 31.4]) { c.fillStyle = rg(c, x, 30, 0, 4.6, [0, 'rgba(222,120,100,.2)'], [1, 'rgba(222,120,100,0)']); c.fillRect(x - 5, 25, 10, 10); }
-  c.fillStyle = 'rgba(96,66,42,.2)'; c.beginPath(); c.moveTo(15.4, 30); c.bezierCurveTo(17, 38.4, 31, 38.4, 32.6, 30); c.lineTo(31.6, 33.6); c.bezierCurveTo(29, 41.4, 19, 41.4, 16.4, 33.6); c.closePath(); c.fill(); // stubble
-  const r = rng(61); c.fillStyle = 'rgba(80,54,34,.3)'; for (let i = 0; i < 70; i++) { const t = r() * Math.PI, d = r(); el(c, 24 + Math.cos(t) * (6 + d * 7), 33 + Math.sin(t) * (3 + d * 6), 0.18, 0.18); }
-  // the sides: long enough to cover the ears and reach the jaw
-  for (const sg of [-1, 1]) {
-    c.beginPath(); c.moveTo(24 + sg * 11.4, 14); c.bezierCurveTo(24 + sg * 15, 18, 24 + sg * 15.4, 28, 24 + sg * 14, 37.4); c.quadraticCurveTo(24 + sg * 12.4, 36.8, 24 + sg * 11.2, 33.6); c.bezierCurveTo(24 + sg * 12.6, 29, 24 + sg * 12.2, 22, 24 + sg * 11.6, 18); c.closePath();
-    c.fillStyle = lg(c, 0, 14, 0, 38, [0, VH[1]], [1, VH[0]]); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.45; c.stroke();
-    for (let k = 0; k < 3; k++) { c.beginPath(); c.moveTo(24 + sg * (12.4 + k * 0.7), 17 + k * 2); c.quadraticCurveTo(24 + sg * (14 + k * 0.4), 26, 24 + sg * (12.8 + k * 0.4), 35 - k); c.strokeStyle = k % 2 ? 'rgba(170,130,90,.4)' : 'rgba(30,20,12,.4)'; c.lineWidth = 0.4; c.stroke(); }
-  }
-  // the top, drawn mirrored so the parting sits on the viewer's left and the fringe sweeps right
-  c.save(); c.translate(48, 0); c.scale(-1, 1);
-  c.beginPath(); c.moveTo(9.4, 30); c.bezierCurveTo(7.4, 10, 15, 2.2, 25, 2.4); c.bezierCurveTo(35.6, 2.6, 41, 10, 38.6, 30); c.lineTo(35.4, 24); c.bezierCurveTo(35, 18, 32.6, 14.4, 29, 14.6); c.quadraticCurveTo(22, 19.4, 15.4, 17.4); c.quadraticCurveTo(13.4, 20.4, 13.2, 25.4); c.closePath();
-  c.fillStyle = lg(c, 8, 2, 40, 26, [0, VH[2]], [0.45, VH[1]], [1, VH[0]]); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.5; c.stroke();
-  for (let i = 0; i < 12; i++) { c.beginPath(); c.moveTo(17 + i * 1.6, 4 + Math.abs(i - 6) * 0.3); c.quadraticCurveTo(15 + i * 1.3, 11, 12 + i * 1.5, 17 + (i > 7 ? -1 : 0)); c.strokeStyle = i % 3 ? 'rgba(170,130,90,.4)' : 'rgba(40,26,14,.4)'; c.lineWidth = 0.4; c.stroke(); }
-  line(c, 28.6, 3, 29.6, 13.6, 'rgba(30,20,12,.55)', 0.45); // the parting
+  // the ears show below the short sides
+  for (const sg of [-1, 1]) { el(c, 24 + sg * 12.2, 25.4, 2, 3.4, '#e4ad8e', OUT, 0.45); c.beginPath(); c.arc(24 + sg * 12.3, 25.4, 1.1, sg < 0 ? 1.9 : -1.2, sg < 0 ? 4.4 : 1.2); c.strokeStyle = 'rgba(170,110,88,.6)'; c.lineWidth = 0.4; c.stroke(); }
+  // a broad, full face with a wide jaw
+  c.beginPath(); c.moveTo(12.4, 20.4); c.bezierCurveTo(12.4, 6.4, 35.6, 6.4, 35.6, 20.4); c.bezierCurveTo(36.4, 30, 35, 36.4, 30.2, 39.6); c.quadraticCurveTo(24, 42.6, 17.8, 39.6); c.bezierCurveTo(13, 36.4, 11.6, 30, 12.4, 20.4); c.closePath();
+  c.fillStyle = rg(c, 21.5, 22, 2, 25, [0, '#f6cfb3'], [0.65, skin], [1, '#d49b7c']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.5; c.stroke();
+  for (const x of [16.4, 31.6]) { c.fillStyle = rg(c, x, 30, 0, 5, [0, 'rgba(222,120,100,.22)'], [1, 'rgba(222,120,100,0)']); c.fillRect(x - 5, 25, 10, 10); }
+  c.fillStyle = 'rgba(96,66,42,.08)'; c.beginPath(); c.moveTo(14.6, 30); c.bezierCurveTo(16.6, 39.4, 31.4, 39.4, 33.4, 30); c.lineTo(32.8, 33.4); c.bezierCurveTo(30, 41.4, 18, 41.4, 15.2, 33.4); c.closePath(); c.fill(); // a faint shadow along the jaw
+  // short dark-brown hair: close at the sides, the top brushed up and a little to one side
+  for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(24 + sg * 10.6, 11.4); c.bezierCurveTo(24 + sg * 12.4, 13, 24 + sg * 12.8, 17, 24 + sg * 12.4, 21.8); c.lineTo(24 + sg * 11.6, 22); c.quadraticCurveTo(24 + sg * 11.4, 17.6, 24 + sg * 10.6, 15.2); c.closePath(); c.fillStyle = VH[1]; c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.4; c.stroke(); }
+  const top = () => { c.beginPath(); c.moveTo(12.2, 18); c.bezierCurveTo(10.8, 8.2, 16.4, 2.8, 24.6, 3); c.bezierCurveTo(32.8, 3.2, 37.6, 8.2, 35.8, 18); c.lineTo(34.4, 14.4); c.quadraticCurveTo(33.2, 11.4, 30.6, 11.6); c.quadraticCurveTo(26.4, 12.8, 22.6, 11.4); c.quadraticCurveTo(18.2, 10.6, 15.8, 12); c.quadraticCurveTo(13.8, 13.4, 13.4, 16); c.closePath(); };
+  top(); c.fillStyle = lg(c, 10, 1, 38, 16, [0, VH[2]], [0.45, VH[1]], [1, VH[0]]); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.5; c.stroke();
+  c.save(); top(); c.clip();
+  for (let i = 0; i < 9; i++) { c.beginPath(); c.moveTo(15.4 + i * 2.2, 12.2 - Math.abs(i - 4) * 0.15); c.quadraticCurveTo(16.4 + i * 2.2, 7, 19.6 + i * 2.1, 4 + Math.abs(i - 4) * 0.25); c.strokeStyle = i % 3 ? 'rgba(130,96,64,.45)' : 'rgba(20,12,6,.4)'; c.lineWidth = 0.4; c.stroke(); }
   c.restore();
-  // eyes narrowed by the smile, with laughter lines
+  // light blue eyes under straight dark brows
   for (const ex of [18.9, 29.1]) {
-    const out = ex < 24 ? -1 : 1;
-    el(c, ex, 23.5, 2.3, 0.8, '#fbfbf8'); el(c, ex + 0.1, 23.5, 0.9, 0.78, '#6a6650', '#3e3a2a', 0.28); el(c, ex + 0.1, 23.5, 0.42, 0.42, '#0e0e12');
-    c.beginPath(); c.moveTo(ex - 2.6, 23.6); c.quadraticCurveTo(ex, 21.9, ex + 2.6, 23.4); c.strokeStyle = '#2e2016'; c.lineWidth = 0.6; c.stroke();
-    c.beginPath(); c.moveTo(ex - 2.2, 24.4); c.quadraticCurveTo(ex, 25.6, ex + 2.3, 24.3); c.strokeStyle = 'rgba(175,115,92,.7)'; c.lineWidth = 0.4; c.stroke(); // the cheek pushes the lower lid up
-    for (const dy of [-0.8, 0.4, 1.6]) line(c, ex + out * 2.9, 23.4 + dy * 0.5, ex + out * 4.3, 23.4 + dy, 'rgba(170,110,88,.55)', 0.3); // crow's feet
+    el(c, ex, 23.5, 2.2, 1.05, '#fbfbf8'); el(c, ex + 0.1, 23.5, 0.95, 0.95, '#6f95bd', '#3e5a78', 0.28); el(c, ex + 0.1, 23.5, 0.44, 0.44, '#0e0e12'); el(c, ex + 0.45, 23.1, 0.22, 0.22, '#ffffff');
+    c.beginPath(); c.moveTo(ex - 2.5, 23.6); c.quadraticCurveTo(ex, 21.9, ex + 2.5, 23.4); c.strokeStyle = '#2e2016'; c.lineWidth = 0.6; c.stroke();
+    c.beginPath(); c.moveTo(ex - 2, 24.6); c.quadraticCurveTo(ex, 25.3, ex + 2.1, 24.5); c.strokeStyle = 'rgba(175,115,92,.6)'; c.lineWidth = 0.4; c.stroke();
   }
-  line(c, 15.8, 20.4, 21.6, 20.0, '#4a3220', 0.85); line(c, 26.4, 20.0, 32.2, 20.4, '#4a3220', 0.85);
-  c.beginPath(); c.moveTo(25, 23.4); c.quadraticCurveTo(26.8, 28.8, 26.4, 29.8); c.quadraticCurveTo(24.4, 31.4, 21.8, 30); c.strokeStyle = 'rgba(180,115,92,.85)'; c.lineWidth = 0.55; c.stroke();
-  // a wide, open smile with teeth
-  c.beginPath(); c.moveTo(18.2, 33.2); c.quadraticCurveTo(24, 39.6, 29.8, 33.2); c.quadraticCurveTo(24, 34.4, 18.2, 33.2); c.closePath(); c.fillStyle = '#fbf6ee'; c.fill(); c.strokeStyle = '#8a4338'; c.lineWidth = 0.6; c.stroke();
-  line(c, 19.4, 34.3, 28.6, 34.3, 'rgba(170,120,100,.35)', 0.3);
-  for (const x of [17, 31]) { c.beginPath(); c.moveTo(x, 30.6); c.quadraticCurveTo(x + (x < 24 ? -0.9 : 0.9), 33.2, x + (x < 24 ? 0.6 : -0.6), 35.6); c.strokeStyle = 'rgba(180,120,98,.5)'; c.lineWidth = 0.45; c.stroke(); }
+  line(c, 15.8, 20.2, 21.6, 19.9, '#2a1c12', 0.95); line(c, 26.4, 19.9, 32.2, 20.2, '#2a1c12', 0.95);
+  c.beginPath(); c.moveTo(25, 23.4); c.quadraticCurveTo(27, 28.8, 26.6, 29.9); c.quadraticCurveTo(24.4, 31.5, 21.6, 30.1); c.strokeStyle = 'rgba(180,115,92,.85)'; c.lineWidth = 0.55; c.stroke();
+  // a closed-mouth half smile
+  c.beginPath(); c.moveTo(19.4, 33.6); c.quadraticCurveTo(24, 35.6, 28.8, 33.3); c.strokeStyle = '#9a5446'; c.lineWidth = 0.65; c.stroke();
+  c.beginPath(); c.moveTo(21.2, 35.4); c.quadraticCurveTo(24, 36.4, 26.8, 35.3); c.strokeStyle = 'rgba(180,110,96,.45)'; c.lineWidth = 0.45; c.stroke();
+  for (const x of [18.8, 29.4]) { c.beginPath(); c.arc(x, 33.4, 0.7, 0, Math.PI * 2); c.fillStyle = 'rgba(180,120,98,.18)'; c.fill(); }
 }
 
 // ---------------------------------------------------------------- Madison Malone (someone to meet, 2024)
-// Likeness notes, from her captioned byline photo on her NZ Herald articles: long hair parted in the centre and worn loose past the
-// shoulders, darker at the crown and lighter, honey-brown, in the lengths, with a slight wave; a round, full face with wide cheeks
-// and a soft chin; defined dark brows; blue-grey eyes; a broad smile that shows her teeth; a black blazer. (Revised after the fan
-// review of 22 Nov 2026: the chin had been drawn too pointed and the hair too flat.)
+// Likeness notes, from her captioned byline photo on her NZ Herald articles, checked against a recent video still supplied by the
+// project owner (23 Nov 2026): long, straight hair parted in the centre and worn loose past the shoulders, darker at the crown and
+// lighter, honey-brown, in the lengths; a round, full face with wide cheeks and a soft chin; defined dark brows; hazel eyes; a
+// broad smile that shows her teeth; a black crew-neck tee. (Revised after the fan review of 22 Nov 2026: the chin had been drawn
+// too pointed and the hair too flat.)
 function bustMadison(c: C2) {
-  const hair = (x0: number) => lg(c, x0, 0, x0 + 14, 0, [0, '#6a4a2e'], [0.5, '#a07a52'], [1, '#c9a57a']);
+  const hair = (x0: number) => lg(c, x0, 0, x0 + 14, 0, [0, '#5a3c24'], [0.5, '#8c6642'], [1, '#b88e62']);
   // hair behind: long, past the shoulders
   c.beginPath(); c.moveTo(8, 54); c.bezierCurveTo(6, 36, 7, 12, 24, 5.6); c.bezierCurveTo(41, 12, 42, 36, 40, 54); c.closePath(); c.fillStyle = lg(c, 0, 6, 0, 54, [0, '#4a3220'], [1, '#8a6642']); c.fill();
-  // black blazer, open neck
-  c.beginPath(); c.moveTo(0, 54); c.quadraticCurveTo(3, 46.8, 15, 45.6); c.lineTo(33, 45.6); c.quadraticCurveTo(45, 46.8, 48, 54); c.closePath();
-  c.fillStyle = lg(c, 0, 0, 48, 0, [0, '#2a2b33'], [0.5, '#15161b'], [1, '#0b0c10']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.5; c.stroke();
-  rr(c, 19.4, 35, 9.2, 13, 3, lg(c, 0, 38, 0, 48, [0, '#d8a58a'], [1, '#efc3a8'])); poly(c, [17.6, 45.4, 30.4, 45.4, 24, 53.6], '#efc3a8'); // neck and the open collar
-  poly(c, [17, 45.4, 24, 54, 15.4, 54, 12.6, 47.4], '#25262e', OUT, 0.35); poly(c, [31, 45.4, 24, 54, 32.6, 54, 35.4, 47.4], '#25262e', OUT, 0.35); // lapels
+  // a black crew-neck tee
+  rr(c, 19.4, 35, 9.2, 13, 3, lg(c, 0, 38, 0, 48, [0, '#d8a58a'], [1, '#efc3a8'])); // neck
+  c.beginPath(); c.moveTo(0, 54); c.quadraticCurveTo(3, 46.8, 15, 45.6); c.lineTo(18.4, 45.6); c.quadraticCurveTo(24, 49.6, 29.6, 45.6); c.lineTo(33, 45.6); c.quadraticCurveTo(45, 46.8, 48, 54); c.closePath();
+  c.fillStyle = lg(c, 0, 0, 48, 0, [0, '#24252c'], [0.5, '#121317'], [1, '#08090c']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.5; c.stroke();
+  c.beginPath(); c.moveTo(18.8, 45.9); c.quadraticCurveTo(24, 50, 29.2, 45.9); c.strokeStyle = '#2a2b33'; c.lineWidth = 0.8; c.stroke(); // its ribbed collar
   // a round, full face with wide cheeks and a soft chin
-  c.beginPath(); c.moveTo(12.8, 21); c.bezierCurveTo(12.8, 7, 35.2, 7, 35.2, 21); c.bezierCurveTo(35.4, 30.4, 32, 39.6, 24, 40.8); c.bezierCurveTo(16, 39.6, 12.6, 30.4, 12.8, 21); c.closePath();
+  c.beginPath(); c.moveTo(12.8, 21); c.bezierCurveTo(12.8, 7, 35.2, 7, 35.2, 21); c.bezierCurveTo(35.4, 31, 32, 38.2, 27.8, 40); c.quadraticCurveTo(24, 41.6, 20.2, 40); c.bezierCurveTo(16, 38.2, 12.6, 31, 12.8, 21); c.closePath();
   c.fillStyle = rg(c, 21.5, 22, 2, 24, [0, '#f8d6bf'], [0.65, '#f0c2a6'], [1, '#dca487']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.5; c.stroke();
   for (const x of [16.6, 31.4]) { c.fillStyle = rg(c, x, 30, 0, 4.8, [0, 'rgba(230,120,110,.26)'], [1, 'rgba(230,120,110,0)']); c.fillRect(x - 5, 25, 10, 11); }
-  // centre parting; the hair falls down both sides of the face, darker at the crown, with a slight wave in the lengths
+  // centre parting; the hair falls straight down both sides of the face, darker at the crown
   for (const sg of [-1, 1]) {
-    c.beginPath(); c.moveTo(24, 6.4); c.bezierCurveTo(24 + sg * 10, 6.6, 24 + sg * 14.8, 14, 24 + sg * 14.6, 26); c.bezierCurveTo(24 + sg * 15.8, 36, 24 + sg * 14.6, 44, 24 + sg * 17.4, 54); c.lineTo(24 + sg * 11.8, 54); c.bezierCurveTo(24 + sg * 12.6, 46, 24 + sg * 11, 38, 24 + sg * 11.4, 28); c.bezierCurveTo(24 + sg * 10.8, 16, 24 + sg * 6, 10.4, 24, 8.6); c.closePath();
+    c.beginPath(); c.moveTo(24, 6.4); c.bezierCurveTo(24 + sg * 10, 6.6, 24 + sg * 14.8, 14, 24 + sg * 14.6, 26); c.bezierCurveTo(24 + sg * 15, 36, 24 + sg * 15.6, 46, 24 + sg * 16.6, 54); c.lineTo(24 + sg * 11.8, 54); c.bezierCurveTo(24 + sg * 12.2, 46, 24 + sg * 11.6, 38, 24 + sg * 11.4, 28); c.bezierCurveTo(24 + sg * 10.8, 16, 24 + sg * 6, 10.4, 24, 8.6); c.closePath();
     c.fillStyle = hair(sg < 0 ? 6 : 28); c.fill();
     c.fillStyle = lg(c, 0, 6, 0, 26, [0, 'rgba(58,38,22,.7)'], [1, 'rgba(58,38,22,0)']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.45; c.stroke();
-    for (let k = 0; k < 5; k++) { c.beginPath(); c.moveTo(24 + sg * (2 + k * 2), 7.4 + k * 0.4); c.bezierCurveTo(24 + sg * (9 + k), 10, 24 + sg * (12.6 + k * 0.4), 22, 24 + sg * (13 + k * 0.6), 30); c.bezierCurveTo(24 + sg * (14.6 + k * 0.6), 38, 24 + sg * (12.6 + k * 0.6), 44, 24 + sg * (14 + k * 0.8), 52); c.strokeStyle = k % 2 ? 'rgba(235,205,160,.5)' : 'rgba(80,54,30,.35)'; c.lineWidth = 0.4; c.stroke(); }
+    for (let k = 0; k < 5; k++) { c.beginPath(); c.moveTo(24 + sg * (2 + k * 2), 7.4 + k * 0.4); c.bezierCurveTo(24 + sg * (9 + k), 10, 24 + sg * (12.6 + k * 0.4), 22, 24 + sg * (13 + k * 0.6), 30); c.bezierCurveTo(24 + sg * (13.4 + k * 0.6), 38, 24 + sg * (13.6 + k * 0.7), 45, 24 + sg * (14 + k * 0.8), 52); c.strokeStyle = k % 2 ? 'rgba(235,205,160,.5)' : 'rgba(80,54,30,.35)'; c.lineWidth = 0.4; c.stroke(); }
   }
-  // defined dark brows, blue-grey eyes
+  // defined dark brows, hazel eyes
   for (const ex of [18.9, 29.1]) {
-    el(c, ex, 23.2, 2.3, 1.15, '#fbfbf8'); el(c, ex + 0.1, 23.25, 1.05, 1.05, '#6f8aa0', '#46606f', 0.28); el(c, ex + 0.1, 23.25, 0.48, 0.5, '#0e0e12');
+    el(c, ex, 23.2, 2.3, 1.15, '#fbfbf8'); el(c, ex + 0.1, 23.25, 1.05, 1.05, '#8a7a4e', '#5a4c2e', 0.28); el(c, ex + 0.1, 23.25, 0.48, 0.5, '#0e0e12');
     c.beginPath(); c.moveTo(ex - 2.6, 23.2); c.quadraticCurveTo(ex, 21.4, ex + 2.6, 23); c.strokeStyle = '#2a1c12'; c.lineWidth = 0.75; c.stroke();
     line(c, ex + (ex < 24 ? -2.4 : 2.4), 22.6, ex + (ex < 24 ? -3.2 : 3.2), 22, '#2a1c12', 0.4); // lashes
     c.beginPath(); c.moveTo(ex - 1.8, 24.7); c.quadraticCurveTo(ex, 25.6, ex + 2, 24.5); c.strokeStyle = 'rgba(190,120,100,.5)'; c.lineWidth = 0.35; c.stroke();
