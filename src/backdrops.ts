@@ -117,17 +117,19 @@ export function workshop(real: C2, part = 15) {
 }
 
 // ------------------------------------------------------------------ Road to Māhia, 2016
-/** Far layer: sky, the long white cloud, Hawke Bay, Mokotahi, a dolphin, Portland Island and its light. */
-function mahiaFar(c: C2) {
+/** Far layer: sky, the long white cloud, Hawke Bay, Mokotahi, a dolphin, Portland Island and its light. `part`: 1 sky, sun and sea, 4 the clouds, 2 land, sea life, the boat and the birds. */
+export function mahiaFar(real: C2, part = 7) {
+  const pick = parts(real, part); let c = pick(1);
   const W = 520;
   c.fillStyle = '#12407f'; c.fillRect(0, 0, W, 180);
-  c.translate(0, -15); // horizon sits above the middle layer's ridge so the bay, the island and the boat stay in view
+  real.translate(0, -15); // horizon sits above the middle layer's ridge so the bay, the island and the boat stay in view
   c.fillStyle = lg(c, 0, 0, 0, 120, [0, '#2a78d2'], [0.6, '#7cc0f0'], [1, '#d6ecfb']); c.fillRect(0, 0, W, 120);
   c.fillStyle = rg(c, 430, 34, 2, 76, [0, 'rgba(255,250,220,.95)'], [0.12, 'rgba(255,245,200,.5)'], [1, 'rgba(255,245,200,0)']); c.fillRect(330, 0, 190, 120); el(c, 430, 34, 7, 7, '#fffbe6');
-  c.save(); c.translate(70, 40); c.scale(1, 0.55); cloud(c, 230, 34, 9, '#c8dcf0'); c.restore(); // ao tea roa: the long white cloud
+  c = pick(4); c.save(); c.translate(70, 40); c.scale(1, 0.55); cloud(c, 230, 34, 9, '#c8dcf0'); c.restore(); // ao tea roa: the long white cloud
   c.save(); c.translate(330, 62); cloud(c, 64, 16, 4, '#c8dcf0'); c.restore();
-  c.fillStyle = lg(c, 0, 116, 0, 180, [0, '#8cc8f0'], [0.07, '#2f7fd0'], [1, '#12407f']); c.fillRect(0, 116, W, 64);
+  c = pick(1); c.fillStyle = lg(c, 0, 116, 0, 180, [0, '#8cc8f0'], [0.07, '#2f7fd0'], [1, '#12407f']); c.fillRect(0, 116, W, 64);
   const r = rng(52); for (let i = 0; i < 170; i++) { const x = r() * W, y = 120 + r() * 58; line(c, x, y, x + 3 + r() * 8, y, `rgba(220,240,255,${0.12 + r() * 0.28})`, 0.4); }
+  c = pick(2);
   // the hills behind Wairoa
   poly(c, [0, 117, 0, 92, 30, 84, 62, 94, 96, 88, 130, 104, 150, 117], lg(c, 0, 84, 0, 117, [0, '#6f9fb8'], [1, '#5a8aa6']));
   // Mokotahi: the pale headland at Māhia Beach
@@ -143,7 +145,7 @@ function mahiaFar(c: C2) {
   for (const [gx, gy, s] of [[250, 44, 1], [262, 50, 0.8], [240, 54, 0.7], [388, 72, 0.9]] as number[][]) { c.beginPath(); c.moveTo(gx - 5 * s, gy); c.quadraticCurveTo(gx - 2 * s, gy - 3 * s, gx, gy); c.quadraticCurveTo(gx + 2 * s, gy - 3 * s, gx + 5 * s, gy); c.strokeStyle = '#f4f2ea'; c.lineWidth = 0.7; c.stroke(); el(c, gx - 5 * s, gy, 0.5, 0.4, '#15171f'); el(c, gx + 5 * s, gy, 0.5, 0.4, '#15171f'); }
 }
 /** Middle layer, transparent above the ridge, in the order you would drive it: Wairoa, Māhia Beach, the coast road, Onenui Station, the building site, the range. */
-function mahiaMid(c: C2) {
+export function mahiaMid(c: C2) {
   const W = 760, r = rng(61);
   const ridge = (x: number) => 104 + 9 * Math.sin(x * 0.016 + 0.6) + 5 * Math.sin(x * 0.041 + 2) - (x > 560 ? Math.min(10, (x - 560) * 0.06) : 0);
   c.beginPath(); c.moveTo(0, 138); for (let x = 0; x <= W; x += 4) c.lineTo(x, ridge(x)); c.lineTo(W, 138); c.closePath();
@@ -452,7 +454,7 @@ export function makeBackdrops(scene: Phaser.Scene) {
   tex(scene, 'bg_listing', 760, 180, (c) => listing(c, scene));
   tex(scene, 'bg_factory', 760, 180, factory);
   tex(scene, 'bg_workshop', 760, 180, (c) => workshop(c));
-  tex(scene, 'bg_mahia_far', 520, 180, mahiaFar);
+  tex(scene, 'bg_mahia_far', 520, 180, (c) => mahiaFar(c));
   tex(scene, 'bg_mahia_mid', 760, 180, mahiaMid);
 
   // Mission control in Auckland the morning flight 13 was lost: dark room, live consoles, a wall clock on New Zealand time

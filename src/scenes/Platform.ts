@@ -35,7 +35,7 @@ const POWER: Record<string, { name: string; secs: number; tip: string }> = {
 /** What changes from one platform setting to the next. */
 const THEMES: Record<string, { music: string; amb: 'hiss' | 'sea'; layers: [string, number][]; hifi?: string; tiles: string; goal: string; egg: string; young?: boolean; pit: string; drop: [string, string, string]; title: string; text: (secs: string) => string }> = {
   workshop: { music: 'workshop', amb: 'hiss', layers: [['bg_workshop', 760]], hifi: 'workshop', tiles: 'workshop', goal: 'bike', egg: 'waterrocket', young: true, pit: 'Mind the service pit!', drop: ['welder', 'spark', 'Welding sparks!'], title: 'Rocket bike: assembled', text: (t) => `All five parts in ${t} s. The bike screams off down Princes Street on hydrogen peroxide.` },
-  mahia: { music: 'mahia', amb: 'sea', layers: [['bg_mahia_far', 520], ['bg_mahia_mid', 760]], tiles: 'mahia', goal: 'pad_empty', egg: 'gnome', pit: 'Splash!', drop: ['welder', 'spark', 'Sparks!'], title: 'Pad hardware delivered', text: (t) => `Everything reached the tip of the peninsula in ${t} s. Launch Complex 1 can open.` },
+  mahia: { music: 'mahia', amb: 'sea', layers: [['bg_mahia_far', 520], ['bg_mahia_mid', 760]], hifi: 'mahia', tiles: 'mahia', goal: 'pad_empty', egg: 'gnome', pit: 'Splash!', drop: ['welder', 'spark', 'Sparks!'], title: 'Pad hardware delivered', text: (t) => `Everything reached the tip of the peninsula in ${t} s. Launch Complex 1 can open.` },
   factory: { music: 'factory', amb: 'hiss', layers: [['bg_factory', 760]], tiles: 'factory', goal: 'rosie', egg: 'engine100', pit: 'Into the cable trench!', drop: ['trimmer', 'offcut', 'Hit by a carbon offcut!'], title: 'Rosie is running', text: (t) => `Everything loaded onto Rosie’s bed in ${t} s. She marks, cuts, drills, mills and sands it: a rocket’s worth of carbon composite in 12 hours, where the hand work took more than 400.` },
   stennis: { music: 'delta', amb: 'sea', layers: [['bg_stennis_far', 520], ['bg_stennis_mid', 760]], tiles: 'stennis', goal: 'lc3', egg: 'eureka', pit: 'Splash!', drop: ['cryoline', 'icicle', 'Hit by falling ice!'], title: 'Everything but the rocket', text: (t) => `Delivered to Wallops in ${t} s. The engine runs, the pad is open and a replacement dome is being made. What is left is the part nobody can hurry: assemble the tank, fill it, chill it, and only then name a date.` },
   listing: { music: 'heli', amb: 'hiss', layers: [['bg_listing', 760]], hifi: 'listing', tiles: 'workshop', goal: 'bell', egg: 'blender', pit: 'Fell into a funding gap!', drop: ['tickerbox', 'candle', 'Hit by a red candle!'], title: 'RKLB is trading', text: (t) => `The whole listing delivered in ${t} s. Peter Beck rings the opening bell by video link, and VACQ becomes RKLB.` },
@@ -61,7 +61,7 @@ export class PlatformScene extends Phaser.Scene {
     // a layer w units wide scrolls just fast enough to show all of itself over the level; factor f needs an offset of HX * (1 - f)
     const layer = (key: string, w: number, depth: number) => { const f = (w - W) / (LW - W); return img(this, HX * (1 - f), 0, key).setOrigin(0).setScrollFactor(f, 1).setDepth(depth); };
     if (hf) hf.backdrop(); else TH.layers.forEach(([key, w], i) => layer(key, w, -10 + i));
-    if (th === 'mahia') for (let i = 0; i < 5; i++) { const c = img(this, HX * 0.65 + 60 + i * 150, 22 + (i % 3) * 12, 'cloud' + (1 + (i % 3))).setScrollFactor(0.35, 1).setAlpha(0.9).setDepth(-9.5); this.tweens.add({ targets: c, x: c.x + 30, duration: 20000 + i * 4000, yoyo: true, repeat: -1 }); }
+    if (th === 'mahia') for (let i = 0; i < 5; i++) { const c = img(this, HX * 0.65 + 60 + i * 150, 22 + (i % 3) * 12, 'cloud' + (1 + (i % 3))).setScrollFactor(0.35, 1).setAlpha(0.9).setDepth(-9.5); hf?.tag({ ['cloud' + i]: c }); this.tweens.add({ targets: c, x: c.x + 30, duration: 20000 + i * 4000, yoyo: true, repeat: -1 }); }
     this.solids = this.physics.add.staticGroup();
     for (const [x0, x1, row] of p.ground as number[][])
       for (let x = x0; x <= x1; x++) for (let y = row; y < 12; y++)
@@ -80,7 +80,7 @@ export class PlatformScene extends Phaser.Scene {
     if (this.fires.length) this.roar = loop('rumble');
     const groundRow = (tx: number) => (p.ground as number[][]).find(([a, b]) => tx >= a && tx <= b)?.[2] ?? 9;
     const board = (x: number, y: number, a: string, b?: string, strike = false) => {
-      img(this, x, y, 'sign').setOrigin(0.5, 1).setDepth(1);
+      deco.push(img(this, x, y, 'sign').setOrigin(0.5, 1).setDepth(1));
       T(this, x, y - 26.4, a, '#ffffff', b ? 4.6 : 5.6, '700').setOrigin(0.5, 0).setDepth(1); if (b) T(this, x, y - 21, b, '#ffe98a', 4.2).setOrigin(0.5, 0).setDepth(1);
       if (strike) this.add.rectangle(x, y - 22.4, 44, 1.2, 0xd8452e).setAngle(-14).setDepth(1);
     };

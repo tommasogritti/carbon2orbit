@@ -4,7 +4,7 @@ The hi-fi layer is a cinematic look any level can opt into: deep parallax with h
 
 | Scene | Worked example | Look |
 | --- | --- | --- |
-| Platform | `going-public`, `workshop` | `listing` in `src/hifiLooks.ts`, `src/looks/workshop.ts` |
+| Platform | `going-public` (indoors, dawn), `workshop` (indoors, night), `lc-1` (outdoors, storm) | `listing` in `src/hifiLooks.ts`, `src/looks/workshop.ts`, `src/looks/mahia.ts` |
 | Launch control | `atea-1` | `src/looks/mercury.ts` |
 | A single-screen mini-game | `rutherford` | `src/looks/stand.ts` |
 | Ride | `find-the-launch-site` | `src/looks/farm.ts` |
