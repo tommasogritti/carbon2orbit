@@ -37,7 +37,7 @@ const THEMES: Record<string, { music: string; amb: 'hiss' | 'sea'; layers: [stri
   workshop: { music: 'workshop', amb: 'hiss', layers: [['bg_workshop', 760]], hifi: 'workshop', tiles: 'workshop', goal: 'bike', egg: 'waterrocket', young: true, pit: 'Mind the service pit!', drop: ['welder', 'spark', 'Welding sparks!'], title: 'Rocket bike: assembled', text: (t) => `All five parts in ${t} s. The bike screams off down Princes Street on hydrogen peroxide.` },
   mahia: { music: 'mahia', amb: 'sea', layers: [['bg_mahia_far', 520], ['bg_mahia_mid', 760]], hifi: 'mahia', tiles: 'mahia', goal: 'pad_empty', egg: 'gnome', pit: 'Splash!', drop: ['welder', 'spark', 'Sparks!'], title: 'Pad hardware delivered', text: (t) => `Everything reached the tip of the peninsula in ${t} s. Launch Complex 1 can open.` },
   factory: { music: 'factory', amb: 'hiss', layers: [['bg_factory', 760]], hifi: 'factory', tiles: 'factory', goal: 'rosie', egg: 'engine100', pit: 'Into the cable trench!', drop: ['trimmer', 'offcut', 'Hit by a carbon offcut!'], title: 'Rosie is running', text: (t) => `Everything loaded onto Rosie’s bed in ${t} s. She marks, cuts, drills, mills and sands it: a rocket’s worth of carbon composite in 12 hours, where the hand work took more than 400.` },
-  stennis: { music: 'delta', amb: 'sea', layers: [['bg_stennis_far', 520], ['bg_stennis_mid', 760]], tiles: 'stennis', goal: 'lc3', egg: 'eureka', pit: 'Splash!', drop: ['cryoline', 'icicle', 'Hit by falling ice!'], title: 'Everything but the rocket', text: (t) => `Delivered to Wallops in ${t} s. The engine runs, the pad is open and a replacement dome is being made. What is left is the part nobody can hurry: assemble the tank, fill it, chill it, and only then name a date.` },
+  stennis: { music: 'delta', amb: 'sea', layers: [['bg_stennis_far', 520], ['bg_stennis_mid', 760]], hifi: 'stennis', tiles: 'stennis', goal: 'lc3', egg: 'eureka', pit: 'Splash!', drop: ['cryoline', 'icicle', 'Hit by falling ice!'], title: 'Everything but the rocket', text: (t) => `Delivered to Wallops in ${t} s. The engine runs, the pad is open and a replacement dome is being made. What is left is the part nobody can hurry: assemble the tank, fill it, chill it, and only then name a date.` },
   listing: { music: 'heli', amb: 'hiss', layers: [['bg_listing', 760]], hifi: 'listing', tiles: 'workshop', goal: 'bell', egg: 'blender', pit: 'Fell into a funding gap!', drop: ['tickerbox', 'candle', 'Hit by a red candle!'], title: 'RKLB is trading', text: (t) => `The whole listing delivered in ${t} s. Peter Beck rings the opening bell by video link, and VACQ becomes RKLB.` },
 };
 const BOP: Record<string, string> = { scooter: 'Scooter: kill switch hit', drawerbot: 'Drawer shut', ram: 'Ram sent packing', gull: 'Shoo!', redtape: 'Red tape cut', bear: 'Bear squeezed', sander: 'Sander unplugged', roll: 'Roll stopped', dust: 'Dust cleared', crab: 'Crab back in the bay', void: 'Void closed up' };
@@ -73,7 +73,7 @@ export class PlatformScene extends Phaser.Scene {
     // test positions: an engine over the trench that fires on a cycle. Cross between firings.
     (p.fires || []).forEach((tx: number, i: number) => {
       const x = tx * TS + 8, gy = ((p.ground as number[][]).find(([a, b]) => tx >= a && tx <= b)?.[2] ?? 9) * TS;
-      img(this, x, gy, 'firestand').setOrigin(0.5, 1).setDepth(1);
+      const stand = img(this, x, gy, 'firestand').setOrigin(0.5, 1).setDepth(1); hf?.tag({ ['fire' + i]: stand }); // a look lights the stand, and lights the place from it while it burns
       const fx = this.add.particles(x, gy - 54, 'puff', { speedY: { min: 150, max: 230 }, speedX: { min: -9, max: 9 }, lifespan: { min: 200, max: 290 }, scale: { start: S * 0.75, end: S * 0.25 }, color: [0xffffff, 0xcfe9ff, 0x7fb4ff, 0x3f6fd0], alpha: { start: 1, end: 0 }, blendMode: 'ADD', frequency: 8, quantity: 2, emitting: false }).setDepth(3);
       this.fires.push({ x, t: i * 1.3, fx, lamp: this.add.circle(x - 9.4, gy - 48.6, 1.2, 0x7cc56b).setDepth(2), on: false });
     });
@@ -405,12 +405,13 @@ export class PlatformScene extends Phaser.Scene {
       if (on) { roar = Math.max(roar, 1 - Math.abs(f.x - this.me.x) / 170); if (Math.abs(f.x - this.me.x) < 11 && this.me.y > 60 && this.inv <= 0 && !this.done && !this.tough()) this.respawn('Caught in the hot fire!'); }
     }
     this.roar?.set(Math.max(0, roar), 0.6);
+    if (this.hf) this.fires.forEach((f, i) => this.hf!.set({ ['fire' + i]: f.on ? 1 : 0 }));
     for (const d of this.droppers) { // welding arms shed a spark every second and a half
       if (d.hold && d.hold > 0) d.hold -= dt; else d.t += dt; // a flash holds the trimming head for a moment
       if (d.t > 1.5) {
         d.t = 0;
         const drop = THEMES[this.p.theme].drop;
-        const s = this.physics.add.image(d.x, 50, drop[1]).setScale(S).setDepth(4).setBlendMode(drop[1] === 'spark' ? 'ADD' : 'NORMAL'); d.live.push(s); if (drop[1] !== 'spark') this.hf?.glow(s, 0xff5a3c, 1.8, 0.8);
+        const s = this.physics.add.image(d.x, 50, drop[1]).setScale(S).setDepth(4).setBlendMode(drop[1] === 'spark' ? 'ADD' : 'NORMAL'); d.live.push(s); if (drop[1] !== 'spark') this.hf?.glow(s, drop[1] === 'icicle' ? 0xbfe6ff : 0xff5a3c, 1.8, drop[1] === 'icicle' ? 0.5 : 0.8);
         if (Math.abs(d.x - this.me.x) < 130) snd.sizzle();
         this.physics.add.overlap(this.me, s, () => { if (this.inv <= 0 && !this.done && !this.tough()) this.respawn(drop[2]); });
       }
