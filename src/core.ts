@@ -214,8 +214,16 @@ function showGfx() { const b = document.getElementById('gfx'); if (b) { b.textCo
 function toggleGfx(game: Phaser.Game) {
   gfxHigh = !gfxHigh; snd.click(); showGfx();
   try { localStorage.setItem(GFX_KEY, gfxHigh ? 'high' : 'standard'); } catch { /* private mode */ }
-  const sc = game.scene.getScenes(true)[0] as any;
-  toast(`Graphics: ${gfxHigh ? 'high' : 'standard'}${sc && sc.def ? ' · from the next start of a level' : ''}`);
+  const sc = game.scene.getScenes(true)[0] as any, label = `Graphics: ${gfxHigh ? 'high' : 'standard'}`;
+  if (!sc) return toast(label);
+  // The map and the title screen lose nothing by being rebuilt, so they switch at once.
+  if (sc.scene.key === 'Map') { toast(label); return sc.scene.restart({ title: false }); }
+  if (sc.scene.key === 'Title') { toast(label); return sc.scene.restart(); }
+  if (!sc.def || overlayOpen()) return toast(label + (sc.def ? ' · from the next start of a level' : ''));
+  // Inside a level the run would be lost, so ask first.
+  sc.scene.pause(); snd.select();
+  showCard(`<div class="kicker">${label.toUpperCase()} · GAME PAUSED</div><h1>Restart this level to see it now?</h1><p>Restarting begins the level again from the start. Otherwise the new graphics apply from the next level you start.</p>`,
+    [{ label: 'Keep playing', fn: () => sc.scene.resume() }, { label: 'Restart the level', alt: true, fn: () => { stopLoops(); music.stop(0.2); sc.scene.restart({ def: sc.def }); } }]);
 }
 // ---------- game speed: + and - at any moment in a level ----------
 /** The speeds on offer. Speed applies inside levels (not on the map), and a level's points scale with it: see `speedFactor`. */
