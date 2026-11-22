@@ -32,6 +32,10 @@ const STEP_LABEL = (st: PlanStep) => st.do === 'circ' ? `CIRCULARISE AT ${fmt(st
 const SITE_LOOK: Record<string, string> = { island: 'mercury' };
 /** A flight with its own light at a shared site: Launch Complex 1 on the day and at the hour each mission flew (looks/lc1.ts). */
 const LEVEL_LOOK: Record<string, string> = { 'its-a-test': 'lc1-test', 'still-testing': 'lc1-still', 'its-business-time': 'lc1-business' };
+/** Flights that left after sunset, each with the evening it had (looks/evening.ts); any other dusk or night flight keeps the plain look. */
+const EVE_LOOK: Record<string, string> = {
+  'lc-2': 'wallops-dusk',
+};
 const TIMELINE: [string, string, number][] = [['maxq', 'MAX-Q', -1], ['meco', 'MECO', 1], ['fairing', 'FAIRING', -1], ['swap', 'HOT-SWAP', 1], ['seco', 'SECO', -1]];
 
 /**
@@ -77,14 +81,14 @@ export class LaunchScene extends Phaser.Scene {
     stopLoops(); music.play('launch', 0);
     this.rumble = loop('rumble'); this.sea = loop('sea'); this.sea.set(0.8);
     const night = !!this.p.night, dusk = !!this.p.dusk, two = !this.ung;
-    const hf = (this.hf = night || dusk ? undefined : hifi(this, LOOKS[LEVEL_LOOK[this.def.id] || SITE_LOOK[this.p.site] || ''])), K = (k: string) => (hf ? hf.key(k) : k); // a look redraws these by name
+    const hf = (this.hf = hifi(this, LOOKS[(night || dusk ? EVE_LOOK[this.def.id] : LEVEL_LOOK[this.def.id] || SITE_LOOK[this.p.site]) || ''])), K = (k: string) => (hf ? hf.key(k) : k); // a look redraws these by name
     const sky = img(this, 0, 0, K(night ? 'sky_night' : dusk ? 'sky_dusk' : 'sky_day')).setOrigin(0);
     this.dark = this.add.rectangle(0, 0, W, H, 0x04050c, 0).setOrigin(0);
     this.stars = img(this, 0, 0, K('stars')).setOrigin(0).setAlpha(0);
     this.earth = img(this, W / 2, H + 20, K('earthlimb')).setOrigin(0.5, 0).setVisible(false);
-    [[1.2, 40, 1], [2.2, 250, 2], [3.6, 120, 3], [5.5, 280, 1], [7.5, 60, 2], [10, 200, 3]].forEach(([alt, x, k]) => this.clouds.push({ o: img(this, x, -50, K('cloud' + k)).setAlpha(night ? 0.35 : dusk ? 0.8 : 0.95).setTint(dusk ? 0xffc8b0 : 0xffffff), alt }));
+    [[1.2, 40, 1], [2.2, 250, 2], [3.6, 120, 3], [5.5, 280, 1], [7.5, 60, 2], [10, 200, 3]].forEach(([alt, x, k]) => this.clouds.push({ o: img(this, x, -50, K('cloud' + k)).setAlpha(night ? 0.35 : dusk ? 0.8 : 0.95).setTint(dusk && !hf ? 0xffc8b0 : 0xffffff), alt }));
     this.ground = img(this, RX + 6, 136, K('site_' + this.p.site)).setOrigin(0.5, 100 / 150);
-    if (night) this.ground.setTint(0x7088c8); else if (dusk) this.ground.setTint(0xd9b4c0);
+    if (hf) { /* an evening look brings the site already in the dark and under its lamps */ } else if (night) this.ground.setTint(0x7088c8); else if (dusk) this.ground.setTint(0xd9b4c0);
     const rnd = new Phaser.Math.RandomDataGenerator([this.def.id]);
     for (let i = 0; i < 16; i++) this.streaks.push(this.add.rectangle(rnd.between(0, W), rnd.between(0, H), 0.4, 7, 0xffffff, 0.4));
     this.smoke = this.add.particles(RX, 135, 'puff', { speedX: { min: -70, max: 70 }, speedY: { min: -14, max: 4 }, lifespan: 1500, scale: { start: S * 0.6, end: S * 2.6 }, alpha: { start: 0.75, end: 0 }, tint: night ? 0xaab4d4 : 0xf4f2ea, frequency: 22, emitting: false });

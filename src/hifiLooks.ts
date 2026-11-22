@@ -22,6 +22,7 @@ import { catchLook } from './looks/catch';
 import { cislunarLook } from './looks/cislunar';
 import { groundtrackLook } from './looks/groundtrack';
 import { cruiseLook } from './looks/cruise';
+import { wallopsLooks } from './looks/wallops';
 import type { HiFi, Look } from './hifi';
 
 // The looks a level's theme can name (see hifi.ts). A look is the art and the numbers; the engine is shared.
@@ -262,4 +263,5 @@ export const LOOKS: Record<string, Look> = { listing: listingLook, workshop: wor
   cislunar: cislunarLook,
   groundtrack: groundtrackLook,
   cruise: cruiseLook,
+  ...wallopsLooks,
 };

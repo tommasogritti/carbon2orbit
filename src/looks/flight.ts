@@ -54,7 +54,7 @@ export const puffy = (seed: number, tone = NOON) => (c: C2, w: number, h: number
 };
 
 /** The day's numbers for the way up: where the sun is on screen, where its glitter lies on the sea (relative to the ground line), and how big the plume is. */
-export interface Ascent { sun: [number, number]; glint: { x: number; y0: number; y1: number; tint?: number }; flare?: number; sunTint?: number; plume?: number; padTint?: number }
+export interface Ascent { sun: [number, number]; glint: { x: number; y0: number; y1: number; tint?: number; /** Half its width (26 unless given). */ w?: number }; flare?: number; sunTint?: number; plume?: number; padTint?: number; /** The sun is too far down to come back into view on the way up (a night launch). */ sunless?: boolean; /** A tint for the glow of the air along the horizon, where the ground below is in the dark. */ airTint?: number }
 type Puff = Phaser.GameObjects.Image; type Emit = Phaser.GameObjects.Particles.ParticleEmitter;
 let o: { a: Ascent; pad: Puff; plume: Puff; core: Puff; glint: Emit; trail: Emit; dust: Emit; flares: Puff[]; twinkle: Puff[]; night: Phaser.GameObjects.Rectangle; sun: Puff; air: Puff } | undefined;
 const GHOSTS = [[0.5, 1.2, 0x9fd0ff, 0.2], [0.95, 0.5, 0xffe2b0, 0.3], [1.5, 2.2, 0x8fffd8, 0.1], [2.1, 3.6, 0xffb0a0, 0.08]];
@@ -69,11 +69,11 @@ export function ascentLive(hf: HiFi, a: Ascent) {
   const night = hf.above(s.add.rectangle(0, 0, 320, 180, 0x02030a).setOrigin(0).setAlpha(0), 'dark'), sun = hf.above(puff(sx, sy, 1.5, 0xffffff, 0), 'stars');
   // stars that twinkle, once the sky is dark enough to show them
   const r = rng(8), twinkle = Array.from({ length: 14 }, () => hf.above(puff(r() * 320, r() * 150, 0.2 + r() * 0.2, 0xdfe8ff, 0), 'stars'));
-  const glint = hf.above(s.add.particles(0, 0, 'puff', { x: { min: a.glint.x - 26, max: a.glint.x + 26 }, y: { min: a.glint.y0, max: a.glint.y1 }, lifespan: { min: 180, max: 420 }, scale: { start: S * 0.16, end: 0 }, alpha: { start: 1, end: 0 }, tint: a.glint.tint ?? 0xfffbe6, blendMode: 'ADD', frequency: 26 }), 'ground'); // the glitter moves
+  const glint = hf.above(s.add.particles(0, 0, 'puff', { x: { min: a.glint.x - (a.glint.w ?? 26), max: a.glint.x + (a.glint.w ?? 26) }, y: { min: a.glint.y0, max: a.glint.y1 }, lifespan: { min: 180, max: 420 }, scale: { start: S * 0.16, end: 0 }, alpha: { start: 1, end: 0 }, tint: a.glint.tint ?? 0xfffbe6, blendMode: 'ADD', frequency: 26 }), 'ground'); // the glitter moves
   const pad = hf.above(puff(0, 0, 4, a.padTint ?? 0xffa850, 0), 'ground'), dust = hf.above(s.add.particles(0, 0, 'puff', { speedX: { min: -120 * k, max: 120 * k }, speedY: { min: -9 * k, max: 2 }, lifespan: { min: 700, max: 1500 }, scale: { start: S * 0.5 * k, end: S * 2.4 * k }, alpha: { start: 0.22, end: 0 }, color: [0xffc890, 0xe8d8b8, 0xf4f2ea], frequency: 30 / k, emitting: false }), 'ground');
   const trail = hf.below(s.add.particles(0, 0, 'puff', { speedY: { min: 150, max: 230 }, speedX: { min: -10, max: 10 }, lifespan: { min: 700, max: 1300 }, scale: { start: S * 0.34 * k, end: S * 1.7 * k }, alpha: { start: 0.34, end: 0 }, tint: 0xf4f2ea, frequency: 14, emitting: false }), 'rocket');
   const plume = hf.below(puff(0, 0, 2, 0xffb060, 0), 'rocket'), core = hf.below(puff(0, 0, 0.7, 0xfff4d8, 0), 'rocket');
-  const airGlow = hf.above(s.add.image(0, 190, 'hf_fl_air').setOrigin(0).setScale(0.5).setAlpha(0), 'stars');
+  const airGlow = hf.above(s.add.image(0, 190, 'hf_fl_air').setOrigin(0).setScale(0.5).setAlpha(0), 'stars'); if (a.airTint !== undefined) airGlow.setTint(a.airTint);
   o = { a, pad, plume, core, glint, trail, dust, flares, twinkle, night, sun, air: airGlow };
 }
 /** A launch look's `step`. */
@@ -87,7 +87,7 @@ export function ascentStep(hf: HiFi) {
   o.plume.setPosition(tx, ty).setAlpha(burn * 0.6 * fl).setScale(S * (0.8 + fl) * k, S * (1.5 + fl) * k);
   o.core.setPosition(rx - 2 * k * Math.sin(st.rot), st.ry + 2 * k * Math.cos(st.rot)).setAlpha(burn * fl).setScale(S * 0.7 * k);
   o.trail.setPosition(tx, ty).emitting = burn > 0 && st.alt >= 0.25;    hf.heat(tx, ty + 6, 30 * k, burn * 0.8);
-  o.night.setAlpha(1 - day); o.sun.setAlpha(1 - day);
+  o.night.setAlpha(1 - day); o.sun.setAlpha(o.a.sunless ? 0 : 1 - day);
   o.air.setAlpha(1 - day).setY(142 - 34 * Phaser.Math.Clamp((st.alt - 30) / 70, 0, 1)); // the horizon drops away and curves as the rocket climbs
   o.flares.forEach((f, i) => f.setAlpha(GHOSTS[i][3] * fk * (0.4 + 0.6 * day)));
   o.twinkle.forEach((t, i) => t.setAlpha((1 - day) * (0.5 + 0.5 * Math.sin(hf.t * (2 + i * 0.37) + i))));
