@@ -40,4 +40,21 @@ const DUSK: Eve = {
   glint: 0xffb080, glintW: 20, lift: 0.3, twilight: true, limb: 0x9a86c8, air: 0xb8a0e0,
 };
 
-export const wallopsLooks: Record<string, Look> = { 'wallops-dusk': evening(LC2, DUSK) };
+// ---- 17 June 2023, 9:24 pm EDT: "Scout's Arrow". The level calls it a night launch, and its account gives the hour. Four
+// days before midsummer the sun sets at Wallops near 8:25, so an hour later it is some ten degrees down: the sky overhead
+// is dark and full of stars, and only a low band of blue is left where the sun went. The new moon was on 18 June, so
+// there is no moon at all; the summer Milky Way is the game's own addition to a moonless sky, and so is the clear weather.
+const NIGHT: Eve = {
+  key: 'hf_w2n', seed: 37, west: 214,
+  sky: [[0, '#01020a'], [0.3, '#030718'], [0.5, '#050e26'], [0.59, '#0a1e3e'], [0.63, '#173a5a'], [0.648, '#2e5468'], [0.69, '#14283e'], [0.8, '#070d20'], [1, '#03050e']],
+  glow: [[130, '50,130,170', 0.26], [44, '120,170,180', 0.22], [12, '236,170,110', 0.3]], cold: 'rgba(2,4,16,.6)', stars: 340, milky: true,
+  bars: 9, bar: 'rgba(4,8,22,.7)', ember: '90,150,170',
+  sea: [[0, '#3a6278'], [0.04, '#143050'], [0.2, '#081630'], [1, '#03071a']], swell: '120,160,210',
+  path: (k) => `rgba(130,${200 - k * 40},${214 - k * 20},${0.42 - k * 0.3})`, mist: 'rgba(80,140,160,.3)',
+  far: '#060c1e', dark: 'rgba(3,6,22,.93)', darkThing: 'rgba(3,6,22,.9)', rim: 'rgba(90,150,180,.4)', spill: 1.1,
+  tone: { shade: '#10162e', down: [[0, 'rgba(12,18,44,.94)'], [1, 'rgba(8,12,32,.96)']], across: [[0, 'rgba(0,0,0,0)'], [1, 'rgba(60,110,140,.16)']] },
+  grade: { threshold: 0.66, bloom: 0.7, exposure: 1.06, contrast: 1.12, saturation: 1.1, shadows: [0.86, 0.94, 1.22], highs: [1.05, 1.0, 0.95], vignette: 0.5, grain: 0.028, fringe: 0.005 },
+  glint: 0x5a8aa0, glintW: 20, lift: 0.5, limb: 0x2c3858, air: 0x4a6aa8,
+};
+
+export const wallopsLooks: Record<string, Look> = { 'wallops-dusk': evening(LC2, DUSK), 'wallops-night': evening(LC2, NIGHT) };

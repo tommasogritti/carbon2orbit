@@ -35,6 +35,7 @@ const LEVEL_LOOK: Record<string, string> = { 'its-a-test': 'lc1-test', 'still-te
 /** Flights that left after sunset, each with the evening it had (looks/evening.ts); any other dusk or night flight keeps the plain look. */
 const EVE_LOOK: Record<string, string> = {
   'lc-2': 'wallops-dusk',
+  haste: 'wallops-night',
 };
 const TIMELINE: [string, string, number][] = [['maxq', 'MAX-Q', -1], ['meco', 'MECO', 1], ['fairing', 'FAIRING', -1], ['swap', 'HOT-SWAP', 1], ['seco', 'SECO', -1]];
 

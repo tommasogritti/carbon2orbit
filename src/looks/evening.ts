@@ -42,7 +42,7 @@ const sky = (e: Eve, hs: number) => (c: C2) => {
   const r = rng(e.seed), gx = e.west;
   c.fillStyle = lg(c, 0, 0, 0, 180, ...e.sky); c.fillRect(0, 0, 320, 180);
   if (e.milky) { soft(c, 7); for (let i = 0; i < 30; i++) el(c, 92 + i * 4.6 + r() * 12, 2 + i * 3.5 + (r() - 0.5) * 16, 12 + r() * 16, 5 + r() * 6, `rgba(${110 + r() * 50},${120 + r() * 40},210,${0.03 + r() * 0.035})`); soft(c, 0); } // the Milky Way, climbing
-  for (let i = 0; i < e.stars; i++) { const x = r() * 320, y = r() * (hs - 3), s = r(), q = r() * (1 - y / (hs + 10)), d = s > 0.975 ? 0.5 : 0.12 + s * 0.2; c.globalAlpha = 0.2 + q * 0.8; el(c, x, y, d, d, s > 0.9 ? '#ffd9a8' : s > 0.8 ? '#a8ccff' : '#ffffff'); } // fewer and fainter toward the horizon
+  for (let i = 0; i < e.stars; i++) { const x = r() * 320, y = r() * (hs - 3), s = r(), q = r() * (1 - y / (hs + 10)), d = (s > 0.975 ? 0.5 : 0.12 + s * 0.2) * (e.milky ? 1.2 : 1); c.globalAlpha = Math.min(1, (0.2 + q * 0.8) * (e.milky ? 1.6 : 1)); el(c, x, y, d, d, s > 0.9 ? '#ffd9a8' : s > 0.8 ? '#a8ccff' : '#ffffff'); } // fewer and fainter toward the horizon
   c.globalAlpha = 1;
   for (const [rad, rgb, a] of e.glow) halo(c, gx, hs + 2, rad, rgb, a);
   const cold = (x0: number, x1: number) => { c.fillStyle = lg(c, x0, 0, x1, 0, [0, e.cold], [1, e.cold.replace(/[\d.]+\)$/, '0)')]); c.fillRect(Math.min(x0, x1), hs - 52, Math.abs(x1 - x0), 56); };
