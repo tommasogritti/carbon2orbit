@@ -194,8 +194,14 @@ function mahiaMid(c: C2) {
 
 
 // ------------------------------------------------------------------ RKLB rings the bell, 2021: from the Long Beach factory floor to the opening bell
-function listing(c: C2, scene: Phaser.Scene) {
+/**
+ * `part` picks what is drawn, so the hi-fi look (hifiLooks.ts) can light the room itself and reuse every object and word:
+ * 1 the room (wall, ceiling, strip lights), 2 the unlit things in it, 4 the things that give off light (signs and screens).
+ */
+export function listing(c: C2, scene: Phaser.Scene, part = 7) {
   const W = 760, r = rng(77);
+  const room = part & 1, things = part & 2, glow = part & 4;
+  if (room) {
   c.fillStyle = lg(c, 0, 0, 0, 180, [0, '#27314d'], [1, '#3a4667']); c.fillRect(0, 0, W, 180);
   for (let x = 0; x < 566; x += 38) line(c, x, 16, x, 138, 'rgba(255,255,255,.035)', 0.6); // wall panels
   // ceiling: trusses and strip lights of a modern factory
@@ -203,18 +209,22 @@ function listing(c: C2, scene: Phaser.Scene) {
   rr(c, 0, 14.4, 566, 1.8, 0, '#55607e');
   for (let x = 30; x < 540; x += 92) { rr(c, x, 20, 44, 2.4, 1.2, '#f4f8ff'); c.fillStyle = lg(c, 0, 22, 0, 124, [0, 'rgba(210,230,255,.15)'], [1, 'rgba(210,230,255,0)']); c.beginPath(); c.moveTo(x, 22); c.lineTo(x + 44, 22); c.lineTo(x + 76, 124); c.lineTo(x - 32, 124); c.closePath(); c.fill(); }
   rr(c, 0, 138, 566, 6, 0, '#1f2740');
+  }
   const sign = (x: number, y: number, w: number, s: string, bg = '#101624', fg = '#fff', size = 4.2) => { rr(c, x, y, w, 9, 1, bg, OUT, 0.35); text(c, s, x + w / 2, y + 4.8, size, fg, 700); };
 
   // ---- A. the factory floor: Long Beach builds the Rutherford engines (the rockets themselves are built in Auckland)
-  sign(14, 26, 84, 'LONG BEACH · HEADQUARTERS'); sign(104, 26, 76, 'RUTHERFORD PRODUCTION', '#1f5a34');
+  if (glow) {sign(14, 26, 84, 'LONG BEACH · HEADQUARTERS'); sign(104, 26, 76, 'RUTHERFORD PRODUCTION', '#1f5a34'); }
+  if (things) {
   for (const x of [28, 176]) rr(c, x, 46, 2.6, 92, 0.4, '#f2d14a', OUT, 0.3);
   rr(c, 26, 86, 154, 2.4, 0.4, '#f2d14a', OUT, 0.3);
   const eng = scene.textures.get('rutherford').getSourceImage() as HTMLCanvasElement;
   for (let i = 0; i < 6; i++) { c.drawImage(eng, 36 + i * 23.4, 52, 26, 33.8); rr(c, 40 + i * 23.4, 44, 18, 5, 0.6, '#f4f6fa', OUT, 0.25); text(c, 'S/N ' + (211 + i), 49 + i * 23.4, 46.7, 2.8, '#15171f', 700); }
   for (let i = 0; i < 4; i++) { const x = 40 + i * 34; c.drawImage(eng, x, 98, 26, 33.8); rr(c, x - 2, 132, 30, 2.4, 0.5, '#8b93a7', OUT, 0.3); for (const dx of [2, 24]) el(c, x + dx, 136, 1.8, 1.8, '#0b0c12'); }
   rr(c, 186, 108, 12, 30, 0.6, '#c8102e', OUT, 0.3); for (let i = 0; i < 4; i++) rr(c, 187.6, 110.5 + i * 6.6, 8.8, 5, 0.3, '#8a0b1f'); // tool chest
+  }
 
   // ---- B. mission control behind glass
+  if (glow) {
   sign(214, 28, 64, 'MISSION CONTROL');
   rr(c, 206, 42, 82, 66, 1.2, '#0a1022', '#8b93a7', 1.1);
   rr(c, 212, 47, 70, 26, 0.6, '#0f2350'); c.save(); c.beginPath(); c.rect(212, 47, 70, 26); c.clip();
@@ -222,8 +232,10 @@ function listing(c: C2, scene: Phaser.Scene) {
   c.beginPath(); for (let x = 212; x <= 282; x += 2) { const y = 60 + 9 * Math.sin((x - 212) * 0.09); if (x === 212) c.moveTo(x, y); else c.lineTo(x, y); } c.strokeStyle = '#ffe98a'; c.lineWidth = 0.6; c.stroke(); el(c, 262, 60 + 9 * Math.sin(50 * 0.09), 1.1, 1.1, '#fff'); c.restore();
   for (let row = 0; row < 2; row++) for (let i = 0; i < 5; i++) { const x = 212 + i * 14.4 + row * 4, y = 80 + row * 13; rr(c, x, y, 9, 6, 0.4, i % 2 ? '#7fd0ff' : '#9fe6a8'); rr(c, x - 1, y + 6.6, 11, 1.6, 0.3, '#2a3350'); el(c, x + 4.5, y + 10.6, 2, 2, '#0b0c12'); }
   line(c, 247, 42, 247, 108, '#8b93a7', 0.8);
+  }
 
   // ---- C. the deal: the Neutron whiteboard of March 2021, three clocks, a desk run as a video roadshow
+  if (things) {
   rr(c, 302, 34, 78, 56, 1, '#f4f6fa', '#8b93a7', 1); text(c, 'NEUTRON', 322, 41, 5, '#c8102e', 700); text(c, 'MARCH 2021', 359, 41, 3.2, '#5b6275', 700);
   poly(c, [320, 84, 316, 60, 319, 48, 322, 45, 325, 48, 328, 60, 324, 84], '#e6e9f0', '#15171f', 0.5); line(c, 316.6, 64, 327.4, 64, '#15171f', 0.4); for (const d of [-1, 1]) line(c, 322 + d * 2.6, 84, 322 + d * 7, 88, '#15171f', 0.5);
   text(c, '8 t to LEO', 356, 50, 4, '#15171f', 700); text(c, '40 m tall', 356, 57, 4, '#15171f', 700); text(c, '4.5 m fairing', 356, 64, 4, '#15171f', 700); text(c, 'reusable', 356, 71.4, 4, '#1f5a34', 700); line(c, 340, 74.4, 372, 74.4, '#1f5a34', 0.5);
@@ -233,11 +245,15 @@ function listing(c: C2, scene: Phaser.Scene) {
     text(c, city, x, 58.6, 2.9, 'rgba(255,255,255,.7)', 700); text(c, i ? 'WED' : 'THU', x, 63, 2.6, i ? 'rgba(255,255,255,.45)' : '#ffe98a', 700);
   }
   rr(c, 392, 116, 82, 3, 0.6, '#d9dee8', OUT, 0.3); for (const x of [398, 466]) rr(c, x, 119, 2, 19, 0, '#55607e');
+  }
+  if (glow) {
   rr(c, 400, 92, 30, 20, 1, '#0b1226', '#8b93a7', 0.7); c.beginPath(); c.moveTo(403, 108); for (const [x, y] of [[408, 104], [412, 106], [417, 100], [421, 101], [427, 95]]) c.lineTo(x, y); c.strokeStyle = '#7cc56b'; c.lineWidth = 0.9; c.stroke(); rr(c, 413.4, 112, 3, 4, 0, '#55607e');
   rr(c, 436, 92, 30, 20, 1, '#0b1226', '#8b93a7', 0.7); for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) { rr(c, 438.4 + i * 9, 94.2 + j * 8.8, 7.6, 7, 0.4, '#27407a'); el(c, 442.2 + i * 9, 97 + j * 8.8, 1.5, 1.5, ['#e8b796', '#c98f6b', '#f0c9a8'][(i + j) % 3]); rr(c, 439.8 + i * 9, 99 + j * 8.8, 4.8, 2.2, 1, '#15171f'); } rr(c, 449.4, 112, 3, 4, 0, '#55607e');
-  for (let i = 0; i < 4; i++) rr(c, 478, 132 - i * 4.4, 13, 4, 0.4, ['#27407a', '#c8102e', '#27407a', '#1f5a34'][i], OUT, 0.25); text(c, 'S-4', 484.5, 120.8, 2.8, '#fff', 700);
+  }
+  if (things) { for (let i = 0; i < 4; i++) rr(c, 478, 132 - i * 4.4, 13, 4, 0.4, ['#27407a', '#c8102e', '#27407a', '#1f5a34'][i], OUT, 0.25); text(c, 'S-4', 484.5, 120.8, 2.8, '#fff', 700); }
 
   // ---- D. the board: one ticker goes out, another comes in
+  if (glow) {
   rr(c, 500, 36, 60, 44, 1.2, '#07090f', '#8b93a7', 1.1);
   text(c, 'VACQ', 530, 46, 6.4, 'rgba(255,255,255,.4)', 700); line(c, 518, 46, 542, 46, '#c8102e', 0.9);
   text(c, 'RKLB', 530, 59, 11, '#ffe98a', 700); text(c, 'NASDAQ · 25 AUG 2021', 530, 72, 3.2, '#7cc56b', 700);
@@ -262,6 +278,7 @@ function listing(c: C2, scene: Phaser.Scene) {
   for (let y = 24; y < 144; y += 3) line(c, 566, y, 760, y, 'rgba(0,0,0,.07)', 0.5); // scan lines
   rr(c, 562, 0, 198, 22, 0, '#0b0e18'); rr(c, 562, 0, 5, 144, 0, '#0b0e18'); rr(c, 566.5, 22, 193.5, 122, 0.6, undefined, '#55607e', 1.2);
   el(c, 576, 11, 2.2, 2.2, '#ff5a4a'); text(c, 'LIVE · NASDAQ MARKETSITE · TIMES SQUARE, NEW YORK', 664, 11.4, 4.4, '#ffffff', 700);
+  }
 }
 
 

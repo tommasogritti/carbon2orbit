@@ -28,6 +28,7 @@ index.html ─ src/main.ts ─ Boot ─┬─ Title ── Map ──(Enter on a
 | `src/scenes/<Mechanic>.ts` | One scene per mechanic (table below). |
 | `src/launchSim.ts` | The launch physics, pure TypeScript with no Phaser, shared by `Launch.ts` and `scripts/launch-sim.mjs`. |
 | `src/art.ts`, `src/backdrops.ts` | All textures. `art.ts` has the drawing helpers, characters, rockets, map; `backdrops.ts` has level backdrops, enemies, power-up bubbles. |
+| `src/hifi.ts`, `src/hifiLooks.ts` | The optional hi-fi layer: parallax depth, lighting, reflections and a post pass (`hifi.ts`), and the looks that use it (`hifiLooks.ts`). See [The hi-fi layer](#the-hi-fi-layer). |
 | `src/audio.ts` | `snd.*` one-shot effects, `loop(kind)` continuous sounds, `music.play(song)`. |
 | `src/soundtracks.ts` | The three alternative soundtracks (`T` in the game): for each, a tune for every song name plus the instruments that play it. `audio.ts` holds the default score and the switch. |
 | `src/leaderboard.ts`, `src/version.ts` | Score, the leaderboard card, the game version and season. |
@@ -63,6 +64,19 @@ The first six are **reusable**: a second level can use them with different param
 - **A bot.** When the page has `?auto=1`, the scene plays itself to a three-star finish. This is how a level is shown to be winnable; `&fast=6` runs it six times faster.
 - **Starting a scene.** Always pass data to `scene.start(key, data)`. Phaser reuses the previous data when none is given.
 
+## The hi-fi layer
+
+A scrolling level can opt into a cinematic look without changing how it plays. `going-public` is the first: Long Beach at first light through a glass wall, with every object and word the plain backdrop had.
+
+- **Opting in.** A platform theme names a look: `hifi: '<name>'` in `THEMES` (`Platform.ts`). A look is an entry in `LOOKS` (`src/hifiLooks.ts`): its parallax layers, tile set, lights, colour grade, and its own moving parts. The engine is `src/hifi.ts`. A theme without a look renders exactly as before.
+- **What the scene calls.** `hifi(scene, look, world)` first in `create()`, then `backdrop()` in place of the plain layers, `tiles` for the tile set, `actor(sprite)` for each enemy and running mate, `glow(sprite, tint)` for pickups and sparks, and `ready({ hero, solids, props })` last. The layer steps itself on the scene's `postupdate` event and cleans up on `shutdown`.
+- **Art.** Still drawn in code, lazily, the first time a level uses the look. `texAt()` draws a texture at any resolution: far layers are drawn coarse on purpose, which reads as depth of field. A look keeps its glass and its room on separate layers so light shafts fall between them and never wash out text.
+- **Lighting.** Phaser's Light2D pipeline on the ground, the hero, enemies and props. Normal maps are generated: `bevelNormals()` from a texture's outline, `paintNormals()` by hand for tiles. Lights that belong to a backdrop layer give that layer's width (`w`) and ride with it.
+- **The hero** is drawn by a stand-in image that copies the physics sprite each step and adds squash, stretch, lean and dust. Enemies get a shadow, a floor reflection and a rocking walk by rotation only. Nothing here may scale or move a physics body: that is what keeps the bot's run identical.
+- **Post pass.** One `PostFXPipeline` on the play camera: thresholded bloom at half size, split-tone grade, vignette, grain, a little lens fringing. The HUD moves to a second camera so the pass never touches it: `ready()` sends everything with scroll factor 0 there.
+- **Fallbacks.** Without WebGL the layers, shadows, reflections and animation stay, and lighting and the post pass are skipped. `?hifi=0` turns the layer off; `?renderer=canvas` forces the Canvas renderer to check the fallback.
+- **Budget.** The look must hold the display's refresh rate at 1280 × 720: measure frame intervals over 20 s or more with the level running, and compare with `?hifi=0`.
+
 ## Cards and text
 
 Story, intro, result, leaderboard and controls are DOM cards over the canvas (`showCard(html, buttons, photo?)` in `core.ts`), so long text, links and photos stay crisp and selectable. Enter confirms the first button. While a card is open, game input is off.
@@ -91,6 +105,7 @@ Story, intro, result, leaderboard and controls are DOM cards over the canvas (`s
 | `?level=<id>` | Jump straight into a level |
 | `?level=<id>&auto=1` | Let the bot play it; `window.__g2o.last` holds the result |
 | Developer mode (footer switch or `?dev=1`) | Every node open; `K` skips a level |
+| `?hifi=0`, `?renderer=canvas` | Play a hi-fi level with the plain look; force the Canvas renderer |
 | `window.__g2o` | Test hooks: `game`, `save`, `LEVELS`, `scene()`, `go(id)`, `last`, `closeCard()` |
 
 Test in a visible browser tab: a hidden tab pauses the game loop.

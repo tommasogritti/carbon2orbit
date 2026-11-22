@@ -20,7 +20,7 @@ How the code works is in [docs/ARCHITECTURE.md](../../../docs/ARCHITECTURE.md). 
    **A level about a Rocket Lab mission gets its patch.** Find the mission's page on rocketlabcorp.com/missions/launches (the address does not always match the mission name: search the launches list by name). The patch is the page's `/assets/Uploads/…` image, usually with "Patch" in its name; the site answers scripts with 403 but serves the image itself to `curl`. Save it 256 px tall as `src/assets/patches/<level id>.png` (`sips -s format png --resampleHeight 256 <download> --out <file>`) and add the level to `src/assets/patches/patches.json` with the mission name and page. A level with two missions lists two files. Done when the level's opening card shows the patch with its credit and source link.
 
 4. **Give the chapter its own world.** Draw what the level needs in `src/backdrops.ts` or `src/art.ts` with the canvas helpers:
-   - a backdrop built from things that were really there, read left to right as a walk through the chapter;
+   - a backdrop built from things that were really there, read left to right as a walk through the chapter (a platform theme can also take the cinematic treatment: "The hi-fi layer" in the architecture doc);
    - on platform levels: enemies and power-ups that belong to this chapter, each explained by a fact, and each power-up changing how the character looks as well as what they can do;
    - an easter egg with a sourced fact, and on exploratory levels a hidden blueprint that unlocks a secret node (`unlocks`, plus an entry in `BONUS`).
    Done when a screenshot of the level could not be mistaken for any other level.

@@ -41,7 +41,7 @@ class Boot extends Phaser.Scene {
 
 Promise.all(['500', '600', '700'].map((w) => document.fonts.load(`${w} 16px "Chakra Petch"`, 'AĀāō'))).finally(() => {
   const game = new Phaser.Game({
-    type: Phaser.AUTO, parent: 'game', width: W * D, height: H * D, backgroundColor: '#05060c',
+    type: new URLSearchParams(location.search).get('renderer') === 'canvas' ? Phaser.CANVAS : Phaser.AUTO, parent: 'game', /* ?renderer=canvas checks the no-WebGL fallback */ width: W * D, height: H * D, backgroundColor: '#05060c',
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, fullscreenTarget: 'stage' },
     render: { antialias: true, roundPixels: false },
     physics: { default: 'arcade', arcade: { gravity: { x: 0, y: 620 } } },

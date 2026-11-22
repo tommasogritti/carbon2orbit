@@ -56,7 +56,7 @@ export function fix<G extends Phaser.GameObjects.GameObject & { x: number; y: nu
 /** Rounded translucent HUD panel. */
 export function panel(s: Phaser.Scene, x: number, y: number, w: number, h: number, alpha = 0.72) { const g = s.add.graphics(); g.fillStyle(0x0b0e18, alpha).fillRoundedRect(x, y, w, h, 3); g.lineStyle(0.5, 0xffffff, 0.18).strokeRoundedRect(x, y, w, h, 3); return g; }
 export function T(s: Phaser.Scene, x: number, y: number, str: string, color = '#ffffff', size = 7, weight = '600') {
-  return s.add.text(x, y, str, { fontFamily: FONT, fontSize: size + 'px', fontStyle: weight, color, lineSpacing: 1 }).setResolution(D);
+  return s.add.text(x, y, str, { fontFamily: FONT, fontSize: size + 'px', fontStyle: weight, color, lineSpacing: 1 }).setResolution(s.game.renderer.type === Phaser.WEBGL ? D : 1); // the Canvas renderer draws a high-resolution text at its full pixel size, so without WebGL text stays at 1
 }
 
 // ---------- input: keyboard + on-screen pad, with edge detection ----------

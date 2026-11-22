@@ -46,7 +46,7 @@ export default defineConfig({
     configureServer(server) {
       server.middlewares.use('/__rec', (req, res) => {
         const q = new URL(req.url || '', 'http://x').searchParams, name = (q.get('name') || 'clip').replace(/[^a-z0-9-]/gi, '');
-        const ext = q.get('ext') === 'wav' ? '.wav' : '.webm'; // .wav is an offline music render (__g2o.renderMusic)
+        const ext = ({ wav: '.wav', jpg: '.jpg', png: '.png' } as Record<string, string>)[q.get('ext') || ''] || '.webm'; // .wav is an offline music render (__g2o.renderMusic); .jpg and .png are canvas snapshots
         const chunks: Buffer[] = [];
         req.on('data', (c) => chunks.push(c));
         req.on('end', () => { mkdirSync('recordings', { recursive: true }); writeFileSync(join('recordings', name + ext), Buffer.concat(chunks)); res.end('ok'); });

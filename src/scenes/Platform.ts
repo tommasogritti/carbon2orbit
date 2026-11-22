@@ -4,6 +4,8 @@ import { D, S, Fit } from '../art';
 import { CHARACTERS } from '../content';
 import type { LevelDef } from '../content';
 import { snd, music, stopLoops, loop, Loop } from '../audio';
+import { hifi, HiFi } from '../hifi';
+import { LOOKS } from '../hifiLooks';
 
 const TS = 16;
 const AUTO = new URLSearchParams(location.search).has('auto');
@@ -28,22 +30,24 @@ const POWER: Record<string, { name: string; secs: number; tip: string }> = {
   L: { name: 'CARBON LIGHT', secs: 10, tip: 'Light as carbon fibre: jump far higher, fall slowly' },
 };
 /** What changes from one platform setting to the next. */
-const THEMES: Record<string, { music: string; amb: 'hiss' | 'sea'; layers: [string, number][]; tiles: string; goal: string; egg: string; young?: boolean; pit: string; drop: [string, string, string]; title: string; text: (secs: string) => string }> = {
+const THEMES: Record<string, { music: string; amb: 'hiss' | 'sea'; layers: [string, number][]; hifi?: string; tiles: string; goal: string; egg: string; young?: boolean; pit: string; drop: [string, string, string]; title: string; text: (secs: string) => string }> = {
   workshop: { music: 'workshop', amb: 'hiss', layers: [['bg_workshop', 760]], tiles: 'workshop', goal: 'bike', egg: 'waterrocket', young: true, pit: 'Mind the service pit!', drop: ['welder', 'spark', 'Welding sparks!'], title: 'Rocket bike: assembled', text: (t) => `All five parts in ${t} s. The bike screams off down Princes Street on hydrogen peroxide.` },
   mahia: { music: 'mahia', amb: 'sea', layers: [['bg_mahia_far', 520], ['bg_mahia_mid', 760]], tiles: 'mahia', goal: 'pad_empty', egg: 'gnome', pit: 'Splash!', drop: ['welder', 'spark', 'Sparks!'], title: 'Pad hardware delivered', text: (t) => `Everything reached the tip of the peninsula in ${t} s. Launch Complex 1 can open.` },
   factory: { music: 'factory', amb: 'hiss', layers: [['bg_factory', 760]], tiles: 'factory', goal: 'rosie', egg: 'engine100', pit: 'Into the cable trench!', drop: ['trimmer', 'offcut', 'Hit by a carbon offcut!'], title: 'Rosie is running', text: (t) => `Everything loaded onto Rosie’s bed in ${t} s. She marks, cuts, drills, mills and sands it: a rocket’s worth of carbon composite in 12 hours, where the hand work took more than 400.` },
   stennis: { music: 'delta', amb: 'sea', layers: [['bg_stennis_far', 520], ['bg_stennis_mid', 760]], tiles: 'stennis', goal: 'lc3', egg: 'eureka', pit: 'Splash!', drop: ['cryoline', 'icicle', 'Hit by falling ice!'], title: 'Everything but the rocket', text: (t) => `Delivered to Wallops in ${t} s. The engine runs, the pad is open and a replacement dome is being made. What is left is the part nobody can hurry: assemble the tank, fill it, chill it, and only then name a date.` },
-  listing: { music: 'heli', amb: 'hiss', layers: [['bg_listing', 760]], tiles: 'workshop', goal: 'bell', egg: 'blender', pit: 'Fell into a funding gap!', drop: ['tickerbox', 'candle', 'Hit by a red candle!'], title: 'RKLB is trading', text: (t) => `The whole listing delivered in ${t} s. Peter Beck rings the opening bell by video link, and VACQ becomes RKLB.` },
+  listing: { music: 'heli', amb: 'hiss', layers: [['bg_listing', 760]], hifi: 'listing', tiles: 'workshop', goal: 'bell', egg: 'blender', pit: 'Fell into a funding gap!', drop: ['tickerbox', 'candle', 'Hit by a red candle!'], title: 'RKLB is trading', text: (t) => `The whole listing delivered in ${t} s. Peter Beck rings the opening bell by video link, and VACQ becomes RKLB.` },
 };
 const BOP: Record<string, string> = { scooter: 'Scooter: kill switch hit', drawerbot: 'Drawer shut', ram: 'Ram sent packing', gull: 'Shoo!', redtape: 'Red tape cut', bear: 'Bear squeezed', sander: 'Sander unplugged', roll: 'Roll stopped', dust: 'Dust cleared', crab: 'Crab back in the bay', void: 'Void closed up' };
 export class PlatformScene extends Phaser.Scene {
   def!: LevelDef; p: any; me!: Phaser.Physics.Arcade.Sprite; solids!: Phaser.Physics.Arcade.StaticGroup;
-  amb?: Loop; jet?: Loop; power: Fit | 'C' = ''; buddy?: Phaser.GameObjects.Image; buddyPre = ''; powerT = 0; powerMax = 1; dbl = false; secret = false; pwHud!: Phaser.GameObjects.Graphics; pwIcon!: Phaser.GameObjects.Image; pwText!: Phaser.GameObjects.Text; jetFx?: Phaser.GameObjects.Particles.ParticleEmitter; wasDown = true; inv = 0; bopped = 0; belts: { x0: number; x1: number; y: number; dir: number; o: Phaser.GameObjects.TileSprite }[] = []; fires: { x: number; t: number; fx: Phaser.GameObjects.Particles.ParticleEmitter; lamp: Phaser.GameObjects.Arc; on: boolean }[] = []; roar?: Loop; jetFxM?: Phaser.GameObjects.Particles.ParticleEmitter; foes: Foe[] = []; droppers: { x: number; t: number; gy: number; live: Phaser.Physics.Arcade.Image[] }[] = []; pre = ''; got = 0; egg = false; hud!: Phaser.GameObjects.Text; msg!: Phaser.GameObjects.Text; safe = { x: 24, y: 100 }; done = false; stun = 0; t0 = 0; falls = 0;
+  hf?: HiFi; amb?: Loop; jet?: Loop; power: Fit | 'C' = ''; buddy?: Phaser.GameObjects.Image; buddyPre = ''; powerT = 0; powerMax = 1; dbl = false; secret = false; pwHud!: Phaser.GameObjects.Graphics; pwIcon!: Phaser.GameObjects.Image; pwText!: Phaser.GameObjects.Text; jetFx?: Phaser.GameObjects.Particles.ParticleEmitter; wasDown = true; inv = 0; bopped = 0; belts: { x0: number; x1: number; y: number; dir: number; o: Phaser.GameObjects.TileSprite }[] = []; fires: { x: number; t: number; fx: Phaser.GameObjects.Particles.ParticleEmitter; lamp: Phaser.GameObjects.Arc; on: boolean }[] = []; roar?: Loop; jetFxM?: Phaser.GameObjects.Particles.ParticleEmitter; foes: Foe[] = []; droppers: { x: number; t: number; gy: number; live: Phaser.Physics.Arcade.Image[] }[] = []; pre = ''; got = 0; egg = false; hud!: Phaser.GameObjects.Text; msg!: Phaser.GameObjects.Text; safe = { x: 24, y: 100 }; done = false; stun = 0; t0 = 0; falls = 0;
   constructor() { super('Platform'); }
   init(d: { def: LevelDef }) { this.def = d.def; this.p = d.def.params; this.got = 0; this.egg = false; this.done = false; this.stun = 0; this.falls = 0; this.safe = { x: 24, y: 100 }; this.sheepList = []; this.foes = []; this.droppers = []; this.belts = []; this.fires = []; this.inv = 0; this.bopped = 0; this.hits = []; this.botWait = 0; this.power = ''; this.powerT = 0; this.dbl = false; this.secret = false; this.buddy = undefined; }
   create() {
     const p = this.p, LW = p.width * TS, th = p.theme as string;
-    const TH = THEMES[th], tl = TH.tiles;
+    const TH = THEMES[th];
+    // a theme with a `hifi` look gets the cinematic layer (hifi.ts): its own backdrop, tiles and lighting, the same play
+    const hf = (this.hf = hifi(this, LOOKS[TH.hifi || ''], { LW, TS, ground: p.ground, plats: p.plats })), tl = hf ? hf.tiles : TH.tiles;
     const me = hero(this.def, !!TH.young), pre = (this.pre = me.pre); // Peter is the 1990s apprentice in the workshop; a level's own lead comes as they are
     this.t0 = 0; // seconds of play so far: counted in update, so time spent paused (controls panel) is not charged
     stopLoops(); music.play(TH.music);
@@ -53,7 +57,7 @@ export class PlatformScene extends Phaser.Scene {
     // far backdrop with slow parallax; a scroll factor f needs an offset of HX * (1 - f) under the zoomed camera
     // a layer w units wide scrolls just fast enough to show all of itself over the level; factor f needs an offset of HX * (1 - f)
     const layer = (key: string, w: number, depth: number) => { const f = (w - W) / (LW - W); return img(this, HX * (1 - f), 0, key).setOrigin(0).setScrollFactor(f, 1).setDepth(depth); };
-    TH.layers.forEach(([key, w], i) => layer(key, w, -10 + i));
+    if (hf) hf.backdrop(); else TH.layers.forEach(([key, w], i) => layer(key, w, -10 + i));
     if (th === 'mahia') for (let i = 0; i < 5; i++) { const c = img(this, HX * 0.65 + 60 + i * 150, 22 + (i % 3) * 12, 'cloud' + (1 + (i % 3))).setScrollFactor(0.35, 1).setAlpha(0.9).setDepth(-9.5); this.tweens.add({ targets: c, x: c.x + 30, duration: 20000 + i * 4000, yoyo: true, repeat: -1 }); }
     this.solids = this.physics.add.staticGroup();
     for (const [x0, x1, row] of p.ground as number[][])
@@ -103,7 +107,7 @@ export class PlatformScene extends Phaser.Scene {
     // parts
     for (const [tx, ty, name] of p.parts as [number, number, string][]) {
       const it = this.physics.add.staticImage(tx * TS + 8, ty * TS + 8, 'part').setScale(S).refreshBody();
-      this.tweens.add({ targets: it, y: it.y - 3, angle: 20, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      this.tweens.add({ targets: it, y: it.y - 3, angle: 20, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); hf?.glow(it, 0xffd76a, 2.2);
       this.physics.add.overlap(this.me, it, () => { this.burst(it.x, it.y, 0xffe98a); it.destroy(); this.got++; snd.pickup(); this.say(name + '!'); this.refresh(); });
     }
     // easter egg
@@ -112,7 +116,7 @@ export class PlatformScene extends Phaser.Scene {
     // power-ups and the hidden blueprint
     for (const [code, tx, ty] of (p.powerups || []) as [Exclude<Fit, ''> | 'C', number, number][]) {
       const it = this.physics.add.staticImage(tx * TS + 8, ty * TS + 8, 'pw_' + code).setScale(S).refreshBody().setDepth(3);
-      this.tweens.add({ targets: it, y: it.y - 3, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      this.tweens.add({ targets: it, y: it.y - 3, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); hf?.glow(it, 0x9fe6ff, 2.6);
       this.physics.add.overlap(this.me, it, () => { this.burst(it.x, it.y, 0x9fe6ff); it.destroy(); this.givePower(code); });
     }
     if (p.secret) {
@@ -165,6 +169,7 @@ export class PlatformScene extends Phaser.Scene {
     this.jet = loop('hiss');
     this.plan();
     this.refresh();
+    hf?.ready({ hero: this.me, solids: this.solids.getChildren(), props: [goal] });
   }
   /** For the controls panel: the keys, plus what this level's own power-ups do. */
   help() {
@@ -259,7 +264,7 @@ export class PlatformScene extends Phaser.Scene {
     this.buddy?.destroy(); this.buddy = undefined;
     if (mate) { // someone from the story runs just ahead of you for a while
       this.buddyPre = mate.pre; this.buddy = img(this, this.me.x, this.me.y, mate.pre + 'peter0').setDepth(5).setAlpha(0);
-      this.tweens.add({ targets: this.buddy, alpha: 1, duration: 200 }); this.burst(this.me.x, this.me.y, 0xffffff);
+      this.tweens.add({ targets: this.buddy, alpha: 1, duration: 200 }); this.hf?.actor(this.buddy); this.burst(this.me.x, this.me.y, 0xffffff);
     }
     snd.power(); this.say(mate ? `${mate.name} ${pw.tip}` : pw.tip); this.pwIcon.setTexture('pw_' + code).setVisible(true); this.pwText.setText(mate ? mate.name.toUpperCase() : pw.name);
     this.cameras.main.flash(120, 160, 230, 255);
@@ -295,7 +300,7 @@ export class PlatformScene extends Phaser.Scene {
     const foe: Foe = { o, kind, x0, x1, dir: 1, speed: SPEED[kind], alive: true, t: Math.random() * 3, baseY };
     if (kind === 'redtape') foe.extra = img(this, x0, gy - 3, 'tapetail').setDepth(3);
     if (kind === 'scooter') foe.extra = img(this, x0, baseY, 'puff').setScale(S * 0.5, S * 0.3).setTint(0xcfe6ff).setBlendMode('ADD').setDepth(3);
-    this.foes.push(foe);
+    this.foes.push(foe); this.hf?.actor(o, false, !ROLL.has(kind) && !FLY.has(kind));
     this.physics.add.overlap(this.me, o, () => this.touch(foe));
   }
   touch(f: Foe) {
@@ -343,7 +348,7 @@ export class PlatformScene extends Phaser.Scene {
       if (d.t > 1.5) {
         d.t = 0;
         const drop = THEMES[this.p.theme].drop;
-        const s = this.physics.add.image(d.x, 50, drop[1]).setScale(S).setDepth(4).setBlendMode(drop[1] === 'spark' ? 'ADD' : 'NORMAL'); d.live.push(s);
+        const s = this.physics.add.image(d.x, 50, drop[1]).setScale(S).setDepth(4).setBlendMode(drop[1] === 'spark' ? 'ADD' : 'NORMAL'); d.live.push(s); if (drop[1] !== 'spark') this.hf?.glow(s, 0xff5a3c, 1.8, 0.8);
         if (Math.abs(d.x - this.me.x) < 130) snd.sizzle();
         this.physics.add.overlap(this.me, s, () => { if (this.inv <= 0 && !this.done && !this.tough()) this.respawn(drop[2]); });
       }
