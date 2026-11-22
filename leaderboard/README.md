@@ -27,7 +27,11 @@ Then tell the game where it is, in a `.env` file at the repository root, and reb
 VITE_LEADERBOARD_URL=https://carbon2orbit-leaderboard.<your-subdomain>.workers.dev
 ```
 
-Set `ALLOWED_ORIGIN` in `wrangler.toml` to the site that hosts the game, and consider a Cloudflare rate-limiting rule on `POST /scores`.
+Set `ALLOWED_ORIGIN` in `wrangler.toml` to the sites that host the game (comma-separated; `*.host` allows its subdomains), and consider a Cloudflare rate-limiting rule on `POST /scores`.
+
+### The public board
+
+The public game's board runs at `https://lb.carbon2orbit.com`: Cloudflare builds and deploys this folder from `main` (Workers Builds, root directory `leaderboard`, deploy command `npx wrangler deploy`), and the game's Pages project sets `VITE_LEADERBOARD_URL=https://lb.carbon2orbit.com`. A fork deploying its own board changes `routes`, `ALLOWED_ORIGIN` and `database_id` in `wrangler.toml`.
 
 ## Local development
 

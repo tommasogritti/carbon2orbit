@@ -4,16 +4,25 @@
 // One row per (season, name): a submission only replaces it when the score is higher.
 import { validate, SEASON_RE } from './rules.js';
 
+const cors = (origin) => ({ 'access-control-allow-origin': origin, vary: 'Origin', 'access-control-allow-methods': 'GET, POST, OPTIONS', 'access-control-allow-headers': 'content-type', 'access-control-max-age': '86400' });
 const json = (data, status, origin) => new Response(JSON.stringify(data), {
   status,
-  headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': origin, 'access-control-allow-methods': 'GET, POST, OPTIONS', 'access-control-allow-headers': 'content-type', 'cache-control': 'no-store' },
+  headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...cors(origin) },
 });
+
+/** ALLOWED_ORIGIN is "*" or a comma-separated list; an entry "*.host" allows any https subdomain of host. */
+function allowOrigin(origin, allowed) {
+  if (allowed.trim() === '*') return '*';
+  const list = allowed.split(',').map((s) => s.trim()).filter(Boolean);
+  const ok = origin && list.some((a) => (a.startsWith('*.') ? origin.startsWith('https://') && origin.endsWith(a.slice(1)) : origin === a));
+  return ok ? origin : list[0];
+}
 
 export default {
   async fetch(request, env) {
-    const origin = env.ALLOWED_ORIGIN || '*';
+    const origin = allowOrigin(request.headers.get('origin'), env.ALLOWED_ORIGIN || '*');
     const url = new URL(request.url);
-    if (request.method === 'OPTIONS') return json({}, 204, origin);
+    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(origin) }); // a 204 may not carry a body
     if (url.pathname.replace(/\/$/, '') !== '/scores') return json({ error: 'not found' }, 404, origin);
 
     if (request.method === 'GET') {
