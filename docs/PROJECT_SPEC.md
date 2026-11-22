@@ -1,216 +1,136 @@
-# Carbon to Orbit — Project Spec for Claude Code
+# Carbon to Orbit: project spec
 
-> Unofficial, open-source browser game that tells the story of Rocket Lab one level at a time, from the 2006 founding and Ātea-1 to Neutron. New levels get added as the company announces new things.
-> "Carbon to Orbit" is a working title. This project is **not affiliated with Rocket Lab**.
+> Unofficial, open-source browser game that tells the story of Rocket Lab one level at a time, from a rocket bike in a Dunedin workshop to the hundredth Electron and on to Neutron. New levels are added as the company's story goes on.
+> This project is **not affiliated with Rocket Lab**.
 
-This file is the full brief. Read all of it before you write code. Build in the milestone order in §11. After each milestone, check every acceptance criterion before moving on.
+This file says **what the game is and the rules it must meet**: goals and decisions (§1, §2), requirements (§6), the cast (§7), every level built or planned (§9), each mechanic's parameters (§10), and the record of fan reviews with their open questions (§12.1). Two companions cover the rest: [ARCHITECTURE.md](ARCHITECTURE.md) explains how the code works, and [the add-level skill](../.claude/skills/add-level/SKILL.md) is the procedure for adding or changing a level. Things that are still wanted but not built are collected in §17.
+
+Section numbers are stable: other files and code comments refer to them, so add to a section or mark it retired, but do not renumber.
 
 ---
 
 ## 1. Goals
 
-1. **Open source and easy to contribute to.** Many people online will add content. Adding a level, an event card or a character should need **no engine code and no image editor**.
+1. **Open source and easy to contribute to.** Many people will add content, most of them working with an AI coding agent. Adding a level needs a text editor and nothing else: no image editor, no audio tools, no asset files.
 2. **Plays in the browser** on desktop and phone, with no install and no account.
 3. **Easy to run locally:** `npm install && npm run dev`.
-4. **Hosted on a VPS** as a static site in a container, deployed automatically on merge to `main`.
+4. **Cheap to host:** the build is a static site that any static host can serve. The only moving part is the optional leaderboard.
 5. **Tells Rocket Lab's history faithfully:** each level is a real event, recognisable from its place, vehicle silhouette, mission name and date, and every fact links to a source.
-6. **Weekly updates:** a new announcement becomes an event card within days and a full level when someone builds it.
-7. **Characters from a photo:** any contributor can turn a picture of a person into a playable, animated character with the help of an AI assistant (see §7).
+6. **Keeps up with the story:** a new announcement becomes a story card within days and a full level when someone builds it.
+7. **Characters from a photo** (not built, §17): any contributor can turn a picture of a person into a playable character with the help of an AI assistant.
 
 ## 2. Core decisions (already made — don't relitigate)
 
 | Topic | Decision |
 | --- | --- |
-| Game concept | **Three kinds of level on a world map.** Every level is exactly one of: a **platform** level (run, jump, collect: the people-and-places stories), a **launch control** level (fly the rocket: the shared launch mechanic, mostly config), or a **mini-game** (a one-off set piece for a big "first"). Story-only events are **cards**. Level select is an overworld **map** in the style of Super Mario World: nodes on a path across Aotearoa, the Pacific, the USA and up to the Moon (§5.6). No tycoon economy in v1. |
-| Photos | Story cards may show **freely licensed photos** (Wikimedia Commons: CC0, public domain, CC BY, CC BY-SA) of the real people and places, with a credit line and source link. Never Rocket Lab's own copyrighted media. Gameplay art stays original illustration (§6 X2, A5). |
-| Art style | **Detailed, smooth 2D illustration** (changed 21 Nov 2026: the first 320×180 pixel-art draft was too coarse to recognise people, rockets or places). The world is laid out in **320×180 units** and rendered at **1280×720** (4 texture pixels per unit), scaled to fit the window. Flat colour with gradients, soft shading and thin dark outlines; particle effects for flame, smoke and steam. Recognisability comes first: Electron carries its lettering and flags, the map uses real coastlines, Peter Beck has his curly hair. One shared colour palette still applies to flat fills. |
-| Engine | **Phaser** + **TypeScript** + **Vite**. Use Phaser 3 latest stable unless Phaser 4 is stable at build time. Check the npm registry and pick one. |
-| Maps | **Tiled** JSON maps, where a level needs one. |
-| Content format | YAML files validated by schemas written in **zod**. Generate JSON Schema from zod (`zod-to-json-schema`) so the engine and the docs never drift. |
-| Backend | **None** in v1. Progress is saved in `localStorage`. |
-| Hosting | Docker image: **Caddy** serving `dist/`. Caddy handles HTTPS automatically. |
-| CI/CD | **GitHub Actions**: lint, typecheck, schema validation, Playwright smoke test, PR preview, deploy on merge. |
-| Licences | Code **MIT**. Art, audio and text content **CC BY-SA 4.0**. Every asset folder has a `CREDITS.md`. |
+| Game concept | **Kinds of level on a world map.** A level is a **platform** level (run, jump, collect: the people-and-places stories), a **launch control** level (fly the rocket), or a **mini-game** (its own kind of play for a particular moment). Story-only events are **cards**; people are nodes to meet. Level select is an overworld **map** in the style of Super Mario World: nodes on a path across Aotearoa, the Pacific, the USA and out to the Moon and Mars (§5.6). No tycoon economy. |
+| New kinds of play | When a chapter is better served by a kind of play the game does not have, build it, and build it as a **reusable mechanic** driven by level parameters so other levels can use it (§10.9 onward). |
+| Photos | Story cards may show **freely licensed photos** (Wikimedia Commons: CC0, public domain, CC BY, CC BY-SA) of the real people and places, with a credit line and source link. Never Rocket Lab's own copyrighted media in the repository (§6 X2, A5). |
+| Art style | **Detailed, smooth 2D illustration.** The world is laid out in **320×180 units** and rendered at **1280×720** (4 texture pixels per unit), scaled to fit the window. Flat colour with gradients, soft shading and thin dark outlines; particle effects for flame, smoke and steam. Recognisability comes first: Electron carries its lettering and flags, the map uses real coastlines, Peter Beck has his curly hair. |
+| Art and sound are code | Every texture is drawn with the Canvas 2D API at boot, and every sound is synthesised with Web Audio. The repository ships no sprite sheets and no audio files, so there is nothing to license and nothing a contributor needs beyond a text editor. |
+| Engine | **Phaser 3** + **TypeScript** + **Vite**. |
+| Content format | Levels are **TypeScript data** (`LevelDef` in `src/content.ts`), checked by the compiler and by each level's bot. A YAML and schema pipeline was the original plan and is in §17. |
+| Backend | **None** for the game: progress is saved in `localStorage`. The one optional service is the leaderboard, a Cloudflare Worker with a D1 database (`leaderboard/`). |
+| Version and seasons | The version comes from `package.json`. Its major.minor is the **season**; scores compare only within a season, so the minor version is bumped whenever levels or points change. |
+| Hosting | A static build (`npm run build` → `dist/`). The host is not chosen yet (§16). |
+| Licences | Code **MIT**. Story text and generated artwork **CC BY-SA 4.0**. Photos keep their own licences, listed in `public/assets/photos/CREDITS.md`. |
 | Package manager | npm. Node LTS. |
 
 ## 3. Glossary
 
-- **Era:** a chapter on the timeline (Origins, Electron, Growing up, Beyond Earth, Space company, Neutron).
-- **Level:** a playable node on the world map. It always names a `kind` and a `mechanic`.
-- **Kind:** `platform` | `launch` | `minigame` (playable) or `card` (story only). The kind sets the node's icon and colour on the map and the badge on its intro card, so players know what they are about to play.
-- **Mechanic:** a TypeScript module that implements gameplay. `platform` and `launch` are the two shared mechanics; each mini-game is its own mechanic (`hotfire`, `heli-catch`, `orbit-raise`, …).
-- **World map:** the overworld level select. One linear path of nodes; the next node opens when the current one is cleared (§5.6).
-- **Easter egg:** an optional hidden find or feat in a level that reveals a piece of fan lore on the result card. The map shows a running count.
-- **Event card:** an illustrated story card with no gameplay (for news, business events and history).
-- **Status:** `announced` | `in-progress` | `flown`. Levels that aren't `flown` show as locked teasers.
-- **Character:** a person drawn by layering shared paper-doll parts, defined in a `character.yaml`.
+- **Level:** a playable node on the world map. It names a `kind` and a `mechanic`.
+- **Kind:** `platform` | `launch` | `minigame` (playable), `card` (story only) or `person` (someone to meet). The kind sets the node's icon and colour on the map and the badge on its intro card.
+- **Mechanic:** one kind of play, implemented as one scene in `src/scenes/`. A level picks it with `mechanic` and configures it with `params` (§10).
+- **Act:** one mechanic's turn in a level told in several (`params.then`, §5.2).
+- **World map:** the overworld level select. Nodes sit on one story path; a node opens when every earlier one is cleared (§5.6).
+- **Secret node:** a bonus node off the main path, opened by finding the blueprint hidden in a level.
+- **Easter egg:** an optional hidden find or feat in a level that reveals a piece of fan lore on the result card.
+- **Status:** `flown` | `in-progress` | `announced`. `announced` levels show as locked teasers.
+- **Character:** a person the player can control, drawn in code with a sprite set, a portrait and a chip (§7).
+- **Guest lead / running mate:** the two ways someone other than Peter Beck takes part in a level (§7.0a).
+- **Season:** the major.minor of the game version; the unit the leaderboard compares within.
 
 ## 4. Repository layout
 
 ```
-carbon-to-orbit/
-  README.md                 what it is, how to play, how to run, disclaimer
-  CONTRIBUTING.md           the three tiers + characters, step by step
-  CODE_OF_CONDUCT.md
-  LICENSE                   MIT (code)
-  LICENSE-CONTENT.md        CC BY-SA 4.0 (art, audio, text)
-  CLAUDE.md                 short guidance for AI agents working in this repo
-  package.json
-  vite.config.ts
-  tsconfig.json
-  src/
-    main.ts                 boots Phaser, loads content manifest
-    engine/
-      content.ts            loads + validates content at build time
-      save.ts               localStorage progress + badges
-      i18n.ts               string lookup
-      registry.ts           mechanic registry
-      characters/           paper-doll compositor
-    scenes/
-      Boot.ts  Title.ts  WorldMap.ts  LevelIntro.ts  EventCard.ts  Builder.ts
-    mechanics/
-      platform/             shared platformer (kind: platform)
-      launch/               shared launch control (kind: launch)
-      hotfire/  heli-catch/  orbit-raise/     mini-games (kind: minigame)
-      types.ts              Mechanic interface
-    schema/
-      era.ts  level.ts  card.ts  character.ts   (zod)
-  content/
-    eras.yaml
-    levels/<NNN-id>/level.yaml + sprites/ maps/ sfx/ CREDITS.md
-    cards/<id>/card.yaml + image.png + CREDITS.md
-    photos/<file>.jpg + CREDITS.md   freely licensed photos for story cards (§6 A5)
-    map.yaml                         world map: regions, labels, path style (§5.6)
-    characters/<id>/character.yaml (+ optional portrait.png)
-    i18n/en.yaml
-  art-kit/
-    palette.gpl  palette.json   32 colours
-    size-guide.md               vehicle heights in px (see §8)
-    parts/                      paper-doll parts, see §7
-    templates/                  blank sprite sheets with frame grids
-  prompts/
-    character-from-photo.md     prompt contributors give any AI assistant (§7)
-    level-from-news.md          prompt to draft a level/card from a press release
-  scripts/
-    new-level.ts  new-card.ts  validate.ts  portrait.ts  gen-schema.ts  news-digest.ts
-  schema/                       generated JSON Schema (committed)
-  tests/
-    smoke.spec.ts               Playwright: open every level
-    schema.test.ts              Vitest: every content file validates
-  docker/
-    Dockerfile  Caddyfile  compose.yaml
-  .github/
-    workflows/ci.yml  preview.yml  deploy.yml  news.yml
-    ISSUE_TEMPLATE/ event-card.yml  level-idea.yml  character.yml
-    pull_request_template.md
+README.md  AGENTS.md  CLAUDE.md  LICENSE
+index.html  package.json  vite.config.ts  tsconfig.json
+src/
+  main.ts            boot, scene list, dev hooks
+  content.ts         every level, bonus node, person and character (the data)
+  core.ts            units, input, save, cards, controls panel, finish(), developer mode
+  art.ts             drawing helpers, characters, rockets, the map
+  backdrops.ts       level backdrops, enemies, power-up bubbles
+  audio.ts           synthesised effects, loops and music
+  launchSim.ts       launch physics, no Phaser
+  leaderboard.ts  version.ts
+  scenes/            Title, Map, and one scene per mechanic
+leaderboard/         optional Cloudflare Worker, schema, shared scoring rules
+scripts/launch-sim.mjs   fly the launch physics headless
+public/assets/photos/    freely licensed photos + CREDITS.md
+docs/                PROJECT_SPEC.md (this file), ARCHITECTURE.md, media/
+.claude/skills/add-level/   the procedure for adding or changing a level
 ```
 
-## 5. Content schemas (implement in zod, under `src/schema/`)
+[ARCHITECTURE.md](ARCHITECTURE.md) describes what each part does and the conventions every scene follows.
 
-### 5.1 Era — `content/eras.yaml`
+## 5. Content: how a level is described
 
-```yaml
-- id: origins
-  title: "Origins"
-  years: [2006, 2012]
-  accent: 12            # palette index for era colour
-- id: electron
-  title: "Electron"
-  years: [2013, 2019]
-# growing-up, beyond-earth, space-company, neutron
-```
+### 5.1 Eras (retired)
 
-### 5.2 Level — `content/levels/<NNN-id>/level.yaml`
+The original plan grouped levels into eras with their own unlocking. The game uses one story path instead; eras survive only as a way to talk about chapters.
 
-```yaml
-id: atea-1                       # kebab-case, unique
-era: origins                     # must match an era id
-order: 3                         # global play order
-title: "Ātea-1"
-date: 2009-11-30                 # ISO; partial allowed: 2016 or 2016-05
-status: flown                    # announced | in-progress | flown
-kind: launch                     # platform | launch | minigame
-mechanic: launch                 # must exist in registry and match the kind
-map: { x: 208, y: 46 }           # node position on the world map (§5.6)
-sources:                         # ≥1 URL, required
-  - https://www.sciencelearn.org.nz/resources/2431-rocket-lab
-intro: >                         # ≤ 400 chars, shown on intro card
-  A 6 m sounding rocket lifts off from Great Mercury Island and crosses
-  100 km: the first private company in the Southern Hemisphere to reach space.
-how: "Hold Space to burn. Ease off at Max-Q."   # ≤ 200 chars, controls
-fact: "Ātea is Māori for space."                 # "Did you know?" on the intro card
-after: >                         # "What really happened", shown on the result card
-  Ātea-1 flew at 14:23 local time and the payload splashed down 50 km downrange.
-egg: "…"                         # optional easter-egg text, revealed when found
-photo:                           # optional, must be listed in content/photos/CREDITS.md
-  file: beck_newman_2016.jpg
-  caption: "Peter Beck with Dava Newman in front of Rocket Lab's sounding rockets, 2016."
-  credit: "US Embassy New Zealand, CC BY 2.0"
-  page: https://commons.wikimedia.org/wiki/File:...
-params:                          # validated by the mechanic's own zod schema
-  vehicle: atea-1
-  site: great-mercury-island
-  goal: { apogee_km: 100, orbit: false }
-characters: [peter-beck]         # optional, must exist in content/characters
-reward:
-  badge: badges/atea-1.png       # original art only
-credits: ["@github-handle"]
-```
+### 5.2 Level: `LevelDef` in `src/content.ts`
+
+The type in the code is the schema; this table says what each field is for.
+
+| Field | Purpose |
+| --- | --- |
+| `id` | kebab-case, unique. Also the name of optional local media files. |
+| `kind`, `mechanic`, `params` | What it is on the map, which scene plays it, and that scene's configuration (§10). |
+| `status` | `flown`, `in-progress` or `announced` (rules below). |
+| `title`, `date`, `place`, `map` | Shown on the map banner and cards; `map` is the node's position (§5.6). |
+| `intro`, `how`, `fact` | The intro card: what happened and why it mattered, how to play, one "did you know". |
+| `after` | "What really happened", on the result card. |
+| `egg` | The easter egg's text, shown once found. |
+| `sources` | At least one URL, shown on the cards. |
+| `photo` | A freely licensed photo for the cards (A5). |
+| `diagram`, `watch` | A labelled drawing registered in `DIAGRAMS`; a link to a video on its own site (linked, never copied). |
+| `hero`, `role` | A guest lead for this level (§7.0a), and the role line on the name plate. |
+| `unlocks`, `parent` | The secret node a level's blueprint opens; the node a bonus or person node branches from. |
 
 Rules:
-- `params` is validated by the schema the mechanic exports (`mechanic.paramsSchema`).
-- `kind` must agree with the mechanic: `platform` ↔ `platform`, `launch` ↔ `launch`, `minigame` ↔ any other mechanic. CI fails otherwise.
-- `status: announced` → the map shows a locked node. Selecting it opens a teaser card with the intro and sources. The level can't be played and never blocks the path. `status: in-progress` (changed 21 Nov 2026) is for a chapter that is still unfolding: it is playable up to where the story has got to, its intro card carries a "story still unfolding" badge, and its result card says what is still to come. Nothing that has not happened is played (Neutron's flight, ESCAPADE's arrival).
-- Validation errors must be human-readable and include the file path and the field.
-- **Levels in several acts** (added 21 Nov 2026): `params.then: { mechanic, params, intro?, how? }` hands over to another mechanic when the first one ends in success, with a short card in between; `then` can nest. Stars are the worst of the acts, the egg counts if any act earns it, and nothing is saved until the last act. `kind` follows the first act. Used by Paschen's Law (launch → arc-lab → launch).
+- `status: announced` → the map shows a locked node. Selecting it opens a teaser card with the intro and sources. The level can't be played and never blocks the path. `status: in-progress` is for a chapter that is still unfolding: it is playable up to where the story has got to, its intro card carries a "story still unfolding" badge, and its result card says what is still to come. Nothing that has not happened is played (Neutron's flight, ESCAPADE's arrival).
+- **Levels in several acts:** `params.then: { mechanic, params, intro?, how? }` hands over to another mechanic when the first one ends in success, with a short card in between; `then` can nest. Stars are the worst of the acts, the egg counts if any act earns it, and nothing is saved until the last act. `kind` follows the first act. Used by Paschen's Law (launch → arc-lab → launch).
+- Main-path levels live in `LEVELS` in story order, secret nodes in `BONUS`, people in `PEOPLE`.
 
-### 5.3 Event card — `content/cards/<id>/card.yaml`
+### 5.3 Story cards
 
-```yaml
-id: rocket-lab-founded
-era: origins
-date: 2006-06
-title: "Rocket Lab is founded"
-body: >                          # ≤ 600 chars
-  After a trip to the US, Peter Beck starts a rocket company in Auckland.
-image: image.png                 # optional, original artwork, 1280x720 max
-sources: [https://...]
-credits: ["@handle"]
-```
+A card is a `LevelDef` with `kind: 'card'` and no mechanic: `intro`, `fact`, `sources` and an optional photo. It clears when read.
 
-### 5.4 Character — `content/characters/<id>/character.yaml`
+### 5.4 Characters
 
 See §7.
 
-### 5.5 Mechanic interface — `src/mechanics/types.ts`
+### 5.5 What a mechanic must provide
 
-```ts
-export interface Mechanic<P> {
-  id: string;                       // "launch"
-  paramsSchema: z.ZodType<P>;       // validates level.params
-  scene: typeof Phaser.Scene;       // receives { level, params, onComplete }
-  preload?(scene: Phaser.Scene, level: Level): void;
-}
-// onComplete({ success: boolean, score?: number }) → save stars, return to the map
-```
+A mechanic is a Phaser scene that receives `{ def }`, reads everything about the level from `def.params`, and ends with one call to `finish()`. It also provides `help()` for the controls panel and a bot under `?auto=1` that reaches three stars. It is registered in `SCENE_FOR` (`src/core.ts`), the `mechanic` union (`src/content.ts`) and the scene list (`src/main.ts`). The full conventions are in [ARCHITECTURE.md](ARCHITECTURE.md); the steps for building one are in the skill's `NEW-MECHANIC.md`.
 
-Register mechanics in `src/engine/registry.ts`. CI must fail if a level names a mechanic that isn't registered.
-
-### 5.6 World map — `content/map.yaml` + `map` on each level and card
+### 5.6 World map
 
 The level select is one overworld screen, wider than the viewport, that scrolls with the player marker.
 
-- **Geography, stylised:** Aotearoa on the left (South Island, North Island, Great Mercury Island, Māhia), the Pacific in the middle, the USA on the right (Long Beach, Wallops, New York), and a band of space along the top with the Moon (later Mars and Venus). Nodes sit roughly where the event happened.
-- **Path:** nodes are joined in `order` by a dotted path. The path may cross the ocean and double back: the company's story really does bounce between two countries.
-- **Nodes:** icon and colour by kind (platform green, launch red, mini-game yellow, card blue, locked grey). Cleared nodes get a tick, and playable ones show 1–3 stars in the banner.
-- **Movement:** arrow keys (or swipe / on-screen pad) walk the marker to the next or previous node along the path; Enter opens the intro card. The next node is closed until the current one is cleared. Cards clear when read.
-- **Banner:** the selected node's title, date, kind and stars. The map also shows the easter-egg count.
-- `?dev=1` opens every node.
-- The marker is the Peter Beck character for now; later, the player's own avatar from `/builder` (CH6).
+- **Geography, stylised:** Aotearoa on the left, the Pacific in the middle, the USA on the right, Australia at the far left edge, and a band of space along the top with the Moon and Mars. Nodes sit roughly where the event happened, placed with the `nz()` and `us()` projections in `src/art.ts`.
+- **Path:** nodes are joined in story order by a dotted trail. The trail crosses the ocean and doubles back: the company's story really does bounce between two countries.
+- **Nodes:** icon and colour by kind (platform green, launch red, mini-game yellow, card blue, locked grey). Cleared nodes get a tick, and playable ones show 1–3 stars in the banner. Secret nodes hang off their parent on a blue trail; people stand beside the path on a violet one.
+- **Movement:** an arrow key walks the marker to the nearest node in that direction, along the trails. The next level to play wears a NEXT tag and `N` walks to it. A node is closed until every earlier level is cleared; pressing towards a closed one says which level opens it. Cards clear when read.
+- **Banner and counters:** the selected node's title, date, kind and stars; counts of easter eggs, secrets and people; the score, with `L` for the leaderboard.
+- **Developer mode** (footer switch or `?dev=1`) opens every node and lets `K` skip a level. Hide the switch before a public release.
+- The marker is always Peter Beck (§7.0a).
 
 ## 6. Requirements
 
-Must = needed for the first public release (M3). Should = after that.
+Must = needed for the first public release. Should = after that. A requirement marked *(not built)* is still wanted; the plan for it is in §17.
 
 ### Gameplay and content
 - **G1 (Must)** The world map (§5.6) is the level select. Nodes open in order along the path.
@@ -218,71 +138,69 @@ Must = needed for the first public release (M3). Should = after that.
 - **G1b (Should)** Each playable level has one easter egg and awards 1–3 stars. Neither is needed to progress.
 - **G2 (Must)** Every level shows an intro card (what happened, when, why it mattered, how to play, one "did you know") with its source links, and a result card that says what really happened.
 - **G3 (Must)** Status handling as in §5.2. Changing one field unlocks a level.
-- **G4 (Must)** Progress and badges are saved in `localStorage` with a schema version and migration. No accounts.
-- **G5 (Should)** Keyboard, mouse and touch controls. Every level can be finished on a phone.
-- **G6 (Should)** All UI strings live in `content/i18n/*.yaml`.
+- **G4 (Must)** Progress is saved in `localStorage` with a schema version. No accounts.
+- **G5 (Should)** Keyboard and touch controls. Every level can be finished on a phone *(touch pad exists; a phone pass over every level is not done)*.
+- **G5b (Must)** Inside any level, `+` and `−` (or the on-page control) change the game speed between ×0.5 and ×4; the setting is remembered. A level's points are its stars × 100 scaled by the average speed of the run: ×0.5 at half speed, ×1.5 at double, ×2 at four times. The best run of each level counts, and the result card says what the run earned.
+- **G5a (Must)** At any moment, `H` or the `?` button pauses the game and shows the controls for the level being played, or for the map. Every mechanic supplies its own, by level and phase.
+- **G6 (Should)** UI strings can be translated *(not built)*.
 
 ### Contribution
-- **C1 (Must)** There are three tiers plus characters:
-  1. **Event card:** YAML + optional image, no code. It can also be submitted through a GitHub issue form.
-  2. **Level:** YAML + sprites + optional Tiled map, using an existing mechanic.
-  3. **Mechanic:** a TypeScript module implementing `Mechanic`, with at least one test.
-  4. **Character:** a `character.yaml` only (§7).
-- **C2 (Must)** All content is validated by the schemas. Invalid files fail CI with readable errors.
-- **C3 (Must)** Every PR gets a preview URL of the built game.
-- **C4 (Must)** The repo includes CONTRIBUTING.md, level and card templates, the art kit, a code of conduct and a PR checklist.
-- **C5 (Should)** `npm run new-level`, `npm run new-card` and `npm run new-character` scaffold from templates.
-- **C6 (Should)** A dev menu at `?dev=1`: jump to any level, unlock everything, show hitboxes. `?level=<id>` and `?auto=1` (bot play) exist for smoke tests.
+- **C1 (Must)** There are three sizes of contribution, all made the same way (the add-level skill):
+  1. **Story card or person:** an entry in `src/content.ts`, no drawing.
+  2. **Level:** an entry in `src/content.ts` using an existing mechanic, plus its backdrop, enemies and power-ups drawn in code.
+  3. **Mechanic:** a new scene, built to be reused (§5.5).
+- **C2 (Must)** A contribution is checked by the compiler (`npm run build`), by its level's bot reaching three stars, and by a fan review (§12.1).
+- **C3 (Should)** Every PR gets a preview URL of the built game *(not built)*.
+- **C4 (Must)** The repo includes a README, `AGENTS.md`, the add-level skill, the architecture doc and a licence. A contributing guide, code of conduct and issue forms are *(not built)*.
+- **C5 (Should)** Scaffolding commands for a new level or card *(not built; the skill tells an agent to copy a neighbouring level instead)*.
+- **C6 (Should)** Developer mode: jump to any level, unlock everything, skip a level. `?level=<id>` and `?auto=1` (bot play) exist for checks.
 
 ### Local development
-- **L1 (Must)** Requires only Node LTS and Git. `npm install && npm run dev` serves the game with hot reload, including content YAML.
+- **L1 (Must)** Requires only Node LTS and Git. `npm install && npm run dev` serves the game with hot reload.
 - **L2 (Must)** No secrets, API keys or backend are needed to run, build or test.
-- **L3 (Should)** `docker compose up` runs the production build locally, the same image as on the VPS.
+- **L3 (Should)** One command serves the production build locally (`npm run preview` today).
 
 ### Hosting
-- **H1 (Must)** The build output is static and served by Caddy in a container.
-- **H2 (Must)** Merging to `main` builds an image, pushes it to GHCR, and deploys it to the VPS over SSH (`docker compose pull && up -d`). A failed build or test never deploys.
-- **H3 (Should)** Images are tagged per commit and by semver release. `scripts/rollback.sh <tag>`.
-- **H4 (Should)** Optional cookie-free analytics (Plausible or Umami), switched off by default and enabled through an env var at build time.
+- **H1 (Must)** The build output is static and can be served by any static host.
+- **H2 (Should)** Merging to `main` builds and deploys automatically; a failed build never deploys *(not built)*.
+- **H3 (Should)** The optional leaderboard costs nothing at this scale and the game works without it (`leaderboard/README.md`).
+- **H4 (Should)** Optional cookie-free analytics, switched off by default *(not built)*.
 
 ### Art and assets
 - **A1 (Must)** 320×180-unit world rendered at 1280×720 (`D = 4` texture pixels per unit), anti-aliased, scaled to fit. Sprites are authored at 4× their size in units (a 20×31-unit character is an 80×124 px image) and shown at scale 1/D. Text uses Chakra Petch, which has the macrons needed for te reo Māori (Ātea, Māhia). Flat fills come from the shared palette; gradients and shading may blend between palette colours.
 - **A1b (Must, added 21 Nov 2026)** Platform backdrops never repeat a module. Each is one long strip, wider than the screen, that reads left to right as a walk through that chapter, built from things that were really there (places, machines, vehicles, signs, wildlife), each one traceable to a source or flagged in the PR as unverified. Use two or three parallax layers outdoors (far: sky, sea, islands; middle: land and buildings) and one detailed wall layer indoors. A layer `w` units wide scrolls with factor `(w - 320) / (levelWidth - 320)` so the whole strip passes by exactly once. Foreground props must not duplicate or hide what the backdrop already shows.
 - **A1a (Must)** Recognisability checklist for any real vehicle, person or place: name the two or three features a fan would look for and make sure they are visible at normal size (for Electron: black carbon body, vertical ELECTRON lettering, flags, nine-nozzle base; for LC-1: cliff-top pad, strongback, lightning masts, sheep).
-- **A2 (Must)** Formats: PNG for sprites, JSON for Tiled maps, OGG for audio. Each asset folder has a `CREDITS.md` naming the author and licence.
+- **A2 (Must)** No art or audio asset files: textures are drawn in code and sound is synthesised (§2). The only binary files are photos for story cards (A5) and the screenshots in `docs/media/`.
 - **A3 (Must)** Vehicles are drawn to the size guide (§8) so they compare correctly.
 - **A4 (Must, changed 21 Nov 2026)** Sound is **synthesised in code** with the Web Audio API (`src/audio.ts`): no audio files, so nothing to license. Three parts: named one-shot effects (`snd.jump()`, `snd.stage()`, …), continuous loops whose level follows the game (`rumble`, `rotor`, `sea`, `hiss`, `whine`), and a 16-step sequencer for music. One song per setting: world map (C major, bright), 1990s workshop (A minor, funky), Māhia (G major, pastoral), launch (D minor, builds in three intensity steps: countdown, ascent, stage two), helicopter catch (E minor, fast), space (slow pads and bells, used for the Moon and for the kick stage). A win or fail jingle ends every level.
 - **A4a (Must)** Sound starts only after the first key press or tap (browser rule). `M` or the speaker button mutes; the choice is remembered. Effects must match what is on screen: the engine roar thins with altitude and drops to a hum in vacuum, the Max-Q alarm sounds only while the bar is red, steam hisses louder near a vent.
 - **A4b (Should)** A contributor adds a song as data (chords, bass and arpeggio patterns, drum strings, lead notes) in `SONGS`, not as an audio file. Recorded clips (`?rec=`) include audio, so the mix can be checked with `ffmpeg -af volumedetect`: keep peaks under -3 dB and effects from masking the music.
-- **A5 (Must)** Photos on story cards: only files whose Commons page states CC0, public domain, CC BY or CC BY-SA. Each is listed in `content/photos/CREDITS.md` with author, licence and source URL, and the card shows the credit and a source link. Photos are JPG, at most 960 px wide. The palette check (A1) does not apply to them. CC BY-SA photos are shown unmodified apart from resizing.
+- **A5 (Must)** Photos on story cards: only files whose Commons page states CC0, public domain, CC BY or CC BY-SA. Each is listed in `public/assets/photos/CREDITS.md` with author, licence and source URL, and the card shows the credit and a source link. Photos are JPG, at most 960 px wide. CC BY-SA photos are shown unmodified apart from resizing.
 
-### Characters from a photo (see §7)
-- **CH1 (Must)** A new character needs only a `character.yaml`, with no image editor and no custom PNG.
-- **CH2 (Must)** `prompts/character-from-photo.md` and the `/builder` scene ship with the repo and work with any AI assistant.
-- **CH3 (Must)** Source photos are **never committed**. `.gitignore` excludes `**/source-photo.*`, and CI rejects JPG/HEIC/WebP files under `content/characters/`.
-- **CH4 (Must)** Real people need a `consent` block. YouTubers, creators and anyone who isn't a company public figure need recorded opt-in, such as a PR they opened or approved. Executives appear only in their public role, and we ask Rocket Lab before a public launch.
-- **CH5 (Must)** Respectful depiction only. Anyone depicted can have their character removed on request. Document this in CONTRIBUTING.md.
-- **CH6 (Should)** Players can build a personal avatar in `/builder` from their own photo. It stays in their browser and is never uploaded.
+### People
+- **CH1 (Should)** A new character from a photo, with no drawing code *(not built, §17)*. Today a character is drawn in code to the §7.0 standard.
+- **CH3 (Must)** Source photos used as drawing references are **never committed**. `.gitignore` excludes `**/source-photo.*`.
+- **CH4 (Must)** Real people appear only in their public role, with sourced facts. Creators and anyone who is not a company public figure need recorded opt-in, such as a PR they opened or approved. We ask Rocket Lab about depicting its executives before a public launch.
+- **CH5 (Must)** Respectful depiction only. Anyone depicted can have their character removed on request; the README says how.
 
 ### Legal and accuracy
 - **X1 (Must)** A "Fan project, not affiliated with Rocket Lab" notice appears on the title screen, in the README and in the page footer.
-- **X2 (Must)** No official Rocket Lab logos, press photos, renders or copied mission-patch artwork. Photos are allowed only under A5 (freely licensed, third-party or government sources). Badges are original designs that carry the mission name. A logo that happens to be visible on clothing in a freely licensed photo is acceptable; a photo chosen for its logo is not.
+- **X2 (Must)** The repository contains no official Rocket Lab logos, press photos or renders; mission patches are the exception, under X2c. Photos are allowed only under A5 (freely licensed, third-party or government sources). Badges are original designs that carry the mission name. A logo that happens to be visible on clothing in a freely licensed photo is acceptable; a photo chosen for its logo is not.
 - **X2a (Must)** Real people are shown in photos only in their public role, with a neutral caption. No invented quotes: narration describes what people did, and dialogue is never put in a real person's mouth unless it is a sourced quotation. That includes titles that imply speech. A photo is used only when its source caption names the person shown; never caption a guess. Family members and other private people are not named. Where a claim rests on the company's own account, say "Rocket Lab says".
 - **X2b (Must)** No stock talk beyond the historical fact of the listing: no price, valuation cheerleading or anything that reads as investment promotion.
 - **X3 (Must)** The game's title does not use "Rocket Lab". The company and missions are named in the story text.
 - **X4 (Must)** Every level and card has at least one source URL, checked at review.
-- **X5 (Should)** Contact Rocket Lab comms before announcing publicly. This is a task for the maintainer (Tom), not for code.
+- **X2c (Must)** Every level about a Rocket Lab mission ships that mission's official patch, taken from its page on rocketlabcorp.com and listed with the mission name and page in `src/assets/patches/patches.json`. The level's opening and result cards show it with "Mission patch © Rocket Lab" and a link to that page; launch levels also carry it as a fairing decal. Official photos remain local only: one shows on a level's cards when `src/assets/official/<level id>.jpg` exists (git-ignored) and the level has no freely licensed photo. `?clean=1` leaves out both.
+- **X5 (Should)** Contact Rocket Lab comms before announcing publicly. This is a task for the maintainer, not for code.
 
 ### Quality
-- **Q1 (Must)** First load under 5 MB; levels are lazy-loaded. Target: interactive within 3 s on a mid-range phone over 4G.
-- **Q2 (Must)** CI runs ESLint, `tsc --noEmit`, Vitest (schemas and content), a palette check, and a Playwright smoke test that opens the map and boots every playable level without console errors.
+- **Q1 (Must)** First load under 5 MB. Target: interactive within 3 s on a mid-range phone over 4G.
+- **Q2 (Must)** Before a merge: `npm run build` passes, every playable level's bot finishes with three stars, and `npm run sim` passes when launch physics changed. Running these in CI on every PR is *(not built)*.
 - **Q3 (Should)** Lighthouse performance score of 90 or more on the title screen.
 
-## 7. Characters from a photo — design
+## 7. Characters
 
-**Goal:** go from any photo of a person (Peter Beck, a YouTuber, yourself) to an animated character in the house style, with no art skills.
-
-**Approach: paper-doll parts + YAML, not photo-to-pixel conversion.** At 32–48 px, raw pixelised photos look muddy and inconsistent. Shared parts guarantee one style, small files, easy review and free animation.
+Every person in the game is drawn in code, in the house style, to the standard below. Turning a photo into a character without drawing code was the original idea for this section; it is not built and is described in §17.
 
 ### 7.0 Recognising a character (Must, added 21 Nov 2026)
 
@@ -295,7 +213,7 @@ A player who knows the person should recognise them at a glance, and a player wh
 5. **Era variants** when the story spans decades (Peter Beck: 1990s apprentice in overalls, present day in black). The defining features (hair, face) stay the same across variants.
 6. **A likeness review** as part of the fan review (§12.1): the reviewer compares the cartoon with the reference photos and says, for portrait, chip and small figure separately, whether it reads as the person without the label.
 
-`character.yaml` gains `likeness: [..]` (the notes), `role_default`, and optional `variants`. Levels may set `role` to override the role line.
+Each entry in `CHARACTERS` (`src/content.ts`) carries its likeness notes and default role. Levels may set `role` to override the role line.
 
 ### 7.0a The cast: one main character, guest leads and running mates (revised 21 Nov 2026)
 
@@ -315,67 +233,18 @@ Characters live in a `CHARACTERS` list: id, texture prefix, name, role, the year
 
 **Before a public release** (CH4, X5): every living person shown here is depicted in their public role only. Ask Rocket Lab about the two executives, and offer each person named a simple way to be removed.
 
-### 7.1 Art kit parts (`art-kit/parts/`)
+### 7.1 to 7.6 (retired)
 
-Each part is a sprite sheet on one shared frame grid (for example 32×48 per frame) with these animations: `idle` (2f), `walk` (4f), `talk` (2f), `cheer` (2f). Parts are drawn in neutral greys or a mask colour and **tinted at runtime**, so a few shapes cover many people.
+These sections specified a paper-doll art kit, a `character.yaml`, a compositor, a `/builder` scene, a photo-to-character prompt and a portrait script. None was built; the idea is kept in §17.
 
-Layer order (back to front): `body` → `outfit.top` → `outfit.bottom` → `head` → `face.beard` → `hair` → `face.glasses` → `accessory`.
-
-Starter set (M2): 3 head shapes · 6 skin tones · 10 hair styles (incl. bald, short, long, curly, ponytail) · 4 beards (none, stubble, short, full) · 3 glasses · 6 tops (t-shirt, polo, hoodie, button shirt, lab coat, flight suit) · 3 bottoms · accessories: headset, hard hat, cap, mic, clipboard, camera.
-
-### 7.2 `character.yaml`
-
-```yaml
-id: example-creator
-name: "Example Creator"
-role: "YouTuber covering Rocket Lab"
-likeness: ["short messy dark hair", "stubble", "navy hoodie", "always holding a mic"]   # see §7.0
-consent:
-  type: opt-in             # opt-in | public-role | self
-  ref: "https://github.com/<org>/<repo>/pull/123"
-body: { head: round, skin: tone-4 }
-hair: { style: short-messy, colour: "#3b2a1e" }   # snapped to palette at build
-face: { beard: stubble, glasses: none }
-outfit: { top: hoodie, top_colour: "#1d3557", bottom: jeans }
-accessory: mic
-appears_in: [hub, the-mountain-god-rises]
-portrait: portrait.png     # optional 64x64, palette-only
-```
-
-- Colours are snapped to the nearest palette colour at build time, with a warning.
-- `consent.type`: `public-role` is only for company executives shown in their public role. `self` is for someone who submits their own character. `opt-in` needs `ref`.
-
-### 7.3 Compositor (`src/engine/characters/`)
-
-At load time, build a Phaser texture per character by layering the tinted parts per frame, then register the animations `<id>-idle`, `<id>-walk` and so on. Cache the result. Unknown part ids are a validation error.
-
-### 7.4 `/builder` scene
-
-- Shows a live preview (all animations), with dropdowns or arrows for each layer and palette swatches.
-- **Import YAML** (paste) and **Export YAML** (copy, or download `character.yaml`).
-- **"Submit to GitHub"** opens the `character.yml` issue form with the YAML prefilled through URL params.
-- Optional local photo assist (CH6): the user picks a photo, it's shown beside the preview for reference only, and it never leaves the browser.
-
-### 7.5 `prompts/character-from-photo.md` (write this file)
-
-Its content should tell any AI assistant to:
-1. Look at the attached photo and describe the person's visible features neutrally: head shape, skin tone, hair style and colour, facial hair, glasses, typical outfit.
-2. Map each feature to the **closest part id from the list in this file**. The prompt embeds the current part list and palette, generated by `npm run gen-prompt`.
-3. Output **only** a valid `character.yaml`. Don't guess sensitive attributes. Choose flattering, neutral options. Fill `consent` with a placeholder and remind the user about CH4.
-4. Tell the user to run `npm run validate` or paste the result into `/builder` to preview it.
-
-### 7.6 `npm run portrait <photo>` (Should)
-
-A local script with no network: background removal (a pure-JS/WASM option, or a plain crop if unavailable), downscale to 64×64, snap to the palette with light dithering, write `portrait.png`. The photo is never copied into the repo.
-
-## 8. Size guide (`art-kit/size-guide.md`)
+## 8. Size guide
 
 Sizes are in world units (1 unit = 4 texture pixels). Launch scenes use **1 unit ≈ 0.225 m**.
 - Ātea-1: about 6 m → about 36 units tall (drawn a little wider than scale so it reads)
 - Electron: 18 m tall, 1.2 m diameter → 80 × 6 units (fairing 12, stage 2 10, stage 1 with interstage and engines 58)
-- Neutron: about 43 m, 7 m first-stage diameter → about 190 × 31 units, so its launch scene needs a wider camera. **Mark the Neutron height as "verify" in the guide**; take it from an official source before drawing.
+- Neutron: 43 m tall with a 7 m first stage (Rocket Lab's launch page, as read in November 2026) → about 190 × 31 units, so its launch scene needs a wider camera.
 
-People in hub and cutscenes use the character frame grid from §7.1, not the vehicle scale.
+People are drawn on a 24 × 34-unit frame and are not to the vehicle scale.
 
 ## 9. Starter level map
 
@@ -516,7 +385,7 @@ Every outfit keeps the curls visible, so the character stays recognisable (§7.0
 
 **Secrets.** Each platform level hides one **blueprint** that can only be reached with that level's movement power-up (flight, or the double jump). Finishing the level with the blueprint opens a **secret node** on the world map: a branch off that level's node, drawn with a blue trail and a glow, as in Super Mario World's secret exits. Secret nodes are optional and never block the main path. The map shows `SECRETS n/m`. So far: The Rocket Bike → **Princes Street Sprint** (a bonus mini-game, mechanic `sprint`: open the valve, keep the wobbling bike upright, beat the sports car, three stars for 140 km/h); Road to Māhia → **Kaitorete Spit: the first choice** (a bonus story card); Rosie the Robot → **Photon: the kick stage grows up** (card; the blueprint needs the carbon-light jump); Archimedes and the tank → **The Hungry Hippo arrives** (card; the blueprint hangs over the canal and needs the methane-and-oxygen pack). Level data: `powerups: [code, x, row][]`, `secret: [x, row]`, and `unlocks: <bonus id>` on the level; bonus nodes live in a separate list with a `parent`.
 
-Plain `sheep` stay friendly: they only bump you. Rules for adding one: tie it to a fact, give it one clear behaviour, make it readable at a glance, and check the level is still fair by running the bot (`?auto=1`) to a clean three-star finish. Jump reach is 3 tiles up and about 4 across; CI checks that no gap or step exceeds it. Later: build levels in Tiled instead of spans.
+Plain `sheep` stay friendly: they only bump you. Rules for adding one: tie it to a fact, give it one clear behaviour, make it readable at a glance, and check the level is still fair by running the bot (`?auto=1`) to a clean three-star finish. Jump reach is 3 tiles up and about 4 across; keep every gap and step within it.
 
 ### 10.2 `heli-catch` (first set piece)
 The booster falls under a parachute in a drifting wind. The player flies the helicopter to line up the hook with the drogue line, inside a time window. Params: `wind`, `time_limit_s`, `difficulty`.
@@ -560,8 +429,8 @@ Stars: three for a final orbit within 15 km of target with structural load under
 - `reference()` flies the mission with the autopilot to produce the planned profile and the stage-1 cue; `npm run sim` prints the timeline, margins and failure cases, so a change to the numbers can be checked without a browser. CI should assert that the autopilot reaches orbit in every launch level and that full throttle through Max-Q fails.
 - **Scripted endings** (`twist: scripted-no-orbit`) count as a clear and explain the real outcome.
 
-### 10.3 Later (don't build in v1, only stub)
-`builder`.
+### 10.3 (retired)
+The `/builder` scene planned here is in §17.
 
 ### 10.5 `fault-finder` (mini-game, built 21 Nov 2026)
 Two phases against a clock that counts days since the failure. **Trace:** six telemetry strips from the last two minutes of the burn, shuffled each play; ← → move a cursor through time, ↑ ↓ change channel, Space flags a point. Only the earliest deviation on the root channel is accepted; flagging a symptom marks where that symptom begins and costs two days. **Bench:** choose a test (↑ ↓, Space) and run it on a six-connection harness; the three standard acceptance tests pass everything, as they did on the flight unit, and only a sustained-load test makes one connection's resistance climb; ← → and Enter tag it. Three stars for 27 days or fewer. The channel names, the tests and their durations are the game's own stand-in for the real investigation.
@@ -629,64 +498,32 @@ Three stars for doing it in at most one sweep more than the list needs. The curv
 ### 10.4 `sprint` (secret mini-game)
 Side view of a night street. Hold to open the peroxide valve (about four seconds of propellant); the bike's wobble grows with speed and is corrected with left and right; cross the flag upright. A rival car accelerates alongside. Unlocked by the blueprint in The Rocket Bike.
 
-## 11. Milestones and acceptance criteria
+## 11. Status: what exists
 
-### Draft (done, 21 Nov 2026)
-A playable vertical slice exists at the repo root: Vite + TypeScript + Phaser 3, the world map, the `platform`, `launch`, `hotfire`, `heli-catch` and `orbit-raise` mechanics, 13 map nodes (§9; 22 after the second pass described below), DOM story cards with photos and sources, `localStorage` save, stars and easter eggs, keyboard and touch pad, synthesised sound effects and music. Shortcuts taken, to be paid back in M0–M2: content lives in `src/content.ts` rather than YAML + zod; all art is drawn in code with the Canvas 2D API (`src/art.ts`) at 4 px per unit rather than shipped as image files from the art kit (good enough to set the style; contributors will want PNG or SVG sources); the character is one hand-drawn sprite, not the paper-doll compositor; no ESLint, Vitest, Playwright, Docker or CI yet. Test hooks: `?level=<id>` jumps to a level, `?auto=1` flies it with a bot, `?dev=1` opens the whole map, `?fast=N` (with `auto`) steps the game N times per tick and keeps running in a background tab. **Developer mode** (the switch in the page footer, remembered, or `?dev=1`) also turns on skipping: `K` on the map marks the node under the marker as done, `K` inside a level ends it as a one-star pass, and intro cards get a "Skip (dev)" button. Hide the switch before a public release.
+### Built so far (21 to 22 Nov 2026)
+A playable vertical slice exists at the repo root: Vite + TypeScript + Phaser 3, the world map, the `platform`, `launch`, `hotfire`, `heli-catch` and `orbit-raise` mechanics, 13 map nodes (§9; 22 after the second pass described below), DOM story cards with photos and sources, `localStorage` save, stars and easter eggs, keyboard and touch pad, synthesised sound effects and music. How it differs from the original plan (§17 keeps what is still wanted): content lives in `src/content.ts` rather than YAML + zod; all art is drawn in code with the Canvas 2D API (`src/art.ts`, `src/backdrops.ts`) at 4 px per unit rather than shipped as image files; characters are drawn in code, not assembled from a paper-doll kit; there is no linting, unit-test suite, CI or deployment yet. Test hooks: `?level=<id>` jumps to a level, `?auto=1` flies it with a bot, `?dev=1` opens the whole map, `?fast=N` (with `auto`) steps the game N times per tick and keeps running in a background tab. **Developer mode** (the switch in the page footer, remembered, or `?dev=1`) also turns on skipping: `K` on the map marks the node under the marker as done, `K` inside a level ends it as a one-star pass, and intro cards get a "Skip (dev)" button. Hide the switch before a public release.
 
-**Title screen, version, score and leaderboard (added 22 Nov 2026).** The game opens on a full-canvas title scene (`src/scenes/Title.ts`); `F` or the corner button toggles full screen. The version comes from `package.json` and is shown on the title screen; its major.minor is the **season**. A score is derived from the save (stars × 100, easter eggs × 150, secrets × 250, people met × 50; rules in `leaderboard/src/rules.js`) and shown on the map; `L` opens the leaderboard card. Scores compare only within a season, so the minor version is bumped whenever levels or points change. The online board is an optional Cloudflare Worker with D1 (`leaderboard/`), configured with `VITE_LEADERBOARD_URL`; the dev server has a stand-in; without either the card shows the player's own score. Developer mode never submits. The Worker checks a score against its parts but cannot prove it: the board is friendly, not authoritative.
+**Title screen, version, score and leaderboard (added 22 Nov 2026).** The game opens on a full-canvas title scene (`src/scenes/Title.ts`); `F` or the corner button toggles full screen. The version comes from `package.json` and is shown on the title screen; its major.minor is the **season**. A score is derived from the save (level points, which are stars × 100 scaled by game speed as in §6 G5b, plus easter eggs × 150, secrets × 250, people met × 50; rules in `leaderboard/src/rules.js`) and shown on the map; `L` opens the leaderboard card. Scores compare only within a season, so the minor version is bumped whenever levels or points change. The online board is an optional Cloudflare Worker with D1 (`leaderboard/`), configured with `VITE_LEADERBOARD_URL`; the dev server has a stand-in; without either the card shows the player's own score. Developer mode never submits. The Worker checks a score against its parts but cannot prove it: the board is friendly, not authoritative.
 
-**For contributors and their agents (added 22 Nov 2026).** `docs/ARCHITECTURE.md` describes how the code works; `.claude/skills/add-level/` is the procedure for adding or changing a level or a mechanic, and `AGENTS.md` points any agent at both. Sections 4, 5 and 14 of this spec describe an earlier plan (YAML content, zod schemas, an art kit of image files) that the draft did not follow: where they disagree with the architecture doc, the architecture doc describes what exists.
+**For contributors and their agents (added 22 Nov 2026).** `docs/ARCHITECTURE.md` describes how the code works; `.claude/skills/add-level/` is the procedure for adding or changing a level or a mechanic, and `AGENTS.md` points any agent at both. This spec was revised on 22 Nov 2026 to describe the game as built; plans that were not followed moved to §17.
 
 **Map navigation (revised 21 Nov 2026).** An arrow key moves to the nearest node in that direction among all nodes the player may stand on, and the marker walks there along the trails; it no longer steps along the story order, which zigzags across the map. The next unfinished level wears a bouncing NEXT tag and `N` walks to it. Pressing towards a locked node says which level opens it.
 
-**Official Rocket Lab media, local only (added 21 Nov 2026).** The repository still ships no official logos or media (§2). As an opt-in for private play, the game shows a mission patch (fairing decal, console badge, level cards) when `src/assets/patches/<level id>.png` exists, and an official photo on a level's cards when `src/assets/official/<level id>.jpg` exists and the level has no freely licensed photo. Both folders are git-ignored. Rocket Lab's Flickr profile says its images may be downloaded with credit, but every photo is marked all rights reserved, so shipping any of this publicly needs Rocket Lab's permission first.
+**Official Rocket Lab media (added 21 Nov 2026, revised 22 Nov 2026).** See §6 X2c. On 22 Nov 2026 the owner decided that mission patches may be used: all fifteen mission levels now ship their patch, credited and linked. Official photos still show only from a player's own git-ignored files. Rocket Lab's Flickr profile says its images may be downloaded with credit, but every photo is marked all rights reserved.
 
 **Second pass (21 Nov 2026):** the nine planned rows of §9 that were not yet playable were built: It's Business Time, Rosie the Robot, Pics Or It Didn't Happen, Return To Sender, Virginia Is For Launch Lovers, Scout's Arrow, ESCAPADE, VICTUS HAZE and Archimedes and the tank, with four new mini-game mechanics (`fault-finder`, `splashdown`, `cruise`, `countdown-race`), two new platform themes (`factory`, `stennis`), a second launch site (Wallops), suborbital flight in the launch model, two secret cards and two more people to meet (Gabe Newell, Rob Lillis). Every playable level finishes with three stars under its bot. **Third pass (same day, at the owner's request):** five more levels (Go Find the Launch Site, Paschen's Law, Beginning Of The Swarm, Two Hemispheres, Outback Delivery) and, following the instruction to add new kinds of play where a story calls for one, four reusable mechanics documented in §10.9 to §10.12 (`ride`, `orbit-ops`, `dual-count`, `arc-lab`), a kick-stage flight plan in launch control, and levels in several acts (§5.2). No photos were added for the new levels: finding freely licensed ones (NASA's Wallops launch photos are a likely source) is still to do.
 
-### M0 — Skeleton
-- Vite + TS + Phaser project, ESLint, Prettier, Vitest, Playwright set up.
-- Scenes: Boot → Title (with the X1 disclaimer) → WorldMap → LevelIntro → mechanic → result card → back to the map.
-- zod schemas for era, level and card. Content is loaded and validated at build time through a Vite plugin or prebuild script that writes `src/generated/content.ts`.
-- A minimal `launch` mechanic, enough to play **Ātea-1** (level 3) to the 100 km goal.
-- Save system with one badge.
-- Dockerfile + Caddyfile + `compose.yaml`; `docker compose up` serves the build.
-- CI: lint, typecheck, unit tests, smoke test.
-- **Accept when:** a fresh clone runs with `npm i && npm run dev`; Ātea-1 can be played and finished; the badge persists after reload; `docker compose up` works; CI is green.
+## 12. Review checklist
 
-### M1 — Electron era
-- `launch` is complete (staging, fairing, orbit goal, twists).
-- Levels 1, 3, 5 (a `launch` placeholder until `builder` exists), 6, 7 and 8, and card 2.
-- Era unlocking, and locked teasers for non-`flown` levels (add level 20 as `announced`).
-- **Accept when:** you can play through the Origins and Electron eras; "It's a Test" ends in the scripted no-orbit outcome; Neutron shows as locked with its source.
-
-### M2 — Contributor kit
-- `scripts/new-level.ts`, `new-card.ts`, `new-character.ts`, `validate.ts`, `gen-schema.ts`, `gen-prompt.ts`.
-- Palette check, readable validation errors, generated JSON Schema committed.
-- Issue forms: event card, level idea, character. PR template with the review checklist (§12).
-- Preview deploys per PR (GitHub Pages under `/pr-<n>/`, or `pr-<n>.` subdomains on the VPS; pick the simpler one and document it).
-- Art kit: palette, size guide, sprite templates, **paper-doll parts starter set**, compositor, **`/builder` scene**, `prompts/character-from-photo.md`.
-- CONTRIBUTING.md with a walkthrough for each tier, including "add a character from a photo with your AI assistant".
-- **Accept when:** someone new can add a card, a level and a character by following CONTRIBUTING.md alone; a broken file fails CI with a clear message; every PR gets a preview link.
-
-### M3 — Public
-- `heli-catch` set piece and level 12.
-- Remaining starter levels as cards or levels where mechanics exist.
-- Weekly news job (§13).
-- Deploy workflow to the VPS (secrets: `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`), plus rollback.
-- Mobile controls pass on all playable levels.
-- **Accept when:** the site is live on the VPS over HTTPS; merging to `main` deploys within 10 min; all Must requirements in §6 are met.
-
-## 12. PR review checklist (put in `.github/pull_request_template.md`)
-
-- [ ] I ran it locally, or played the preview link, to the end
-- [ ] Fan review done (§12.1) and its fact errors fixed
-- [ ] `npm run validate` passes
-- [ ] Every fact has a source link; the date is checked
-- [ ] All art is original, in the house style (§2, A1), with credits in `CREDITS.md`
-- [ ] No official logos, photos or copied mission patches
-- [ ] Characters of real people: the `consent` block is filled and valid
-- [ ] No source photos committed
+- [ ] I played it to the end, and its bot (`?level=<id>&auto=1`) finishes with three stars
+- [ ] `npm run build` passes (and `npm run sim` if launch physics changed)
+- [ ] The controls panel (`H`) lists every key the level uses
+- [ ] Fan review done (§12.1) and its fact errors fixed; anything unverified is recorded there as open
+- [ ] Every fact has a source link; dates say which time zone they are in where it matters
+- [ ] The backdrop, enemies and power-ups belong to this chapter and repeat no other level's
+- [ ] No official logos or photos are committed; each mission patch is listed in `patches.json` with its source; photos are credited in `CREDITS.md`
+- [ ] Real people: public role, sourced facts, no invented speech
+- [ ] The level table (§9), the README and the minor version are updated
 
 ### 12.1 Fan review
 
@@ -716,39 +553,37 @@ Open from the sixth review: D'Mello's portrait was drawn from a black-and-white 
 
 Still open from the second review: name of the recovery ship on "There And Back Again"; whether the founding trip was 2006 or 2007; the Fisher & Paykel plant's product line (props currently say DishDrawer); a cliff-top backdrop for LC-1.
 
-## 13. Weekly update workflow
+## 13. Keeping up with the news (retired)
 
-1. **`news.yml`** (scheduled weekly): `scripts/news-digest.ts` fetches Rocket Lab press releases (RSS, or their newsroom page) and recent SEC filings for RKLB, compares them with `content/.seen.json`, and opens one GitHub issue, "This week: <date>", listing the new items with links. No API keys; if a source is unreachable, list the failure in the issue rather than failing silently.
-2. **Triage** (maintainer): label each item `event-card`, `level-worthy`, `status-change` or `skip`.
-3. `event-card`: someone fills the issue form, and a workflow turns the form into a PR (`content/cards/<id>/card.yaml`).
-4. `status-change`: a one-line PR, for example Neutron `announced → flown` once it flies.
-5. `level-worthy`: label it `good first level`, attach the template, and let a contributor claim it.
-6. Merge deploys automatically. Add a "This week" line to `CHANGELOG.md`, shown on the title screen.
+The plan for a weekly digest that turns Rocket Lab announcements into issues is in §17. Until it exists, a new announcement is handled by hand with the add-level skill: a story card first, a level when someone builds it, and a status change (for example Neutron `announced → flown`) when the event happens.
 
-`prompts/level-from-news.md` should help contributors use an AI assistant to draft a card or level YAML from a press-release URL. It must keep facts and wording paraphrased, not copied.
+## 14. Guidance for agents
 
-## 14. `CLAUDE.md` for the repo (create it)
+`AGENTS.md` at the repository root is the entry point (`CLAUDE.md` imports it). It points to the add-level skill and the architecture doc. Keep it short.
 
-Keep it short. Include:
-- The project summary (one paragraph) and a link to this spec, saved in the repo as `docs/SPEC.md`.
-- Commands: `npm run dev | build | test | e2e | validate | new-level | new-card | new-character`.
-- Rules: content is data, so never hard-code level-specific logic in the engine; new gameplay goes in `src/mechanics/<id>/` with a params schema and a test; keep the palette; never commit photos; never add official Rocket Lab logos or imagery; every fact needs a source.
-- Definition of done: lint + typecheck + tests + smoke test pass and the docs are updated.
+## 15. Out of scope
 
-## 15. Out of scope for v1
-
-Accounts, leaderboards and any backend; multiplayer; 3D; the tycoon/economy layer; in-game purchases; using official Rocket Lab media.
+Accounts; multiplayer; 3D; a tycoon or economy layer; in-game purchases; committing official Rocket Lab media other than mission patches; any leaderboard that claims to be authoritative (the game runs in the browser, so scores cannot be proven).
 
 ## 16. Open questions (for the maintainer; don't block on these)
 
 - Final title. Whether to ask Rocket Lab for a blessing before announcing.
-- Should business events (listing, acquisitions, earnings) stay cards only, or get gameplay?
-- Photos of people other than Peter Beck: Commons has almost none for other Rocket Lab staff. Ask for opt-in photos, or keep everyone else as pixel characters?
-- Should the map stay one linear path, or branch (optional side nodes for mission-name deep cuts)?
-- Who the first 2–3 maintainers and reviewers are.
-- Languages beyond English, and how Māori place names are shown (keep macrons, for example Ātea-1 and Māhia).
-- PR preview hosting: GitHub Pages or the VPS.
+- Where to host: a free static host is enough; whether a custom domain is worth it.
+- Whether to accept donations at all. Hosting is free, and collecting money around another company's name changes the footing of a fan project.
+- Should business events (acquisitions, earnings) stay cards only, or get gameplay? The Nasdaq listing became a level.
+- Photos of people other than Peter Beck: Commons has almost none for other Rocket Lab staff. Ask for opt-in photos, or keep everyone else as drawn characters?
+- Open factual questions are listed with each fan review in §12.1.
 
----
+## 17. Roadmap: wanted, not built
 
-*Spec as of 21 Nov 2026. The Neutron status (first launch expected 2027) and the 100-launch milestone reflect announcements up to that date.*
+Kept from the original brief. Each is independent; none is needed to add levels today.
+
+- **Continuous integration.** Run the build, the launch sim and every level's bot on each PR; give each PR a preview URL; deploy on merge to `main`. The original plan also had ESLint, unit tests and a Playwright smoke test that boots every level without console errors.
+- **Hosting and deploy.** Originally a Docker image with Caddy on a VPS, deployed over SSH with a rollback script. A static host does the same job with less to run.
+- **Contributor paperwork.** A contributing guide, a code of conduct, issue forms for "level idea" and "story card", and a PR template carrying the §12 checklist.
+- **Content as data files.** Levels as YAML validated by zod schemas, with readable errors and scaffolding commands, so a story card needs no TypeScript. Worth doing if people without agents start contributing.
+- **Characters from a photo.** A shared paper-doll art kit (heads, hair, outfits, accessories on one frame grid, tinted at runtime), a small character file choosing parts, a compositor that builds the sprite set, a `/builder` scene with live preview and import/export, and a prompt that lets any AI assistant turn a photo into that file. Source photos never leave the contributor's machine. Later, players could build their own avatar the same way.
+- **A weekly news digest.** A scheduled job that reads Rocket Lab's press releases and filings, and opens one issue listing what is new, to be triaged into story cards, status changes and level ideas.
+- **Translation.** UI and story strings moved out of the code so the game can be translated.
+- **A phone pass.** Check that every level can be finished on a touch screen.
+- **Analytics.** Optional and cookie-free, off by default.

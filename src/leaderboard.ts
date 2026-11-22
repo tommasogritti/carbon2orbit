@@ -3,7 +3,7 @@
 import { save, showCard, DEV } from './core';
 import { ALL, BONUS, PEOPLE } from './content';
 import { VERSION, SEASON } from './version';
-import { POINTS, scoreOf, cleanName } from '../leaderboard/src/rules.js';
+import { POINTS, SPEED_MAX, scoreOf, cleanName } from '../leaderboard/src/rules.js';
 
 export interface Entry { name: string; score: number; stars: number; levels: number; at: string }
 const BASE = ((import.meta.env.VITE_LEADERBOARD_URL as string | undefined) || (import.meta.env.DEV ? '/__lb' : '')).replace(/\/$/, '');
@@ -15,8 +15,8 @@ const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&
 export function tally() {
   const playable = ALL().filter((d) => d.mechanic && d.status !== 'announced');
   const done = playable.filter((d) => save.done[d.id]);
-  const t = { stars: done.reduce((n, d) => n + save.done[d.id], 0), levels: done.length, eggs: Object.keys(save.eggs).length, secrets: Object.keys(save.unlocks).length, people: Object.keys(save.met).length };
-  const max = scoreOf({ stars: playable.length * 3, eggs: ALL().filter((d) => d.egg).length, secrets: BONUS.length, people: PEOPLE.length });
+  const t = { stars: done.reduce((n, d) => n + save.done[d.id], 0), points: done.reduce((n, d) => n + (save.pts[d.id] ?? save.done[d.id] * 100), 0), levels: done.length, eggs: Object.keys(save.eggs).length, secrets: Object.keys(save.unlocks).length, people: Object.keys(save.met).length };
+  const max = scoreOf({ points: playable.length * 3 * POINTS.star * SPEED_MAX, eggs: ALL().filter((d) => d.egg).length, secrets: BONUS.length, people: PEOPLE.length });
   return { ...t, score: scoreOf(t) as number, max: max as number, of: playable.length };
 }
 export async function top(limit = 15): Promise<Entry[]> {
@@ -26,7 +26,7 @@ export async function top(limit = 15): Promise<Entry[]> {
 }
 export async function submit(name: string): Promise<{ ok?: boolean; rank?: number; best?: number; error?: string }> {
   const t = tally();
-  const r = await fetch(`${BASE}/scores`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ season: SEASON, version: VERSION, name, score: t.score, stars: t.stars, levels: t.levels, eggs: t.eggs, secrets: t.secrets, people: t.people }) });
+  const r = await fetch(`${BASE}/scores`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ season: SEASON, version: VERSION, name, score: t.score, points: t.points, stars: t.stars, levels: t.levels, eggs: t.eggs, secrets: t.secrets, people: t.people }) });
   return r.json();
 }
 
@@ -36,7 +36,7 @@ export function showBoard(note = '') {
   let name = ''; try { name = localStorage.getItem(NAME_KEY) || ''; } catch { /* private mode */ }
   const canSubmit = online && !DEV && t.score > 0;
   const why = !online ? 'No online leaderboard is configured for this copy of the game, so this is your own score only.' : DEV ? 'Developer mode is on, so scores are not submitted.' : t.score === 0 ? 'Finish a level to get on the board.' : 'Only the name you type and your score are sent.';
-  const parts = `${t.stars} ★ × ${POINTS.star} · ${t.eggs} easter eggs × ${POINTS.egg} · ${t.secrets} secrets × ${POINTS.secret} · ${t.people} people met × ${POINTS.person}`;
+  const parts = `${t.points.toLocaleString('en-NZ')} level points (${t.stars} ★ × ${POINTS.star}, scaled by game speed) · ${t.eggs} easter eggs × ${POINTS.egg} · ${t.secrets} secrets × ${POINTS.secret} · ${t.people} people met × ${POINTS.person}`;
   showCard(
     `<div class="kicker">LEADERBOARD · SEASON ${SEASON} <span class="src">(game v${VERSION})</span></div><h1>${t.score.toLocaleString('en-NZ')} points</h1>` +
     `<p>${t.levels} of ${t.of} levels played, out of a possible ${t.max.toLocaleString('en-NZ')} points.<br><span class="src">${parts}</span></p>` +

@@ -47,11 +47,13 @@ Open the address Vite prints. Press **H** at any moment for the controls of what
 | Arrows (or W A S D) | Move, steer, pitch, choose |
 | Space (or Z) | Jump, burn, the next step in a sequence |
 | Enter (or X) | Confirm, hold the count, engine cutoff |
+| + and − | Game speed inside a level, from ×0.5 to ×4. Faster scores more, slower scores less |
 | H | Controls for the current level or the map |
 | L | Your score and the leaderboard |
 | N | On the map: walk to the next level |
 | F | Full screen |
 | M | Sound on or off |
+| T | Next soundtrack: the original score, 1980s synthwave, chiptune, or slow and cinematic |
 
 A touch pad appears on phones.
 
@@ -81,6 +83,16 @@ Three rules keep the game worth playing:
 
 The full brief, including the level backlog, is in [docs/PROJECT_SPEC.md](docs/PROJECT_SPEC.md).
 
+Changes come in as pull requests and are reviewed by the maintainer before they are merged; nothing is pushed straight to `main`. The rules GitHub enforces are in [.github/rulesets/main.json](.github/rulesets/main.json).
+
+## Contributors
+
+| | | |
+| --- | --- | --- |
+| [@tommasogritti](https://github.com/tommasogritti) | Started the project and maintains it | [X](https://x.com/tommasogritti) |
+
+The same list is in the game: **Credits** in the page footer, or **C** on the title screen and the map. When your first pull request is merged, add yourself to [src/contributors.ts](src/contributors.ts) and to this table.
+
 ## Under the hood
 
 - **Vite, TypeScript, Phaser 3.** Static and client-only.
@@ -96,25 +108,29 @@ The full brief, including the level backlog, is in [docs/PROJECT_SPEC.md](docs/P
 | `?level=<id>` | Jump straight into a level, for example `?level=capstone` |
 | `?level=<id>&auto=1` | Let the bot play it; add `&fast=6` to run six times faster |
 | `?level=<id>&auto=1&rec=<name>` | Record the run to `recordings/<name>.webm` (dev server only) |
+| `&recmix=sfx`, `&clean=1` | With `rec`: record sound effects without music. Anywhere: leave out mission patches and local official photos |
 | `npm run sim` | Fly the launch physics with the autopilot and print timelines and margins |
 | `npm run build` | Type-check and build |
 
 ## Score, seasons and the leaderboard
 
-Your score is stars, easter eggs, secrets and people met. Press **L** to see it.
+Your score is level points, easter eggs, secrets and people met. A level is worth its stars × 100 at normal speed, more if you play it faster (×1.5 at double speed, ×2 at four times) and less if you slow it down (×0.5 at half speed); your best run of each level counts. Press **L** to see it.
 
 Scores are grouped by **season**, the major.minor of the game version, so a board never mixes players who had different levels to play. The version is on the title screen.
 
 The online leaderboard is optional and runs on a small Cloudflare Worker with a D1 database. Without one, the game shows only your own score. Setup is in [leaderboard/README.md](leaderboard/README.md).
 
-## Official patches and photos (optional, your copy only)
+## Mission patches and official photos
 
-This repository contains no official Rocket Lab media. For your own play, the game will show a mission patch on the fairing and on a level's cards if you save it as `src/assets/patches/<level id>.png`, and an official photo on a level's cards if you save it as `src/assets/official/<level id>.jpg`. Both folders are git-ignored. Patches are on each mission's page at rocketlabcorp.com/missions/launches; photos are on Rocket Lab's Flickr, which asks for credit and marks them all rights reserved.
+Each level about a Rocket Lab mission shows that mission's official patch on its cards, and launch levels paint it on the fairing. The patches are Rocket Lab's artwork, taken from each mission's page at rocketlabcorp.com/missions/launches; every card credits Rocket Lab and links the page, and [src/assets/patches/patches.json](src/assets/patches/patches.json) lists them all.
+
+Official photos are not in the repository. For your own play, save one as `src/assets/official/<level id>.jpg` (git-ignored) and it shows on that level's cards. Rocket Lab's Flickr asks for credit and marks its photos all rights reserved.
 
 ## Licence and credits
 
 - **Code:** MIT, see [LICENSE](LICENSE).
 - **Story text and generated artwork:** CC BY-SA 4.0.
+- **Mission patches:** © Rocket Lab, not covered by the licences above; each card links its source.
 - **Photos on story cards:** freely licensed images from Wikimedia Commons, each credited in [public/assets/photos/CREDITS.md](public/assets/photos/CREDITS.md).
 
 Rocket Lab, Electron, Neutron and the mission names belong to Rocket Lab. This project is a tribute by fans and is not endorsed by the company. If you are shown in the game and would like to be removed, open an issue.

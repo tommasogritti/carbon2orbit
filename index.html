@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
     <title>Carbon to Orbit — an unofficial Rocket Lab fan game</title>
+    <meta name="description" content="Play the story of Rocket Lab, one level at a time: platform levels, launch control and mini-games. An unofficial, open-source fan game, not affiliated with Rocket Lab." />
   </head>
   <body>
     <div id="stage">
@@ -12,12 +13,14 @@
       <button id="full" title="Full screen (F)" aria-label="Full screen on or off">⛶</button>
       <button id="help" title="Controls (H)" aria-label="Show the controls">?</button>
       <button id="mute" title="Sound on/off (M)" aria-label="Sound on or off">🔊</button>
+      <button id="track" title="Next soundtrack (T)" aria-label="Switch to the next soundtrack">♪</button>
+      <div id="speed" aria-label="Game speed"><button data-d="1" title="Faster (+)" aria-label="Faster">+</button><span>×1</span><button data-d="-1" title="Slower (−)" aria-label="Slower">−</button></div>
       <div id="touch" hidden>
         <div class="tgroup"><button data-k="left">◀</button><button data-k="right">▶</button><button data-k="up">▲</button><button data-k="down">▼</button></div>
         <div class="tgroup"><button data-k="b">B</button><button data-k="a">A</button></div>
       </div>
     </div>
-    <footer>Fan project, not affiliated with Rocket Lab. Code MIT · content CC BY-SA 4.0 · photo credits on each card. <button id="dev" title="Developer mode opens every level and lets K skip one">Developer mode: off</button></footer>
+    <footer>Fan project, not affiliated with Rocket Lab. Code MIT · content CC BY-SA 4.0 · photo credits on each card. <button id="credits" title="Who made the game, and where the source is (C on the title screen and the map)">Credits</button><button id="dev" title="Developer mode opens every level and lets K skip one">Developer mode: off</button></footer>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

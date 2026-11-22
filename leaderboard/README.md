@@ -4,10 +4,10 @@ A small Cloudflare Worker with a D1 database. The game works without it: with no
 
 ## How scores work
 
-- A score is `stars × 100 + easter eggs × 150 + secrets × 250 + people met × 50` (see `src/rules.js`, shared with the game).
+- A score is `level points + easter eggs × 150 + secrets × 250 + people met × 50` (see `src/rules.js`, shared with the game). A level's points are its stars × 100, scaled by the average game speed it was played at: ×0.5 at half speed, ×1 at normal speed, ×1.5 at double, ×2 at four times. The best run of each level counts.
 - Scores are grouped by **season**, the major.minor of the game version (`0.2.x` is season `0.2`). Levels and scoring change between seasons, so boards never mix them. Bump the minor version in `package.json` whenever levels are added or points change.
 - One row per name per season; a new submission replaces it only if it is higher.
-- The game runs in the browser, so a score cannot be proven. The Worker checks that the total matches its parts and that the parts are possible. Treat the board as friendly, not as proof.
+- The game runs in the browser, so a score cannot be proven. The Worker checks that the total matches its parts and that the parts are possible (level points must lie between what those stars earn at the slowest and the fastest speed). Treat the board as friendly, not as proof.
 
 ## Deploy
 
@@ -44,4 +44,4 @@ npx wrangler dev
 | Request | Reply |
 | --- | --- |
 | `GET /scores?season=0.2&limit=20` | `{ season, scores: [{ name, score, stars, levels, at }] }`, best first |
-| `POST /scores` with `{ season, version, name, score, stars, levels, eggs, secrets, people }` | `{ ok, rank, best }`, or `{ error }` with status 400 |
+| `POST /scores` with `{ season, version, name, score, points, stars, levels, eggs, secrets, people }` | `{ ok, rank, best }`, or `{ error }` with status 400 |

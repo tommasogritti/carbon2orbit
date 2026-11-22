@@ -4,6 +4,7 @@ import { D, S, MAPW, MAPH, BUST_URL, BUSTS, DIAGRAMS } from '../art';
 import { LEVELS, BONUS, PEOPLE, CHARACTERS, LevelDef } from '../content';
 import { snd, music, stopLoops } from '../audio';
 import { tally, showBoard } from '../leaderboard';
+import { showCredits } from '../contributors';
 
 const ZOOM = 2.5; // the map is shown wider than gameplay scenes so the geography reads at a glance
 /** Only announced things are locked. A chapter that is still unfolding (in-progress) can be played up to where the story has got to. */
@@ -128,8 +129,9 @@ export class MapScene extends Phaser.Scene {
       world.push(tagN, halo);
     }
     hotkeys.KeyL = () => showBoard();
+    hotkeys.KeyC = () => showCredits(this.game);
     hotkeys.KeyN = () => { const n = this.nextUp(); if (n && n !== this.cur && !this.moving) this.walkTo(n); };
-    this.events.once('shutdown', () => { hotkeys.KeyN = undefined; hotkeys.KeyL = undefined; });
+    this.events.once('shutdown', () => { hotkeys.KeyN = undefined; hotkeys.KeyL = undefined; hotkeys.KeyC = undefined; });
     cam.ignore(hud);
     this.cameras.add(0, 0, W * D, H * D).setZoom(D).centerOn(W / 2, H / 2).ignore(world);
     this.refresh();

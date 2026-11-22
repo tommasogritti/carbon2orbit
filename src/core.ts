@@ -1,15 +1,18 @@
 import Phaser from 'phaser';
 import { byId, CHARACTERS } from './content';
+import { speedFactor, levelPoints } from '../leaderboard/src/rules.js';
 import type { LevelDef } from './content';
 import { D, S, UI, BUSTS } from './art';
-import { beep, snd, music, stopLoops, unlock, muted, setMuted } from './audio';
+import { beep, snd, music, stopLoops, unlock, muted, setMuted, nextSoundtrack } from './audio';
 
+/** `?clean=1` leaves Rocket Lab's mission patches and the optional local photos out, for footage without their artwork. */
+const CLEAN = new URLSearchParams(location.search).has('clean');
 /**
- * Official mission patches, by level id, when they have been fetched into src/assets/patches/ (see README).
- * They are Rocket Lab's artwork, so that folder is git-ignored: the game shows a patch where the file exists and
- * simply goes without where it does not. Nothing here ships in the repository.
+ * Official Rocket Lab mission patches, by file name (normally the level id), from src/assets/patches/.
+ * patches.json lists, for each level, which patches it shows, the mission each belongs to and the page it came from;
+ * the cards credit Rocket Lab and link that page. How to add one: .claude/skills/add-level/SKILL.md.
  */
-export const PATCHES: Record<string, string> = Object.fromEntries(
+export const PATCHES: Record<string, string> = CLEAN ? {} : Object.fromEntries(
   Object.entries(import.meta.glob('./assets/patches/*.png', { eager: true, import: 'default', query: '?url' }) as Record<string, string>).map(([p, url]) => [p.split('/').pop()!.replace('.png', ''), url]),
 );
 /**
@@ -18,7 +21,7 @@ export const PATCHES: Record<string, string> = Object.fromEntries(
  * downloaded with credit, but they are all rights reserved, so this folder is git-ignored too: local play only.
  */
 const officialMeta = (Object.values(import.meta.glob('./assets/official/manifest.json', { eager: true, import: 'default' }))[0] || {}) as Record<string, { title: string; page: string }>;
-export const OFFICIAL: Record<string, NonNullable<LevelDef['photo']>> = Object.fromEntries(
+export const OFFICIAL: Record<string, NonNullable<LevelDef['photo']>> = CLEAN ? {} : Object.fromEntries(
   Object.entries(import.meta.glob('./assets/official/*.jpg', { eager: true, import: 'default', query: '?url' }) as Record<string, string>).map(([p, src]) => {
     const id = p.split('/').pop()!.replace('.jpg', '');
     return [id, { file: '', src, official: true, caption: officialMeta[id]?.title || 'Official Rocket Lab photo', credit: 'Rocket Lab', page: officialMeta[id]?.page || 'https://www.flickr.com/photos/rocketlab/' }];
@@ -26,7 +29,16 @@ export const OFFICIAL: Record<string, NonNullable<LevelDef['photo']>> = Object.f
 );
 /** The picture for a level's cards: its freely licensed photo if it has one, else a local official photo if present. */
 export const cardPhoto = (def: LevelDef) => def.photo || OFFICIAL[def.id];
-export const patchImg = (id: string) => (PATCHES[id] ? `<img class="patch" src="${PATCHES[id]}" alt="Mission patch" title="Mission patch © Rocket Lab">` : '');
+export interface PatchSource { file: string; mission: string; page: string }
+export const PATCH_SOURCES: Record<string, PatchSource[]> = CLEAN ? {} : (Object.values(import.meta.glob('./assets/patches/patches.json', { eager: true, import: 'default' }))[0] || {}) as Record<string, PatchSource[]>;
+/** A level's mission patch (or patches), credited to Rocket Lab with a link to the mission page it came from. */
+export function patchImg(id: string) {
+  const list = (PATCH_SOURCES[id] || []).filter((p) => PATCHES[p.file.replace('.png', '')]);
+  if (!list.length) return '';
+  const imgs = list.map((p) => `<img src="${PATCHES[p.file.replace('.png', '')]}" alt="${p.mission} mission patch">`).join('');
+  const credit = list.map((p) => `${p.mission} · <a href="${p.page}" target="_blank" rel="noopener">source</a>`).join('<br>');
+  return `<figure class="patches${list.length > 1 ? ' two' : ''}"><div>${imgs}</div><figcaption>Mission patch${list.length > 1 ? 'es' : ''} © Rocket Lab<br>${credit}</figcaption></figure>`;
+}
 export const W = 320;
 export const H = 180;
 export const SCENE_FOR: Record<string, string> = { platform: 'Platform', launch: 'Launch', hotfire: 'Hotfire', 'heli-catch': 'Heli', 'orbit-raise': 'OrbitRaise', sprint: 'Sprint', 'fault-finder': 'FaultFinder', splashdown: 'Splashdown', cruise: 'Cruise', 'countdown-race': 'CountdownRace', ride: 'Ride', 'orbit-ops': 'OrbitOps', 'dual-count': 'DualCount', 'arc-lab': 'ArcLab' };
@@ -68,10 +80,15 @@ export function initInput(game: Phaser.Game) {
     else if (sc.def) { sc.scene.pause(); finish(sc, sc.def, { success: true, stars: 1, title: 'Skipped', text: 'Developer mode: level skipped and marked as done.' }); }
   };
   hotkeys.KeyH = () => showHelp(game);
+  document.querySelectorAll<HTMLElement>('#speed button').forEach((b) => b.addEventListener('click', () => { b.blur(); setSpeed(Number(b.dataset.d)); }));
+  showSpeed();
   // F, or the corner button, fills the screen. The whole stage goes full screen, so cards still show on top of the game.
   const full = () => { if (game.scale.fullscreen.available) game.scale.toggleFullscreen(); };
   hotkeys.KeyF = full;
   document.getElementById('full')?.addEventListener('click', (e) => { (e.currentTarget as HTMLElement).blur(); full(); });
+  // T, or the note button, steps through the soundtracks; the new one's name shows for a moment.
+  const track = () => { unlock(); const s = nextSoundtrack(); toast(`♪ Soundtrack: ${s.name} · ${s.style}`); };
+  document.getElementById('track')?.addEventListener('click', (e) => { (e.currentTarget as HTMLElement).blur(); track(); });
   const help = document.getElementById('help');
   help?.addEventListener('click', () => { help.blur(); if (helpOpen) overlayConfirm(); else showHelp(game); });
   const dev = document.getElementById('dev');
@@ -88,6 +105,9 @@ export function initInput(game: Phaser.Game) {
     unlock(); // browsers only allow sound after a key press or tap
     if ((e.target as HTMLElement | null)?.tagName === 'INPUT') { if (e.code === 'Enter') { overlayConfirm(); e.preventDefault(); } return; } // typing a name: keys are text, not controls
     if (e.code === 'KeyM' && !e.repeat) setMuted(!muted());
+    if (!overlayOpen() && (e.key === '+' || e.key === '=' || e.code === 'NumpadAdd')) { setSpeed(1); e.preventDefault(); return; }
+    if (!overlayOpen() && (e.key === '-' || e.key === '_' || e.code === 'NumpadSubtract')) { setSpeed(-1); e.preventDefault(); return; }
+    if (e.code === 'KeyT' && !e.repeat) track();
     if (e.code === 'KeyH' && !e.repeat && helpOpen) { overlayConfirm(); e.preventDefault(); return; } // H closes the panel it opened
     if (!e.repeat && !overlayOpen() && hotkeys[e.code]) { hotkeys[e.code]!(); e.preventDefault(); return; }
     const k = MAP[e.code];
@@ -115,15 +135,15 @@ export const just = (k: Key) => live() && latch[k];
 export const sfx = beep;
 
 // ---------- save ----------
-export interface Save { v: 1; done: Record<string, number>; eggs: Record<string, true>; unlocks: Record<string, true>; met: Record<string, true>; at?: string }
+export interface Save { v: 1; done: Record<string, number>; pts: Record<string, number>; eggs: Record<string, true>; unlocks: Record<string, true>; met: Record<string, true>; at?: string }
 const KEY = 'carbon-to-orbit-save';
 export function loadSave(): Save {
-  try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && s.v === 1) return { unlocks: {}, met: {}, ...s }; } catch { /* fresh save */ }
-  return { v: 1, done: {}, eggs: {}, unlocks: {}, met: {} };
+  try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && s.v === 1) return { unlocks: {}, met: {}, pts: {}, ...s }; } catch { /* fresh save */ }
+  return { v: 1, done: {}, pts: {}, eggs: {}, unlocks: {}, met: {} };
 }
 export const save: Save = loadSave();
 export function persist() { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch { /* private mode */ } }
-export function resetSave() { save.done = {}; save.eggs = {}; save.unlocks = {}; save.met = {}; delete save.at; persist(); }
+export function resetSave() { save.done = {}; save.pts = {}; save.eggs = {}; save.unlocks = {}; save.met = {}; delete save.at; persist(); }
 /** Developer mode: every node open, and K skips a level. On with ?dev=1 in the address, or with the switch in the page footer (remembered). */
 const devStored = () => { try { return localStorage.getItem('carbon-to-orbit-dev') === '1'; } catch { return false; } };
 export const DEV = new URLSearchParams(location.search).has('dev') || devStored();
@@ -166,6 +186,39 @@ export function showCard(html: string, btns: Btn[], photo?: LevelDef['photo']) {
   confirmFn = () => { closeCard(); btns[0].fn(); };
   o.hidden = false;
 }
+/** A line of text at the top of the stage that fades away by itself. */
+let toastTimer: number | undefined;
+export function toast(text: string) {
+  let el = document.getElementById('toast');
+  if (!el) { el = document.createElement('div'); el.id = 'toast'; el.setAttribute('role', 'status'); document.getElementById('stage')!.appendChild(el); }
+  el.textContent = text; el.classList.add('on');
+  clearTimeout(toastTimer); toastTimer = window.setTimeout(() => el.classList.remove('on'), 2400);
+}
+// ---------- game speed: + and - at any moment in a level ----------
+/** The speeds on offer. Speed applies inside levels (not on the map), and a level's points scale with it: see `speedFactor`. */
+export const SPEEDS = [0.5, 0.75, 1, 1.5, 2, 3, 4];
+const SPEED_KEY = 'carbon-to-orbit-speed';
+let speedIx = (() => { try { const i = SPEEDS.indexOf(Number(localStorage.getItem(SPEED_KEY))); return i < 0 ? 2 : i; } catch { return 2; } })();
+export const speed = () => SPEEDS[speedIx];
+const pct = (f: number) => (f === 1 ? 'score ×1' : `score ×${f}`);
+function showSpeed() {
+  const el = document.querySelector('#speed span'); if (!el) return;
+  const f = speedFactor(speed()) as number;
+  el.innerHTML = `×${speed()}<small>${f === 1 ? '' : f > 1 ? '+' + Math.round((f - 1) * 100) + '%' : '−' + Math.round((1 - f) * 100) + '%'}</small>`;
+  (el.parentElement as HTMLElement).title = `Game speed ×${speed()} (+ and − keys): ${pct(f)} in a level`;
+  (el.parentElement as HTMLElement).classList.toggle('fast', speed() > 1); (el.parentElement as HTMLElement).classList.toggle('slow', speed() < 1);
+}
+export function setSpeed(d: number) {
+  const i = Math.max(0, Math.min(SPEEDS.length - 1, speedIx + d));
+  if (i === speedIx) return snd.deny();
+  speedIx = i; snd.click(); try { localStorage.setItem(SPEED_KEY, String(speed())); } catch { /* private mode */ }
+  showSpeed();
+}
+/** The average speed of the level being played: game steps taken per screen frame, counted only while a level is running. */
+const run = { frames: 0, steps: 0 };
+export function trackRun(steps: number) { run.frames++; run.steps += steps; }
+const runAverage = () => (run.frames > 30 ? run.steps / run.frames : 1);
+
 // ---------- the controls panel: H, or the ? button, at any moment ----------
 /**
  * What the keys do, per scene. A scene whose controls depend on the level (or the phase) defines `help()` instead and
@@ -173,7 +226,7 @@ export function showCard(html: string, btns: Btn[], photo?: LevelDef['photo']) {
  */
 export interface Help { title: string; rows: [keys: string, does: string][]; note?: string }
 export const CONTROLS: Record<string, Help> = {
-  Map: { title: 'World map', rows: [['← ↑ ↓ →', 'Walk to the nearest level in that direction'], ['Enter', 'Open the level, card or person you are standing on'], ['N', 'Walk straight to the next level to play'], ['L', 'Your score and the leaderboard']], note: 'Greyed-out levels open once every earlier level on the story path is finished.' },
+  Map: { title: 'World map', rows: [['← ↑ ↓ →', 'Walk to the nearest level in that direction'], ['Enter', 'Open the level, card or person you are standing on'], ['N', 'Walk straight to the next level to play'], ['L', 'Your score and the leaderboard'], ['C', 'Who made the game, and its source']], note: 'Greyed-out levels open once every earlier level on the story path is finished.' },
   Platform: { title: 'Platform level', rows: [['← →', 'Run'], ['Space', 'Jump: hold for a higher jump. Land on a troublemaker to see it off'], ['Space (jet pack)', 'Hold to fly while the jet pack lasts'], ['Space (gumboots)', 'Press again in mid-air for a second jump']], note: 'Collect every part, then reach the goal. Bubbles are power-ups; the timer bar shows how long one lasts.' },
   Hotfire: { title: 'Engine hot-fire', rows: [['Space', 'Hold to spin the electric pumps up; release to let pressure fall']], note: 'Keep the needle in the green band until the qualification bar is full, before the battery runs flat.' },
   Heli: { title: 'Helicopter catch', rows: [['← ↑ ↓ →', 'Fly the helicopter']], note: 'Put the hook at the bottom of your cable on the line trailing above the parachute. You get three passes.' },
@@ -188,7 +241,7 @@ export function showHelp(game: Phaser.Game) {
   const sc = game.scene.getScenes(true)[0] as any;
   const h: Help | undefined = sc && (sc.help?.() || CONTROLS[sc.scene.key]);
   if (!h) return;
-  const rows: [string, string][] = [...h.rows, ['H', 'Show or hide this panel'], ['M', 'Sound on or off'], ...(DEV ? [['K', 'Developer mode: skip this level'] as [string, string]] : [])];
+  const rows: [string, string][] = [...h.rows, ['+ −', 'Game speed in a level: faster scores more, slower scores less'], ['H', 'Show or hide this panel'], ['M', 'Sound on or off'], ['T', 'Next soundtrack: four to choose from'], ...(DEV ? [['K', 'Developer mode: skip this level'] as [string, string]] : [])];
   sc.scene.pause(); helpOpen = true; snd.select();
   showCard(`<div class="kicker">CONTROLS · GAME PAUSED</div><h1>${h.title}</h1><table class="keys">${rows.map(([k, t]) => `<tr><td>${kbd(k)}</td><td>${t}</td></tr>`).join('')}</table>${h.note ? `<p class="how">${h.note}</p>` : ''}<p class="src">Arrows also work as W A S D, Space as Z, Enter as X.</p>`,
     [{ label: 'Back to the game', fn: () => { helpOpen = false; sc.scene.resume(); } }]);
@@ -230,7 +283,15 @@ export function finish(scene: Phaser.Scene, def: LevelDef, r: { success: boolean
   }
   if (r.success && def._stars !== undefined) r = { ...r, stars: Math.min(def._stars, r.stars || 1), egg: r.egg || def._egg };
   stopLoops(); music.stop(0.3); if (r.success) snd.win(); else snd.lose();
-  if (r.success) { save.done[def.id] = Math.max(save.done[def.id] || 0, r.stars || 1); }
+  // points for the level: stars × 100, scaled by the average game speed it was played at; the best run is kept
+  const avg = runAverage(), factor = speedFactor(avg) as number, earned = r.success ? (levelPoints(r.stars || 1, avg) as number) : 0;
+  run.frames = 0; run.steps = 0;
+  if (r.success) {
+    const before = save.pts[def.id] ?? (save.done[def.id] || 0) * 100;
+    save.pts[def.id] = Math.max(before, earned);
+    save.done[def.id] = Math.max(save.done[def.id] || 0, r.stars || 1);
+  }
+  const speedLine = r.success ? `<p class="src">Played at ×${avg.toFixed(2).replace(/\.?0+$/, '')} speed on average: ${factor === 1 ? `${earned} points` : `score ×${factor} = ${earned} points`}${save.pts[def.id] > earned ? ` (your best here is ${save.pts[def.id]})` : ''}. Press + or − in a level to change speed.</p>` : '';
   if (r.egg && def.egg) save.eggs[def.id] = true;
   const fresh = !!(r.success && r.secret && def.unlocks && !save.unlocks[def.unlocks]);
   if (r.success && r.secret && def.unlocks) save.unlocks[def.unlocks] = true;
@@ -239,7 +300,7 @@ export function finish(scene: Phaser.Scene, def: LevelDef, r: { success: boolean
   const egg = def.egg ? (save.eggs[def.id] ? `<p class="fact"><b>Easter egg found:</b> ${def.egg}</p>` : `<p class="src">There is an easter egg hidden in this level…</p>`) : '';
   const bonus = def.unlocks ? byId(def.unlocks) : undefined;
   const secret = !bonus ? '' : save.unlocks[bonus.id] ? `<p class="fact unlock"><b>${fresh ? 'Secret unlocked' : 'Secret found'}:</b> “${bonus.title}” is now on the map, branching off this node.</p>` : `<p class="src">A blueprint is hidden somewhere in this level. You will need a power-up to reach it.</p>`;
-  const html = `${r.success ? patchImg(def.id) : ''}<div class="kicker">${def.title.toUpperCase()} · ${r.success ? 'MISSION SUCCESS' : 'ANOMALY'}</div><h1>${r.title}</h1>${stars}<p>${r.text}</p>${r.success ? `<p class="fact"><b>What really happened:</b> ${def.after}</p>` : ''}${r.success ? watchLink(def) : ''}${egg}${r.success ? secret : ''}`;
+  const html = `${r.success ? patchImg(def.id) : ''}<div class="kicker">${def.title.toUpperCase()} · ${r.success ? 'MISSION SUCCESS' : 'ANOMALY'}</div><h1>${r.title}</h1>${stars}<p>${r.text}</p>${r.success ? `<p class="fact"><b>What really happened:</b> ${def.after}</p>` : ''}${speedLine}${r.success ? watchLink(def) : ''}${egg}${r.success ? secret : ''}`;
   const back = () => scene.scene.start('Map', { title: false }); // without data Phaser reuses the boot data and the title card comes back
   const retry = () => scene.scene.start(scene.scene.key, { def });
   showCard(html, r.success ? [{ label: 'Back to map', fn: back }, { label: 'Play again', fn: retry, alt: true }] : [{ label: 'Try again', fn: retry }, { label: 'Back to map', fn: back, alt: true }]);

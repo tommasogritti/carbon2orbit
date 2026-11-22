@@ -4,9 +4,6 @@ dist
 **/source-photo.*
 recordings
 
-# Rocket Lab mission patches: their artwork, fetched for local play only, never committed
-src/assets/patches/
-
 # Official Rocket Lab photos (Flickr, all rights reserved, credit required): local play only, never committed
 src/assets/official/
 

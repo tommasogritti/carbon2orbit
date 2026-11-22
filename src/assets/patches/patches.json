@@ -1,0 +1,112 @@
+{
+  "its-a-test": [
+    {
+      "file": "its-a-test.png",
+      "mission": "It's a Test",
+      "page": "https://rocketlabcorp.com/missions/launches/its-a-test/"
+    }
+  ],
+  "still-testing": [
+    {
+      "file": "still-testing.png",
+      "mission": "Still Testing",
+      "page": "https://rocketlabcorp.com/missions/launches/still-testing/"
+    }
+  ],
+  "its-business-time": [
+    {
+      "file": "its-business-time.png",
+      "mission": "It's Business Time",
+      "page": "https://rocketlabcorp.com/missions/launches/its-business-time/"
+    }
+  ],
+  "pics-or-it-didnt-happen": [
+    {
+      "file": "pics-or-it-didnt-happen.png",
+      "mission": "Pics Or It Didn't Happen",
+      "page": "https://rocketlabcorp.com/missions/launches/pics-or-it-didnt-happen/"
+    }
+  ],
+  "return-to-sender": [
+    {
+      "file": "return-to-sender.png",
+      "mission": "Return to Sender",
+      "page": "https://rocketlabcorp.com/missions/launches/flight-16/"
+    }
+  ],
+  "there-and-back-again": [
+    {
+      "file": "there-and-back-again.png",
+      "mission": "There And Back Again",
+      "page": "https://rocketlabcorp.com/missions/launches/there-and-back-again/"
+    }
+  ],
+  "capstone": [
+    {
+      "file": "capstone.png",
+      "mission": "CAPSTONE",
+      "page": "https://rocketlabcorp.com/missions/launches/capstone/"
+    }
+  ],
+  "lc-2": [
+    {
+      "file": "lc-2.png",
+      "mission": "Virginia is for Launch Lovers",
+      "page": "https://rocketlabcorp.com/missions/launches/new-mission-page-2/"
+    }
+  ],
+  "haste": [
+    {
+      "file": "haste.png",
+      "mission": "Scout's Arrow",
+      "page": "https://rocketlabcorp.com/missions/launches/scouts-arrow/"
+    }
+  ],
+  "paschens-law": [
+    {
+      "file": "paschens-law.png",
+      "mission": "We Will Never Desert You",
+      "page": "https://rocketlabcorp.com/missions/launches/we-will-never-desert-you/"
+    }
+  ],
+  "beginning-of-the-swarm": [
+    {
+      "file": "beginning-of-the-swarm.png",
+      "mission": "Beginning Of The Swarm",
+      "page": "https://rocketlabcorp.com/missions/launches/beginning-of-the-swarm/"
+    }
+  ],
+  "two-hemispheres": [
+    {
+      "file": "two-hemispheres-2.png",
+      "mission": "HASTE A La Vista",
+      "page": "https://rocketlabcorp.com/missions/launches/haste-a-la-vista/"
+    },
+    {
+      "file": "two-hemispheres.png",
+      "mission": "Ice AIS Baby",
+      "page": "https://rocketlabcorp.com/missions/launches/ice-ais-baby/"
+    }
+  ],
+  "outback-delivery": [
+    {
+      "file": "outback-delivery.png",
+      "mission": "Varda W-Series",
+      "page": "https://rocketlabcorp.com/missions/launches/varda-space-industries/"
+    }
+  ],
+  "victus-haze": [
+    {
+      "file": "victus-haze.png",
+      "mission": "VICTUS HAZE",
+      "page": "https://rocketlabcorp.com/missions/launches/victus-haze/"
+    }
+  ],
+  "the-mountain-god-rises": [
+    {
+      "file": "the-mountain-god-rises.png",
+      "mission": "The Mountain God Rises",
+      "page": "https://rocketlabcorp.com/missions/launches/iqps-the-mountain-god-rises/"
+    }
+  ]
+}

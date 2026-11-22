@@ -17,6 +17,8 @@ How the code works is in [docs/ARCHITECTURE.md](../../../docs/ARCHITECTURE.md). 
 
 3. **Write the level as data.** Add a `LevelDef` to `LEVELS` in `src/content.ts`, in story order, following a neighbouring level of the same mechanic. Place it on the map with the `nz()` or `us()` projection in `src/art.ts`. Done when `intro`, `how`, `fact`, `after`, `egg`, `sources` and `params` are filled, and `after` says what really happened.
 
+   **A level about a Rocket Lab mission gets its patch.** Find the mission's page on rocketlabcorp.com/missions/launches (the address does not always match the mission name: search the launches list by name). The patch is the page's `/assets/Uploads/…` image, usually with "Patch" in its name; the site answers scripts with 403 but serves the image itself to `curl`. Save it 256 px tall as `src/assets/patches/<level id>.png` (`sips -s format png --resampleHeight 256 <download> --out <file>`) and add the level to `src/assets/patches/patches.json` with the mission name and page. A level with two missions lists two files. Done when the level's opening card shows the patch with its credit and source link.
+
 4. **Give the chapter its own world.** Draw what the level needs in `src/backdrops.ts` or `src/art.ts` with the canvas helpers:
    - a backdrop built from things that were really there, read left to right as a walk through the chapter;
    - on platform levels: enemies and power-ups that belong to this chapter, each explained by a fact, and each power-up changing how the character looks as well as what they can do;
@@ -31,7 +33,7 @@ How the code works is in [docs/ARCHITECTURE.md](../../../docs/ARCHITECTURE.md). 
 
 ## Rules
 
-- **Fan project.** Commit no official Rocket Lab logos, patches, photos or video. Photos must be freely licensed and credited in `public/assets/photos/CREDITS.md`; video is linked, never copied.
+- **Fan project.** Official Rocket Lab mission patches are the one piece of Rocket Lab artwork the repository carries, each credited and linked to its source. Every other photo must be freely licensed and credited in `public/assets/photos/CREDITS.md`; Rocket Lab's logos, photos and video stay out, and video is linked, never copied.
 - **Real people.** Show them in their public role, state facts with sources, and write no speech for them. A person appears as a guest lead (`hero`), a running mate (`params.buddy`) or someone to meet (`PEOPLE`); Peter Beck remains the main character. Draw a new character to the likeness rules in spec §7.0.
 - **Where sources disagree,** say less on screen and list the question as open in spec §12.1.
 - **Launch control** is written for players who know the vocabulary. Keep terms, sequence and timings true to the webcasts; game-only limits are documented as such in spec §10.2c.

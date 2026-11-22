@@ -4,6 +4,7 @@ import { S } from '../art';
 import { music, stopLoops, snd } from '../audio';
 import { VERSION, SEASON } from '../version';
 import { tally, showBoard } from '../leaderboard';
+import { showCredits } from '../contributors';
 
 /** The title screen: the whole canvas, an Electron climbing past the Earth's limb, and the way in. */
 export class TitleScene extends Phaser.Scene {
@@ -49,10 +50,11 @@ export class TitleScene extends Phaser.Scene {
     this.tweens.add({ targets: go, alpha: 0.25, duration: 620, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     T(this, W / 2, 151, t.levels ? `${t.levels} of ${t.of} levels played · ${t.score.toLocaleString('en-NZ')} points` : `${t.of} levels across thirty years`, '#ffe98a', 6).setOrigin(0.5).setShadow(0, 1, '#000000', 3);
     T(this, 6, H - 5, `v${VERSION} · season ${SEASON}`, '#8fa3c8', 4.8, '700').setOrigin(0, 1).setShadow(0, 1, '#000000', 3);
-    T(this, W / 2, H - 5, 'H controls   L leaderboard   F full screen   M sound', '#b8c6e6', 4.8, '700').setOrigin(0.5, 1).setShadow(0, 1, '#000000', 3);
+    T(this, W / 2, H - 5, 'H controls   L leaderboard   C credits   F full screen   M sound', '#b8c6e6', 4.8, '700').setOrigin(0.5, 1).setShadow(0, 1, '#000000', 3);
     T(this, W - 6, H - 5, 'Not affiliated with Rocket Lab', '#8fa3c8', 4.8, '700').setOrigin(1, 1).setShadow(0, 1, '#000000', 3);
     hotkeys.KeyL = () => showBoard();
-    this.events.once('shutdown', () => { hotkeys.KeyL = undefined; });
+    hotkeys.KeyC = () => showCredits(this.game);
+    this.events.once('shutdown', () => { hotkeys.KeyL = undefined; hotkeys.KeyC = undefined; });
     this.input.on('pointerdown', () => this.start());
   }
   /** One climb, bottom-left to top-right, then again after a pause. */
@@ -60,7 +62,7 @@ export class TitleScene extends Phaser.Scene {
     this.rocket.setPosition(20, H + 86).setAlpha(1);
     this.tweens.add({ targets: this.rocket, x: 152, y: -30, duration: 15000, ease: 'Quad.easeIn', onComplete: () => this.time.delayedCall(3500, () => this.fly()) });
   }
-  help() { return { title: 'Title screen', rows: [['Enter', 'Start, or carry on where you left off'], ['L', 'Your score and the leaderboard'], ['F', 'Full screen on or off']] as [string, string][] }; }
+  help() { return { title: 'Title screen', rows: [['Enter', 'Start, or carry on where you left off'], ['L', 'Your score and the leaderboard'], ['C', 'Who made the game, and its source'], ['F', 'Full screen on or off']] as [string, string][] }; }
   start() {
     if (this.leaving || overlayOpen()) return;
     this.leaving = true; snd.select();

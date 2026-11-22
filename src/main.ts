@@ -3,10 +3,10 @@ import '@fontsource/chakra-petch/500.css';
 import '@fontsource/chakra-petch/600.css';
 import '@fontsource/chakra-petch/700.css';
 import './style.css';
-import { W, H, initInput, save, resetSave, closeCard, SCENE_FOR, PATCHES } from './core';
+import { W, H, initInput, save, resetSave, closeCard, SCENE_FOR, PATCHES, speed, trackRun, overlayOpen } from './core';
 import { makeArt, D } from './art';
 import { makeBackdrops } from './backdrops';
-import { recStream, unlock, audioState } from './audio';
+import { recStream, unlock, audioState, renderMusic } from './audio';
 import { byId, LEVELS } from './content';
 import { MapScene, openLevel } from './scenes/Map';
 import { PlatformScene } from './scenes/Platform';
@@ -16,6 +16,7 @@ import { HeliScene } from './scenes/Heli';
 import { OrbitRaiseScene } from './scenes/OrbitRaise';
 import { SprintScene } from './scenes/Sprint';
 import { TitleScene } from './scenes/Title';
+import { showCredits } from './contributors';
 import { FaultFinderScene } from './scenes/FaultFinder';
 import { SplashdownScene } from './scenes/Splashdown';
 import { CruiseScene } from './scenes/Cruise';
@@ -27,7 +28,7 @@ import { ArcLabScene } from './scenes/ArcLab';
 
 class Boot extends Phaser.Scene {
   constructor() { super('Boot'); }
-  preload() { for (const [id, url] of Object.entries(PATCHES)) this.load.image('patch_' + id, url); } // mission patches, where present locally
+  preload() { for (const [id, url] of Object.entries(PATCHES)) this.load.image('patch_' + id, url); } // mission patches, for the fairing decal
   create() {
     makeArt(this); makeBackdrops(this);
     const q = new URLSearchParams(location.search);
@@ -47,13 +48,15 @@ Promise.all(['500', '600', '700'].map((w) => document.fonts.load(`${w} 16px "Cha
     scene: [Boot, TitleScene, MapScene, PlatformScene, LaunchScene, HotfireScene, HeliScene, OrbitRaiseScene, SprintScene, FaultFinderScene, SplashdownScene, CruiseScene, CountdownRaceScene, RideScene, OrbitOpsScene, DualCountScene, ArcLabScene],
   });
   initInput(game);
+  document.getElementById('credits')?.addEventListener('click', (e) => { (e.currentTarget as HTMLElement).blur(); showCredits(game); });
   // Dev-only gameplay recorder: ?rec=<name> captures the canvas; the clip is saved by the dev server when the level ends.
+  // &recmix=sfx records the sound effects without the music, for footage that is cut to its own music afterwards.
   const recName = new URLSearchParams(location.search).get('rec');
   let recStop: undefined | (() => Promise<string>);
   if (recName && import.meta.env.DEV) {
     game.events.once('ready', () => {
       unlock();
-      const stream = new MediaStream([...game.canvas.captureStream(30).getVideoTracks(), ...recStream().getAudioTracks()]);
+      const stream = new MediaStream([...game.canvas.captureStream(30).getVideoTracks(), ...recStream(new URLSearchParams(location.search).get('recmix') === 'sfx').getAudioTracks()]);
       const rec = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9,opus', videoBitsPerSecond: 8_000_000 });
       const chunks: Blob[] = [];
       rec.ondataavailable = (e) => chunks.push(e.data);
@@ -66,6 +69,21 @@ Promise.all(['500', '600', '700'].map((w) => document.fonts.load(`${w} 16px "Cha
       (window as any).__g2o.recStop = recStop;
     });
   }
+  // Game speed (+ and -): while a level is running, each screen frame takes `speed()` game steps: two at ×2, one every
+  // other frame at ×0.5. Every step is a normal 60 Hz step, so physics and timing behave exactly as at ×1.
+  // Installed on the first step, not on 'ready': Phaser sets the loop's callback when the loop starts, which is after 'ready'.
+  if (!(Number(new URLSearchParams(location.search).get('fast')) > 1)) game.events.once('prestep', () => {
+    const draw = game.step.bind(game), skip = game.headlessStep.bind(game);
+    let acc = 0, t = 0;
+    game.loop.callback = (time: number, delta: number) => {
+      if (!t) t = time;
+      const sc = game.scene.getScenes(true)[0] as any, inLevel = !!(sc && sc.def) && !overlayOpen();
+      acc += inLevel ? speed() : 1;
+      const n = Math.floor(acc + 1e-9); acc -= n;
+      if (inLevel) trackRun(n);
+      for (let i = 0; i < n; i++) { t += delta; (i === n - 1 ? draw : skip)(t, delta); }
+    };
+  });
   // Dev-only fast-forward for bot runs: ?fast=6 steps the whole game six times per tick (it also keeps running in a background tab).
   const fast = Number(new URLSearchParams(location.search).get('fast'));
   if (fast > 1) game.events.once('ready', () => {
@@ -78,6 +96,8 @@ Promise.all(['500', '600', '700'].map((w) => document.fonts.load(`${w} 16px "Cha
   (window as any).__g2o = {
     game, save, LEVELS, resetSave, closeCard, openLevel, audio: audioState,
     scene: () => game.scene.getScenes(true)[0],
+    // Dev-only: render a soundtrack offline to recordings/<name>.wav, e.g. renderMusic('synthwave', [['map', 4], ['launch', 4, 0], ['launch', 4, 1], ['launch', 8, 2]], 'preview')
+    renderMusic: import.meta.env.DEV ? async (track: string, plan: [string, number, number?][], name: string, tail?: number) => { const wav = await renderMusic(track, plan, tail); await fetch(`/__rec?ext=wav&name=${name}`, { method: 'POST', body: wav }); return `saved ${name}.wav, ${(wav.size / 192000).toFixed(1)} s`; } : undefined,
     go: (id: string) => { closeCard(); const d = byId(id); game.scene.getScenes(true).forEach((s) => s.scene.stop()); game.scene.start(SCENE_FOR[d.mechanic!], { def: d }); },
   };
 });

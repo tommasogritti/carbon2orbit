@@ -8,4 +8,4 @@ An unofficial, open-source Rocket Lab fan game: Vite + TypeScript + Phaser 3, al
 
 Before a commit: `npm run build` passes; the level's bot (`?level=<id>&auto=1`, in a visible tab) finishes with three stars; `npm run sim` passes when launch physics changed.
 
-Commit no official Rocket Lab logos, patches, photos or video. Text about real people states sourced facts and no invented speech.
+Official Rocket Lab mission patches are committed, credited and linked to their source (how: the add-level skill); commit no other Rocket Lab logos, photos or video. Text about real people states sourced facts and no invented speech.

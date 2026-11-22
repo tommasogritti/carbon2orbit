@@ -1,5 +1,7 @@
 // All sound is synthesised with the Web Audio API: no audio files, nothing to license.
 // Three parts: one-shot effects (`snd`), continuous loops (`loop`) and a small step sequencer (`music`).
+// The sequencer plays the default score (SONGS, below) or one of the alternative soundtracks in soundtracks.ts.
+import { SOUNDTRACKS } from './soundtracks';
 
 const PREF = 'carbon-to-orbit-audio';
 let ctx: AudioContext | undefined;
@@ -12,14 +14,18 @@ const LEVEL = 0.85;
 function ac(): AudioContext {
   if (ctx) return ctx;
   ctx = new AudioContext();
-  master = ctx.createGain(); master.gain.value = isMuted ? 0 : LEVEL;
-  out = ctx.createDynamicsCompressor(); out.threshold.value = -16; out.ratio.value = 5; out.attack.value = 0.004; out.release.value = 0.2;
-  master.connect(out).connect(ctx.destination);
-  musicBus = ctx.createGain(); musicBus.gain.value = 0.62; musicBus.connect(master);
-  sfxBus = ctx.createGain(); sfxBus.gain.value = 0.9; sfxBus.connect(master);
-  noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
-  const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  wire(ctx, isMuted ? 0 : LEVEL);
   return ctx;
+}
+/** Build the mixer on a context: music and effects buses into the master gain, then a compressor. */
+function wire(c: BaseAudioContext, level: number) {
+  master = c.createGain(); master.gain.value = level;
+  out = c.createDynamicsCompressor(); out.threshold.value = -16; out.ratio.value = 5; out.attack.value = 0.004; out.release.value = 0.2;
+  master.connect(out).connect(c.destination);
+  musicBus = c.createGain(); musicBus.gain.value = 0.62; musicBus.connect(master);
+  sfxBus = c.createGain(); sfxBus.gain.value = 0.9; sfxBus.connect(master);
+  noiseBuf = c.createBuffer(1, c.sampleRate * 2, c.sampleRate);
+  const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
 }
 /** Browsers only start audio after a user gesture; call this from the first key press or tap. */
 export function unlock() { const c = ac(); if (c.state === 'suspended') void c.resume(); }
@@ -29,8 +35,12 @@ export function setMuted(m: boolean) {
   try { localStorage.setItem(PREF, m ? 'off' : 'on'); } catch { /* private mode */ }
   const b = document.getElementById('mute'); if (b) b.textContent = m ? '🔇' : '🔊';
 }
-/** Audio stream for the dev gameplay recorder. */
-export function recStream() { const c = ac(); if (!recDest) { recDest = c.createMediaStreamDestination(); out.connect(recDest); } return recDest.stream; }
+/** Audio stream for the dev gameplay recorder: the whole mix, or only the sound effects (for footage that gets its own music). */
+export function recStream(sfxOnly = false) {
+  const c = ac();
+  if (!recDest) { recDest = c.createMediaStreamDestination(); if (sfxOnly) { const g = c.createGain(); g.gain.value = 0.7; sfxBus.connect(g).connect(recDest); } else out.connect(recDest); }
+  return recDest.stream;
+}
 /** For tests: the context state and how many loops are running. */
 export const audioState = () => ({ state: ctx?.state, muted: isMuted, song: playing?.name, loops: loops.size });
 
@@ -275,7 +285,39 @@ const SONGS: Record<string, Song> = {
     lead: [[[0, 79, 8], [8, 88, 8]], [[4, 84, 10]], [[0, 81, 8], [8, 88, 8]], [[4, 86, 12]]],
   },
 };
-let playing: Song | undefined, step = 0, nextT = 0, timer: number | undefined, intensity = 2, songGain: GainNode | undefined;
+/** A song that has been set up to play: the default score's, or the current soundtrack's tune of the same name. */
+interface Cued { name: string; bpm: number; steps: number; play(step: number, t: number, spb: number): void }
+let playing: Cued | undefined, step = 0, nextT = 0, timer: number | undefined, intensity = 2, songGain: GainNode | undefined;
+
+// The soundtrack: the default score, or one of the alternatives. The choice is remembered.
+const TRACK_PREF = 'carbon-to-orbit-soundtrack';
+const ORIGINAL = { id: 'original', name: 'Original', style: 'the first score' };
+let trackId = ORIGINAL.id;
+try { const s = localStorage.getItem(TRACK_PREF); if (SOUNDTRACKS.some((x) => x.id === s)) trackId = s!; } catch { /* default score */ }
+export const soundtracks = () => [ORIGINAL, ...SOUNDTRACKS].map(({ id, name, style }) => ({ id, name, style }));
+export const soundtrack = () => soundtracks().find((s) => s.id === trackId)!;
+/** Change soundtrack. Whatever is playing starts again in the new one. */
+export function setSoundtrack(id: string) {
+  if (!soundtracks().some((s) => s.id === id)) return soundtrack();
+  trackId = id;
+  try { localStorage.setItem(TRACK_PREF, id); } catch { /* private mode */ }
+  if (playing) { const name = playing.name, level = intensity; music.stop(0.2); music.play(name, level); }
+  return soundtrack();
+}
+export function nextSoundtrack() { const all = soundtracks(); return setSoundtrack(all[(all.findIndex((s) => s.id === trackId) + 1) % all.length].id); }
+/** A song's tune in an alternative soundtrack, if that soundtrack is known and has one. */
+function tuneOf(name: string, track: string) { const alt = SOUNDTRACKS.find((s) => s.id === track), tune = alt?.tunes[name]; return alt && tune ? { alt, tune } : undefined; }
+/** Set a song up to play into `dest`. A soundtrack with no tune of that name falls back to the default score, so no level is ever silent. */
+function cue(name: string, c: BaseAudioContext, dest: AudioNode, track = trackId): Cued | undefined {
+  const t = tuneOf(name, track);
+  if (t) {
+    const { alt, tune } = t, n = tune.steps ?? 16, trim = c.createGain(); trim.gain.value = alt.gain * (tune.vol ?? 1); trim.connect(dest);
+    const kit = { c, noise: noiseBuf, ...(alt.fx ? alt.fx(c, trim, tune, noiseBuf) : { dry: trim, wet: trim }) };
+    return { name, bpm: tune.bpm, steps: n, play: (st, at, spb) => alt.step(kit, tune, Math.floor(st / n) % tune.chords.length, st % n, at, spb, intensity) };
+  }
+  const song = SONGS[name];
+  return song && { name, bpm: song.bpm, steps: 16, play: (st, at, spb) => classicStep(song, st, at, spb, dest) };
+}
 
 function voicePad(f: number, t: number, dur: number, vol: number, bus: AudioNode) {
   const c = ac(), lp = c.createBiquadFilter(), g = c.createGain(); lp.type = 'lowpass'; lp.frequency.value = 1100;
@@ -298,24 +340,25 @@ function drum(kind: 'k' | 's' | 'h', t: number, bus: AudioNode) {
   else { f.type = 'highpass'; f.frequency.value = 7500; g.gain.setValueAtTime(0.06, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.04); }
   s.connect(f).connect(g).connect(bus); s.start(t, Math.random()); s.stop(t + 0.2);
 }
-function schedule() {
-  const c = ac(), song = playing, bus = songGain;
-  if (!song || !bus) return;
-  const spb = 60 / song.bpm / 4; // seconds per 16th
-  while (nextT < c.currentTime + 0.18) {
-    const bar = Math.floor(step / 16) % song.chords.length, s = step % 16, [root, ...iv] = song.chords[bar], t = nextT;
-    const tones = [root + 12, ...iv.map((i) => root + 12 + i), root + 24];
-    const on = (layer: 'drums' | 'arp' | 'lead') => intensity >= (song.layers?.[layer] ?? 0);
-    if (s === 0) for (const m of [root + 12, ...iv.map((i) => root + 12 + i)]) voicePad(hz(m + 12), t, spb * 16, 0.022 * (song.pad ?? 1), bus);
-    const b = song.bass[s]; if (b !== null && b !== undefined) voice('triangle', hz(root + b), t, spb * 2.2, 0.26, bus, 700);
-    const a = song.arp?.[s]; if (a !== null && a !== undefined && on('arp')) voice(song.bell ? 'sine' : 'square', hz(tones[a % tones.length] + 12), t, song.bell ? 1.2 : spb * 1.6, song.bell ? 0.05 : 0.045, bus, song.bell ? undefined : 2400);
-    if (song.drums && on('drums')) { if (song.drums.k[s] === 'x') drum('k', t, bus); if (song.drums.s[s] === 'x') drum('s', t, bus); if (song.drums.h[s] === 'x') drum('h', t, bus); }
-    if (on('lead')) for (const [ls, m, len] of song.lead?.[bar % (song.lead?.length || 1)] || []) if (ls === s) {
-      if (song.bell) { voice('sine', hz(m), t, 2.4, 0.11, bus); voice('sine', hz(m) * 2.01, t, 1.2, 0.025, bus); }
-      else { voice('triangle', hz(m), t, spb * len * 0.95, 0.15, bus, undefined, 0.004); voice('sine', hz(m) * 2, t, spb * len * 0.6, 0.03, bus); }
-    }
-    step++; nextT += spb;
+/** One sixteenth of the default score. */
+function classicStep(song: Song, step: number, t: number, spb: number, bus: AudioNode) {
+  const bar = Math.floor(step / 16) % song.chords.length, s = step % 16, [root, ...iv] = song.chords[bar];
+  const tones = [root + 12, ...iv.map((i) => root + 12 + i), root + 24];
+  const on = (layer: 'drums' | 'arp' | 'lead') => intensity >= (song.layers?.[layer] ?? 0);
+  if (s === 0) for (const m of [root + 12, ...iv.map((i) => root + 12 + i)]) voicePad(hz(m + 12), t, spb * 16, 0.022 * (song.pad ?? 1), bus);
+  const b = song.bass[s]; if (b !== null && b !== undefined) voice('triangle', hz(root + b), t, spb * 2.2, 0.26, bus, 700);
+  const a = song.arp?.[s]; if (a !== null && a !== undefined && on('arp')) voice(song.bell ? 'sine' : 'square', hz(tones[a % tones.length] + 12), t, song.bell ? 1.2 : spb * 1.6, song.bell ? 0.05 : 0.045, bus, song.bell ? undefined : 2400);
+  if (song.drums && on('drums')) { if (song.drums.k[s] === 'x') drum('k', t, bus); if (song.drums.s[s] === 'x') drum('s', t, bus); if (song.drums.h[s] === 'x') drum('h', t, bus); }
+  if (on('lead')) for (const [ls, m, len] of song.lead?.[bar % (song.lead?.length || 1)] || []) if (ls === s) {
+    if (song.bell) { voice('sine', hz(m), t, 2.4, 0.11, bus); voice('sine', hz(m) * 2.01, t, 1.2, 0.025, bus); }
+    else { voice('triangle', hz(m), t, spb * len * 0.95, 0.15, bus, undefined, 0.004); voice('sine', hz(m) * 2, t, spb * len * 0.6, 0.03, bus); }
   }
+}
+function schedule() {
+  const c = ac(), p = playing;
+  if (!p || !songGain) return;
+  const spb = 60 / p.bpm / 4; // seconds per 16th
+  while (nextT < c.currentTime + 0.18) { p.play(step, nextT, spb); step++; nextT += spb; }
 }
 export const music = {
   /** Start a song (no-op if it is already playing). */
@@ -323,8 +366,9 @@ export const music = {
     intensity = level;
     if (playing?.name === name) return;
     this.stop(0.25);
-    const c = ac(); playing = SONGS[name]; if (!playing) return;
+    const c = ac(); if (!SONGS[name]) return;
     songGain = c.createGain(); songGain.gain.setValueAtTime(0.0001, c.currentTime); songGain.gain.linearRampToValueAtTime(1, c.currentTime + 0.4); songGain.connect(musicBus);
+    playing = cue(name, c, songGain);
     step = 0; nextT = c.currentTime + 0.12;
     timer = window.setInterval(schedule, 40);
   },
@@ -336,3 +380,38 @@ export const music = {
     songGain = undefined; playing = undefined;
   },
 };
+
+/**
+ * Dev tool: render music offline, through the same mixer the game uses, and return it as a WAV file. `plan` lists
+ * [song, bars, intensity]; consecutive entries for the same song carry on without a break, a new song follows a short
+ * pause. Used to export the soundtrack previews in recordings/ (see `__g2o.renderMusic` in main.ts).
+ */
+export async function renderMusic(track: string, plan: [song: string, bars: number, level?: number][], tail = 2): Promise<Blob> {
+  const SR = 48000, GAP = 0.5, T0 = 0.05;
+  const len = (name: string, bars: number) => { const t = tuneOf(name, track)?.tune; return (bars * (t?.steps ?? 16) * 60) / (t?.bpm ?? SONGS[name].bpm) / 4; };
+  const total = plan.reduce((sum, [name, bars], i) => sum + len(name, bars) + (i && plan[i - 1][0] !== name ? GAP : 0), T0) + tail;
+  const off = new OfflineAudioContext(2, Math.ceil(total * SR), SR);
+  const live = { ctx, master, out, musicBus, sfxBus, noiseBuf, intensity };
+  ctx = off as unknown as AudioContext; wire(off, LEVEL); // every voice asks ac() for the context, so lend it the offline one while the notes are laid out
+  try {
+    let t = T0, cur: Cued | undefined, g: GainNode | undefined, st = 0;
+    for (const [name, bars, level = 2] of plan) {
+      if (cur?.name !== name) {
+        if (g) { g.gain.setValueAtTime(1, t); g.gain.linearRampToValueAtTime(0.0001, t + GAP * 0.8); t += GAP; }
+        g = off.createGain(); g.gain.setValueAtTime(0.0001, Math.max(0, t - 0.03)); g.gain.linearRampToValueAtTime(1, t); g.connect(musicBus);
+        cur = cue(name, off, g, track); st = 0;
+        if (!cur) throw new Error('no such song: ' + name);
+      }
+      intensity = level;
+      const spb = 60 / cur.bpm / 4;
+      for (let i = 0; i < bars * cur.steps; i++) { cur.play(st++, t, spb); t += spb; }
+    }
+    if (g) { g.gain.setValueAtTime(1, t); g.gain.linearRampToValueAtTime(0.0001, t + tail * 0.9); }
+  } finally { ({ ctx, master, out, musicBus, sfxBus, noiseBuf, intensity } = live); }
+  const buf = await off.startRendering(), n = buf.length, ch = [buf.getChannelData(0), buf.getChannelData(1)];
+  const view = new DataView(new ArrayBuffer(44 + n * 4)), str = (o: number, s: string) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+  str(0, 'RIFF'); view.setUint32(4, 36 + n * 4, true); str(8, 'WAVEfmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 2, true);
+  view.setUint32(24, SR, true); view.setUint32(28, SR * 4, true); view.setUint16(32, 4, true); view.setUint16(34, 16, true); str(36, 'data'); view.setUint32(40, n * 4, true);
+  for (let i = 0; i < n; i++) for (let c = 0; c < 2; c++) view.setInt16(44 + i * 4 + c * 2, Math.max(-1, Math.min(1, ch[c][i])) * 32767, true);
+  return new Blob([view], { type: 'audio/wav' });
+}

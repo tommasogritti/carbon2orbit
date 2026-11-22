@@ -52,8 +52,21 @@ footer { position: fixed; bottom: 0; left: 0; right: 0; height: 22px; line-heigh
 .card .watch a { display: inline-block; background: #27407a; color: #fff; font-weight: 700; text-decoration: none; padding: 3px 10px; border-radius: 999px; margin-right: 8px; }
 .card .watch a:hover { background: #3f7fd0; }
 
-.card img.patch { float: right; width: 108px; height: auto; margin: 0 0 8px 14px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
+.card figure.patches { float: right; margin: 0 0 8px 14px; width: 120px; text-align: center; }
+.card figure.patches.two { width: 190px; }
+.card figure.patches > div { display: flex; gap: 8px; justify-content: center; align-items: center; }
+.card figure.patches img { width: 108px; height: auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
+.card figure.patches.two img { width: 88px; }
+.card figure.patches figcaption { font-size: 10.5px; line-height: 1.35; color: #8d97b0; margin-top: 4px; }
+.card figure.patches a { color: #b8c6e6; }
 
+#credits { margin-left: 10px; font: inherit; font-size: 11px; color: #b8c6e6; background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; }
+#credits:hover { color: #fff; }
+.card table.people { border-collapse: collapse; margin: 6px 0 12px; width: 100%; }
+.card table.people td { padding: 6px 12px 6px 0; font-size: 14.5px; line-height: 1.4; border-bottom: 1px solid rgba(255,255,255,.07); }
+.card table.people td:first-child { white-space: nowrap; font-weight: 700; }
+.card table.people td:last-child { white-space: nowrap; text-align: right; padding-right: 0; }
+.card table.people a { color: #ffe98a; }
 #dev { margin-left: 10px; font: inherit; font-size: 11px; color: #7f8aa3; background: none; border: 1px solid rgba(255,255,255,.18); border-radius: 999px; padding: 0 8px; height: 17px; line-height: 15px; cursor: pointer; }
 #dev:hover { color: #fff; border-color: rgba(255,255,255,.5); }
 #dev.on { color: #0b0e18; background: #ffe98a; border-color: #ffe98a; font-weight: 700; }
@@ -74,3 +87,15 @@ footer { position: fixed; bottom: 0; left: 0; right: 0; height: 22px; line-heigh
 
 #full { position: absolute; top: 100px; right: 8px; z-index: 6; width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: rgba(11,14,24,.75); color: #fff; font-size: 17px; cursor: pointer; }
 #stage:fullscreen { inset: 0; width: 100vw; height: 100vh; background: #05060c; }
+
+#track { position: absolute; top: 146px; right: 8px; z-index: 6; width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: rgba(11,14,24,.75); color: #fff; font-size: 18px; cursor: pointer; }
+#toast { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 7; padding: 7px 16px; border-radius: 999px; background: rgba(11,14,24,.88); border: 1px solid rgba(255,233,138,.6); color: #ffe98a; font: 700 14px "Chakra Petch", system-ui, sans-serif; letter-spacing: .4px; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .35s; }
+#toast.on { opacity: 1; }
+
+#speed { position: absolute; top: 192px; right: 8px; z-index: 6; width: 38px; border-radius: 19px; border: 1px solid rgba(255,255,255,.3); background: rgba(11,14,24,.75); color: #fff; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
+#speed button { width: 100%; height: 26px; border: 0; background: none; color: #fff; font-size: 17px; font-weight: 700; cursor: pointer; }
+#speed button:hover { background: rgba(255,255,255,.14); }
+#speed span { font: 700 12px/1.1 system-ui, sans-serif; padding: 3px 0; text-align: center; }
+#speed span small { display: block; font-size: 9.5px; font-weight: 600; min-height: 10px; color: #8d97b0; }
+#speed.fast span, #speed.fast span small { color: #ffe98a; }
+#speed.slow span, #speed.slow span small { color: #7fd0ff; }

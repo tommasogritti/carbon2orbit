@@ -7,6 +7,7 @@ const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 const LB_FILE = join('recordings', 'leaderboard-dev.json');
 
 // Dev-only: `?rec=<name>` records the game canvas and posts the clip here; it is saved to recordings/<name>.webm.
+// Offline music renders are posted here too, and saved as recordings/<name>.wav.
 export default defineConfig({
   define: { __VERSION__: JSON.stringify(pkg.version) },
   plugins: [{
@@ -44,10 +45,11 @@ export default defineConfig({
     apply: 'serve',
     configureServer(server) {
       server.middlewares.use('/__rec', (req, res) => {
-        const name = (new URL(req.url || '', 'http://x').searchParams.get('name') || 'clip').replace(/[^a-z0-9-]/gi, '');
+        const q = new URL(req.url || '', 'http://x').searchParams, name = (q.get('name') || 'clip').replace(/[^a-z0-9-]/gi, '');
+        const ext = q.get('ext') === 'wav' ? '.wav' : '.webm'; // .wav is an offline music render (__g2o.renderMusic)
         const chunks: Buffer[] = [];
         req.on('data', (c) => chunks.push(c));
-        req.on('end', () => { mkdirSync('recordings', { recursive: true }); writeFileSync(join('recordings', name + '.webm'), Buffer.concat(chunks)); res.end('ok'); });
+        req.on('end', () => { mkdirSync('recordings', { recursive: true }); writeFileSync(join('recordings', name + ext), Buffer.concat(chunks)); res.end('ok'); });
       });
     },
   }],
