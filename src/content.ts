@@ -4,7 +4,7 @@ export type Kind = 'platform' | 'launch' | 'minigame' | 'card' | 'person';
 export interface LevelDef {
   id: string;
   kind: Kind;
-  mechanic?: 'platform' | 'launch' | 'hotfire' | 'heli-catch' | 'orbit-raise' | 'sprint' | 'fault-finder' | 'splashdown' | 'cruise' | 'countdown-race' | 'ride' | 'orbit-ops' | 'dual-count' | 'arc-lab';
+  mechanic?: 'platform' | 'launch' | 'hotfire' | 'heli-catch' | 'orbit-raise' | 'sprint' | 'fault-finder' | 'splashdown' | 'cruise' | 'countdown-race' | 'ride' | 'orbit-ops' | 'dual-count' | 'arc-lab' | 'edit-bay';
   parent?: string; // bonus nodes only: the map node they branch from
   unlocks?: string; // platform levels: the bonus node opened by finding this level's hidden blueprint
   status: 'flown' | 'in-progress' | 'announced';
@@ -354,6 +354,50 @@ export const LEVELS: LevelDef[] = [
     sources: ['https://dcdoxfest.com/films/wild-wild-space/', WP + 'Wild_Wild_Space', 'https://techcrunch.com/2024/07/11/wild-wild-space-doc-captures-the-risks-and-rivalries-of-the-new-space-race/', WP + 'Ross_Kauffman'],
   },
   {
+    id: 'four-channels', kind: 'minigame', mechanic: 'edit-bay', status: 'flown', role: 'The edit desk · a game role',
+    title: 'Four channels, one call', date: '2024-08-11', place: 'YouTube · four channels', map: { x: 410, y: 244 },
+    intro: 'On 8 August 2024 Rocket Lab reports its second-quarter results and holds its conference call for investors at 2 p.m. Pacific. Afterwards four YouTube creators who follow the company, Vince of Vince is Bullish, Dave G of Dave G Investing, Matt Farley of MattMoney and Scott O, interview Sir Peter Beck and the chief financial officer, Adam Spice, and share the conversation out: four parts, one on each creator’s channel, each pointing to the other three. In this level you are the edit desk, a role the game invents: cut the recording into its four parts and get each one to the right channel before it goes live, then put the whole interview back together.',
+    how: 'Act one, Sunday 11 August. The whole recording is on the tape. ← → scrub along it (hold to go faster; let go and the view zooms in) and Space cuts at the yellow line. Cut in the quiet gap where one creator’s turn ends and the next begins: the faces above the waveform show who is asking. Each finished part drops into the OUT tray: ↑ ↓ choose the channel with the same face, and Enter sends it. The channels sit in a different order every time. Uploads running at once share one connection. Enter on a channel that has a part pulls it back; Enter on a STALLED upload retries it. A sticky note on the tape is the chapter list (the game borrows it from Scott O’s full cut, two days early): Space on it and your next cut snaps to the break. Act two, Tuesday 13 August: splice the parts back into the full interview, in order, and send it to every channel before each one goes live. Three stars for every video on the right channel and on time, with every cut in its gap.',
+    fact: 'The four parts went up within twenty minutes of each other. YouTube dates parts 1 to 3 to 3 p.m. Pacific on Sunday 11 August, which was midnight in Amsterdam and already 10 a.m. on Monday 12 August in New Zealand; Scott O’s part 4 followed at 3:20. Each description sends viewers on to the other channels, in order: part 1 Vince, part 2 Dave, part 3 Matt, part 4 Scott.',
+    after: 'The four parts went live on 11 August Pacific time (12 August in continental Europe and New Zealand): part 1 on Vince is Bullish (11 min 32 s), part 2 on Dave G Investing (12 min 41 s), part 3 on MattMoney (14 min 2 s) and part 4 on Scott O (15 min 29 s). On 13 August, Pacific time, each channel posted the whole interview as a full cut: Dave G and MattMoney at 3 p.m., Vince at 4 p.m. and Scott O at 4:02. Scott O’s full cut marks each creator’s turn in its chapters: Vince from 0:54, Dave from 10:35, Matt from 21:16 and Scott from 30:54, with the wrap-up at 45:21. (In the game one edit desk does all the work; in reality each creator posted on his own channel. The speaker strip on the tape is a picture, not a transcript, and the upload speeds, the stalls and the pace of the clock are the game’s own.)',
+    egg: 'On the frame, every time. Your cuts fall where Scott O’s full cut puts its chapter marks: 10:35, 21:16 and 30:54. And from the results release the interview followed, dated 8 August 2024: Rocket Lab reported the first hot fire of Archimedes, Neutron’s engine, and that both of NASA’s ESCAPADE spacecraft were finished. Both are levels in this game.',
+    diagram: { key: 'cast_q2_2024', caption: 'Drawn for the game; no photos are used. The four creators in the order of their parts, and their two guests. Meet each creator beside this node.' },
+    watch: { url: 'https://www.youtube.com/watch?v=QIIcZ0MK0_A', label: '“FULL INTERVIEW | Sir Peter Beck &amp; Adam Spice of Rocket Lab (Q2 2024)”, on Scott O’s channel (YouTube). The other full cuts and the four parts are in the sources.' },
+    sources: ['https://investors.rocketlabcorp.com/events/event-details/second-quarter-2024-financial-results-update-and-conference-call', 'https://www.sec.gov/Archives/edgar/data/1819994/000095017024094034/rklb-ex99_1.htm', 'https://www.youtube.com/watch?v=QIIcZ0MK0_A', 'https://www.youtube.com/watch?v=JEOcyOo77Po', 'https://www.youtube.com/watch?v=BKIOvo_jYC8', 'https://www.youtube.com/watch?v=LpUnlXgn4dw', 'https://www.youtube.com/watch?v=nYirK_3WRYA', 'https://www.youtube.com/watch?v=dfIHhLd9Wjs', 'https://www.youtube.com/watch?v=WAoYVU3pnXY', 'https://www.youtube.com/watch?v=fzIBsEy4BU8'],
+    params: {
+      theme: 'q2-2024', mode: 'parts', grace: 60, bandwidth: 50,
+      clock: { date: '2024-08-11', start: 13 * 60, rate: 0.36, zones: [['LOS ANGELES', 'PDT', 0], ['AMSTERDAM', 'CEST', 9], ['AUCKLAND', 'NZST', 19]] },
+      // the tape runs from Vince's first question to the wrap-up, on the timeline of Scott O's full cut; the cuts are its chapter marks
+      tape: { from: 54, to: 2721, marks: [635, 1276, 1854] },
+      guests: ['', 'a'], // Peter Beck and Adam Spice
+      parts: [{ who: 'cv' }, { who: 'cd' }, { who: 'cm' }, { who: 'cs' }],
+      channels: [
+        { name: 'Vince is Bullish', handle: '@vinceisbullish', chip: 'cv', part: 0, due: 15 * 60 },
+        { name: 'Dave G Investing', handle: '@daveginvesting', chip: 'cd', part: 1, due: 15 * 60 },
+        { name: 'MattMoney · Matt Farley', handle: '@RealMattMoney', chip: 'cm', part: 2, due: 15 * 60 },
+        { name: 'Scott O', handle: '@scotto2050', chip: 'cs', part: 3, due: 15 * 60 + 20 },
+      ],
+      notes: [330], hiccups: [[13 * 60 + 25, 1], [13 * 60 + 50, 3]],
+      then: {
+        mechanic: 'edit-bay',
+        intro: 'Tuesday 13 August, Pacific time. Two days after the parts, each creator posts the whole interview on his own channel as a full cut. The four parts are back in the bin, and the full cuts go live at different times: Dave G Investing and MattMoney at 3 p.m., Vince is Bullish at 4 p.m. and Scott O at 4:02.',
+        how: 'Act two. ← → choose a part in the bin and Space splices it onto the full cut: in order, part 1 first. Once the full cut has rendered, ↑ ↓ choose a channel and Enter starts its upload. Every upload running at once shares the connection, so four at once each go at a quarter of the speed: start the channels that go live first. Enter on a running upload pauses it; Enter on a STALLED one retries it.',
+        params: {
+          theme: 'q2-2024', mode: 'full', grace: 90, bandwidth: 93, render: 8,
+          clock: { date: '2024-08-13', start: 13 * 60 + 30, rate: 0.3, zones: [['LOS ANGELES', 'PDT', 0], ['AMSTERDAM', 'CEST', 9], ['AUCKLAND', 'NZST', 19]] },
+          parts: [{ who: 'cv', len: 692 }, { who: 'cd', len: 761 }, { who: 'cm', len: 842 }, { who: 'cs', len: 929 }], // the parts as posted, in seconds
+          channels: [ // each full cut as posted: when it went live (Pacific) and how long it runs
+            { name: 'Dave G Investing', handle: '@daveginvesting', chip: 'cd', part: 0, due: 15 * 60, len: 2838 },
+            { name: 'MattMoney · Matt Farley', handle: '@RealMattMoney', chip: 'cm', part: 0, due: 15 * 60, len: 2748 },
+            { name: 'Vince is Bullish', handle: '@vinceisbullish', chip: 'cv', part: 0, due: 16 * 60, len: 2830 },
+            { name: 'Scott O', handle: '@scotto2050', chip: 'cs', part: 0, due: 16 * 60 + 2, len: 2784 },
+          ],
+          hiccups: [[14 * 60 + 5, 0]],
+        },
+      },
+    },
+  },
+  {
     id: 'space-billionaire', kind: 'card', status: 'flown',
     title: 'Forbes counts a billionaire', date: '2024-11-15', place: 'Forbes estimate', map: { x: 440, y: 214 },
     intro: 'In November 2024 Forbes estimated Peter Beck’s fortune at US$1 billion for the first time, after Rocket Lab’s share price rose. The estimate counted his stake of roughly 10% in the company, plus money from shares he had sold over the years.',
@@ -583,6 +627,43 @@ export const PEOPLE: LevelDef[] = [
     fact: 'In May 2024 NZME announced that she was the only New Zealander in the media category of that year’s Forbes 30 Under 30 Asia list. Peter Beck had been on her show a year earlier: see the Markets with Madison card in America.',
     after: '',
     sources: ['https://www.nzherald.co.nz/hawkes-bay-today/news/behind-rocket-labs-50th-launch-realising-sir-peter-becks-dream/HXA325VFNVGKNOPYIN4ZNRIOHU', 'https://www.nzme.co.nz/news/nz-herald-s-madison-reidy-makes-2024-forbes-30-under-30-asia-list', WP + 'List_of_Electron_launches'],
+  },
+  // The four creators of the Q2 2024 interview: their public role as YouTube creators, from their own channels and videos.
+  {
+    id: 'vince-is-bullish', kind: 'person', status: 'flown', parent: 'four-channels', portrait: 'cv',
+    portraitCredit: 'Drawn from his YouTube channel picture; no freely licensed photo is available.',
+    title: 'Vince is Bullish', date: '2024-08', place: 'YouTube · @vinceisbullish', map: { x: 390, y: 228 },
+    intro: 'A YouTube creator who goes by Vince, on the channel Vince is Bullish (@vinceisbullish on YouTube and X). He asked the first questions in the four-part interview with Sir Peter Beck and Adam Spice after the Q2 2024 results, and posted it as part 1. His description lists the Q2 earnings, Rocket Lab’s competition and Neutron’s propulsive landing among the subjects.',
+    fact: 'It was not his first time talking to Beck: his channel has “A Conversation With Rocket Lab CEO Peter Beck About The Future”, posted on 8 May 2024, two days after the Q1 2024 results.',
+    after: '',
+    sources: ['https://www.youtube.com/watch?v=nYirK_3WRYA', 'https://www.youtube.com/watch?v=BKIOvo_jYC8', 'https://www.youtube.com/watch?v=T__1ubfs_iE', 'https://www.youtube.com/@vinceisbullish'],
+  },
+  {
+    id: 'dave-g', kind: 'person', status: 'flown', parent: 'four-channels', portrait: 'cd',
+    portraitCredit: 'Drawn from his YouTube channel picture; no freely licensed photo is available.',
+    title: 'Dave G', date: '2024-08', place: 'YouTube · Dave G Investing', map: { x: 404, y: 266 },
+    intro: 'The YouTube creator behind Dave G Investing (@daveginvesting). Part 2 of the Q2 2024 interview, “Talking Space &amp; Rocket Lab With Sir Peter Beck!”, went up on his channel. Two days later he posted the “Complete Interview”, noting that its four sections had first been posted on the individual channels.',
+    fact: 'Three months earlier, on 8 May 2024, he had posted “The Future of Rocket Lab: Interview With CEO Peter Beck &amp; CFO Adam Spice!”, after the Q1 2024 results.',
+    after: '',
+    sources: ['https://www.youtube.com/watch?v=dfIHhLd9Wjs', 'https://www.youtube.com/watch?v=JEOcyOo77Po', 'https://www.youtube.com/watch?v=kldLGQHMU98', 'https://www.youtube.com/@daveginvesting'],
+  },
+  {
+    id: 'matt-farley', kind: 'person', status: 'flown', parent: 'four-channels', portrait: 'cm',
+    portraitCredit: 'Drawn from his YouTube channel picture; no freely licensed photo is available.',
+    title: 'Matt Farley', date: '2024-08', place: 'YouTube · MattMoney', map: { x: 428, y: 262 },
+    intro: 'A YouTube creator whose channel is MattMoney (@RealMattMoney); on it he describes himself as an engineer. He also writes about Rocket Lab on Seeking Alpha under his own name. Part 3 of the Q2 2024 interview went up on his channel, and its description sets out the order to watch in: Vince’s channel first, then Dave G, then his, then Scott.',
+    fact: 'His full cut, posted on 13 August, is called “The ENTIRE Sir Peter Beck and Adam Spice Interview”.',
+    after: '',
+    sources: ['https://www.youtube.com/watch?v=WAoYVU3pnXY', 'https://www.youtube.com/watch?v=LpUnlXgn4dw', 'https://www.youtube.com/@RealMattMoney/about', 'https://seekingalpha.com/article/4664134-rocket-lab-the-future-is-bright'],
+  },
+  {
+    id: 'scott-o', kind: 'person', status: 'flown', parent: 'four-channels', portrait: 'cs',
+    portraitCredit: 'Drawn from a frame of the full interview on his channel; his channel picture is a graphic, and no freely licensed photo is available.',
+    title: 'Scott O', date: '2024-08', place: 'YouTube · @scotto2050', map: { x: 436, y: 240 },
+    intro: 'A YouTube creator on the channel Scott O (@scotto2050). He asked the last questions of the Q2 2024 interview and posted them as part 4, “Post-Q2 Q&amp;A with Sir Peter Beck &amp; Adam Spice of Rocket Lab”, whose chapters run from new launch timeframes and merchant components to Neutron spending and Electron capacity and recovery plans.',
+    fact: 'His full cut is the one whose title names the quarter, “FULL INTERVIEW | Sir Peter Beck &amp; Adam Spice of Rocket Lab (Q2 2024)”, and its chapters mark where each creator’s turn begins.',
+    after: '',
+    sources: ['https://www.youtube.com/watch?v=fzIBsEy4BU8', 'https://www.youtube.com/watch?v=QIIcZ0MK0_A', 'https://www.youtube.com/@scotto2050'],
   },
   {
     id: 'adam-spice', kind: 'person', status: 'flown', parent: 'going-public', portrait: 'a',
