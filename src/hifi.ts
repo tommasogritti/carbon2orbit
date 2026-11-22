@@ -11,7 +11,7 @@ import { D, S, C2, lg, rg } from './art';
 //   - Light2D lighting on the ground, the hero and the enemies, with normal maps generated from each texture;
 //   - contact shadows and floor reflections, and squash, stretch and lean on the hero;
 //   - one post pass over the play camera: thresholded bloom, a colour grade, vignette and film grain.
-// The HUD moves to its own camera so the post pass never touches it. Without WebGL the art and the
+// The HUD moves to its own camera so the post pass never touches it (the map and the title bring their own way: `ownHud`). Without WebGL the art and the
 // animation stay and the lighting and post pass are skipped. Players switch it with the Graphics button or G
 // (remembered, high by default); `?hifi=0` turns it off for one visit.
 
@@ -59,7 +59,7 @@ export interface Look {
  * What the layer needs to know about the level: its width in units (W for a single-screen scene), and whichever of these
  * the scene has: a tile grid (platform levels), or a ground height and its gaps (rides).
  */
-export interface World { LW: number; TS?: number; ground?: number[][]; plats?: number[][]; height?: (x: number) => number; gaps?: number[][] }
+export interface World { LW: number; TS?: number; ground?: number[][]; plats?: number[][]; height?: (x: number) => number; gaps?: number[][]; /** The scene already keeps its HUD on a camera of its own (the map): the layer adds none and sorts nothing. */ ownHud?: boolean }
 
 /** Texture resolution (pixels per unit) by key: far layers are drawn coarse on purpose, which reads as depth of field. */
 const RES: Record<string, number> = {};
@@ -208,9 +208,11 @@ export class HiFi {
     if (!BUILT.has(look)) { BUILT.add(look); look.build(scene); }
     if (this.gl) {
       // the HUD gets a camera of its own, so bloom, grade and grain stay on the world; until `ready` sorts them, new objects belong to the play camera
-      this.ui = scene.cameras.add(0, 0, W * D, H * D).setZoom(D).setName('hud');
-      if (this.still) this.ui.centerOn(W / 2, H / 2); // a single-screen scene draws its HUD in world units, like everything else in it
-      scene.events.on('addedtoscene', this.claim, this);
+      if (!world.ownHud) {
+        this.ui = scene.cameras.add(0, 0, W * D, H * D).setZoom(D).setName('hud');
+        if (this.still) this.ui.centerOn(W / 2, H / 2); // a single-screen scene draws its HUD in world units, like everything else in it
+        scene.events.on('addedtoscene', this.claim, this);
+      }
       if (look.ambient !== undefined) scene.lights.enable().setAmbientColor(look.ambient);
       const pm = (scene.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer).pipelines;
       if (!pm.postPipelineClasses.has('HiFiPost')) pm.addPostPipeline('HiFiPost', HiFiPost);
@@ -302,7 +304,7 @@ export class HiFi {
       if (look.ambient !== undefined) for (const d of look.lights || []) this.lamps.push({ l: s.lights.addLight(d.x, d.y, d.r, d.color, d.i), def: d, f: d.w ? this.f(d.w) : 1, k: 1 });
       if (look.heroLight && look.ambient !== undefined) this.heroLamp = s.lights.addLight(o.hero?.x || 0, o.hero?.y || 0, look.heroLight.r, look.heroLight.color, look.heroLight.i);
       // everything pinned to the screen is HUD: it leaves the play camera for the HUD camera
-      for (const c of s.children.list as any[]) if (c.scrollFactorX === 0 && !this.own.has(c)) c.cameraFilter = cam.id;
+      if (this.ui) for (const c of s.children.list as any[]) if (c.scrollFactorX === 0 && !this.own.has(c)) c.cameraFilter = cam.id;
       this.hud(...(o.hud || []));
       cam.setPostPipeline('HiFiPost'); this.post = cam.getPostPipeline('HiFiPost') as HiFiPost; this.post.grade = look.grade; this.post.heat = [0.5, 0.5, 0.1, 0];
     }

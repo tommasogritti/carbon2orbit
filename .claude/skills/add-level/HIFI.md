@@ -9,6 +9,7 @@ The hi-fi layer is a cinematic look any level can opt into: deep parallax with h
 | A single-screen mini-game | `rutherford` | `src/looks/stand.ts` |
 | A scene that is all interface | `pics-or-it-didnt-happen` (panels and graphs stay in the world and glow; words go to the HUD) | `src/looks/review.ts` |
 | Ride | `find-the-launch-site` | `src/looks/farm.ts` |
+| The world map | `Map.ts` (sea and land on separate layers; names, pins, nodes and tags untouched) | `src/looks/map.ts` |
 
 The look changes how a level looks, never what it says or how it plays.
 
