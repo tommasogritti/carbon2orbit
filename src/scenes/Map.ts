@@ -97,7 +97,9 @@ export class MapScene extends Phaser.Scene {
       if (p.portrait !== undefined) img(this, p.map.x, p.map.y, p.portrait + 'peter_chip').setScale(S * 0.62).setDepth(3); else img(this, p.map.x, p.map.y, 'n_person').setDepth(3);
       if (save.met[p.id]) img(this, p.map.x + 6.5, p.map.y - 6.5, 'check').setDepth(4);
     }
-    if (lit) for (const g of [lit, pg]) { // hi-fi: the trails are thousands of dots, which cost a good part of a frame every time they are drawn; so they are drawn once, into a texture
+    // The trails are thousands of dots, which cost a good part of a frame every time they are drawn, so they are drawn
+    // once, into a texture at three times the map's units (the camera shows 2.5 screen pixels per unit, so they stay sharp).
+    for (const g of lit ? [lit, pg] : [pg]) {
       const rt = this.add.renderTexture(0, 0, MAPW * 3, MAPH * 3).setOrigin(0).setScale(1 / 3); if (g === lit) rt.setBlendMode('ADD');
       rt.draw(g.setScale(3)); g.destroy();
     }
