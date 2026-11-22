@@ -12,6 +12,9 @@ The hi-fi layer is a cinematic look any level can opt into: deep parallax with h
 | Ride | `find-the-launch-site` | `src/looks/farm.ts` |
 | The title screen | `Title.ts` (space redrawn, the rocket lit by Light2D, every word on the HUD camera) | `src/looks/title.ts` |
 | The world map | `Map.ts` (sea and land on separate layers; names, pins, nodes and tags untouched) | `src/looks/map.ts` |
+| Launch control after sunset | `lc-2` (dusk), `haste` (night), act one of `paschens-law` (dusk at Māhia): the site's plain drawing in the dark under its own lamps, a sky for the hour | `src/looks/evening.ts` (shared), `src/looks/wallops.ts`, `src/looks/lc1.ts`; named in `EVE_LOOK` in `Launch.ts` |
+| Platform, outdoors by day, with things that light up on a cycle | `archimedes` | `src/looks/stennis.ts` |
+| A single-screen scene over one scrolling tile | `street-sprint` (the tile taken apart so the buildings pass more slowly than the kerb) | `src/looks/sprint.ts` |
 
 The look changes how a level looks, never what it says or how it plays.
 
