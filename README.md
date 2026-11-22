@@ -49,6 +49,8 @@ Open the address Vite prints. Press **H** at any moment for the controls of what
 | Enter (or X) | Confirm, hold the count, engine cutoff |
 | + and − | Game speed inside a level, from ×0.5 to ×4. Faster scores more, slower scores less |
 | H | Controls for the current level or the map |
+| Esc | In a level: back to the map (the ⌂ button too; it asks first) |
+| I | A hint, in levels that have them (the 💡 button too) |
 | L | Your score and the leaderboard |
 | N | On the map: walk to the next level |
 | F | Full screen |

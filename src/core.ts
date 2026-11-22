@@ -92,6 +92,13 @@ export function initInput(game: Phaser.Game) {
   document.getElementById('track')?.addEventListener('click', (e) => { (e.currentTarget as HTMLElement).blur(); track(); });
   document.getElementById('gfx')?.addEventListener('click', (e) => { (e.currentTarget as HTMLElement).blur(); toggleGfx(game); });
   showGfx();
+  // The map button (or Esc) leaves a level for the map, after asking; the hint button (or I) shows when the scene offers hints.
+  document.getElementById('home')?.addEventListener('click', (e) => { (e.currentTarget as HTMLElement).blur(); leaveLevel(game); });
+  document.getElementById('hint')?.addEventListener('click', (e) => { (e.currentTarget as HTMLElement).blur(); showHint(game); });
+  hotkeys.Escape = () => leaveLevel(game);
+  hotkeys.KeyI = () => showHint(game);
+  const sync = () => { const sc = game.scene.getScenes(true)[0] as any, inLevel = !!(sc && sc.def); document.getElementById('home')!.hidden = !inLevel; document.getElementById('hint')!.hidden = !(inLevel && typeof sc.hint === 'function'); };
+  game.events.on('poststep', () => { if ((game.loop.frame & 15) === 0) sync(); });
   const help = document.getElementById('help');
   help?.addEventListener('click', () => { help.blur(); if (helpOpen) overlayConfirm(); else showHelp(game); });
   const dev = document.getElementById('dev');
@@ -250,14 +257,36 @@ export const CONTROLS: Record<string, Help> = {
   Sprint: { title: 'Rocket bike sprint', rows: [['Space', 'Hold to open the peroxide valve'], ['← →', 'Tap to keep the balance needle centred']], note: 'The faster you go, the more it wobbles. Stay upright to the flag.' },
 };
 let helpOpen = false;
-const kbd = (s: string) => s.replace(/(←|→|↑|↓|Space|Enter|\b[A-Z]\b)/g, '<kbd>$1</kbd>');
+const kbd = (s: string) => s.replace(/(←|→|↑|↓|Space|Enter|Esc|\b[A-Z]\b)/g, '<kbd>$1</kbd>');
+/** Ask before leaving a level for the map: the run so far is not saved. */
+export function leaveLevel(game: Phaser.Game) {
+  if (overlayOpen()) return;
+  const sc = game.scene.getScenes(true)[0] as any;
+  if (!sc || !sc.def) return;
+  sc.scene.pause(); snd.select();
+  showCard(`<div class="kicker">${sc.def.title.toUpperCase()} · GAME PAUSED</div><h1>Back to the map?</h1><p>This run of the level is not saved. Stars and points you already earned here stay.</p>`,
+    [{ label: 'Keep playing', fn: () => sc.scene.resume() }, { label: 'Back to the map', alt: true, fn: () => { stopLoops(); music.stop(0.3); sc.scene.start('Map', { title: false }); } }]);
+}
+/**
+ * A hint, when the scene offers one: `hint()` returns the next hint for where the player is now (and may charge for it,
+ * in the scene's own currency), or undefined when there is none left.
+ */
+export function showHint(game: Phaser.Game) {
+  if (overlayOpen()) return;
+  const sc = game.scene.getScenes(true)[0] as any;
+  if (!sc || typeof sc.hint !== 'function') return;
+  const h: { title: string; text: string; cost?: string } | undefined = sc.hint();
+  sc.scene.pause(); snd.select();
+  showCard(`<div class="kicker">HINT · GAME PAUSED</div><h1>${h ? h.title : 'No more hints'}</h1><p>${h ? h.text : 'That is everything the hints can tell you here.'}</p>${h?.cost ? `<p class="src">${h.cost}</p>` : ''}`,
+    [{ label: 'Back to the game', fn: () => sc.scene.resume() }]);
+}
 /** Pause whatever is running and show its controls. */
 export function showHelp(game: Phaser.Game) {
   if (overlayOpen()) return;
   const sc = game.scene.getScenes(true)[0] as any;
   const h: Help | undefined = sc && (sc.help?.() || CONTROLS[sc.scene.key]);
   if (!h) return;
-  const rows: [string, string][] = [...h.rows, ['+ −', 'Game speed in a level: faster scores more, slower scores less'], ['H', 'Show or hide this panel'], ['M', 'Sound on or off'], ['T', 'Next soundtrack: four to choose from'], ['G', 'Graphics: high (HD) or standard (SD), for slower computers'], ...(DEV ? [['K', 'Developer mode: skip this level'] as [string, string]] : [])];
+  const rows: [string, string][] = [...h.rows, ['+ −', 'Game speed in a level: faster scores more, slower scores less'], ['H', 'Show or hide this panel'], ['M', 'Sound on or off'], ['T', 'Next soundtrack: four to choose from'], ['Esc', 'In a level: back to the map (asks first)'], ...((sc.hint ? [['I', 'A hint for where you are now']] : []) as [string, string][]), ['G', 'Graphics: high (HD) or standard (SD), for slower computers'], ...(DEV ? [['K', 'Developer mode: skip this level'] as [string, string]] : [])];
   sc.scene.pause(); helpOpen = true; snd.select();
   showCard(`<div class="kicker">CONTROLS · GAME PAUSED</div><h1>${h.title}</h1><table class="keys">${rows.map(([k, t]) => `<tr><td>${kbd(k)}</td><td>${t}</td></tr>`).join('')}</table>${h.note ? `<p class="how">${h.note}</p>` : ''}<p class="src">Arrows also work as W A S D, Space as Z, Enter as X.</p>`,
     [{ label: 'Back to the game', fn: () => { helpOpen = false; sc.scene.resume(); } }]);
