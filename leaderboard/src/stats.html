@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Carbon to Orbit: who played</title>
+<!-- The private view of the anonymous play counts, served by the leaderboard Worker at /stats (stats.js).
+     It asks for the stats token once, keeps it in this browser, and reads /stats.json with it. -->
+<style>
+  :root {
+    color-scheme: light;
+    --plane: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+    --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11, 11, 11, 0.10); --series: #2a78d6; --wash: rgba(11, 11, 11, 0.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --plane: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+      --grid: #2c2c2a; --axis: #383835; --border: rgba(255, 255, 255, 0.10); --series: #3987e5; --wash: rgba(255, 255, 255, 0.07);
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--plane); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1080px; margin: 0 auto; padding: 28px 20px 60px; }
+  h1 { font-size: 22px; margin: 0; }
+  h2 { font-size: 16px; margin: 0 0 2px; }
+  .sub { color: var(--ink-2); margin: 2px 0 0; }
+  .note { color: var(--ink-2); font-size: 13px; margin: 0 0 12px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin-top: 16px; }
+  .filters { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-top: 18px; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface); }
+  button, select, input { font: inherit; color: inherit; }
+  .seg button { border: 0; background: none; padding: 6px 12px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--border); }
+  .seg button:hover { background: var(--wash); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+  select, .plain { border: 1px solid var(--border); border-radius: 8px; background: var(--surface); padding: 6px 10px; }
+  .plain { cursor: pointer; }
+  .plain:hover { background: var(--wash); }
+  .spacer { flex: 1; }
+  label { color: var(--ink-2); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 16px; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .tile .k { color: var(--ink-2); font-size: 13px; }
+  .tile .v { font-size: 26px; font-weight: 600; line-height: 1.2; }
+  .tile .d { color: var(--muted); font-size: 12px; min-height: 1.4em; }
+  #chart { position: relative; }
+  #chart svg { display: block; width: 100%; }
+  #chart text { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  #tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 13px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14); white-space: nowrap; display: none; z-index: 2; }
+  #tip b { font-size: 15px; }
+  #tip .r { color: var(--ink-2); display: flex; justify-content: space-between; gap: 16px; }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { padding: 6px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--grid); }
+  th { color: var(--ink-2); font-weight: 600; font-size: 13px; position: sticky; top: 0; background: var(--surface); }
+  th:first-child, td:first-child { text-align: left; }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.zero { color: var(--muted); }
+  td.total { font-weight: 600; }
+  td a { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--axis); cursor: pointer; }
+  #gate { max-width: 420px; }
+  #gate input { width: 100%; border: 1px solid var(--axis); border-radius: 8px; padding: 8px 10px; background: var(--surface); margin: 10px 0; }
+  #msg { color: var(--ink-2); margin-top: 16px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Carbon to Orbit: who played</h1>
+  <p class="sub">Anonymous daily counts by country. Days are UTC. A player is a browser's first level start of the day.</p>
+
+  <form id="gate" class="card" hidden>
+    <h2>Stats token</h2>
+    <p class="note" id="gate-note">These numbers are private. Paste the token set as the Worker's STATS_TOKEN secret; this browser will remember it.</p>
+    <input id="token" type="password" autocomplete="off" aria-label="Stats token" required>
+    <button class="plain" type="submit">Show the numbers</button>
+  </form>
+
+  <p id="msg" hidden></p>
+
+  <div id="app" hidden>
+    <div class="filters">
+      <div class="seg" id="range" role="group" aria-label="Date range">
+        <button type="button" data-v="7">7 days</button><button type="button" data-v="30">30 days</button><button type="button" data-v="90">90 days</button><button type="button" data-v="0">All</button>
+      </div>
+      <label>Country <select id="country"></select></label>
+      <div class="seg" id="metric" role="group" aria-label="What to count">
+        <button type="button" data-v="players">Players</button><button type="button" data-v="starts">Level starts</button><button type="button" data-v="finishes">Levels finished</button>
+      </div>
+      <span class="spacer"></span>
+      <button class="plain" type="button" id="refresh">Refresh</button>
+      <button class="plain" type="button" id="forget">Forget token</button>
+    </div>
+
+    <div class="tiles" id="tiles"></div>
+
+    <section class="card">
+      <h2 id="chart-title"></h2>
+      <p class="note" id="chart-note"></p>
+      <div id="chart"><div id="tip"></div></div>
+    </section>
+
+    <section class="card">
+      <h2 id="days-title"></h2>
+      <p class="note">Newest day first. The busiest countries of the range have their own column.</p>
+      <div class="scroll"><table id="days"></table></div>
+    </section>
+
+    <section class="card">
+      <h2>By country</h2>
+      <p class="note">Totals for the range. Players are summed over days, so someone who played on three days counts three times. Select a country to filter the page.</p>
+      <div class="scroll"><table id="countries"></table></div>
+    </section>
+
+    <section class="card">
+      <h2 id="levels-title">By level</h2>
+      <p class="note">How often each level was started, finished and failed, and with how many stars. One player retrying five times is five starts.</p>
+      <div class="scroll"><table id="levels"></table></div>
+    </section>
+  </div>
+</main>
+
+<script>
+const KEY = 'c2o-stats-token';
+const $ = (id) => document.getElementById(id);
+const state = { range: 30, country: null, metric: 'players' }; // country null = every country
+const METRIC = { players: 'Players', starts: 'Level starts', finishes: 'Levels finished' };
+let D = null;
+
+const el = (tag, text, cls) => { const e = document.createElement(tag); if (text != null) e.textContent = text; if (cls) e.className = cls; return e; };
+const fmt = (n) => n.toLocaleString('en-GB');
+const iso = (d) => d.toISOString().slice(0, 10);
+const addDays = (day, n) => { const d = new Date(day + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return iso(d); };
+const dayName = (day, long) => new Date(day + 'T00:00:00Z').toLocaleDateString('en-GB', { timeZone: 'UTC', day: 'numeric', month: 'short', ...(long ? { weekday: 'short' } : {}) });
+
+const regions = (() => { try { return new Intl.DisplayNames(['en'], { type: 'region' }); } catch { return null; } })();
+// '' holds the counts from before countries were recorded; XX is what Cloudflare reports when it cannot tell.
+function countryName(c) { if (c === '') return 'Not recorded'; if (c === 'XX') return 'Unknown'; try { return (regions && regions.of(c)) || c; } catch { return c; } }
+const flag = (c) => (/^[A-Z]{2}$/.test(c) && c !== 'XX' ? String.fromCodePoint(...[...c].map((ch) => 0x1f1e6 + ch.charCodeAt(0) - 65)) + ' ' : '');
+const shortName = (c) => (c === '' ? 'Not rec.' : c === 'XX' ? 'Unknown' : flag(c) + c);
+
+function show(which, text) {
+  $('gate').hidden = which !== 'gate'; $('app').hidden = which !== 'app'; $('msg').hidden = which !== 'msg';
+  if (which === 'msg') $('msg').textContent = text;
+  if (which === 'gate') { if (text) $('gate-note').textContent = text; $('token').focus(); }
+}
+
+async function load() {
+  let token = null; try { token = localStorage.getItem(KEY); } catch { /* no storage: ask each time */ }
+  token = token || load.once;
+  if (!token) return show('gate');
+  if (!D) show('msg', 'Loading…');
+  const to = iso(new Date()), from = state.range ? addDays(to, 1 - state.range) : '2000-01-01';
+  let r;
+  try { r = await fetch('/stats.json?from=' + from + '&to=' + to, { headers: { authorization: 'Bearer ' + token } }); } catch { return show('msg', 'Could not reach the Worker. Check the connection and refresh.'); }
+  if (r.status === 401) { try { localStorage.removeItem(KEY); } catch { /* nothing kept */ } load.once = null; return show('gate', 'That token was not accepted. Paste the Worker\'s STATS_TOKEN secret.'); }
+  if (!r.ok) return show('msg', r.status === 503 ? 'The database has no play-count tables yet: run migrate-country.sql (see leaderboard/README.md), then refresh.' : 'The Worker answered ' + r.status + '. Refresh to try again.');
+  D = await r.json();
+  show('app'); render();
+}
+
+/** Every day to show, oldest first: the chosen range, starting no earlier than the first day with a count. */
+function dayList() {
+  const start = D.first && D.first > D.from ? D.first : D.from;
+  const out = [];
+  for (let d = start > D.to ? D.to : start; d <= D.to; d = addDays(d, 1)) out.push(d);
+  return out;
+}
+/** Players were not counted before playersFrom: those days have plays but no player figure. */
+const known = (day, metric) => metric !== 'players' || (D.playersFrom != null && day >= D.playersFrom);
+
+function render() {
+  for (const b of $('range').children) b.setAttribute('aria-pressed', String(Number(b.dataset.v) === state.range));
+  for (const b of $('metric').children) b.setAttribute('aria-pressed', String(b.dataset.v === state.metric));
+
+  // Tiles count the whole range; the chart and the day table leave out days from before the chosen count was kept.
+  const all = dayList(), m = state.metric;
+  const days = all.some((d) => known(d, m)) ? all.filter((d) => known(d, m)) : all;
+  const totals = new Map(); // country -> { players, starts, finishes, fails }
+  for (const r of D.days) {
+    const t = totals.get(r.country) || { players: 0, starts: 0, finishes: 0, fails: 0 };
+    t.players += r.players; t.starts += r.starts; t.finishes += r.finishes; t.fails += r.fails;
+    totals.set(r.country, t);
+  }
+  const ranked = [...totals.keys()].sort((a, b) => totals.get(b)[m] - totals.get(a)[m] || totals.get(b).starts - totals.get(a).starts || a.localeCompare(b));
+  if (state.country != null && !totals.has(state.country)) state.country = null;
+
+  // The country filter
+  const sel = $('country'); sel.replaceChildren(new Option('All countries', '*'));
+  for (const c of ranked) sel.add(new Option(flag(c) + countryName(c), c));
+  sel.value = state.country == null ? '*' : state.country;
+
+  const rows = D.days.filter((r) => state.country == null || r.country === state.country);
+  const perDay = new Map(all.map((d) => [d, { players: 0, starts: 0, finishes: 0, fails: 0, by: [] }]));
+  for (const r of rows) { const t = perDay.get(r.day); if (!t) continue; t.players += r.players; t.starts += r.starts; t.finishes += r.finishes; t.fails += r.fails; t.by.push(r); }
+  const where = state.country == null ? '' : ' in ' + countryName(state.country);
+
+  tiles(all, perDay);
+  $('chart-title').textContent = METRIC[m] + ' per day' + where;
+  const firstKnown = all.find((d) => known(d, m));
+  $('chart-note').textContent = m !== 'players' ? 'Every start or finish counts, so one player can add several.'
+    : !firstKnown ? 'No players counted yet in this range. Players are counted from the first play after this version of the game went live; level starts go back further.'
+    : firstKnown > all[0] ? 'Players are counted from ' + dayName(firstKnown) + '. For earlier days, see Level starts.'
+    : 'Each browser counts once a day. Today is still filling up.';
+  chart(days, perDay, m);
+  $('days-title').textContent = METRIC[m] + ' by day and country';
+  dayTable(days, ranked, m);
+  countryTable(ranked, totals);
+  $('levels-title').textContent = 'By level' + where;
+  levelTable();
+}
+
+function tiles(days, perDay) {
+  const box = $('tiles'); box.replaceChildren();
+  const tile = (k, v, d) => { const t = el('div', null, 'tile'); t.append(el('div', k, 'k'), el('div', v, 'v'), el('div', d || '', 'd')); box.append(t); };
+  const counted = days.filter((d) => known(d, 'players'));
+  const p = (d) => (perDay.has(d) && known(d, 'players') ? fmt(perDay.get(d).players) : '–');
+  const yesterday = addDays(D.today, -1);
+  tile('Players today', p(D.today), 'so far, ' + dayName(D.today, true));
+  tile('Players yesterday', p(yesterday), dayName(yesterday, true));
+  const full = counted.filter((d) => d < D.today); // today is not over, so it stays out of the average
+  tile('Players per day', full.length ? fmt(Math.round(full.reduce((s, d) => s + perDay.get(d).players, 0) / full.length * 10) / 10) : '–', full.length ? 'average over ' + full.length + (full.length === 1 ? ' full day' : ' full days') : 'no full day yet');
+  const best = counted.reduce((b, d) => (b == null || perDay.get(d).players > perDay.get(b).players ? d : b), null);
+  tile('Busiest day', best && perDay.get(best).players ? fmt(perDay.get(best).players) : '–', best && perDay.get(best).players ? dayName(best, true) : '');
+  let starts = 0, finishes = 0; for (const t of perDay.values()) { starts += t.starts; finishes += t.finishes; }
+  tile('Level starts', fmt(starts), days.length + (days.length === 1 ? ' day' : ' days'));
+  tile('Levels finished', fmt(finishes), starts ? Math.round(finishes / starts * 100) + '% of starts' : '');
+}
+
+/** Ticks on clean numbers: 0 and up to four steps of 1, 2 or 5 times a power of ten. */
+function ticks(max) {
+  if (max <= 4) return Array.from({ length: Math.max(1, max) + 1 }, (_, i) => i);
+  const raw = max / 4, pow = Math.pow(10, Math.floor(Math.log10(raw))), step = [1, 2, 5, 10].map((k) => k * pow).find((s) => s >= raw);
+  const out = []; for (let v = 0; v < max + step; v += step) out.push(v);
+  return out;
+}
+
+function chart(days, perDay, m) {
+  const box = $('chart'), tip = $('tip'); tip.style.display = 'none';
+  const old = box.querySelector('svg'); if (old) old.remove();
+  const NS = 'http://www.w3.org/2000/svg';
+  const s = (tag, attrs) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+  const W = Math.max(320, box.clientWidth), H = 230, L = 40, R = 8, T = 12, B = 24, pw = W - L - R, ph = H - T - B;
+  const vals = days.map((d) => (known(d, m) ? perDay.get(d)[m] : null));
+  const tk = ticks(Math.max(1, ...vals.map((v) => v || 0))), top = tk[tk.length - 1];
+  const svg = s('svg', { viewBox: '0 0 ' + W + ' ' + H, height: H, role: 'img', 'aria-label': $('chart-title').textContent + '. The table below holds the same numbers.' });
+  const y = (v) => T + ph - (v / top) * ph;
+  for (const v of tk) {
+    svg.append(s('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: v ? 'var(--grid)' : 'var(--axis)', 'stroke-width': 1 }));
+    const t = s('text', { x: L - 8, y: y(v) + 4, 'text-anchor': 'end' }); t.textContent = fmt(v); svg.append(t);
+  }
+  const band = pw / days.length, bw = Math.max(1, Math.min(24, band - 2));
+  const every = Math.ceil(days.length / Math.max(1, Math.floor(pw / 56)));
+  days.forEach((d, i) => {
+    const cx = L + band * (i + 0.5), v = vals[i];
+    if ((days.length - 1 - i) % every === 0) { const t = s('text', { x: cx, y: H - 6, 'text-anchor': 'middle' }); t.textContent = dayName(d); svg.append(t); }
+    if (v) {
+      const h = Math.max(1, (v / top) * ph), r = Math.min(4, h, bw / 2), x0 = cx - bw / 2, y0 = T + ph - h;
+      // rounded at the data end, square on the baseline; today, not over yet, is drawn lighter
+      svg.append(s('path', { d: 'M' + x0 + ',' + (T + ph) + 'V' + (y0 + r) + 'Q' + x0 + ',' + y0 + ' ' + (x0 + r) + ',' + y0 + 'H' + (x0 + bw - r) + 'Q' + (x0 + bw) + ',' + y0 + ' ' + (x0 + bw) + ',' + (y0 + r) + 'V' + (T + ph) + 'Z', fill: 'var(--series)', opacity: d === D.today ? 0.5 : 1 }));
+    }
+    const hit = s('rect', { x: L + band * i, y: T, width: band, height: ph + B, fill: 'transparent' });
+    hit.addEventListener('pointerenter', () => {
+      tip.replaceChildren(el('div', dayName(d, true) + (d === D.today ? ' (so far)' : '')));
+      const head = el('div'); head.append(el('b', v == null ? '–' : fmt(v)), ' ' + METRIC[m].toLowerCase()); tip.append(head);
+      if (v == null) tip.append(el('div', 'players were not counted yet', 'r'));
+      else if (state.country == null) for (const r of perDay.get(d).by.filter((r) => r[m]).sort((a, b) => b[m] - a[m]).slice(0, 5)) { const row = el('div', null, 'r'); row.append(el('span', flag(r.country) + countryName(r.country)), el('span', fmt(r[m]))); tip.append(row); }
+      tip.style.display = 'block';
+      const left = Math.min(Math.max(0, cx - tip.offsetWidth / 2), box.clientWidth - tip.offsetWidth);
+      tip.style.left = left + 'px'; tip.style.top = Math.max(0, (v ? y(v) : T + ph) - tip.offsetHeight - 8) + 'px';
+    });
+    hit.addEventListener('pointerleave', () => { tip.style.display = 'none'; });
+    svg.append(hit);
+  });
+  box.append(svg);
+}
+
+/** A number cell: zero is muted, an unknown player count is a dash, and `heat` (0 to 1) washes the cell in the series hue. */
+function num(v, cls, heat) {
+  const td = el('td', v == null ? '–' : v ? fmt(v) : '0', (v ? '' : 'zero ') + (cls || ''));
+  if (heat && v) td.style.background = 'color-mix(in srgb, var(--series) ' + Math.round(6 + 30 * heat) + '%, transparent)';
+  return td;
+}
+function head(table, cols) {
+  const tr = el('tr'); for (const c of cols) { const th = el('th', Array.isArray(c) ? c[0] : c); if (Array.isArray(c)) th.title = c[1]; tr.append(th); }
+  const thead = el('thead'); thead.append(tr); table.replaceChildren(thead); const body = el('tbody'); table.append(body); return body;
+}
+
+function dayTable(days, ranked, m) {
+  const cols = ranked.slice(0, 8), rest = ranked.slice(8);
+  const cell = new Map(); let peak = 1;
+  for (const r of D.days) { cell.set(r.day + ' ' + r.country, r[m]); if (cols.includes(r.country)) peak = Math.max(peak, r[m]); }
+  const body = head($('days'), ['Day', 'All', ...cols.map((c) => [shortName(c), countryName(c)]), ...(rest.length ? [['Other', rest.length + ' more countries']] : [])]);
+  for (const d of [...days].reverse()) {
+    const ok = known(d, m), tr = el('tr'), at = (c) => cell.get(d + ' ' + c) || 0;
+    const all = ranked.reduce((s, c) => s + at(c), 0);
+    tr.append(el('td', dayName(d, true) + (d === D.today ? ' (so far)' : '')), num(ok ? all : null, 'total'));
+    for (const c of cols) tr.append(num(ok ? at(c) : null, '', at(c) / peak));
+    if (rest.length) tr.append(num(ok ? rest.reduce((s, c) => s + at(c), 0) : null));
+    body.append(tr);
+  }
+}
+
+function countryTable(ranked, totals) {
+  const body = head($('countries'), ['Country', 'Players', 'Level starts', 'Levels finished', 'Levels failed', 'Share of ' + METRIC[state.metric].toLowerCase()]);
+  const all = ranked.reduce((s, c) => s + totals.get(c)[state.metric], 0);
+  for (const c of ranked) {
+    const t = totals.get(c), tr = el('tr'), name = el('td'), a = el('a', flag(c) + countryName(c));
+    a.addEventListener('click', () => { state.country = state.country === c ? null : c; render(); });
+    name.append(a); if (state.country === c) name.className = 'total';
+    tr.append(name, num(c === '' ? null : t.players), num(t.starts), num(t.finishes), num(t.fails), el('td', all ? Math.round(t[state.metric] / all * 100) + '%' : '–'));
+    body.append(tr);
+  }
+  if (!ranked.length) { const td = el('td', 'Nothing counted in this range yet.', 'zero'); td.colSpan = 6; const tr = el('tr'); tr.append(td); body.append(tr); }
+}
+
+function levelTable() {
+  const by = new Map();
+  for (const r of D.levels) {
+    if (state.country != null && r.country !== state.country) continue;
+    const t = by.get(r.level) || { starts: 0, finishes: 0, fails: 0, s1: 0, s2: 0, s3: 0 };
+    for (const k in t) t[k] += r[k];
+    by.set(r.level, t);
+  }
+  const body = head($('levels'), ['Level', 'Starts', 'Finished', 'Failed', ['Finish rate', 'Finished, as a share of starts'], '★', '★★', '★★★']);
+  for (const [level, t] of [...by].sort((a, b) => b[1].starts - a[1].starts || a[0].localeCompare(b[0]))) {
+    const tr = el('tr');
+    tr.append(el('td', level), num(t.starts, 'total'), num(t.finishes), num(t.fails), el('td', t.starts ? Math.round(t.finishes / t.starts * 100) + '%' : '–'), num(t.s1), num(t.s2), num(t.s3));
+    body.append(tr);
+  }
+  if (!by.size) { const td = el('td', 'Nothing counted in this range yet.', 'zero'); td.colSpan = 8; const tr = el('tr'); tr.append(td); body.append(tr); }
+}
+
+$('gate').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const t = $('token').value.trim(); $('token').value = '';
+  try { localStorage.setItem(KEY, t); } catch { /* no storage: kept for this page only */ }
+  load.once = t; load();
+});
+$('range').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { state.range = Number(b.dataset.v); load(); } });
+$('metric').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { state.metric = b.dataset.v; render(); } });
+$('country').addEventListener('change', (e) => { state.country = e.target.value === '*' ? null : e.target.value; render(); });
+$('refresh').addEventListener('click', load);
+$('forget').addEventListener('click', () => { try { localStorage.removeItem(KEY); } catch { /* nothing kept */ } load.once = null; D = null; show('gate', 'Token forgotten on this browser. Paste it again to see the numbers.'); });
+let resizing; addEventListener('resize', () => { clearTimeout(resizing); resizing = setTimeout(() => { if (D && !$('app').hidden) render(); }, 150); });
+load();
+</script>
+</body>
+</html>

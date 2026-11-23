@@ -10,3 +10,7 @@ src/assets/official/
 # local environment (leaderboard URL)
 .env
 .env.*
+
+# local state of `wrangler dev` (leaderboard/README.md)
+.wrangler/
+.dev.vars

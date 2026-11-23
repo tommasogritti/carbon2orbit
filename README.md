@@ -199,7 +199,7 @@ Official photos are not in the repository. For your own play, save one as `src/a
 
 ## Privacy
 
-The game sets no cookies and asks for nothing. The public site counts visits with Cloudflare Web Analytics, which is cookie-free and does not track individuals. The game also sends an anonymous count when a level starts and ends (the season, the level, finished or not, and the stars), which the leaderboard Worker adds to a daily total; nothing identifies a player. Nothing is sent when your browser asks sites not to track it (Do Not Track or Global Privacy Control), in developer mode, or from a copy without a leaderboard. The code is [src/stats.ts](src/stats.ts).
+The game sets no cookies and asks for nothing. The public site counts visits with Cloudflare Web Analytics, which is cookie-free and does not track individuals. The game also sends an anonymous count when a level starts and ends (the season, the level, finished or not, and the stars), which the leaderboard Worker adds to a daily total for the country the request came from; the country is the only thing kept about where you are, and your IP address is never read or stored. To count how many people played on a day without giving anyone an id, your browser remembers one thing, the date it was last counted, and its first level start of a day adds one to that day's players. Nothing identifies a player. Nothing is sent when your browser asks sites not to track it (Do Not Track or Global Privacy Control), in developer mode, or from a copy without a leaderboard. The code is [src/stats.ts](src/stats.ts).
 
 ## Licence and credits
 

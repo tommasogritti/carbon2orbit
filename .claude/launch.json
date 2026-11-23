@@ -2,6 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     { "name": "game", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev", "--", "--port", "5183", "--strictPort"], "port": 5183 },
-    { "name": "game-next-levels", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev", "--", "--port", "5193", "--strictPort"], "port": 5193 }
+    { "name": "game-next-levels", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev", "--", "--port", "5193", "--strictPort"], "port": 5193 },
+    { "name": "leaderboard-worker", "runtimeExecutable": "npx", "runtimeArgs": ["wrangler", "dev", "--config", "leaderboard/wrangler.toml", "--port", "8799", "--var", "STATS_TOKEN:local"], "port": 8799 }
   ]
 }
