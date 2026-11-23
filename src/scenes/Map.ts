@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { W, H, T, just, save, persist, DEV, showCard, srcLinks, watchLink, patchImg, cardPhoto, KIND_LABEL, SCENE_FOR, img, panel, hero, hotkeys } from '../core';
+import { W, H, T, just, save, persist, DEV, free, setFree, showCard, closeCard, overlayOpen, toast, srcLinks, watchLink, patchImg, cardPhoto, KIND_LABEL, SCENE_FOR, img, panel, hero, hotkeys } from '../core';
 import { D, S, MAPW, MAPH, BUST_URL, BUSTS, DIAGRAMS } from '../art';
 import { LEVELS, BONUS, PEOPLE, CHARACTERS, LevelDef } from '../content';
 import { snd, music, stopLoops } from '../audio';
@@ -13,9 +13,9 @@ const ZOOM = 2.5; // the map is shown wider than gameplay scenes so the geograph
 /** Only announced things are locked. A chapter that is still unfolding (in-progress) can be played up to where the story has got to. */
 const playable = (d: LevelDef) => d.status !== 'announced';
 /** A node is open when every earlier flown node is done (Super Mario World style linear path). */
-export const isOpen = (i: number) => DEV || LEVELS.slice(0, i).every((d) => !playable(d) || save.done[d.id]);
+export const isOpen = (i: number) => DEV || free.on || LEVELS.slice(0, i).every((d) => !playable(d) || save.done[d.id]);
 /** Secret nodes appear once their blueprint has been found. */
-const found = () => BONUS.filter((b) => DEV || save.unlocks[b.id]);
+const found = () => BONUS.filter((b) => DEV || free.on || save.unlocks[b.id]);
 /** People stand beside the path once you have reached the node they branch from. */
 const folk = () => PEOPLE.filter((p) => isOpen(LEVELS.findIndex((l) => l.id === p.parent)));
 const branches = () => [...found(), ...folk()];
@@ -25,16 +25,16 @@ const parentOf = (b: LevelDef) => LEVELS.find((l) => l.id === b.parent)!;
 export function openLevel(scene: Phaser.Scene, def: LevelDef) {
   const locked = !playable(def);
   const kind = locked ? 'locked' : def.kind;
-  const head = `${patchImg(def.id)}<div class="kicker"><span class="badge k-${kind}">${locked ? 'COMING ' + def.date.toUpperCase() : KIND_LABEL[def.kind]}</span>${def.status === 'in-progress' ? '<span class="badge k-locked">STORY STILL UNFOLDING</span>' : ''}${def.date} · ${def.place}</div><h1>${def.title}</h1><p>${def.intro}</p><p class="fact"><b>Did you know?</b> ${def.fact}</p>`;
+  const head = `${patchImg(def.id)}<div class="kicker">${free.on ? '<span class="badge k-free">FREE PLAY</span>' : ''}<span class="badge k-${kind}">${locked ? 'COMING ' + def.date.toUpperCase() : KIND_LABEL[def.kind]}</span>${def.status === 'in-progress' ? '<span class="badge k-locked">STORY STILL UNFOLDING</span>' : ''}${def.date} · ${def.place}</div><h1>${def.title}</h1><p>${def.intro}</p><p class="fact"><b>Did you know?</b> ${def.fact}</p>`;
   const back = { label: 'Back to map', fn: () => {}, alt: true };
   if (def.kind === 'person') { // meeting someone: facts and a picture, never invented speech
     const pic = def.photo || (def.portrait !== undefined ? { file: '', page: '', src: BUSTS[def.portrait], caption: def.title + ', as drawn in the game.', credit: def.portraitCredit || 'Likeness from the photo on Rocket Lab’s team page; no freely licensed photo is available.' } : undefined);
-    showCard(head + srcLinks(def.sources), [{ label: 'Good to meet you', fn: () => { save.met[def.id] = true; save.done[def.id] = 3; persist(); scene.scene.restart({ title: false }); } }], pic);
+    showCard(head + srcLinks(def.sources), [{ label: 'Good to meet you', fn: () => { if (free.on) return; save.met[def.id] = true; save.done[def.id] = 3; persist(); scene.scene.restart({ title: false }); } }], pic);
     return;
   }
   const diagram = def.diagram ? `<figure class="diagram"><img src="${DIAGRAMS[def.diagram.key]}" alt="${def.kind === 'card' ? 'Drawing for this story' : 'Labelled diagram'}"><figcaption>${def.diagram.caption}</figcaption></figure>` : '';
   if (def.kind === 'card' || locked) {
-    showCard(head + diagram + watchLink(def) + srcLinks(def.sources), [{ label: locked ? 'Back to map' : 'Continue', fn: () => { if (!locked) { save.done[def.id] = 3; persist(); scene.scene.restart({ title: false }); } } }], cardPhoto(def));
+    showCard(head + diagram + watchLink(def) + srcLinks(def.sources), [{ label: locked ? 'Back to map' : 'Continue', fn: () => { if (!locked && !free.on) { save.done[def.id] = 3; persist(); scene.scene.restart({ title: false }); } } }], cardPhoto(def));
   } else {
     const lead = CHARACTERS.find((c) => c.id === def.hero); // a level played as someone other than Peter says so up front
     const cast = lead ? `<div class="cast"><img class="toon" src="${BUSTS[lead.pre]}" alt="Cartoon of ${lead.name}"><div><b>In this level you play ${lead.name}</b>, ${lead.role}. ${lead.likeness}<br><span class="src">Drawn likeness; no freely licensed photo is available.</span></div></div>` : '';
@@ -43,6 +43,46 @@ export function openLevel(scene: Phaser.Scene, def: LevelDef) {
     const skip = { label: 'Skip (dev)', alt: true, fn: () => { save.done[def.id] = save.done[def.id] || 1; save.at = def.id; persist(); scene.scene.restart({ title: false }); } };
     showCard(head + cast + mateCast + diagram + `<p class="how">How to play: ${def.how}</p>` + watchLink(def) + srcLinks(def.sources), [{ label: 'Start', fn: () => { if (!DEV) count('start', def.id); scene.scene.start(SCENE_FOR[def.mechanic!], { def }); } }, back, ...(DEV ? [skip] : [])], cardPhoto(def));
   }
+}
+
+/**
+ * Free play, from wherever the player is (P, or the footer button): the title screen and the map go to the map with
+ * the list open. A level in progress is left alone, since that run may still count.
+ */
+export function freePlay(game: Phaser.Game) {
+  if (overlayOpen()) return;
+  const sc = game.scene.getScenes(true)[0] as any;
+  if (!sc) return;
+  if (sc.def) return toast(free.on ? 'Press Esc for the map, then P to pick another level' : 'Free play starts from the map: finish this level, or press Esc');
+  if (sc.scene.key === 'Map') { if (sc.moving) return; if (free.on) return showPicker(sc); }
+  setFree(true); snd.select(); toast('Free play: every level open, nothing scored');
+  sc.scene.start('Map', { title: false, pick: true });
+}
+
+/** The free-play list: every node on the map, by kind, in story order. Picking one moves the marker there and opens its card. */
+export function showPicker(scene: MapScene) {
+  if (overlayOpen()) return;
+  snd.select();
+  const year = (d: LevelDef) => d.date.match(/\d{4}/)?.[0] ?? d.date;
+  const chip = (d: LevelDef) => {
+    const locked = !playable(d), seen = save.done[d.id] || save.met[d.id];
+    return `<button class="pick" data-id="${d.id}"${locked ? ' disabled' : ''}><i class="k-${locked ? 'locked' : d.kind}"></i><b>${d.title}</b><small>${locked ? 'coming ' + d.date : year(d)}${seen ? ' · ✓' : ''}</small></button>`;
+  };
+  const groups: [string, LevelDef[]][] = [
+    ['Platform levels', LEVELS.filter((d) => d.kind === 'platform')], ['Launch control', LEVELS.filter((d) => d.kind === 'launch')],
+    ['Mini-games', LEVELS.filter((d) => d.kind === 'minigame')], ['Story cards', LEVELS.filter((d) => d.kind === 'card')],
+    ['Secrets', BONUS], ['People to meet', PEOPLE],
+  ];
+  showCard(
+    `<div class="kicker"><span class="badge k-free">FREE PLAY</span>NOTHING IS SCORED</div><h1>Pick a level</h1>` +
+    `<p>Every level, story card and person is open, in any order. Stars, points and secrets are not kept, and your story save stays as it was. ✓ marks what you have already played.</p>` +
+    `<div class="picker">${groups.map(([name, list]) => `<h2>${name}</h2><div class="picks">${list.map(chip).join('')}</div>`).join('')}</div>`,
+    [{ label: 'Back to the map', fn: () => {} }, { label: 'Leave free play', alt: true, fn: () => { setFree(false); scene.scene.restart({ title: false }); } }],
+  );
+  document.querySelectorAll<HTMLButtonElement>('#overlay button.pick').forEach((b) => b.addEventListener('click', () => {
+    const d = nodes().find((n) => n.id === b.dataset.id); if (!d) return;
+    closeCard(); scene.jump(d); snd.select(); openLevel(scene, d);
+  }));
 }
 
 /** Paths between nodes are gentle arcs; long ocean crossings bow more. */
@@ -56,7 +96,7 @@ function arc(a: { x: number; y: number }, b: { x: number; y: number }, t: number
 export class MapScene extends Phaser.Scene {
   cur: LevelDef = LEVELS[0]; pre = ''; lastStep = 0; tag!: Phaser.GameObjects.Container; marker!: Phaser.GameObjects.Image; ring!: Phaser.GameObjects.Image; moving = false; hf?: HiFi; banner!: Phaser.GameObjects.Text; sub!: Phaser.GameObjects.Text; badge!: Phaser.GameObjects.Image;
   constructor() { super('Map'); }
-  create(data: { title?: boolean }) {
+  create(data: { title?: boolean; pick?: boolean }) {
     this.moving = false;
     stopLoops(); music.play('map');
     const cam = this.cameras.main; cam.setZoom(ZOOM).setBounds(0, 0, MAPW, MAPH);
@@ -103,7 +143,7 @@ export class MapScene extends Phaser.Scene {
       const rt = this.add.renderTexture(0, 0, MAPW * 3, MAPH * 3).setOrigin(0).setScale(1 / 3); if (g === lit) rt.setBlendMode('ADD');
       rt.draw(g.setScale(3)); g.destroy();
     }
-    this.cur = nodes().find((d) => d.id === save.at) || LEVELS[0];
+    this.cur = nodes().find((d) => d.id === ((free.on && free.at) || save.at)) || LEVELS[0];
     const m = this.cur.map;
     this.ring = img(this, m.x, m.y - 0.5, 'ring').setDepth(2);
     this.tweens.add({ targets: this.ring, scale: S * 1.25, alpha: 0.25, duration: 700, yoyo: true, repeat: -1 });
@@ -128,9 +168,9 @@ export class MapScene extends Phaser.Scene {
     const eggs = Object.keys(save.eggs).length, total = LEVELS.filter((d) => d.egg).length;
     h(panel(this, 4, 4, 82, 14)); h(T(this, 9, 6.5, 'CARBON TO ORBIT', '#ffffff', 7.5, '700'));
     const tl = tally();
-    h(panel(this, W - 196, 4, 154, 23)); h(T(this, W - 47, 17, `SCORE ${tl.score.toLocaleString('en-NZ')}   ·   L leaderboard`, '#ffffff', 5.6, '700')).setOrigin(1, 0);
+    h(panel(this, W - 196, 4, 154, 23)); h(T(this, W - 47, 17, free.on ? 'FREE PLAY · NOT SCORED   ·   P pick a level' : `SCORE ${tl.score.toLocaleString('en-NZ')}   ·   L leaderboard`, free.on ? '#d9c4ff' : '#ffffff', 5.6, '700')).setOrigin(1, 0);
     h(T(this, W - 47, 7, `EGGS ${eggs}/${total}   SECRETS ${Object.keys(save.unlocks).length}/${BONUS.length}   PEOPLE ${Object.keys(save.met).length}/${PEOPLE.length}`, '#ffe98a', 6)).setOrigin(1, 0);
-    h(T(this, 9, 21, '←↑↓→ move   ⏎ open   N next   H controls' + (DEV ? '   K skip' : ''), '#dfe6f7', 5, '700')).setShadow(0, 1, '#000', 3);
+    h(T(this, 9, 21, '←↑↓→ move   ⏎ open   ' + (free.on ? 'P list' : 'N next   P free play') + '   H controls' + (DEV ? '   K skip' : ''), '#dfe6f7', 5, '700')).setShadow(0, 1, '#000', 3);
     // the level to play next wears a bouncing tag, and N walks straight to it
     const nxt = this.nextUp();
     if (nxt) {
@@ -142,12 +182,14 @@ export class MapScene extends Phaser.Scene {
     hotkeys.KeyL = () => showBoard();
     hotkeys.KeyC = () => showCredits(this.game);
     hotkeys.KeyN = () => { const n = this.nextUp(); if (n && n !== this.cur && !this.moving) this.walkTo(n); };
-    this.events.once('shutdown', () => { hotkeys.KeyN = undefined; hotkeys.KeyL = undefined; hotkeys.KeyC = undefined; });
+    hotkeys.KeyP = () => freePlay(this.game);
+    this.events.once('shutdown', () => { hotkeys.KeyN = undefined; hotkeys.KeyL = undefined; hotkeys.KeyC = undefined; hotkeys.KeyP = undefined; });
     hf?.set({ moving: 0 }); hf?.ready();
     cam.ignore(hud);
     this.cameras.add(0, 0, W * D, H * D).setZoom(D).centerOn(W / 2, H / 2).ignore(this.children.list.filter((o) => !hud.includes(o))); // everything that is not HUD is the map's
     this.refresh();
     if (data?.title) this.titleCard();
+    else if (data?.pick) showPicker(this);
   }
   titleCard() {
     showCard(
@@ -169,8 +211,14 @@ export class MapScene extends Phaser.Scene {
     save.done[d.id] = save.done[d.id] || (d.kind === 'card' || d.kind === 'person' ? 3 : 1); if (d.kind === 'person') save.met[d.id] = true;
     persist(); snd.select(); this.scene.restart({ title: false });
   }
+  /** Free play: put the marker straight on a node picked from the list. */
+  jump(d: LevelDef) {
+    this.cur = d; free.at = d.id;
+    this.marker.setPosition(d.map.x, d.map.y - 5).setTexture(this.pre + 'peter0').setFlipX(false);
+    this.ring.setVisible(true); this.refresh();
+  }
   /** The first level on the story path that is open and not finished yet. */
-  nextUp() { return LEVELS.find((d, i) => playable(d) && !save.done[d.id] && isOpen(i)); }
+  nextUp() { return free.on ? undefined : LEVELS.find((d, i) => playable(d) && !save.done[d.id] && isOpen(i)); }
   /**
    * Which node an arrow press means: the nearest one in that direction, among every node you may stand on.
    * Close and well-aligned beats far and well-aligned; anything more than about 70° off the arrow is ignored.
@@ -217,7 +265,7 @@ export class MapScene extends Phaser.Scene {
         if (Math.abs(x - this.marker.x) > 0.05) this.marker.setFlipX(x < this.marker.x);
         this.marker.setPosition(x, y - 5).setTexture(this.pre + 'peterw' + (Math.floor(this.time.now / 90) % 6));
       },
-      onComplete: () => { this.marker.setTexture(this.pre + 'peter0'); this.cur = dest; this.moving = false; save.at = dest.id; persist(); this.ring.setVisible(true); this.refresh(); },
+      onComplete: () => { this.marker.setTexture(this.pre + 'peter0'); this.cur = dest; this.moving = false; if (free.on) free.at = dest.id; else { save.at = dest.id; persist(); } this.ring.setVisible(true); this.refresh(); },
     });
   }
   update() {
