@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { W, H, T, just, img, cam, hotkeys, overlayOpen } from '../core';
+import { W, H, T, just, img, cam, hotkeys, overlayOpen, free } from '../core';
+import { freePlay } from './Map';
 import { S } from '../art';
 import { music, stopLoops, snd } from '../audio';
 import { VERSION, SEASON } from '../version';
@@ -59,7 +60,8 @@ export class TitleScene extends Phaser.Scene {
     T(this, W - 6, H - 5, 'Not affiliated with Rocket Lab', '#8fa3c8', 4.8, '700').setOrigin(1, 1).setShadow(0, 1, '#000000', 3);
     hotkeys.KeyL = () => showBoard();
     hotkeys.KeyC = () => showCredits(this.game);
-    this.events.once('shutdown', () => { hotkeys.KeyL = undefined; hotkeys.KeyC = undefined; });
+    hotkeys.KeyP = () => freePlay(this.game);
+    this.events.once('shutdown', () => { hotkeys.KeyL = undefined; hotkeys.KeyC = undefined; hotkeys.KeyP = undefined; });
     this.input.on('pointerdown', () => this.start());
     if (hf) { hf.shade(body, 4, 2); hf.tag({ sky, stars, earth, star: hs, smoke: this.smoke, flame: this.flame, rocket: this.rocket }); hf.set({ x: this.rocket.x, y: this.rocket.y, on: 0 }); hf.ready({ hud: this.children.list.slice(worldN) }); }
   }
@@ -68,12 +70,12 @@ export class TitleScene extends Phaser.Scene {
     this.rocket.setPosition(20, H + 86).setAlpha(1);
     this.tweens.add({ targets: this.rocket, x: 152, y: -30, duration: 15000, ease: 'Quad.easeIn', onComplete: () => this.time.delayedCall(3500, () => this.fly()) });
   }
-  help() { return { title: 'Title screen', rows: [['Enter', 'Start, or carry on where you left off'], ['L', 'Your score and the leaderboard'], ['C', 'Who made the game, and its source'], ['F', 'Full screen on or off']] as [string, string][] }; }
+  help() { return { title: 'Title screen', rows: [['Enter', 'Start, or carry on where you left off'], ['P', 'Free play: pick any level from a list. Nothing is scored'], ['L', 'Your score and the leaderboard'], ['C', 'Who made the game, and its source'], ['F', 'Full screen on or off']] as [string, string][] }; }
   start() {
     if (this.leaving || overlayOpen()) return;
     this.leaving = true; snd.select();
     for (const c of this.cameras.cameras) c.fadeOut(350, 5, 6, 12); // the HUD camera too, when the hi-fi layer has made one
-    this.time.delayedCall(360, () => this.scene.start('Map', { title: tally().levels === 0 }));
+    this.time.delayedCall(360, () => this.scene.start('Map', free.on ? { title: false, pick: true } : { title: tally().levels === 0 }));
   }
   update() {
     const r = this.rocket, on = r.y > -20 && r.y < H + 70;

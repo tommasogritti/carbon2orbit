@@ -55,6 +55,7 @@ Open the address Vite prints. Press **H** at any moment for the controls of what
 | I | A hint, in levels that have them (the 💡 button too) |
 | L | Your score and the leaderboard |
 | N | On the map: walk to the next level |
+| P | Free play: every level, card and person open, picked from a list (the ☰ button or the footer switch too). Nothing is scored or saved |
 | F | Full screen |
 | M | Sound on or off |
 | T | Next soundtrack: the original score, 1980s synthwave, chiptune, or slow and cinematic |
@@ -173,7 +174,8 @@ The same list is in the game: **Credits** in the page footer, or **C** on the ti
 
 | | |
 | --- | --- |
-| Developer mode | The switch in the page footer (or `?dev=1`): every level open, `K` skips one |
+| Free play | `P`, the ☰ button or the footer switch (or `?free=1`): every node open, a list to pick from, nothing scored or saved |
+| Developer mode | `npm run dev` only, not in the deployed game: the switch in the page footer (or `?dev=1`) opens every level, and `K` skips one |
 | `?level=<id>` | Jump straight into a level, for example `?level=capstone` |
 | `?level=<id>&auto=1` | Let the bot play it; add `&fast=6` to run six times faster |
 | `?level=<id>&auto=1&rec=<name>` | Record the run to `recordings/<name>.webm` (dev server only) |
