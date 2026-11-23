@@ -4,7 +4,7 @@ export type Kind = 'platform' | 'launch' | 'minigame' | 'card' | 'person';
 export interface LevelDef {
   id: string;
   kind: Kind;
-  mechanic?: 'platform' | 'launch' | 'hotfire' | 'heli-catch' | 'orbit-raise' | 'sprint' | 'fault-finder' | 'splashdown' | 'cruise' | 'countdown-race' | 'ride' | 'orbit-ops' | 'dual-count' | 'arc-lab' | 'edit-bay' | 'slot-finder' | 'hat-trick';
+  mechanic?: 'platform' | 'launch' | 'hotfire' | 'heli-catch' | 'orbit-raise' | 'sprint' | 'fault-finder' | 'splashdown' | 'cruise' | 'countdown-race' | 'ride' | 'orbit-ops' | 'dual-count' | 'arc-lab' | 'edit-bay' | 'slot-finder' | 'hat-trick' | 'fit-out';
   parent?: string; // bonus nodes only: the map node they branch from
   unlocks?: string; // platform levels: the bonus node opened by finding this level's hidden blueprint
   status: 'flown' | 'in-progress' | 'announced';
@@ -33,6 +33,11 @@ export interface LevelDef {
 const WP = 'https://en.wikipedia.org/wiki/';
 const C = 'https://commons.wikimedia.org/wiki/File:';
 const RL = 'https://rocketlabcorp.com/';
+/** What goes aboard Return On Investment, for both acts of its level: [key, kind, label, place along the deck (-1 stern to 1 bow), weight, goes over]. */
+const ROI_ITEMS = [
+  ['t1', 'thruster', 'Thruster 1', -0.78, 3], ['t2', 'thruster', 'Thruster 2', -0.66, 3], ['t3', 'thruster', 'Thruster 3', 0.76, 3], ['t4', 'thruster', 'Thruster 4', 0.88, 3],
+  ['pw', 'power', 'Power generation', -0.4, 3], ['bs', 'shield', 'Blast shield', -0.4, 1, 'pw'], ['cg', 'cradle', 'Capture gear', 0.2, 3],
+];
 
 export const LEVELS: LevelDef[] = [
   {
@@ -485,6 +490,33 @@ export const LEVELS: LevelDef[] = [
     params: { theme: 'varda', orbit: { alt_km: 500, inc_deg: 97.5 }, thrust: 0.42, target: { name: 'KOONIBBA TEST RANGE', lat: -31.9, lon: 133.4 }, steps: [{ do: 'lower', alt: 300 }, { do: 'raise', alt: 900 }, { do: 'deorbit' }, { do: 'release', alt: 470 }] },
   },
   {
+    id: 'return-on-investment', kind: 'minigame', mechanic: 'fit-out', status: 'in-progress', hero: 'shaun', role: 'Vice President, Neutron',
+    title: 'Return On Investment', date: '2025–2026', place: 'Amelia, Louisiana', map: { x: 708, y: 298 },
+    intro: 'Rocket Lab describes two ways home for Neutron’s first stage: a landing on a barge far out in the Atlantic, for missions that need everything the rocket has, and a return to Launch Complex 3 in Virginia. On 27 February 2025 it shows what that barge will be: a 400-foot deck barge, the Oceanus, supplied by Canal Barge of New Orleans and renamed Return On Investment. On 10 July it announces that Bollinger Shipyards has the contract for the fit-out, already begun, mainly at Bollinger’s yard in Amelia, Louisiana, to a design led by Rocket Lab. The announcement quotes Rocket Lab’s Vice President for Neutron, Shaun D’Mello, and lists what the barge needs: thrusters to hold its position, blast shielding for the equipment on deck, and autonomous gear to capture and secure the stage. By May 2026 the thrusters and the power generation that drives them have reached the yard. In this level you put them aboard. (You play D’Mello. No account places him at the yard, where the work is Bollinger’s; the game does.)',
+    how: 'Act one, the yard crane. ← → run the trolley along the gantry, ↑ ↓ hoist and lower, Space hooks on and sets down. Lower the hook onto a load on the quay, hook on, lift it well clear, and carry it to its outline on the deck. The load swings when the trolley starts and stops: ease off early and let it settle, because a load only goes down when it is over its mark, touching the deck, and steady. The barge trims as the weight goes on: with too much at one end she will take no more there until the other end is loaded, so work both ends. The blast shield goes over the power generation. Three stars for no more than one knock, inside five minutes. Act two is a thruster trial.',
+    fact: 'Return On Investment is 400 ft (122 m) long. On the May 2026 results call Peter Beck put the finished platform at more than 11 million pounds, or 5,000 tonnes, with 10 megawatts of power generation across four station-keeping thrusters. Rocket Lab says it will work out of the US East Coast, carrying first stages back to Wallops Island, and that it is Jones Act compliant, as American law requires of a vessel carrying cargo between places in the United States.',
+    after: 'The story so far. Rocket Lab revealed Return On Investment on 27 February 2025, and on 10 July 2025 announced that Bollinger Shipyards had the contract and that the work had begun, with delivery then expected in early 2026. On the May 2026 results call Peter Beck said the thruster housings and the main cabin were installed, that the power generation systems and the thrusters had arrived at the yard, and that sea trials were on track to start later in the year. The barge is not meant for Neutron’s first flight: that one is to end in an intentional soft splashdown, and if the re-entry goes well the barge goes under the stage on flight two. Beck, on that call: “I do not want to put the barge under the vehicle until we know that we are not going to punch a hole through it.” As of November 2026 Rocket Lab has not announced the barge’s delivery or the start of sea trials, Neutron’s first flight is no earlier than 2027, and nothing has landed on the barge. (The gantry crane, the weights, the order of the lifts, the power generation as a single unit, the old name still on the hull and its repainting, and the whole trial are the game’s own. Shaun D’Mello is Rocket Lab’s Vice President for Neutron; no account places him at the yard, and the work there is Bollinger’s.) This level gets its next act when a Neutron comes home to it.',
+    egg: 'Oceanus. The barge’s first name belongs to a Titan: in Greek myth Oceanus was the great river that ran round the whole world. Rocket Lab’s own announcement tells that story before giving the barge the name it will work under.',
+    sources: [RL + 'updates/rocket-lab-reveals-ocean-platform-for-neutron-rocket-landings-at-sea/', RL + 'updates/rocket-lab-selects-bollinger-shipyards-to-support-modification-of-neutron-landing-platform/', RL + 'launch/neutron/', 'https://www.fool.com/earnings/call-transcripts/2026/05/08/rocket-lab-rklb-q1-2026-earnings-transcript/', 'https://aerospaceamerica.aiaa.org/features/rocket-labs-next-step/', 'https://www.nasaspaceflight.com/2026/07/rocket-lab-update-072026/', 'https://www.sec.gov/Archives/edgar/data/1819994/000181999426000073/rklb-11092026ex991.htm'],
+    params: {
+      theme: 'amelia', act: 'lift', hull: { was: 'OCEANUS', name: 'RETURN ON INVESTMENT', cabin: -0.93 }, trim: 3.4, trimAngle: 0.011, par: 300, maxKnocks: 8, items: ROI_ITEMS,
+      then: {
+        mechanic: 'fit-out',
+        intro: 'With its thrusters aboard, the barge can do the one thing a landing platform must: stay where it is put. In May 2026 Rocket Lab said sea trials were on track to start later in the year; it has not said since whether they have begun, or what they involve. This trial, in the water beside the yard, is the game’s own.',
+        how: 'The yard from above, the quay on the left. ← ↑ ↓ → thrust that way: the thrusters swing round together, and take a moment to answer. Space twists the hull anticlockwise, Enter clockwise. Bring the barge into each dashed box, pointing the way the box points, and hold her there until the ring fills. She is heavy: nothing stops a slide but a push the other way. The windsock shows what is pushing on her. Three stars inside 1 min 30 s, without touching the quay.',
+        params: {
+          theme: 'amelia', act: 'trial', hull: { name: 'RETURN ON INVESTMENT', cabin: -0.93 }, items: ROI_ITEMS, start: [99, 70], box: 7, deg: 7, par: 90, limit: 300,
+          steps: [
+            { say: 'Lines off. Thrust away from the quay (→) and bring her into the first box.', at: [126, 104], hdg: 0, hold: 4 },
+            { say: 'A breeze pushes her back towards the quay. Hold the box against it.', at: [126, 104], hdg: 0, hold: 7, wind: [-3.4, 0, 0.5] },
+            { say: 'Now walk her sideways (↓), bow pointing the same way.', at: [186, 118], hdg: 0, hold: 5, wind: [-1.6, -2, 0.5] },
+            { say: 'Last: swing the bow round to the new heading, and hold it in the gusts.', at: [186, 118], hdg: -28, hold: 6, wind: [2.4, 1.2, 0.7, 0.12] },
+          ],
+        },
+      },
+    },
+  },
+  {
     id: 'escapade', kind: 'minigame', mechanic: 'cruise', status: 'flown',
     title: 'ESCAPADE', date: '2025-11-13', place: 'Earth → Sun–Earth L2 → Mars', map: { x: 736, y: 48 },
     intro: 'Two small spacecraft, Blue and Gold, designed and built by Rocket Lab for NASA and the University of California, Berkeley, to study how the solar wind strips away the atmosphere of Mars. Berkeley leads and operates the mission. Having missed the 2024 Mars window, they leave Earth on 13 November 2025 on Blue Origin’s New Glenn and take a road nobody has used before: out to a looping “kidney bean” orbit around the Sun–Earth L2 point, about a million miles away, to wait; then back past Earth a year later, for a powered flyby that throws them at Mars.',
@@ -578,7 +610,7 @@ export const LEVELS: LevelDef[] = [
   {
     id: 'neutron', kind: 'launch', mechanic: 'launch', status: 'announced',
     title: 'Neutron: first flight', date: 'no earlier than 2027', place: 'LC-3, Wallops Island, Virginia', map: { x: 802, y: 270 },
-    intro: 'The medium-lift rocket: 43 m tall, 13 tonnes to low Earth orbit, a carbon-composite first stage 7 m across on nine methane-fuelled Archimedes engines, and a “Hungry Hippo” fairing that stays attached, opens its jaws to let the second stage out, and flies home with the booster. The landing platform is a 122 m barge named Return On Investment. It has not flown yet, and this game will not pretend otherwise.',
+    intro: 'The medium-lift rocket: 43 m tall, 13 tonnes to low Earth orbit, a carbon-composite first stage 7 m across on nine methane-fuelled Archimedes engines, and a “Hungry Hippo” fairing that stays attached, opens its jaws to let the second stage out, and flies home with the booster. The landing platform is a 122 m barge named Return On Investment. Neutron has not flown yet, and this game will not pretend otherwise.',
     fact: 'In October 2026 Rocket Lab reported that a manufacturing process issue had left voids in parts of a composite propellant tank dome for the first stage. It has refined the process and is making a replacement forward dome; the tank still has to be assembled and tested. First flight is now no earlier than 2027.',
     after: '',
     sources: [RL + 'launch/neutron/', 'https://www.sec.gov/Archives/edgar/data/1819994/000181999426000074/rklb-20260930.htm', 'https://www.sec.gov/Archives/edgar/data/1819994/000181999426000073/rklb-11092026ex991.htm', WP + 'Rocket_Lab_Neutron'],
