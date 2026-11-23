@@ -27,6 +27,7 @@ index.html ─ src/main.ts ─ Boot ─┬─ Title ── Map ──(Enter on a
 | `src/scenes/Title.ts` | The title screen. |
 | `src/scenes/<Mechanic>.ts` | One scene per mechanic (table below). |
 | `src/launchSim.ts` | The launch physics, pure TypeScript with no Phaser, shared by `Launch.ts` and `scripts/launch-sim.mjs`. |
+| `scripts/readme-levels.mjs` | `npm run readme`: writes the README's level table and the level counts from `src/content.ts`; `-- --check` fails when they are out of date. |
 | `src/creators.ts` | The YouTube creators of the Q2 2024 and Q1 2026 interviews (Mrs. Iglesias, who leads the Q1 2026 level, among them): portraits, chips and the cast drawings. |
 | `src/art.ts`, `src/backdrops.ts` | All textures. `art.ts` has the drawing helpers, characters, rockets, map; `backdrops.ts` has level backdrops, enemies, power-up bubbles. |
 | `src/hifi.ts`, `src/hifiLooks.ts`, `src/looks/` | The optional hi-fi layer: parallax depth, lighting, reflections and a post pass (`hifi.ts`), the list of looks (`hifiLooks.ts`) and one file per look (`looks/`). See [The hi-fi layer](#the-hi-fi-layer). |

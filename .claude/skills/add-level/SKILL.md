@@ -29,7 +29,7 @@ How the code works is in [docs/ARCHITECTURE.md](../../../docs/ARCHITECTURE.md). 
 
 6. **Have a fan check it.** Run the review in [FAN-REVIEW.md](FAN-REVIEW.md) with a separate read-only agent and apply what it finds. Done when every WRONG and MISLEADING finding is fixed or recorded as open in spec §12.1.
 
-7. **Record it.** Add or update the row in spec §9, the level table in `README.md`, and any new params in spec §10. Bump the minor version in `package.json`, because new levels start a new leaderboard season. Commit with a message that names the level.
+7. **Record it.** Add or update the row in spec §9 and any new params in spec §10. Run `npm run readme`: it rewrites the README's level table and the level counts (README badge, About text in `index.html`) from `src/content.ts`; a new mechanic first needs its label in `PLAY` in `scripts/readme-levels.mjs`. Done when `npm run readme -- --check` passes and the new level has its row in the README. Bump the minor version in `package.json`, because new levels start a new leaderboard season. Commit with a message that names the level.
 
 ## Rules
 

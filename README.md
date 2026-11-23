@@ -9,7 +9,9 @@ From a rocket bike in a Dunedin workshop to the hundredth Electron, and on to Ne
 
 An unofficial, open-source browser game. Fan project, not affiliated with Rocket Lab.
 
+<!-- counts:start: written by `npm run readme` -->
 `29 playable levels` · `17 kinds of play` · `every fact sourced` · `art and sound made in code`
+<!-- counts:end -->
 
 </div>
 
@@ -62,14 +64,77 @@ A touch pad appears on phones.
 
 ## The levels
 
-| Kind | Levels |
-| --- | --- |
-| Platform | The Rocket Bike · Road to Māhia · Rosie the Robot (with Ashlee Vance as a running mate) · RKLB rings the bell (played as Adam Spice) · No Time Toulouse (with Madison Malone as a running mate) · Archimedes and the tank |
-| Launch control | Ātea-1 · It's a Test · Still Testing · It's Business Time · Virginia Is For Launch Lovers · Scout's Arrow (HASTE) · Paschen's Law · Beginning Of The Swarm · The Mountain God Rises |
-| Mini-game | Rutherford hot-fire · Go Find the Launch Site (played as Shaun D'Mello) · Pics Or It Didn't Happen · Return To Sender · Eating the Hat (the Neutron announcement, in two acts) · There And Back Again · CAPSTONE to the Moon · Four channels, one call (Q2 2024 creator interview) · Two Hemispheres · Outback Delivery · ESCAPADE · Seven diaries, one slot (played as Mrs. Iglesias: the Q1 2026 creator interview) · VICTUS HAZE |
-| Story | Rocket Lab is founded · When the Heavens Went on Sale · Markets with Madison · Sir Peter · Wild Wild Space · Forbes counts a billionaire · Five channels, one Q&A · Neutron (locked until it flies) |
-| People to meet | Mark Rocket and Sir Stephen Tindall · Ky Michaelson · Sir Michael Fay · Dava Newman · Gabe Newell · Adam Spice · Rob Lillis · Madison Malone · Vince is Bullish · Dave G · Matt Farley · Scott O · Mrs. Iglesias |
-| Secrets | Princes Street Sprint · Kaitorete Spit · Inside the first hundred · Photon · The Hungry Hippo · Kinéis: five for five |
+<!-- levels:start: written by `npm run readme` from src/content.ts; do not edit by hand -->
+All 36 stops on the map, in story order:
+
+| # | Level | Year | Where | Play |
+| --- | --- | --- | --- | --- |
+| 1 | The Rocket Bike | 1995–2000 | Dunedin, Aotearoa New Zealand | Platform |
+| 2 | Rocket Lab is founded | 2006 | Auckland | Story card |
+| 3 | Ātea-1 | 2009 | Great Mercury Island | Launch control |
+| 4 | Rutherford hot-fire | 2013–2016 | Auckland test stand | Mini-game: engine hot-fire |
+| 5 | Go Find the Launch Site (played as Shaun D’Mello) | about 2015 | Māhia Peninsula | Mini-game: off-road ride |
+| 6 | Road to Māhia | 2016 | Māhia Peninsula | Platform |
+| 7 | It’s a Test | 2017 | LC-1, Māhia | Launch control |
+| 8 | Still Testing | 2018 | LC-1, Māhia | Launch control |
+| 9 | It’s Business Time | 2018 | LC-1, Māhia | Launch control |
+| 10 | Rosie the Robot (with Ashlee Vance as a running mate) | 2019 | Auckland production complex | Platform |
+| 11 | Pics Or It Didn’t Happen | 2020 | LC-1, Māhia → mission control, Auckland | Mini-game: failure investigation |
+| 12 | Return To Sender | 2020 | Pacific Ocean, downrange of Māhia | Mini-game: capsule recovery |
+| 13 | Eating the Hat | 2021 | Long Beach, California | Mini-game: blend and eat a hat |
+| 14 | RKLB rings the bell (played as Adam Spice; with Peter Beck as a running mate) | 2021 | Long Beach, California | Platform |
+| 15 | There And Back Again | 2022 | Pacific Ocean, off Māhia | Mini-game: helicopter catch |
+| 16 | CAPSTONE to the Moon | 2022 | LC-1 → lunar transfer | Mini-game: orbit raising |
+| 17 | Virginia Is For Launch Lovers | 2023 | LC-2, Wallops Island, Virginia | Launch control |
+| 18 | When the Heavens Went on Sale | 2023 | New York | Story card |
+| 19 | Markets with Madison | 2023 | NZ Herald, Auckland | Story card |
+| 20 | Scout’s Arrow | 2023 | LC-2, Wallops Island, Virginia | Launch control |
+| 21 | Paschen’s Law | 2023 | LC-1, Māhia | Launch control, then lab experiment |
+| 22 | Beginning Of The Swarm | 2024 | LC-1, Māhia | Launch control |
+| 23 | Sir Peter | 2024 | Aotearoa New Zealand | Story card |
+| 24 | No Time Toulouse (with Madison Malone as a running mate) | 2024 | Rocket Lab mission control, Mount Wellington, Auckland | Platform |
+| 25 | Wild Wild Space | 2024 | HBO and Max | Story card |
+| 26 | Four channels, one call | 2024 | YouTube | Mini-game: edit an interview |
+| 27 | Forbes counts a billionaire | 2024 | Forbes estimate | Story card |
+| 28 | Two Hemispheres | 2024 | LC-2, Wallops and LC-1, Māhia | Mini-game: two launch counts |
+| 29 | Outback Delivery | 2025 | Low Earth orbit → Koonibba, South Australia | Mini-game: spacecraft burns |
+| 30 | ESCAPADE | 2025 | Earth → Sun–Earth L2 → Mars | Mini-game: cruise to Mars |
+| 31 | Seven diaries, one slot (played as Mrs. Iglesias) | 2026 | YouTube | Mini-game: find a meeting slot |
+| 32 | Five channels, one Q&A | 2026 | YouTube | Story card |
+| 33 | VICTUS HAZE | 2026 | LC-1, Māhia | Mini-game: race the count |
+| 34 | The Mountain God Rises | 2026 | LC-1, Māhia | Launch control |
+| 35 | Archimedes and the tank | 2024–2026 | Stennis → Middle River → Wallops | Platform |
+| 36 | Neutron: first flight (locked until it flies) | no earlier than 2027 | LC-3, Wallops Island, Virginia | Launch control |
+
+Secrets, unlocked by finding a hidden blueprint:
+
+| Secret | Play | Found in |
+| --- | --- | --- |
+| Princes Street Sprint | Mini-game: street sprint | The Rocket Bike |
+| Kaitorete Spit: the first choice | Story card | Road to Māhia |
+| Photon: the kick stage grows up | Story card | Rosie the Robot |
+| The Hungry Hippo arrives | Story card | Archimedes and the tank |
+| Kinéis: five for five | Story card | No Time Toulouse |
+| Inside the first hundred | Story card | Go Find the Launch Site |
+
+People to meet, on small nodes beside the path:
+
+| Person | Year | Beside |
+| --- | --- | --- |
+| Mark Rocket and Sir Stephen Tindall | 2006–2007 | Rocket Lab is founded |
+| Ky “Rocketman” Michaelson | 2006 | Rocket Lab is founded |
+| Sir Michael Fay | 2009 | Ātea-1 |
+| Dava Newman | 2016 | Rutherford hot-fire |
+| Gabe Newell | 2020 | Return To Sender |
+| Rob Lillis | 2025 | ESCAPADE |
+| Madison Malone | 2024 | Sir Peter |
+| Vince is Bullish | 2024 | Four channels, one call |
+| Dave G | 2024 | Four channels, one call |
+| Matt Farley | 2024 | Four channels, one call |
+| Scott O | 2024 | Four channels, one call |
+| Mrs. Iglesias | 2026 | Seven diaries, one slot |
+| Adam Spice | 2018– | RKLB rings the bell |
+<!-- levels:end -->
 
 ## Contribute, with or without an agent
 
