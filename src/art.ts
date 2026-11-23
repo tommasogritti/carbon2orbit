@@ -66,13 +66,19 @@ function curls(c: C2, cx: number, cy: number, rIn: number, rOut: number, sx: num
  * Outfits: '' everyday, 'S' yellow suit and helmet, 'J' jet pack, 'H' hi-vis vest and hard hat, 'B' gumboots and a checked bush shirt,
  * 'T' clean-room coverall and safety glasses, 'L' carbon-weave jacket, 'F' face shield, apron and cryogenic gauntlets, 'M' methane-oxygen pack,
  * 'W' winter layers (a quilted puffer jacket and a knitted beanie), 'U' a kick stage on the back, with its Curie engine.
+ * The Neutron announcement (1 March 2021, read from the frames of Rocket Lab's video): 'K' a blue blazer over an
+ * open-collar white shirt, 'Q' the everyday black top under a plain black baseball cap, 'R' the blazer and the cap,
+ * 'N' the blazer with a white napkin tucked into the collar, as he wore it at the table.
  */
-export type Fit = '' | 'S' | 'J' | 'H' | 'B' | 'T' | 'L' | 'F' | 'M' | 'W' | 'U';
-function peter(c: C2, leg: number, air = false, young = false, fit: Fit = '', adam = false) {
+export type Fit = '' | 'S' | 'J' | 'H' | 'B' | 'T' | 'L' | 'F' | 'M' | 'W' | 'U' | 'K' | 'Q' | 'R' | 'N';
+/** Peter Beck today, in an outfit, for scenes that draw him at their own size: `reach` raises the near hand (1 is at the mouth). */
+export function drawPeter(c: C2, leg: number, fit: Fit = '', reach = 0) { peter(c, leg, false, false, fit, false, reach); }
+function peter(c: C2, leg: number, air = false, young = false, fit: Fit = '', adam = false, reach = 0) {
   const limb = (x0: number, y0: number, ang: number, len: number, w: number, col: string) => { const x1 = x0 + Math.sin(ang) * len, y1 = y0 + Math.cos(ang) * len; line(c, x0, y0, x1, y1, OUT, w + 0.7); line(c, x0, y0, x1, y1, col, w); return [x1, y1]; };
   const a = leg * 0.62, skin = '#eebf9f', skinD = '#dba283';
   const suit = fit === 'S', boots = fit === 'B', clean = fit === 'T', weave = fit === 'L', cryo = fit === 'F', puffer = fit === 'W';
-  const legA = clean ? '#cfd6e2' : suit ? '#d9b93a' : adam ? '#2a2e3c' : young ? '#24406f' : '#263f6b', legB = clean ? '#f2f5fa' : suit ? '#f2d14a' : adam ? '#353a4c' : young ? '#2b4f8a' : '#30508a';
+  const blazer = fit === 'K' || fit === 'R' || fit === 'N', cap = fit === 'Q' || fit === 'R'; // the Neutron announcement: blue blazer, black cap
+  const legA = clean ? '#cfd6e2' : suit ? '#d9b93a' : adam ? '#2a2e3c' : young ? '#24406f' : blazer ? '#1a1c24' : '#263f6b', legB = clean ? '#f2f5fa' : suit ? '#f2d14a' : adam ? '#353a4c' : young ? '#2b4f8a' : blazer ? '#23262f' : '#30508a';
   const shoe = (x: number, y: number) => {
     if (boots) { rr(c, x - 1.9, y - 5, 4, 6.2, 1, '#17181e', OUT, 0.35); rr(c, x - 1.9, y - 0.6, 5.2, 2.4, 1, '#17181e', OUT, 0.35); rr(c, x - 1.9, y - 5, 4, 1.1, 0.4, '#d8452e'); return; } // gumboots with a red band
     if (clean) { rr(c, x - 1.8, y - 1.4, 4.8, 2.8, 1.2, '#4d9be8', OUT, 0.35); return; } // blue shoe covers
@@ -87,6 +93,10 @@ function peter(c: C2, leg: number, air = false, young = false, fit: Fit = '', ad
     else if (puffer) { const [hx, hy] = limb(x, 18, ang, 5.4, 3.2, back ? '#1f2636' : '#323c52'); line(c, hx - Math.sin(ang) * 2.6 - 1.2, hy - Math.cos(ang) * 2.6, hx - Math.sin(ang) * 2.6 + 1.2, hy - Math.cos(ang) * 2.6, 'rgba(160,180,220,.35)', 0.3); el(c, hx, hy + 0.6, 1.2, 1.2, back ? skinD : skin, OUT, 0.3); }
     else if (boots) { const [hx, hy] = limb(x, 18, ang, 5.6, 2.5, back ? '#8f2a1c' : '#b8342a'); el(c, hx, hy + 0.5, 1.2, 1.2, back ? skinD : skin, OUT, 0.3); }
     else if (adam) { const [hx, hy] = limb(x, 18, ang, 5.6, 2.6, back ? '#141c30' : '#1f2b47'); rr(c, hx - 1.3, hy - 0.9, 2.6, 1, 0.3, '#f4f4f0'); el(c, hx, hy + 0.6, 1.2, 1.2, back ? skinD : skin, OUT, 0.3); }
+    else if (blazer) { // blue sleeves; at full reach the forearm folds back up to the mouth, pinching what he eats
+      if (!back && reach > 0) { const [ex, ey] = limb(x, 18, ang, 3.6, 2.7, '#2a4c9e'); const ux = 11.6 - ex, uy = 13.4 - ey, fa = Math.atan2(ux, uy), fl = Math.min(6.4, Math.hypot(ux, uy)); const [hx, hy] = limb(ex, ey, fa, fl * reach + 1.2 * (1 - reach), 2.5, '#2a4c9e'); el(c, hx, hy, 1.25, 1.2, skin, OUT, 0.3); el(c, hx + 0.6, hy - 0.8, 0.5, 0.45, '#16171d'); return; }
+      const [hx, hy] = limb(x, 18, ang, 5.6, 2.7, back ? '#1d3878' : '#2a4c9e'); rr(c, hx - 1.3, hy - 0.9, 2.6, 1, 0.3, '#f4f4f0'); el(c, hx, hy + 0.6, 1.2, 1.2, back ? skinD : skin, OUT, 0.3);
+    }
     else if (young) { limb(x, 18.2, 0, 1.6, 2.6, '#cfd5df'); const [hx, hy] = limb(x, 19, ang, 5, 2.1, back ? skinD : skin); el(c, hx, hy, 1.25, 1.25, back ? skinD : skin, OUT, 0.3); }
     else { const [hx, hy] = limb(x, 18, ang, 5.6, 2.5, back ? '#0f1014' : '#1b1c23'); el(c, hx, hy + 0.5, 1.2, 1.2, back ? skinD : skin, OUT, 0.3); }
   };
@@ -117,6 +127,12 @@ function peter(c: C2, leg: number, air = false, young = false, fit: Fit = '', ad
     line(c, 12, 15.9, 12, 26.4, '#9aa3b5', 0.35); rr(c, 9.2, 14.8, 5.6, 2, 1, '#323c52', OUT, 0.3);
   } else if (boots) {
     rr(c, 7.4, 16.6, 9.2, 9.4, 2.2, '#b8342a', OUT, 0.4); c.save(); c.beginPath(); c.roundRect(7.4, 16.6, 9.2, 9.4, 2.2); c.clip(); for (let i = 0; i < 4; i++) { c.fillStyle = 'rgba(15,15,20,.55)'; c.fillRect(7.4 + i * 2.6, 16.6, 1.2, 9.4); c.fillRect(7.4, 17.4 + i * 2.6, 9.2, 1.2); } c.restore();
+  } else if (blazer) { // a blue blazer, open over a white shirt with an open collar: no tie
+    rr(c, 6.6, 16.4, 10.8, 9.8, 2.4, lg(c, 6.6, 0, 17.4, 0, [0, '#3558b0'], [0.5, '#2a4c9e'], [1, '#1b3574']), OUT, 0.4);
+    poly(c, [9.8, 16.6, 14.2, 16.6, 13.2, 26, 10.8, 26], '#f4f6fa'); poly(c, [9.8, 16.6, 12, 18.8, 10.2, 19.8], '#ffffff', OUT, 0.2); poly(c, [14.2, 16.6, 12, 18.8, 13.8, 19.8], '#ffffff', OUT, 0.2); // the shirt and its open collar
+    poly(c, [9.6, 16.8, 10.8, 26, 9.2, 26, 7.6, 20.6], '#23438e', OUT, 0.3); poly(c, [14.4, 16.8, 13.2, 26, 14.8, 26, 16.4, 20.6], '#23438e', OUT, 0.3); // the lapels
+    line(c, 10.2, 17.6, 10.9, 25.6, 'rgba(160,190,255,.45)', 0.3); el(c, 11, 23.8, 0.35, 0.35, '#152a5e'); rr(c, 14.6, 23, 2.2, 0.5, 0.2, '#1d3a80'); // a seam, a button, a pocket flap
+    if (fit === 'N') { poly(c, [9.4, 16.6, 14.6, 16.6, 15.2, 24.6, 12, 26.4, 8.8, 24.6], lg(c, 0, 16.6, 0, 26.4, [0, '#ffffff'], [1, '#dfe3ea']), OUT, 0.3); line(c, 10, 17.4, 11.4, 25, 'rgba(150,160,180,.45)', 0.3); line(c, 14, 17.4, 12.8, 25, 'rgba(150,160,180,.45)', 0.3); } // a white napkin tucked into the collar
   } else if (adam) { // navy blazer over an open-collar white shirt
     rr(c, 6.6, 16.4, 10.8, 9.8, 2.4, lg(c, 6.6, 0, 17.4, 0, [0, '#26355a'], [0.5, '#1c2740'], [1, '#121a2e']), OUT, 0.4); // broad shoulders
     poly(c, [10, 16.6, 14, 16.6, 12, 23], '#cfe0f2'); poly(c, [10, 16.6, 12, 19.4, 10.6, 20.2], '#e2e6ee', OUT, 0.2); poly(c, [14, 16.6, 12, 19.4, 13.4, 20.2], '#e2e6ee', OUT, 0.2);
@@ -152,6 +168,12 @@ function peter(c: C2, leg: number, air = false, young = false, fit: Fit = '', ad
     for (let x = 7.6; x < 17; x += 1.4) line(c, x, 1.6 + Math.abs(x - 12) * 0.25, x, 5.4, 'rgba(60,10,6,.35)', 0.3);
     rr(c, 5.6, 5, 12.8, 2.4, 1, '#b83a2e', OUT, 0.35); line(c, 6, 6.2, 18, 6.2, 'rgba(255,200,180,.3)', 0.3);
   }
+  if (cap) { // a plain black baseball cap, the peak forward, sitting high on the curls: they spill out at the sides and the back
+    c.beginPath(); c.moveTo(6.4, 6.4); c.bezierCurveTo(6.2, -0.2, 17.8, -0.2, 17.6, 6.4); c.closePath(); c.fillStyle = lg(c, 6, 0, 18, 0, [0, '#34363f'], [0.5, '#1c1d24'], [1, '#0c0d11']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.4; c.stroke();
+    for (const x of [9.4, 12, 14.6]) line(c, x, 1.6 + Math.abs(x - 12) * 0.2, x + (x - 12) * 0.25, 6.2, 'rgba(120,124,140,.4)', 0.25); el(c, 12, 1.5, 0.7, 0.4, '#2a2c36', OUT, 0.2); // panel seams, the button on top
+    c.beginPath(); c.moveTo(5.6, 6.2); c.quadraticCurveTo(12, 4.6, 18.4, 6.2); c.quadraticCurveTo(12, 8.2, 5.6, 6.2); c.closePath(); c.fillStyle = '#111217'; c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.35; c.stroke(); // the peak
+    rr(c, 10.6, 3.2, 2.8, 1.6, 0.4, 'rgba(235,238,245,.75)'); // a small white mark on the front (the game does not copy the logo)
+  }
   if (fit === 'H') { // hard hat perched on the curls
     c.beginPath(); c.moveTo(6.2, 5.6); c.bezierCurveTo(6.2, -0.8, 17.8, -0.8, 17.8, 5.6); c.closePath(); c.fillStyle = lg(c, 6, 0, 18, 0, [0, '#ffffff'], [1, '#c2c8d2']); c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.4; c.stroke();
     rr(c, 4.8, 5, 14.4, 1.4, 0.7, '#f4f4f0', OUT, 0.35); line(c, 12, 0.8, 12, 5, 'rgba(0,0,0,.2)', 0.5);
@@ -167,7 +189,7 @@ function peter(c: C2, leg: number, air = false, young = false, fit: Fit = '', ad
   c.beginPath(); c.moveTo(adam ? 10.5 : 10.2, adam ? 13.5 : 13.3); c.quadraticCurveTo(12.2, adam ? 13.6 : 14.5, adam ? 13.7 : 14, adam ? 13.5 : 13.0); c.strokeStyle = '#8a4b3c'; c.lineWidth = 0.45; c.stroke();
   if (!adam) { c.fillStyle = rg(c, 8.5, 12, 0, 1.6, [0, 'rgba(226,120,100,.22)'], [1, 'rgba(226,120,100,0)']); c.fillRect(6.5, 10.2, 4, 3.6); c.fillStyle = rg(c, 15.5, 12, 0, 1.6, [0, 'rgba(226,120,100,.22)'], [1, 'rgba(226,120,100,0)']); c.fillRect(13.5, 10.2, 4, 3.6); }
   if (cryo) { rr(c, 6, 5.2, 12, 1.5, 0.7, '#f2d14a', OUT, 0.3); c.beginPath(); c.moveTo(6.6, 6.6); c.lineTo(17.4, 6.6); c.quadraticCurveTo(18, 12.5, 15.6, 15.8); c.lineTo(8.4, 15.8); c.quadraticCurveTo(6, 12.5, 6.6, 6.6); c.closePath(); c.fillStyle = 'rgba(190,232,255,.34)'; c.fill(); c.strokeStyle = 'rgba(220,245,255,.9)'; c.lineWidth = 0.35; c.stroke(); line(c, 8.2, 7.6, 9, 13.6, 'rgba(255,255,255,.55)', 0.5); } // clear face shield on a yellow headband: the curls stay out
-  arm(8.4, -a * 0.9 + (air ? 2.2 : 0), false);
+  arm(8.4, reach > 0 ? 0.35 + reach * 0.6 : -a * 0.9 + (air ? 2.2 : 0), false);
 }
 /** Head-and-shoulders portrait, 48 x 54 units. Adult proportions: eyes a little above the middle, long lower face, heavy jaw. */
 // Shaun D'Mello (from the captioned black-and-white portrait on Rocket Lab's team page): short dark hair, cropped close at the

@@ -9,7 +9,7 @@ From a rocket bike in a Dunedin workshop to the hundredth Electron, and on to Ne
 
 An unofficial, open-source browser game. Fan project, not affiliated with Rocket Lab.
 
-`28 playable levels` · `16 kinds of play` · `every fact sourced` · `art and sound made in code`
+`29 playable levels` · `17 kinds of play` · `every fact sourced` · `art and sound made in code`
 
 </div>
 
@@ -66,7 +66,7 @@ A touch pad appears on phones.
 | --- | --- |
 | Platform | The Rocket Bike · Road to Māhia · Rosie the Robot (with Ashlee Vance as a running mate) · RKLB rings the bell (played as Adam Spice) · No Time Toulouse (with Madison Malone as a running mate) · Archimedes and the tank |
 | Launch control | Ātea-1 · It's a Test · Still Testing · It's Business Time · Virginia Is For Launch Lovers · Scout's Arrow (HASTE) · Paschen's Law · Beginning Of The Swarm · The Mountain God Rises |
-| Mini-game | Rutherford hot-fire · Go Find the Launch Site (played as Shaun D'Mello) · Pics Or It Didn't Happen · Return To Sender · There And Back Again · CAPSTONE to the Moon · Four channels, one call (Q2 2024 creator interview) · Two Hemispheres · Outback Delivery · ESCAPADE · Seven diaries, one slot (played as Mrs. Iglesias: the Q1 2026 creator interview) · VICTUS HAZE |
+| Mini-game | Rutherford hot-fire · Go Find the Launch Site (played as Shaun D'Mello) · Pics Or It Didn't Happen · Return To Sender · Eating the Hat (the Neutron announcement, in two acts) · There And Back Again · CAPSTONE to the Moon · Four channels, one call (Q2 2024 creator interview) · Two Hemispheres · Outback Delivery · ESCAPADE · Seven diaries, one slot (played as Mrs. Iglesias: the Q1 2026 creator interview) · VICTUS HAZE |
 | Story | Rocket Lab is founded · When the Heavens Went on Sale · Markets with Madison · Sir Peter · Wild Wild Space · Forbes counts a billionaire · Five channels, one Q&A · Neutron (locked until it flies) |
 | People to meet | Mark Rocket and Sir Stephen Tindall · Ky Michaelson · Sir Michael Fay · Dava Newman · Gabe Newell · Adam Spice · Rob Lillis · Madison Malone · Vince is Bullish · Dave G · Matt Farley · Scott O · Mrs. Iglesias |
 | Secrets | Princes Street Sprint · Kaitorete Spit · Inside the first hundred · Photon · The Hungry Hippo · Kinéis: five for five |
