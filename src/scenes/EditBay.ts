@@ -61,8 +61,44 @@ export class EditBayScene extends Phaser.Scene {
   constructor() { super('EditBay'); }
   /** The controls panel (H or the ? button), by mode. Shape agreed with core's showHelp. */
   help(): { title: string; rows: [keys: string, does: string][]; note?: string } {
-    if (this.mode === 'full') return { title: 'Edit bay · full cuts', rows: [['← →', 'Choose a part in the bin.'], ['Space', 'Splice the chosen part onto the end of the full cut. They go in order: part 1 first.'], ['↑ ↓', 'Choose a channel.'], ['Enter', 'On a channel: start sending the full cut, pause a running upload (or resume it), or retry a STALLED one.']], note: 'Every upload running at once shares the same connection, so two at once each go at half speed. Start the channels that go live first.' };
-    return { title: 'Edit bay · cutting the parts', rows: [['← →', 'Scrub along the tape. Hold to go faster; let go and the view zooms in.'], ['Space', 'Cut the tape at the yellow line. Or, on a sticky note, pick up the chapter list: your next cut snaps to the break.'], ['↑ ↓', 'Choose a channel.'], ['Enter', 'On a channel: send it the part in the OUT tray, pull back the part it has, or retry a STALLED upload.']], note: 'Cut in the quiet gap where one creator’s turn ends and the next one’s begins: the faces above the waveform show who is asking. Match each part’s face to the channel with the same face. Every upload running at once shares one connection.' };
+    if (this.mode === 'full') return { title: 'Edit bay · full cuts', rows: [['← →', 'Choose a part in the bin.'], ['Space', 'Splice the chosen part onto the end of the full cut. They go in order: part 1 first.'], ['↑ ↓', 'Choose a channel.'], ['Enter', 'On a channel: start sending the full cut, pause a running upload (or resume it), or retry a STALLED one.']], note: 'Every upload running at once shares the same connection, so two at once each go at half speed. Start the channels that go live first. Stuck? Press I, or the 💡 button, for a hint.' };
+    return { title: 'Edit bay · cutting the parts', rows: [['← →', 'Scrub along the tape. Hold to go faster; let go and the view zooms in.'], ['Space', 'Cut the tape at the yellow line. Or, on a sticky note, pick up the chapter list: your next cut snaps to the break.'], ['↑ ↓', 'Choose a channel.'], ['Enter', 'On a channel: send it the part in the OUT tray, pull back the part it has, or retry a STALLED upload.']], note: 'Cut in the quiet gap where one creator’s turn ends and the next one’s begins. The white notches on the strip at the top mark the gaps, and the time under the cursor turns green when you are in one. Match each part’s face to the channel with the same face. Every upload running at once shares one connection. Stuck? Press I, or the 💡 button, for a hint.' };
+  }
+  /** Who leads a part, by the channel it belongs on ("Vince is Bullish"). */
+  owner(part: number) { return this.lanes.find((l) => l.part === part)?.name ?? `part ${part + 1}`; }
+  /** Where a channel sits on screen this time (the order changes every play). */
+  row(l: Lane) { return ['first', 'second', 'third', 'fourth'][l.slot] + ' row'; }
+  /**
+   * A hint (I, or the 💡 button) for what to do next, read off the bay as it is: a stalled upload, a part waiting in the
+   * tray and where it goes, a part on the wrong channel, or where the next break is and which way to scrub. Free.
+   */
+  hint(): { title: string; text: string } {
+    const stalled = this.lanes.find((l) => l.state === 'stall');
+    if (stalled) return { title: 'An upload has stalled', text: `${stalled.name}, in the ${this.row(stalled)}, has stopped uploading. ↑ ↓ to it and press Enter to restart it. Do it straight away: the clock keeps running.` };
+    if (this.mode === 'full') {
+      if (this.bin.length) {
+        const want = this.spliced.length, at = this.bin.indexOf(want), d = at - this.binSel;
+        return { title: `Splice part ${want + 1} next`, text: `The full cut runs in order, part 1 first. Part ${want + 1} (the face of ${this.owner(want)}) is ${d === 0 ? 'the one selected now: press Space' : `${Math.abs(d)} ${Math.abs(d) === 1 ? 'step' : 'steps'} to the ${d > 0 ? 'right' : 'left'} in the bin: press ${d > 0 ? '→' : '←'} ${Math.abs(d) === 1 ? 'once' : Math.abs(d) + ' times'}, then Space`}. A part out of order costs four minutes.` };
+      }
+      if (!this.ready) return { title: 'Rendering', text: 'Every part is spliced and the full cut is rendering: the green bar under it. When it is done, send it to the channels, earliest release first.' };
+      const waiting = this.lanes.filter((l) => l.state === 'empty' || l.state === 'pause').sort((a, b) => a.due - b.due);
+      if (!waiting.length) return { title: 'Everything is on its way', text: 'Every channel has its full cut uploading or done. Keep an eye out for a STALLED upload, and press Enter on it if one stops.' };
+      const first = waiting[0], same = waiting.filter((l) => l.due === first.due), running = this.lanes.filter((l) => l.state === 'up').length;
+      return { title: 'Who to send first', text: `${same.map((l) => `${l.name} (${this.row(l)})`).join(' and ')} ${same.length > 1 ? 'go' : 'goes'} live next, at ${hm(first.due)}. ↑ ↓ to ${same.length > 1 ? 'each' : 'it'} and press Enter to start the upload. Uploads running at once share the connection${running ? `, and ${running} ${running === 1 ? 'is' : 'are'} running now` : ''}, so leave the later channels until the early ones are done.` };
+    }
+    const part = this.tray[0];
+    if (part !== undefined) {
+      const home = this.lanes.find((l) => l.part === part)!;
+      if (home.clip >= 0) return { title: 'The right channel is taken', text: `Part ${part + 1} belongs on ${home.name}, in the ${this.row(home)}, but that channel has part ${home.clip + 1}. ↑ ↓ to it and press Enter to pull that part back, then Enter again to send part ${part + 1}.` };
+      return { title: `Send part ${part + 1}`, text: `Part ${part + 1} is in the OUT tray, with the face of ${home.name}. Its channel is in the ${this.row(home)} this time${this.sel === home.slot ? ', and it is selected: press Enter.' : `: press ${home.slot < this.sel ? '↑' : '↓'} ${Math.abs(home.slot - this.sel) === 1 ? 'once' : Math.abs(home.slot - this.sel) + ' times'}, then Enter.`}` };
+    }
+    const wrong = this.lanes.find((l) => l.clip >= 0 && l.clip !== l.part && l.state !== 'live');
+    if (wrong) return { title: 'A part is on the wrong channel', text: `${wrong.name}, in the ${this.row(wrong)}, has part ${wrong.clip + 1}, which belongs on ${this.owner(wrong.clip)}. ↑ ↓ to ${wrong.name} and press Enter to pull it back into the OUT tray, then send it to the right one.` };
+    const tp = this.p.tape, k = tp.marks.findIndex((_m: number, i: number) => this.cutAt[i] === undefined);
+    if (k < 0) return { title: 'Every part is cut', text: 'All the cuts are made and every part is on its way. Wait for the uploads, and press Enter on any upload that STALLS.' };
+    const m = tp.marks[k], d = m - this.cur, far = Math.abs(d) > 40, note = this.notes.length && !this.snap ? ` A shortcut: the sticky note at ${mmss(this.notes[0])} on the tape is the chapter list. Stop on it and press Space, and your next cut snaps to the break.` : '';
+    if (Math.abs(d) <= 3) return { title: 'You are in the gap', text: `The cursor is in the quiet gap between ${this.owner(k)} and ${this.owner(k + 1)}: press Space to cut here.` };
+    return { title: `The next break: ${mmss(m)}`, text: `The next cut goes at ${mmss(m)} on the tape, in the quiet gap where ${this.owner(k)}’s turn ends and ${this.owner(k + 1)}’s begins. It is the next white notch on the strip at the top, ${far ? `about ${Math.round(Math.abs(d) / 60)} minutes of tape ${d > 0 ? 'ahead' : 'back'}: hold ${d > 0 ? '→' : '←'} to scrub there fast, and let go as you get close so the view zooms in` : `just ${d > 0 ? 'ahead' : 'behind'}: tap ${d > 0 ? '→' : '←'} to creep there`}. Stop when the time under the cursor turns green and the waveform goes flat, then press Space.${note}` };
   }
   init(d: { def: LevelDef }) {
     this.def = d.def; this.p = d.def.params; this.th = THEMES[this.p.theme]; this.mode = this.p.mode === 'full' ? 'full' : 'parts';
@@ -115,7 +151,7 @@ export class EditBayScene extends Phaser.Scene {
     (this.p.clock.zones as [string, string, number][]).forEach((_z, i) => this.clockT.push(T(this, CLX + i * 34, CLY + 11, '', '#cfd6ea', 3.4, '700').setOrigin(0.5, 0).setAlign('center').setDepth(3).setShadow(0, 1, '#000000', 2)));
     if (this.mode === 'full') (this.p.parts as unknown[]).forEach(() => { this.binChip.push(img(this, 0, 0, 'peter_chip').setScale(S * 0.42).setDepth(3)); this.binT.push(T(this, 0, 0, '', '#ffffff', 4.2, '700').setOrigin(0.5, 0).setDepth(3)); });
     this.plate();
-    this.say(this.mode === 'parts' ? 'The recording is in. Cut it into its parts: ← → scrub, Space cuts at a break.' : 'The parts are live. Now the full cuts: ← → and Space splice the parts in order.');
+    this.say(this.mode === 'parts' ? 'The recording is in. Hold → to scrub to the first white notch on the strip above, stop when the time turns green, and press Space to cut. Stuck? Press I.' : 'The parts are live. Now the full cuts: ← → and Space splice the parts in order, part 1 first.');
     if (hf) { const w = Object.values(world); hf.tag(world); this.tell(); hf.ready({ hud: this.children.list.filter((o) => !w.includes(o)), lateHud: true }); }
   }
   /**
@@ -138,6 +174,8 @@ export class EditBayScene extends Phaser.Scene {
   }
   say(s: string) { this.msg.setText(s); }
   laneAt(slot: number) { return this.lanes.find((l) => l.slot === slot)!; }
+  /** The uncut break whose quiet gap the cursor is in, if any. */
+  inGap() { const tp = this.p.tape; if (!tp) return -1; return tp.marks.findIndex((m: number, i: number) => this.cutAt[i] === undefined && Math.abs(this.cur - m) <= 3.2); }
   bounds(i: number) { const tp = this.p.tape, b = [tp.from, ...tp.marks, tp.to]; return [i ? this.cutAt[i - 1] ?? b[i] : b[0], i < tp.marks.length ? this.cutAt[i] ?? b[i + 1] : b[i + 1]] as [number, number]; }
 
   update(_t: number, dms: number) {
@@ -176,6 +214,8 @@ export class EditBayScene extends Phaser.Scene {
       if (this.made[i]) return;
       if ((i === 0 || this.cutAt[i - 1] !== undefined) && (i === tp.marks.length || this.cutAt[i] !== undefined)) { this.made[i] = true; this.tray.push(i); }
     });
+    const next = this.tray[0]; // and say what to do with it
+    if (next !== undefined) { const home = this.lanes.find((l) => l.part === next)!; this.say(`${this.msg.text} Part ${next + 1} is in the OUT tray: ↑ ↓ to ${home.name} (same face), then Enter.`); }
   }
   enterParts() {
     const l = this.laneAt(this.sel);
@@ -183,11 +223,13 @@ export class EditBayScene extends Phaser.Scene {
     if (l.clip < 0 && this.tray.length) {
       const part = this.tray.shift()!, [a, b] = this.bounds(part);
       l.clip = part; l.size = b - a; l.prog = 0; l.state = 'up'; if (part !== l.part) this.wrongSends++; snd.select();
-      return this.say(`Part ${part + 1} is uploading to ${l.name}.`);
+      const left = this.tp() ? this.p.tape.marks.findIndex((_m: number, i: number) => this.cutAt[i] === undefined) : -1;
+      return this.say(`Part ${part + 1} is uploading to ${l.name}.${this.tray.length ? ` Part ${this.tray[0] + 1} is waiting in the OUT tray.` : left >= 0 ? ' Now scrub on to the next white notch and cut.' : ''}`);
     }
     if (l.clip >= 0 && l.state !== 'live') { this.tray.unshift(l.clip); this.say(`Part ${l.clip + 1} pulled back from ${l.name}.`); l.clip = -1; l.prog = 0; l.state = 'empty'; this.pulls++; return snd.move(); }
     snd.deny(); this.say(this.tray.length ? 'That channel is already live.' : 'The OUT tray is empty: cut a part first.');
   }
+  tp() { return !!this.p.tape; }
   botV?: number;
   botParts(dt: number): [number, boolean, boolean, boolean, boolean] {
     this.botT += dt; const tp = this.p.tape; let cut = false, send = false;
@@ -279,6 +321,7 @@ export class EditBayScene extends Phaser.Scene {
     // overview of the whole tape, with the part of it in view
     g.fillStyle(0x000000, 0.55).fillRoundedRect(TX, 23, TW, 5, 1.5);
     for (const tn of this.turns) g.fillStyle(tn.q ? 0xd8452e : 0x3f7fd0, 0.55).fillRect(OX(tn.t0), 24, Math.max(0.3, OX(tn.t1) - OX(tn.t0)), 3);
+    tp.marks.forEach((m: number, i: number) => { if (this.cutAt[i] === undefined) g.fillStyle(0xffffff, 0.95).fillRect(OX(m) - 0.5, 22.4, 1, 6.2); }); // the quiet gaps between parts, where the cuts go
     g.lineStyle(0.5, 0xffffff, 0.8).strokeRect(OX(Math.max(tp.from, this.cur - this.hw)), 22.6, ((Math.min(tp.to, this.cur + this.hw) - Math.max(tp.from, this.cur - this.hw)) / span) * TW, 5.8);
     this.cutAt.forEach((c, i) => c !== undefined && g.fillStyle(this.cutKind[i] === 'sloppy' ? P.orange : 0xff5a5a).fillRect(OX(c) - 0.3, 22, 0.6, 7));
     for (const n of this.notes) g.fillStyle(P.yellow).fillRect(OX(n) - 0.8, 22.4, 1.6, 1.6);
@@ -298,9 +341,11 @@ export class EditBayScene extends Phaser.Scene {
     if (this.cur - this.hw < tp.from) g.fillStyle(0x000000, 0.6).fillRect(TX, 38, Math.max(0, X(tp.from) - TX), 40);
     if (this.cur + this.hw > tp.to) g.fillStyle(0x000000, 0.6).fillRect(X(tp.to), 38, Math.max(0, TX + TW - X(tp.to)), 40);
     this.cutAt.forEach((c, i) => { if (c === undefined || c < t0 || c > t1) return; const x = X(c), col = this.cutKind[i] === 'sloppy' ? P.orange : 0xff5a5a; g.fillStyle(col).fillRect(x - 0.4, 38, 0.8, 40); g.fillTriangle(x - 2, 38, x + 2, 38, x, 41); });
+    tp.marks.forEach((m: number, i: number) => { if (this.cutAt[i] === undefined && m + 3.2 > t0 && m - 3.2 < t1) { const a = Math.max(TX, X(m - 3.2)), b = Math.min(TX + TW, X(m + 3.2)); g.fillStyle(P.lgreen, 0.22).fillRect(a, 38, Math.max(0.5, b - a), 40); } }); // and the gap itself, in the zoomed view
     for (const n of this.notes) if (n > t0 && n < t1) { const x = X(n); g.fillStyle(0x000000, 0.4).fillRect(x - 3.2, 47.4, 6.4, 6.4); g.fillStyle(P.yellow).fillRect(x - 3.6, 46.8, 6.4, 6.4); g.fillStyle(0x6b4a2b).fillRect(x - 2.6, 48.4, 4.4, 0.5).fillRect(x - 2.6, 50, 4.4, 0.5).fillRect(x - 2.6, 51.6, 3, 0.5); }
     g.fillStyle(0xffe98a).fillRect(CX - 0.4, 36, 0.8, 42); g.fillTriangle(CX - 2.4, 36, CX + 2.4, 36, CX, 38.6);
-    this.curT.setText(`${mmss(this.cur)}${this.snap ? '  · CHAPTER LIST: NEXT CUT SNAPS' : ''}`);
+    const gap = this.inGap() >= 0;
+    this.curT.setText(`${mmss(this.cur)}${gap ? '  · QUIET GAP: SPACE CUTS' : ''}${this.snap ? '  · CHAPTER LIST: NEXT CUT SNAPS' : ''}`).setColor(gap ? '#7cc56b' : '#ffe98a');
     this.edgeT[0].setText(mmss(Math.max(tp.from, t0))); this.edgeT[1].setText(mmss(Math.min(tp.to, t1)));
   }
   drawSplice(g: Phaser.GameObjects.Graphics) {
