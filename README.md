@@ -174,7 +174,7 @@ The same list is in the game: **Credits** in the page footer, or **C** on the ti
 | | |
 | --- | --- |
 | Free play | `P`, the ☰ button or the footer switch (or `?free=1`): every node open, a list to pick from, nothing scored or saved |
-| Developer mode | The switch in the page footer (or `?dev=1`): every level open, `K` skips one |
+| Developer mode | `npm run dev` only, not in the deployed game: the switch in the page footer (or `?dev=1`) opens every level, and `K` skips one |
 | `?level=<id>` | Jump straight into a level, for example `?level=capstone` |
 | `?level=<id>&auto=1` | Let the bot play it; add `&fast=6` to run six times faster |
 | `?level=<id>&auto=1&rec=<name>` | Record the run to `recordings/<name>.webm` (dev server only) |

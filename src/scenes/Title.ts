@@ -54,8 +54,6 @@ export class TitleScene extends Phaser.Scene {
     const t = tally();
     const go = T(this, W / 2, 139, t.levels ? 'PRESS ENTER TO CONTINUE' : 'PRESS ENTER TO START', '#ffffff', 11.5, '700').setOrigin(0.5).setLetterSpacing(0.6).setShadow(0, 1, '#000000', 5);
     this.tweens.add({ targets: go, alpha: 0.25, duration: 620, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-    const fp = T(this, W / 2, 161, 'P  FREE PLAY: PICK ANY LEVEL, NOTHING SCORED', '#d9c4ff', 5.4, '700').setOrigin(0.5).setShadow(0, 1, '#000000', 3).setInteractive({ useHandCursor: true });
-    fp.on('pointerdown', (_p: unknown, _x: number, _y: number, e: Phaser.Types.Input.EventData) => { e.stopPropagation(); freePlay(this.game); });
     T(this, W / 2, 151, t.levels ? `${t.levels} of ${t.of} levels played · ${t.score.toLocaleString('en-NZ')} points` : `${t.of} levels across thirty years`, '#ffe98a', 6).setOrigin(0.5).setShadow(0, 1, '#000000', 3);
     T(this, 6, H - 5, `v${VERSION} · season ${SEASON}`, '#8fa3c8', 4.8, '700').setOrigin(0, 1).setShadow(0, 1, '#000000', 3);
     T(this, W / 2, H - 5, 'H controls   L leaderboard   C credits   F full screen   M sound', '#b8c6e6', 4.8, '700').setOrigin(0.5, 1).setShadow(0, 1, '#000000', 3);
