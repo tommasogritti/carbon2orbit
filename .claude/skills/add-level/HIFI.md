@@ -9,6 +9,7 @@ The hi-fi layer is a cinematic look any level can opt into: deep parallax with h
 | A single-screen mini-game | `rutherford`; `return-to-sender` (one fall through three lights: the look moves its own grade and ambient with the altitude) | `src/looks/stand.ts`, `src/looks/reentry.ts` |
 | A scene that is all interface | `pics-or-it-didnt-happen` (panels and graphs stay in the world and glow; words go to the HUD), `four-channels` (the same, with a room lit by its own lamps and faces kept on the HUD), `seven-diaries` (a window that keeps the level's clock), `outback-delivery` (a map: its light is the day and night of the real hour) | `src/looks/groundtrack.ts`, `src/looks/review.ts`, `src/looks/edit.ts`, `src/looks/diary.ts` |
 | A pad seen on a console, round the clock | `two-hemispheres` (two pictures, each under its own local time; the room is a bezel laid over them), `victus-haze` (one picture, a winter day from before dawn to a night launch) | `src/looks/twopads.ts`, `src/looks/haze.ts`; the pad picture is shared in `src/looks/padview.ts` |
+| A single-screen scene in two rooms, one look per act | `eat-the-hat` (a bright factory hall for the walk; a dark stage, lit ribs and blue floor lights for the table) | `src/looks/hat.ts` |
 | Ride | `find-the-launch-site` | `src/looks/farm.ts` |
 | The title screen | `Title.ts` (space redrawn, the rocket lit by Light2D, every word on the HUD camera) | `src/looks/title.ts` |
 | The world map | `Map.ts` (sea and land on separate layers; names, pins, nodes and tags untouched) | `src/looks/map.ts` |
