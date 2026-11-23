@@ -103,7 +103,8 @@ export function initInput(game: Phaser.Game) {
   help?.addEventListener('click', () => { help.blur(); if (helpOpen) overlayConfirm(); else showHelp(game); });
   setFree(free.on); // label the footer button
   const dev = document.getElementById('dev');
-  if (dev) {
+  if (dev && !import.meta.env.DEV) dev.remove(); // the deployed game has no developer mode
+  else if (dev) {
     dev.textContent = DEV ? 'Developer mode: ON · K skips a level · click to turn off' : 'Developer mode: off';
     dev.classList.toggle('on', DEV);
     dev.addEventListener('click', () => {
@@ -163,9 +164,12 @@ export function loadSave(): Save {
 export const save: Save = loadSave();
 export function persist() { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch { /* private mode */ } }
 export function resetSave() { save.done = {}; save.pts = {}; save.eggs = {}; save.unlocks = {}; save.met = {}; delete save.at; persist(); }
-/** Developer mode: every node open, and K skips a level. On with ?dev=1 in the address, or with the switch in the page footer (remembered). */
+/**
+ * Developer mode: every node open, and K skips a level. Only on the dev server (`npm run dev`), never in the deployed
+ * game: on with ?dev=1 in the address, or with the switch in the page footer (remembered).
+ */
 const devStored = () => { try { return localStorage.getItem('carbon-to-orbit-dev') === '1'; } catch { return false; } };
-export const DEV = new URLSearchParams(location.search).has('dev') || devStored();
+export const DEV = import.meta.env.DEV && (new URLSearchParams(location.search).has('dev') || devStored());
 /**
  * Free play: every node on the map is open, a list (P) jumps straight to any of them, and nothing is scored or saved:
  * no stars, points, eggs, secrets, people met or map position. For trying a level without playing the story in order.

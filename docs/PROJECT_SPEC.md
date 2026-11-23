@@ -125,7 +125,7 @@ The level select is one overworld screen, wider than the viewport, that scrolls 
 - **Nodes:** icon and colour by kind (platform green, launch red, mini-game yellow, card blue, locked grey). Cleared nodes get a tick, and playable ones show 1–3 stars in the banner. Secret nodes hang off their parent on a blue trail; people stand beside the path on a violet one.
 - **Movement:** an arrow key walks the marker to the nearest node in that direction, along the trails. The next level to play wears a NEXT tag and `N` walks to it. A node is closed until every earlier level is cleared; pressing towards a closed one says which level opens it. Cards clear when read.
 - **Banner and counters:** the selected node's title, date, kind and stars; counts of easter eggs, secrets and people; the score, with `L` for the leaderboard.
-- **Developer mode** (footer switch or `?dev=1`) opens every node and lets `K` skip a level. Hide the switch before a public release.
+- **Developer mode** (footer switch or `?dev=1`) opens every node and lets `K` skip a level. It exists only on the dev server: a production build has no switch and ignores `?dev=1` (since 23 Nov 2026).
 - The marker is always Peter Beck (§7.0a).
 
 ## 6. Requirements
