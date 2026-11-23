@@ -97,10 +97,11 @@ export function initInput(game: Phaser.Game) {
   document.getElementById('hint')?.addEventListener('click', (e) => { (e.currentTarget as HTMLElement).blur(); showHint(game); });
   hotkeys.Escape = () => leaveLevel(game);
   hotkeys.KeyI = () => showHint(game);
-  const sync = () => { const sc = game.scene.getScenes(true)[0] as any, inLevel = !!(sc && sc.def); document.getElementById('home')!.hidden = !inLevel; document.getElementById('hint')!.hidden = !(inLevel && typeof sc.hint === 'function'); };
+  const sync = () => { const sc = game.scene.getScenes(true)[0] as any, inLevel = !!(sc && sc.def); document.getElementById('home')!.hidden = !inLevel; document.getElementById('hint')!.hidden = !(inLevel && typeof sc.hint === 'function'); document.getElementById('pick')!.hidden = !(sc && (sc.scene.key === 'Map' || sc.scene.key === 'Title')); };
   game.events.on('poststep', () => { if ((game.loop.frame & 15) === 0) sync(); });
   const help = document.getElementById('help');
   help?.addEventListener('click', () => { help.blur(); if (helpOpen) overlayConfirm(); else showHelp(game); });
+  setFree(free.on); // label the footer button
   const dev = document.getElementById('dev');
   if (dev) {
     dev.textContent = DEV ? 'Developer mode: ON · K skips a level · click to turn off' : 'Developer mode: off';
@@ -123,7 +124,14 @@ export function initInput(game: Phaser.Game) {
     if (!e.repeat && !overlayOpen() && hotkeys[e.code]) { hotkeys[e.code]!(); e.preventDefault(); return; }
     const k = MAP[e.code];
     if (!k) return;
-    if (overlayOpen()) { if (k === 'b' || k === 'a') { if (!e.repeat) overlayConfirm(); e.preventDefault(); } return; }
+    if (overlayOpen()) {
+      if (k === 'b' || k === 'a') {
+        const f = document.activeElement; // a level picked in the free-play list with Tab, then Enter or Space
+        if (!e.repeat) { if (f instanceof HTMLButtonElement && f.matches('#overlay button.pick')) f.click(); else overlayConfirm(); }
+        e.preventDefault();
+      }
+      return;
+    }
     if (!e.repeat) latch[k] = true;
     pad[k] = true; e.preventDefault();
   });
@@ -158,6 +166,19 @@ export function resetSave() { save.done = {}; save.pts = {}; save.eggs = {}; sav
 /** Developer mode: every node open, and K skips a level. On with ?dev=1 in the address, or with the switch in the page footer (remembered). */
 const devStored = () => { try { return localStorage.getItem('carbon-to-orbit-dev') === '1'; } catch { return false; } };
 export const DEV = new URLSearchParams(location.search).has('dev') || devStored();
+/**
+ * Free play: every node on the map is open, a list (P) jumps straight to any of them, and nothing is scored or saved:
+ * no stars, points, eggs, secrets, people met or map position. For trying a level without playing the story in order.
+ * P, or the footer button, turns it on; ?free=1 starts in it; it lasts until the player leaves it or reloads.
+ * `at` is where the marker stands in free play, kept apart from the save's.
+ */
+export const free = { on: new URLSearchParams(location.search).has('free'), at: '' };
+export function setFree(on: boolean) {
+  free.on = on; if (!on) free.at = '';
+  const b = document.getElementById('free');
+  if (b) { b.textContent = on ? 'Free play: on' : 'Free play'; b.classList.toggle('on', on); }
+  document.getElementById('pick')?.classList.toggle('on', on);
+}
 /**
  * Who is played in a level, and which sprite set to use. Peter Beck is the main character throughout; a level can hand
  * the controls to someone else with `hero`. Peter has a younger set for 1990s levels.
@@ -257,7 +278,7 @@ const runAverage = () => (run.frames > 30 ? run.steps / run.frames : 1);
  */
 export interface Help { title: string; rows: [keys: string, does: string][]; note?: string }
 export const CONTROLS: Record<string, Help> = {
-  Map: { title: 'World map', rows: [['← ↑ ↓ →', 'Walk to the nearest level in that direction'], ['Enter', 'Open the level, card or person you are standing on'], ['N', 'Walk straight to the next level to play'], ['L', 'Your score and the leaderboard'], ['C', 'Who made the game, and its source']], note: 'Greyed-out levels open once every earlier level on the story path is finished.' },
+  Map: { title: 'World map', rows: [['← ↑ ↓ →', 'Walk to the nearest level in that direction'], ['Enter', 'Open the level, card or person you are standing on'], ['N', 'Walk straight to the next level to play'], ['P', 'Free play: pick any level, card or person from a list. Nothing is scored'], ['L', 'Your score and the leaderboard'], ['C', 'Who made the game, and its source']], note: 'Greyed-out levels open once every earlier level on the story path is finished, or at once in free play.' },
   Platform: { title: 'Platform level', rows: [['← →', 'Run'], ['Space', 'Jump: hold for a higher jump. Land on a troublemaker to see it off'], ['Space (jet pack)', 'Hold to fly while the jet pack lasts'], ['Space (gumboots)', 'Press again in mid-air for a second jump']], note: 'Collect every part, then reach the goal. Bubbles are power-ups; the timer bar shows how long one lasts.' },
   Hotfire: { title: 'Engine hot-fire', rows: [['Space', 'Hold to spin the electric pumps up; release to let pressure fall']], note: 'Keep the needle in the green band until the qualification bar is full, before the battery runs flat.' },
   Heli: { title: 'Helicopter catch', rows: [['← ↑ ↓ →', 'Fly the helicopter']], note: 'Put the hook at the bottom of your cable on the line trailing above the parachute. You get three passes.' },
@@ -340,19 +361,21 @@ export function finish(scene: Phaser.Scene, def: LevelDef, r: { success: boolean
   // points for the level: stars × 100, scaled by the average game speed it was played at; the best run is kept
   const avg = runAverage(), factor = speedFactor(avg) as number, earned = r.success ? (levelPoints(r.stars || 1, avg) as number) : 0;
   run.frames = 0; run.steps = 0;
-  if (r.success) {
+  const scored = !free.on; // free play keeps nothing: the save is left exactly as it was
+  if (r.success && scored) {
     const before = save.pts[def.id] ?? (save.done[def.id] || 0) * 100;
     save.pts[def.id] = Math.max(before, earned);
     save.done[def.id] = Math.max(save.done[def.id] || 0, r.stars || 1);
   }
-  const speedLine = r.success ? `<p class="src">Played at ×${avg.toFixed(2).replace(/\.?0+$/, '')} speed on average: ${factor === 1 ? `${earned} points` : `score ×${factor} = ${earned} points`}${save.pts[def.id] > earned ? ` (your best here is ${save.pts[def.id]})` : ''}. Press + or − in a level to change speed.</p>` : '';
-  if (r.egg && def.egg) save.eggs[def.id] = true;
-  const fresh = !!(r.success && r.secret && def.unlocks && !save.unlocks[def.unlocks]);
-  if (r.success && r.secret && def.unlocks) save.unlocks[def.unlocks] = true;
-  save.at = def.id; persist();
+  const speedLine = !r.success ? '' : scored ? `<p class="src">Played at ×${avg.toFixed(2).replace(/\.?0+$/, '')} speed on average: ${factor === 1 ? `${earned} points` : `score ×${factor} = ${earned} points`}${save.pts[def.id] > earned ? ` (your best here is ${save.pts[def.id]})` : ''}. Press + or − in a level to change speed.</p>` : `<p class="src">Free play: this run is not scored or saved. Press P on the map to pick another level, or to leave free play.</p>`;
+  if (r.egg && def.egg && scored) save.eggs[def.id] = true;
+  const fresh = !!(scored && r.success && r.secret && def.unlocks && !save.unlocks[def.unlocks]);
+  if (scored && r.success && r.secret && def.unlocks) save.unlocks[def.unlocks] = true;
+  if (scored) { save.at = def.id; persist(); } else free.at = def.id;
   const stars = r.success ? `<div class="stars">${'★'.repeat(r.stars || 1)}${'☆'.repeat(3 - (r.stars || 1))}</div>` : '';
-  const egg = def.egg ? (save.eggs[def.id] ? `<p class="fact"><b>Easter egg found:</b> ${def.egg}</p>` : `<p class="src">There is an easter egg hidden in this level…</p>`) : '';
-  const bonus = def.unlocks ? byId(def.unlocks) : undefined;
+  const eggFound = scored ? save.eggs[def.id] : r.egg;
+  const egg = def.egg ? (eggFound ? `<p class="fact"><b>Easter egg found:</b> ${def.egg}</p>` : `<p class="src">There is an easter egg hidden in this level…</p>`) : '';
+  const bonus = def.unlocks && scored ? byId(def.unlocks) : undefined; // in free play every secret is already on the map
   const secret = !bonus ? '' : save.unlocks[bonus.id] ? `<p class="fact unlock"><b>${fresh ? 'Secret unlocked' : 'Secret found'}:</b> “${bonus.title}” is now on the map, branching off this node.</p>` : `<p class="src">A blueprint is hidden somewhere in this level. You will need a power-up to reach it.</p>`;
   const html = `${r.success ? patchImg(def.id) : ''}<div class="kicker">${def.title.toUpperCase()} · ${r.success ? 'MISSION SUCCESS' : 'ANOMALY'}</div><h1>${r.title}</h1>${stars}<p>${r.text}</p>${r.success ? `<p class="fact"><b>What really happened:</b> ${def.after}</p>` : ''}${speedLine}${r.success ? watchLink(def) : ''}${egg}${r.success ? secret : ''}`;
   const back = () => scene.scene.start('Map', { title: false }); // without data Phaser reuses the boot data and the title card comes back

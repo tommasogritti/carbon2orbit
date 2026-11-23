@@ -137,6 +137,7 @@ Story, intro, result, leaderboard and controls are DOM cards over the canvas (`s
 | `npm run sim` | Fly the launch physics headless with the autopilot and print timelines and margins |
 | `?level=<id>` | Jump straight into a level |
 | `?level=<id>&auto=1` | Let the bot play it; `window.__g2o.last` holds the result |
+| Free play (`P`, ☰, footer switch or `?free=1`) | Every node open and a list to pick from (`showPicker` in `src/scenes/Map.ts`); `finish()` and the cards save nothing while `free.on` (`src/core.ts`) |
 | Developer mode (footer switch or `?dev=1`) | Every node open; `K` skips a level |
 | `?hifi=0`, `?renderer=canvas` | Play a hi-fi level with the plain look; force the Canvas renderer |
 | `window.__g2o` | Test hooks: `game`, `save`, `LEVELS`, `scene()`, `go(id)`, `last`, `closeCard()` |
