@@ -139,6 +139,27 @@ function makePeter(scene: Phaser.Scene, act: 'walk' | 'table') {
 
 type Step = 'serve' | 'snip' | 'blend' | 'pour' | 'taste' | 'done';
 const IX = 210, IY = 24, IW = 104, IH = 92; // the close-up panel at the table
+// the blended cap: a charcoal slurry, darker underneath, with a pale froth on top, so it reads against the lit close-up
+const MUSH = 0x34363f, MUSH_D = 0x24262d, FROTH = 0xb9bec9, FLECK = 0x5c606c, GLASS_IN = 0x1a1f2c, GLASS_HI = 0xf2f7ff;
+type Pt = [number, number];
+const V2 = (pts: Pt[]) => pts.map(([x, y]) => new Phaser.Math.Vector2(x, y));
+const areaOf = (pts: Pt[]) => Math.abs(pts.reduce((a, [x, y], i) => { const [x2, y2] = pts[(i + 1) % pts.length]; return a + x * y2 - x2 * y; }, 0)) / 2;
+/** The part of a polygon below the line y = h (screen y grows downwards). */
+function below(pts: Pt[], h: number): Pt[] {
+  const out: Pt[] = [];
+  pts.forEach((a, i) => {
+    const b = pts[(i + 1) % pts.length], ina = a[1] >= h, inb = b[1] >= h;
+    if (ina) out.push(a);
+    if (ina !== inb) { const t = (h - a[1]) / (b[1] - a[1]); out.push([a[0] + (b[0] - a[0]) * t, h]); }
+  });
+  return out;
+}
+/** What `k` of a vessel holds, settled flat however the vessel is tipped: the filled polygon and the height of its surface. */
+function settle(pts: Pt[], k: number): { fill: Pt[]; y: number } {
+  const ys = pts.map((p) => p[1]); let lo = Math.min(...ys), hi = Math.max(...ys); const want = areaOf(pts) * k;
+  for (let i = 0; i < 18; i++) { const m = (lo + hi) / 2; if (areaOf(below(pts, m)) > want) lo = m; else hi = m; }
+  return { fill: below(pts, hi), y: hi };
+}
 export class HatTrickScene extends Phaser.Scene {
   def!: LevelDef; p: any; th!: Theme; act: 'walk' | 'table' = 'walk'; ended = false; hf?: HiFi; g!: Phaser.GameObjects.Graphics; vf!: Phaser.GameObjects.Graphics; call!: Phaser.GameObjects.Text; info!: Phaser.GameObjects.Text; head!: Phaser.GameObjects.Text;
   peter!: Phaser.GameObjects.Image; t = 0; motor?: Loop;
@@ -342,16 +363,33 @@ export class HatTrickScene extends Phaser.Scene {
     }
     this.drawTable();
   }
+  /** The blended cap filling `fill` up to its surface at height `y`: charcoal, darker below, a pale froth along the top. */
+  mush(fill: Pt[], y: number, rim = 1) {
+    if (fill.length < 3) return; const g = this.g, bot = Math.max(...fill.map((p) => p[1]));
+    g.fillStyle(MUSH).fillPoints(V2(fill), true);
+    if (bot - y > 3) for (const k of [0.35, 0.65]) { const d = below(fill, y + (bot - y) * k); if (d.length >= 3) g.fillStyle(MUSH_D, 0.45).fillPoints(V2(d), true); }
+    const xs = fill.filter((p) => Math.abs(p[1] - y) < 0.01).map((p) => p[0]); if (xs.length < 2) return;
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), r = rng(7);
+    g.lineStyle(0.8 * rim, FROTH, 0.95).lineBetween(x0 + 0.3, y + 0.3 * rim, x1 - 0.3, y + 0.3 * rim);
+    if (rim >= 1) for (let x = x0 + 1.2; x < x1 - 1; x += 1.6 + r() * 1.4) g.fillStyle(FROTH, 0.7).fillCircle(x, y + 0.2 - r() * 0.6, 0.35 + r() * 0.35);
+  }
   drawTable() {
     const g = this.g, pp = this.p; g.clear();
     // the glass on the table fills as the jar pours; the jar goes from full to empty
-    const gl = this.glass!, lvl = Math.cbrt(Math.min(1, this.fill));
-    if (this.fill > 0) { const top = gl.y - 15.4 + 7.8 * (1 - lvl), hw = 5.4 * lvl; g.fillStyle(0x16171d, 0.95).fillTriangle(gl.x - hw, top, gl.x + hw, top, gl.x, gl.y - 7.6); }
-    this.jar!.setAlpha(this.step === 'pour' || this.step === 'blend' ? 0.4 : 1);
+    const gl = this.glass!, lvl = Math.cbrt(Math.min(1, this.fill)), jar0 = pp.pour?.jar ?? 1.25;
+    if (this.fill > 0) { const top = gl.y - 15.4 + 7.8 * (1 - lvl), hw = 5.4 * lvl; this.mush([[gl.x - hw, top], [gl.x + hw, top], [gl.x, gl.y - 7.6]], top, 0.5); }
+    const at = ['serve', 'snip', 'blend', 'pour', 'taste', 'done'].indexOf(this.step);
+    if (at >= 2) { const j = this.jar!, x = j.x - 5, y = j.y - 20, m = settle([[x + 2, y + 3], [x + 8, y + 3], [x + 7.2, y + 12.6], [x + 2.8, y + 12.6]], 0.85 * Math.min(1, this.left / jar0)); this.mush(m.fill, m.y, 0.4); } // what is left in the jar on the table
     const ip = this.step === 'snip' || this.step === 'blend' || this.step === 'pour';
     if (!ip) { this.info.setText(this.steps()); return; }
-    g.fillStyle(0x070a14, 0.82).fillRoundedRect(IX, IY, IW, IH, 4); g.lineStyle(0.5, 0xffffff, 0.25).strokeRoundedRect(IX, IY, IW, IH, 4); // the close-up, in the world: it takes the room's light and glow
     const cx = IX + IW / 2;
+    // the close-up, in the world (it takes the room's light and glow): a lit box, so the dark cap and what becomes of it show up
+    g.fillStyle(0x4c5670, 0.96).fillRoundedRect(IX, IY, IW, IH, 4);
+    for (let i = 0; i < 10; i++) { const k = 1 - i / 10; g.fillStyle(0xdce4f2, 0.025).fillEllipse(cx, IY + IH / 2, (IW - 6) * k, (IH - 6) * k); }
+    const [lx, ly] = this.step === 'pour' ? [IX + 34, IY + 52] : [cx, IY + 46], rw = 2 * Math.min(lx - IX, IX + IW - lx) - 6, rh = 2 * Math.min(ly - IY, IY + IH - ly) - 6;
+    for (let i = 0; i < 14; i++) { const k = 1 - i / 14; g.fillStyle(0xfff4e6, 0.03).fillEllipse(lx, ly, rw * k, rh * k); } // a soft light behind the vessel
+    if (this.step !== 'snip') { const ty = this.step === 'pour' ? IY + 82 : IY + 84; g.fillStyle(0xd6dce6, 0.55).fillRect(IX + 1.5, ty, IW - 3, IY + IH - 1.5 - ty); g.lineStyle(0.6, 0xffffff, 0.7).lineBetween(IX + 1.5, ty, IX + IW - 1.5, ty); } // the tablecloth
+    g.lineStyle(1, 0x0b0f1a, 0.8).strokeRoundedRect(IX, IY, IW, IH, 4); g.lineStyle(0.5, 0xffffff, 0.35).strokeRoundedRect(IX + 0.8, IY + 0.8, IW - 1.6, IH - 1.6, 3.4);
     if (this.step === 'snip') { // the cap from above, the cut line, the cut so far and the blade
       g.fillStyle(0x0f1015).fillCircle(cx, IY + 50, 30); g.fillStyle(0x1c1d24).fillCircle(cx, IY + 46, 24); g.lineStyle(0.4, 0x3a3c48).strokeCircle(cx, IY + 46, 24);
       for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; g.lineBetween(cx, IY + 46, cx + Math.cos(a) * 24, IY + 46 + Math.sin(a) * 24); }
@@ -363,26 +401,39 @@ export class HatTrickScene extends Phaser.Scene {
       g.lineStyle(0.8, P.red).strokeCircle(bx - 11, by - 4 - op * 4, 1.8).strokeCircle(bx - 11, by + 4 + op * 4, 1.8);
     } else if (this.step === 'blend') { // the jar, close up: the pieces, the blades, the motor's temperature
       const j0 = IY + 12, j1 = IY + 72, jl = (y: number) => cx - 26 + ((y - j0) / (j1 - j0)) * 8, jr = (y: number) => cx + 26 - ((y - j0) / (j1 - j0)) * 8;
-      g.fillStyle(0xbfe0ff, 0.07).fillPoints([new Phaser.Math.Vector2(jl(j0), j0), new Phaser.Math.Vector2(jr(j0), j0), new Phaser.Math.Vector2(jr(j1), j1), new Phaser.Math.Vector2(jl(j1), j1)], true);
-      g.lineStyle(0.7, 0xe6f0ff, 0.9).beginPath().moveTo(jl(j0), j0).lineTo(jl(j1), j1).lineTo(jr(j1), j1).lineTo(jr(j0), j0).strokePath();
-      const spin = this.pulseT > 0 ? this.time.now / 25 : 0; g.lineStyle(1, 0xc9ced7).lineBetween(cx - 9 * Math.cos(spin), j1 - 3, cx + 9 * Math.cos(spin), j1 - 3); g.fillStyle(0x8b93a7).fillCircle(cx, j1 - 3, 1.4);
-      g.fillStyle(0x2a2c36).fillRoundedRect(cx - 20, j1, 40, 12, 2); g.fillStyle(this.heat > 0.66 ? P.red : P.lgreen).fillCircle(cx, j1 + 6, 1.6);
+      g.fillStyle(0xffffff, 0.14).fillPoints(V2([[jl(j0), j0], [jr(j0), j0], [jr(j1), j1], [jl(j1), j1]]), true);
+      const spin = this.pulseT > 0 ? this.time.now / 25 : 0; g.lineStyle(1, 0x6f7586).lineBetween(cx - 9 * Math.cos(spin), j1 - 3, cx + 9 * Math.cos(spin), j1 - 3); g.fillStyle(0x4a5066).fillCircle(cx, j1 - 3, 1.4);
       const r = rng(3);
-      for (const b of this.bits) { const y = j1 - 4 - b.h * (j1 - j0 - 10), x = jl(y) + 4 + b.x * (jr(y) - jl(y) - 8), s = 3.6 * b.r; g.fillStyle(0x000000, 0.6).fillRect(x - s - 0.4, y - s * 0.4 - 0.4, s * 2 + 0.8, s * 0.8 + 0.8); g.fillStyle(r() < 0.3 ? 0x3a3c46 : 0x1c1d24).fillRect(x - s, y - s * 0.4, s * 2, s * 0.8); }
+      for (const b of this.bits) { const y = j1 - 4 - b.h * (j1 - j0 - 10), x = jl(y) + 4 + b.x * (jr(y) - jl(y) - 8), s = 3.6 * b.r; g.fillStyle(0x000000, 0.3).fillRect(x - s + 0.4, y - s * 0.4 + 0.6, s * 2, s * 0.8); g.fillStyle(r() < 0.3 ? 0x4a4d58 : MUSH).fillRect(x - s, y - s * 0.4, s * 2, s * 0.8); g.fillStyle(FROTH, 0.55).fillRect(x - s, y - s * 0.4, s * 2, 0.4); }
+      for (const [w, c, a] of [[1.8, GLASS_IN, 0.7], [0.7, GLASS_HI, 1]] as [number, number, number][]) g.lineStyle(w, c, a).beginPath().moveTo(jl(j0), j0).lineTo(jl(j1), j1).lineTo(jr(j1), j1).lineTo(jr(j0), j0).strokePath();
+      g.fillStyle(0x2a2c36).fillRoundedRect(cx - 20, j1, 40, 12, 2); g.lineStyle(0.5, 0x8b93a7, 0.8).lineBetween(cx - 18, j1 + 0.5, cx + 18, j1 + 0.5); g.fillStyle(this.heat > 0.66 ? P.red : P.lgreen).fillCircle(cx, j1 + 6, 1.6);
       g.fillStyle(0x000000, 0.5).fillRoundedRect(IX + 6, IY + IH - 9, IW - 12, 4, 2); g.fillStyle(this.heat > 0.66 ? P.red : P.orange).fillRoundedRect(IX + 6, IY + IH - 9, Math.max(3, (IW - 12) * Math.min(1, this.heat)), 4, 2);
       for (let i = 0; i < pp.pulses; i++) g.fillStyle(i < this.shred ? P.lgreen : 0x3a3c48).fillCircle(IX + IW - 8 - i * 6, IY + 6, 2);
     } else { // the pour: the jar tipping over the glass, the glass's green band
       const GH = 24, gx = IX + 30, gy = IY + 70, top = gy - GH, hw0 = 16, lvl2 = Math.cbrt(Math.min(1, this.fill)), [lo, hi] = pp.pour.band as number[];
-      const bandY = (f: number) => gy - GH * Math.cbrt(f);
-      g.fillStyle(P.green, 0.35).fillRect(gx - hw0 - 3, bandY(hi), hw0 * 2 + 6, bandY(lo) - bandY(hi));
-      if (this.fill > 0) { const hw = hw0 * lvl2; g.fillStyle(0x16171d).fillTriangle(gx - hw, gy - GH * lvl2, gx + hw, gy - GH * lvl2, gx, gy); }
-      g.lineStyle(0.7, 0xe6f0ff, 0.95).beginPath().moveTo(gx - hw0, top).lineTo(gx, gy).lineTo(gx + hw0, top).strokePath(); g.lineBetween(gx, gy, gx, gy + 12); g.lineBetween(gx - 8, gy + 12, gx + 8, gy + 12);
-      const a = -this.tilt * 1.7, px = IX + 74, py = IY + 40, c = Math.cos(a), s = Math.sin(a), P2 = (x: number, y: number) => [px + x * c - y * s, py + x * s + y * c];
-      const pts = [[-9, -30], [9, -30], [6, 0], [-6, 0]].map(([x, y]) => P2(x, y));
-      g.fillStyle(0xbfe0ff, 0.1).fillPoints(pts.map(([x, y]) => new Phaser.Math.Vector2(x, y)), true); g.lineStyle(0.8, 0xe6f0ff, 0.95).strokePoints(pts.map(([x, y]) => new Phaser.Math.Vector2(x, y)), true);
-      const k = Math.min(1, this.left / (pp.pour.jar ?? 1.25)); if (k > 0.02) { const pts2 = [[-6 - 2.6 * k, -29 * k], [6 + 2.6 * k, -29 * k], [5.6, -1], [-5.6, -1]].map(([x, y]) => P2(x, y)); g.fillStyle(0x16171d, 0.95).fillPoints(pts2.map(([x, y]) => new Phaser.Math.Vector2(x, y)), true); }
-      if (this.flow > 0.03) { const [lx, ly] = P2(-9, -30), n = Math.round(4 + this.flow * 10); for (let i = 0; i < n; i++) { const t = ((this.stepT * 3 + i / n) % 1); g.fillStyle(0x16171d).fillRect(lx - 1 - t * 3, ly + (gy - GH * lvl2 - ly) * t - 1, 2.2, 2.2); } }
-      g.fillStyle(0x2a2c36).fillCircle(px, py, 2);
+      const bandY = (f: number) => gy - GH * Math.cbrt(f), sy = gy - GH * lvl2;
+      g.fillStyle(P.green, 0.4).fillRect(gx - hw0 - 3, bandY(hi), hw0 * 2 + 6, bandY(lo) - bandY(hi));
+      g.fillStyle(0xffffff, 0.14).fillTriangle(gx - hw0, top, gx + hw0, top, gx, gy); // the bowl of the glass
+      if (this.fill > 0) { const hw = hw0 * lvl2; this.mush([[gx - hw, sy], [gx + hw, sy], [gx, gy]], sy); }
+      for (const f of [lo, hi]) g.lineStyle(0.7, P.lgreen, 1).lineBetween(gx - hw0 - 5, bandY(f), gx + hw0 + 5, bandY(f)); // the band's edges, over what is poured
+      for (const [w, cl, al] of [[1.8, GLASS_IN, 0.7], [0.7, GLASS_HI, 1]] as [number, number, number][]) { g.lineStyle(w, cl, al).beginPath().moveTo(gx - hw0, top).lineTo(gx, gy).lineTo(gx + hw0, top).strokePath(); g.lineBetween(gx, gy, gx, gy + 12); g.lineBetween(gx - 8, gy + 12, gx + 8, gy + 12); }
+      // the jar, tipping about its base: what is left in it settles flat, and pours from the lip
+      const a = -this.tilt * 1.7, px = IX + 74, py = IY + 40, c = Math.cos(a), s = Math.sin(a), P2 = (x: number, y: number): Pt => [px + x * c - y * s, py + x * s + y * c];
+      const pts = ([[-9, -30], [9, -30], [6, 0], [-6, 0]] as Pt[]).map(([x, y]) => P2(x, y));
+      g.fillStyle(0xffffff, 0.14).fillPoints(V2(pts), true);
+      const k = Math.min(1, this.left / jar0); if (k > 0.005) { const m = settle(([[-8.2, -29.6], [8.2, -29.6], [5.3, -0.8], [-5.3, -0.8]] as Pt[]).map(([x, y]) => P2(x, y)), 0.9 * k); this.mush(m.fill, m.y); }
+      if (this.flow > 0.03) { // the stream, as thick as the flow: off the lip, then falling into the glass
+        const L = P2(-9, -30), T: Pt = [gx + (L[0] - gx) * 0.3, sy - 0.5], C: Pt = [L[0] + (T[0] - L[0]) * 0.85, L[1] + 0.5], w = 0.6 + this.flow * 3.4, n = 14;
+        const pt = (t: number): Pt => [(1 - t) * (1 - t) * L[0] + 2 * t * (1 - t) * C[0] + t * t * T[0], (1 - t) * (1 - t) * L[1] + 2 * t * (1 - t) * C[1] + t * t * T[1]];
+        const sideA: Pt[] = [], sideB: Pt[] = [];
+        for (let i = 0; i <= n; i++) { const t = i / n, [x, y] = pt(t), dx = 2 * (1 - t) * (C[0] - L[0]) + 2 * t * (T[0] - C[0]), dy = 2 * (1 - t) * (C[1] - L[1]) + 2 * t * (T[1] - C[1]), d = Math.hypot(dx, dy) || 1, hw = (w * (1 - 0.3 * t)) / 2; sideA.push([x - (dy / d) * hw, y + (dx / d) * hw]); sideB.push([x + (dy / d) * hw, y - (dx / d) * hw]); }
+        g.fillStyle(MUSH).fillPoints(V2([...sideA, ...sideB.reverse()]), true);
+        g.lineStyle(0.4, FROTH, 0.55).strokePoints(V2(sideA.slice(1)), false);
+        const m = Math.round(2 + this.flow * 5); for (let i = 0; i < m; i++) { const [x, y] = pt((this.stepT * 2.2 + i / m) % 1); g.fillStyle(i % 2 ? FLECK : FROTH, i % 2 ? 0.9 : 0.6).fillRect(x - 0.35, y - 0.35, 0.7, 0.7); } // bits of cap riding down
+        for (let i = 0; i < 4; i++) { const q = (this.stepT * 3 + i / 4) % 1, side = i % 2 ? 1 : -1; g.fillStyle(FROTH, 0.8 * (1 - q)).fillCircle(T[0] + side * (1 + q * (2 + this.flow * 3)), T[1] - Math.sin(q * Math.PI) * (1 + this.flow * 2), 0.5); } // where it lands
+      }
+      for (const [w, cl, al] of [[1.8, GLASS_IN, 0.7], [0.7, GLASS_HI, 1]] as [number, number, number][]) g.lineStyle(w, cl, al).strokePoints(V2(pts), true);
+      g.fillStyle(0x4a5066).fillPoints(V2(([[-6.5, 0], [6.5, 0], [6, 3.2], [-6, 3.2]] as Pt[]).map(([x, y]) => P2(x, y))), true); // the jar's collar, where the hand holds it
     }
     this.info.setText(this.steps());
   }
