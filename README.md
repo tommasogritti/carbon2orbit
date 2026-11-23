@@ -10,7 +10,7 @@ From a rocket bike in a Dunedin workshop to the hundredth Electron, and on to Ne
 An unofficial, open-source browser game. Fan project, not affiliated with Rocket Lab.
 
 <!-- counts:start: written by `npm run readme` -->
-`29 playable levels` · `17 kinds of play` · `every fact sourced` · `art and sound made in code`
+`30 playable levels` · `18 kinds of play` · `every fact sourced` · `art and sound made in code`
 <!-- counts:end -->
 
 </div>
@@ -65,7 +65,7 @@ A touch pad appears on phones.
 ## The levels
 
 <!-- levels:start: written by `npm run readme` from src/content.ts; do not edit by hand -->
-All 36 stops on the map, in story order:
+All 37 stops on the map, in story order:
 
 | # | Level | Year | Where | Play |
 | --- | --- | --- | --- | --- |
@@ -98,13 +98,14 @@ All 36 stops on the map, in story order:
 | 27 | Forbes counts a billionaire | 2024 | Forbes estimate | Story card |
 | 28 | Two Hemispheres | 2024 | LC-2, Wallops and LC-1, Māhia | Mini-game: two launch counts |
 | 29 | Outback Delivery | 2025 | Low Earth orbit → Koonibba, South Australia | Mini-game: spacecraft burns |
-| 30 | ESCAPADE | 2025 | Earth → Sun–Earth L2 → Mars | Mini-game: cruise to Mars |
-| 31 | Seven diaries, one slot (played as Mrs. Iglesias) | 2026 | YouTube | Mini-game: find a meeting slot |
-| 32 | Five channels, one Q&A | 2026 | YouTube | Story card |
-| 33 | VICTUS HAZE | 2026 | LC-1, Māhia | Mini-game: race the count |
-| 34 | The Mountain God Rises | 2026 | LC-1, Māhia | Launch control |
-| 35 | Archimedes and the tank | 2024–2026 | Stennis → Middle River → Wallops | Platform |
-| 36 | Neutron: first flight (locked until it flies) | no earlier than 2027 | LC-3, Wallops Island, Virginia | Launch control |
+| 30 | Return On Investment (played as Shaun D’Mello) | 2025–2026 | Amelia, Louisiana | Mini-game: shipyard crane and thruster trial |
+| 31 | ESCAPADE | 2025 | Earth → Sun–Earth L2 → Mars | Mini-game: cruise to Mars |
+| 32 | Seven diaries, one slot (played as Mrs. Iglesias) | 2026 | YouTube | Mini-game: find a meeting slot |
+| 33 | Five channels, one Q&A | 2026 | YouTube | Story card |
+| 34 | VICTUS HAZE | 2026 | LC-1, Māhia | Mini-game: race the count |
+| 35 | The Mountain God Rises | 2026 | LC-1, Māhia | Launch control |
+| 36 | Archimedes and the tank | 2024–2026 | Stennis → Middle River → Wallops | Platform |
+| 37 | Neutron: first flight (locked until it flies) | no earlier than 2027 | LC-3, Wallops Island, Virginia | Launch control |
 
 Secrets, unlocked by finding a hidden blueprint:
 

@@ -55,9 +55,10 @@ index.html ─ src/main.ts ─ Boot ─┬─ Title ── Map ──(Enter on a
 | `edit-bay` | `EditBay.ts` | Cut a recording into parts, send each to the right channel, schedule uploads before release times | §10.13 |
 | `slot-finder` | `SlotFinder.ts` | Slide and stretch one meeting across several half-hidden diaries, send invitations, and fit the follow-up work in before a release time | §10.14 |
 | `hat-trick` | `HatTrick.ts` | Act one: stay in a moving camera frame while gathering things to wear and carry. Act two: a dish made by hand at a table: steer scissors along cut lines, pulse a blender in time, pour to a line against a lag, taste | §10.15 |
+| `fit-out` | `FitOut.ts` | Act one: a gantry crane with a swinging load sets a list of things on their marks on a hull that trims as the weight goes on. Act two: hold the fitted hull in a series of boxes on its thrusters, against wind | §10.16 |
 | `hotfire`, `heli-catch`, `orbit-raise`, `sprint`, `fault-finder`, `splashdown`, `cruise`, `countdown-race` | one file each | Single-purpose mini-games | §10.2 to §10.8 |
 
-The first six, `edit-bay`, `slot-finder` and `hat-trick` are **reusable**: a second level can use them with different params and art. A level can also be told in several acts: `params.then = { mechanic, params, intro?, how? }` hands a successful act to the next scene, and nothing is saved until the last act ends.
+The first six, `edit-bay`, `slot-finder`, `hat-trick` and `fit-out` are **reusable**: a second level can use them with different params and art. A level can also be told in several acts: `params.then = { mechanic, params, intro?, how? }` hands a successful act to the next scene, and nothing is saved until the last act ends.
 
 ## Conventions every scene follows
 
