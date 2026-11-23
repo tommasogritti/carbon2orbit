@@ -333,9 +333,12 @@ export const srcLinks = (urls: string[]) =>
  */
 export function who(s: Phaser.Scene, def: LevelDef, x: number, y: number, young = false, wrap: (o: any) => any = (o) => o) {
   const h = hero(def, young);
+  const name = T(s, x + 23, y + 3.6, h.name.toUpperCase(), '#ffffff', 6.6, '700'), role = T(s, x + 23, y + 12.4, h.role, '#ffe98a', 5);
+  const w = Math.max(100, 23 + Math.max(name.width, role.width) + 6); // the plate grows to fit a long role, so the words stay on it
+  const shift = Math.min(0, W - 2 - (x + w)); x += shift; name.x += shift; role.x += shift; // and a plate on the right edge moves left to stay on screen
   const parts = [
-    wrap(panel(s, x, y, 100, 22, 0.85)).setDepth(48), wrap(img(s, x + 11, y + 11, h.pre + 'peter_chip')).setScale(S * 0.68).setDepth(49),
-    wrap(T(s, x + 23, y + 3.6, h.name.toUpperCase(), '#ffffff', 6.6, '700')).setDepth(49), wrap(T(s, x + 23, y + 12.4, h.role, '#ffe98a', 5)).setDepth(49),
+    wrap(panel(s, x, y, w, 22, 0.85)).setDepth(48), wrap(img(s, x + 11, y + 11, h.pre + 'peter_chip')).setScale(S * 0.68).setDepth(49),
+    wrap(name).setDepth(49), wrap(role).setDepth(49),
   ];
   parts.forEach((o) => o.setAlpha(0));
   s.tweens.add({ targets: parts, alpha: 1, duration: 250 });

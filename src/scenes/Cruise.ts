@@ -15,6 +15,14 @@ const MARS = { x: 36, y: 38, r: 15, v: 60 }; // the way out, and the speed neede
 const THR = 16, MAIN = 26, TANK = 26; // thruster and main-engine acceleration (px/s²); seconds of thruster propellant
 const LAG = 2.4; // Gold flies the same path a little behind Blue
 const LOOK = 'cruise'; // the hi-fi look (looks/cruise.ts)
+const AIM = { x: 110, y: 138 }; // where to point on the way back to Earth: gravity curves Blue under it from there
+const AID = 8; // seconds the hint's guide lines stay on screen
+/** Screen directions in words, for the hints: "up and to the right". */
+const dirWord = (dx: number, dy: number) => [Math.abs(dy) * 2 > Math.abs(dx) ? (dy < 0 ? 'up' : 'down') : '', Math.abs(dx) * 2 > Math.abs(dy) ? (dx < 0 ? 'to the left' : 'to the right') : ''].filter(Boolean).join(' and ') || 'nowhere much';
+/** The arrow keys that change velocity by (ex, ey), and for how long to hold each one. */
+const taps = (ex: number, ey: number) => [Math.abs(ex) > 4 ? `${ex > 0 ? '→' : '←'} for about ${(Math.abs(ex) / THR).toFixed(1)} s` : '', Math.abs(ey) > 4 ? `${ey > 0 ? '↓' : '↑'} for about ${(Math.abs(ey) / THR).toFixed(1)} s` : ''].filter(Boolean);
+/** The keys that push along a direction: "↑ with →". */
+const keysFor = (ux: number, uy: number) => [Math.abs(ux) > 0.38 ? (ux > 0 ? '→' : '←') : '', Math.abs(uy) > 0.38 ? (uy > 0 ? '↓' : '↑') : ''].filter(Boolean).join(' with ');
 
 /**
  * ESCAPADE: fly Blue (Gold follows) the long way to Mars. Nothing here has brakes: every push from a thruster stays
@@ -22,14 +30,64 @@ const LOOK = 'cruise'; // the hi-fi look (looks/cruise.ts)
  * lowest point of the flyby, and leave for Mars.
  */
 export class CruiseScene extends Phaser.Scene {
-  def!: LevelDef; x = 0; y = 0; vx = 0; vy = 0; fuel = 1; next = 0; t = 0; ended = false; peri = 999; burned = 0; inKey = false; flew = false; started = false; path: { x: number; y: number; a: number }[] = [];
+  def!: LevelDef; x = 0; y = 0; vx = 0; vy = 0; fuel = 1; next = 0; t = 0; ended = false; peri = 999; burned = 0; inKey = false; flew = false; started = false; path: { x: number; y: number; a: number }[] = []; hints = 0; aid = 0; aidAt = { x: 0, y: 0 };
   blue!: Phaser.GameObjects.Image; gold!: Phaser.GameObjects.Image; g!: Phaser.GameObjects.Graphics; hud!: Phaser.GameObjects.Text; call!: Phaser.GameObjects.Text; tip!: Phaser.GameObjects.Text; puff!: Phaser.GameObjects.Particles.ParticleEmitter; flame!: Phaser.GameObjects.Particles.ParticleEmitter; hiss!: Loop; rumble!: Loop; hf?: HiFi;
   constructor() { super('Cruise'); }
   /** The controls panel (H or the ? button): what the keys do right now, in this level and this phase. Shape agreed with core's showHelp. */
   help(): { title: string; rows: [keys: string, does: string][]; note?: string } {
-    return { title: 'Cruise', rows: [['← ↑ ↓ →', 'Fire a thruster: a push in that direction. It stays until you cancel it with a push the other way.'], ['Space (hold)', 'Fire the main engine along the direction of travel. Use it at the lowest point of the Earth flyby.']], note: this.started ? 'Fly the gates in order, pass under Earth through the green band, and leave through the Mars gate.' : 'The clock starts with your first key press.' };
+    return { title: 'Cruise', rows: [['← ↑ ↓ →', 'Fire a thruster: a push in that direction. It stays until you cancel it with a push the other way.'], ['Space (hold)', 'Fire the main engine along the direction of travel. Use it at the lowest point of the Earth flyby.']], note: (this.started ? 'Fly the gates in order, pass under Earth through the green band, and leave through the Mars gate.' : 'The clock starts with your first key press.') + ' Stuck? Press I, or the 💡 button, for a hint about where Blue is heading now.' };
   }
-  init(d: { def: LevelDef }) { this.def = d.def; this.x = 124; this.y = 82; this.vx = 38; this.vy = -31; this.fuel = 1; this.next = 0; this.t = 0; this.ended = false; this.peri = 999; this.burned = 0; this.inKey = false; this.flew = false; this.path = []; this.started = AUTO; }
+  /** Where Blue goes if nobody touches anything for `secs` seconds, under gravity alone. The hints and their guide line use it. */
+  coast(secs: number, tx = 0, ty = 0, dots?: { x: number; y: number }[]) {
+    let x = this.x, y = this.y, vx = this.vx, vy = this.vy, minR = 999, below = false, near = 999, hit = false, lost = false;
+    for (let i = 0; i < secs * 30; i++) {
+      const dx = x - EX, dy = y - EY, r = Math.hypot(dx, dy), a = GM / (r * r);
+      vx -= ((dx / r) * a) / 30; vy -= ((dy / r) * a) / 30; x += vx / 30; y += vy / 30;
+      if (r < minR) { minR = r; below = dy > 0; }
+      near = Math.min(near, Math.hypot(x - tx, y - ty));
+      if (dots && i % 4 === 0) dots.push({ x, y });
+      if (r < ER + 1.5) { hit = true; break; }
+      if (x < -30 || x > W + 30 || y < -30 || y > H + 30) { lost = true; break; }
+    }
+    return { minR, below, near, hit, lost };
+  }
+  /**
+   * A hint (I, or the 💡 button), read off where Blue is now: which keys to tap and for how long, or to let go and coast.
+   * It is free; afterwards a dotted line shows where Blue coasts to and a dashed one points at the next target, for a few seconds.
+   */
+  hint(): { title: string; text: string; cost?: string } {
+    this.hints++; this.aid = AID;
+    const sp = Math.hypot(this.vx, this.vy), dx = this.x - EX, dy = this.y - EY, r = Math.hypot(dx, dy);
+    const moving = `Blue is moving ${dirWord(this.vx, this.vy)} at speed ${sp.toFixed(0)}.`;
+    const toward = (tx: number, ty: number, vc: number) => { const d = Math.hypot(tx - this.x, ty - this.y) || 1; return taps(((tx - this.x) / d) * vc - this.vx, ((ty - this.y) / d) * vc - this.vy); };
+    const steer = (k: string[]) => (k.length ? `hold ${k.join(', then ')}. Then let go and coast.` : 'you are nearly there: a tap or two at most, then coast.');
+    const left = Math.round(this.fuel * 100), fuel = this.fuel < 0.35 ? ` You have ${left}% propellant left; three stars need 35% at the end. For those, press Esc and start again with fewer, shorter pushes.` : '';
+    const guide = 'The dotted line shows where Blue will coast with no more pushes; the dashed one points where to go.';
+    if (!this.started) {
+      this.aidAt = { x: GATES[0][0], y: GATES[0][1] };
+      return { title: 'Before you start', text: `Out here nothing slows Blue down. An arrow key adds speed in that direction, and it stays until you add the same amount the other way. So tap, let go, and watch the blue trail: it shows where you are really going, not where you last pushed. Blue is already heading for gate A: let it coast there without touching anything. The clock starts with your first key press. ${guide}` };
+    }
+    if (this.next < GATES.length) {
+      const [gx, gy, name] = GATES[this.next], c = this.coast(10, gx, gy); this.aidAt = { x: gx, y: gy };
+      const order = this.next === 0 ? '' : ' The gates go round the loop in order: A at the top, B on the right, C below it, D at the bottom.';
+      if (c.near < 9) return { title: `On course for gate ${name}`, text: `Let go and coast: on this course Blue flies through gate ${name} by itself. Every push you skip now is propellant saved for later.${order}${fuel} ${guide}` };
+      return { title: `Steering for gate ${name}`, text: `Gate ${name}, the flashing yellow ring, is ${dirWord(gx - this.x, gy - this.y)} of Blue. ${moving} To head straight for it at an easy speed, ${steer(toward(gx, gy, 26))}${order}${fuel} ${guide}` };
+    }
+    if (!this.flew) {
+      this.aidAt = AIM;
+      if (this.inKey) return { title: 'Burn now', text: 'Hold Space until Blue is past the lowest point and climbing out of the green band. The main engine pushes along your direction of travel, and a push here, deep in Earth’s gravity, is worth far more than one anywhere else.' };
+      const c = this.coast(14), away = keysFor(dx / r, dy / r), closer = keysFor(-dx / r, -dy / r);
+      if (c.hit) return { title: 'Heading into the atmosphere', text: `On this course Blue comes in too low and hits the atmosphere. ${r < 72 ? `Push away from Earth with a short tap of ${away}, a quarter of a second, then ask again.` : `Aim for a point below and to the right of Earth instead. To get there, ${steer(toward(AIM.x, AIM.y, 34))}`}${fuel} ${guide}` };
+      if (c.minR < KEY.r1 && c.below) return { title: 'Lined up for the flyby', text: `Let go: on this course gravity swings Blue under Earth through the green band. When the panel says PERIGEE · BURN, hold Space until you are past the bottom.${fuel} ${guide}` };
+      if (r < 72) return { title: c.below ? 'Passing too wide' : 'Passing over the top', text: `${c.below ? 'On this course Blue swings under Earth but outside the green band.' : 'On this course Blue swings past above Earth, but the way through is the green band underneath it.'} Close in, gravity does the turning: a short tap of ${c.below ? closer : keysFor(0, 1)}, a quarter of a second, then ask again to see the new course.${fuel} ${guide}` };
+      return { title: 'Back to Earth for the flyby', text: `Head for a point just below and to the right of Earth, at about speed 34, then let go: gravity curves Blue underneath, through the green band. ${moving} To get there, ${steer(toward(AIM.x, AIM.y, 34))}${fuel} ${guide}` };
+    }
+    this.aidAt = { x: MARS.x, y: MARS.y };
+    const c = this.coast(12, MARS.x, MARS.y), slow = sp < MARS.v + 2;
+    if (c.near < MARS.r && !slow) return { title: 'On the way to Mars', text: `Let go and coast: on this course Blue reaches the Mars gate at top left, fast enough to keep going. ${guide}` };
+    return { title: 'Out to the Mars gate', text: `The Mars gate is the ring at top left, and Blue must reach it at speed ${MARS.v} or more. ${moving} ${slow ? `Hold Space to speed up: the main engine pushes along your direction of travel${r < 50 ? ', and close to Earth each second of it is worth more' : ''}. ` : ''}${c.near < MARS.r ? 'The direction is right.' : `To aim at it, ${steer(toward(MARS.x, MARS.y, Math.max(sp, MARS.v + 4)))}`}${fuel} ${guide}` };
+  }
+  init(d: { def: LevelDef }) { this.def = d.def; this.x = 124; this.y = 82; this.vx = 38; this.vy = -31; this.fuel = 1; this.next = 0; this.t = 0; this.ended = false; this.peri = 999; this.burned = 0; this.inKey = false; this.flew = false; this.path = []; this.started = AUTO; this.hints = 0; this.aid = 0; }
   create() {
     cam(this); stopLoops(); music.play('space'); this.hiss = loop('hiss'); this.rumble = loop('rumble');
     this.cameras.main.setBackgroundColor('#04050c');
@@ -48,7 +106,7 @@ export class CruiseScene extends Phaser.Scene {
     this.flame = this.add.particles(0, 0, 'puff', { speed: { min: 20, max: 50 }, lifespan: 300, scale: { start: S * 0.5, end: 0 }, color: [0xffffff, 0xb8dcff, 0x6fa8ff], blendMode: 'ADD', emitting: false });
     this.puff = this.add.particles(0, 0, 'puff', { speed: { min: 14, max: 30 }, lifespan: 240, scale: { start: S * 0.22, end: 0 }, alpha: { start: 0.9, end: 0 }, emitting: false });
     this.gold = img(this, this.x, this.y, 'esc_gold').setAlpha(0); this.blue = img(this, this.x, this.y, 'esc_blue');
-    panel(this, 110, 150, 84, 26, 0.8); this.hud = T(this, 115, 152.4, '', '#ffffff', 5, '700');
+    panel(this, 142, 150, 84, 26, 0.8); this.hud = T(this, 147, 152.4, '', '#ffffff', 5, '700');
     this.call = T(this, W / 2 + 20, 6, '13 November 2025 · New Glenn has let go of Blue and Gold', '#ffe98a', 6.2, '700').setOrigin(0.5, 0).setShadow(0, 1, '#000000', 3).setAlign('center');
     this.tip = T(this, W / 2 + 20, 15, 'press an arrow key to take over · every push stays until you cancel it', '#cfd6ea', 4.8, '700').setOrigin(0.5, 0).setShadow(0, 1, '#000000', 3);
     who(this, { ...this.def, role: this.def.role || 'CEO · Rocket Lab built Blue and Gold' }, 4, H - 26);
@@ -62,7 +120,7 @@ export class CruiseScene extends Phaser.Scene {
     if (!this.started) { // the clock waits for the first touch of the controls
       if (held('left') || held('right') || held('up') || held('down') || held('a')) { this.started = true; this.tip.setText('←↑↓→ fire thrusters · small pushes, then coast'); } else return this.draw(Math.hypot(this.vx, this.vy), 0);
     }
-    const dt = Math.min(0.05, dms / 1000); this.t += dt;
+    const dt = Math.min(0.05, dms / 1000); this.t += dt; this.aid = Math.max(0, this.aid - dt);
     const dx = this.x - EX, dy = this.y - EY, r = Math.hypot(dx, dy), sp = Math.hypot(this.vx, this.vy);
     const below = dy > 0 && r < KEY.r1 + 6;
     // ---- controls: four thrusters, and the main engine along the direction of travel
@@ -105,6 +163,12 @@ export class CruiseScene extends Phaser.Scene {
     const g = this.g; g.clear();
     g.lineStyle(0.5, 0x7fb4ff, 0.7).beginPath(); const n = this.path.length; for (let i = Math.max(0, n - 220); i < n; i += 2) { const p = this.path[i]; if (i === Math.max(0, n - 220)) g.moveTo(p.x, p.y); else g.lineTo(p.x, p.y); } g.strokePath();
     GATES.forEach(([x, y, name], i) => { const done = i < this.next, cur = i === this.next; g.lineStyle(cur ? 0.9 : 0.5, done ? P.lgreen : cur ? 0xffe98a : 0x8fa3c8, done ? 0.5 : 1).strokeCircle(x, y, cur ? 9 + Math.sin(this.t * 5) : 8); if (cur) { g.fillStyle(0xffe98a).fillCircle(x, y, 1); void name; } });
+    if (this.aid > 0) { // after a hint: where Blue coasts to (dotted), and where to go (dashed)
+      const fade = Math.min(1, this.aid / 1.5), dots: { x: number; y: number }[] = []; this.coast(10, 0, 0, dots);
+      dots.forEach((p) => g.fillStyle(0xffffff, 0.75 * fade).fillCircle(p.x, p.y, 0.55));
+      const ax = this.aidAt.x - this.x, ay = this.aidAt.y - this.y, d = Math.hypot(ax, ay);
+      g.lineStyle(0.6, 0xffe98a, 0.85 * fade); for (let k = 0; k < d - 3; k += 6) g.lineBetween(this.x + (ax / d) * k, this.y + (ay / d) * k, this.x + (ax / d) * Math.min(k + 3, d), this.y + (ay / d) * Math.min(k + 3, d));
+    }
     const out = this.flew; g.lineStyle(out ? 0.9 : 0.5, out ? 0xffe98a : 0x8fa3c8, out ? 1 : 0.6).strokeCircle(MARS.x, MARS.y, MARS.r + (out ? Math.sin(this.t * 5) : 0));
     this.blue.setPosition(this.x, this.y).setRotation(Math.atan2(this.vy, this.vx)); this.hf?.set({ x: this.x, y: this.y, rot: this.blue.rotation, next: this.next, started: this.started ? 1 : 0 });
     const lag = this.path[this.path.length - 1 - Math.round(LAG * 60)]; // Gold, two days behind on the same road
