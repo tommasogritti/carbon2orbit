@@ -1,6 +1,6 @@
 # Give a level the hi-fi look
 
-The hi-fi layer is a cinematic look any level can opt into: deep parallax with haze, Light2D lighting with generated normal maps, reflections, particles and one post pass (bloom, grade, vignette, grain, heat shimmer). How it works is "The hi-fi layer" in [docs/ARCHITECTURE.md](../../../docs/ARCHITECTURE.md). Read it, and the worked example for your kind of scene, before step 1:
+The hi-fi layer is a cinematic look any level can opt into: deep parallax with haze, Light2D lighting with generated normal maps, reflections, particles, shader-drawn sprites (a rocket plume) and one post pass (bloom, grade, vignette, grain, heat shimmer and, where the look asks, light shafts, a lens streak, pressure waves and shake). How it works is "The hi-fi layer" in [docs/ARCHITECTURE.md](../../../docs/ARCHITECTURE.md). Read it, and the worked example for your kind of scene, before step 1:
 
 | Scene | Worked example | Look |
 | --- | --- | --- |
@@ -12,7 +12,7 @@ The hi-fi layer is a cinematic look any level can opt into: deep parallax with h
 | A single-screen scene in two rooms, one look per act | `eat-the-hat` (a bright factory hall for the walk; a dark stage, lit ribs and blue floor lights for the table) | `src/looks/hat.ts` |
 | Ride | `find-the-launch-site` | `src/looks/farm.ts` |
 | The title screen | `Title.ts` (space redrawn, the rocket lit by Light2D, every word on the HUD camera) | `src/looks/title.ts` |
-| The world map | `Map.ts` (sea and land on separate layers; names, pins, nodes and tags untouched) | `src/looks/map.ts` |
+| The world map | `Map.ts` (sea and land on separate layers, both computed point by point from the plain map's coastlines to look like a satellite picture; names, pins, nodes and tags untouched) | `src/looks/map.ts` |
 | Launch control after sunset | `lc-2` (dusk), `haste` (night), act one of `paschens-law` (dusk at Māhia): the site's plain drawing in the dark under its own lamps, a sky for the hour | `src/looks/evening.ts` (shared), `src/looks/wallops.ts`, `src/looks/lc1.ts`; named in `EVE_LOOK` in `Launch.ts` |
 | Platform, outdoors by day, with things that light up on a cycle | `archimedes` | `src/looks/stennis.ts` |
 | A single-screen scene over one scrolling tile | `street-sprint` (the tile taken apart so the buildings pass more slowly than the kerb) | `src/looks/sprint.ts` |
@@ -40,7 +40,8 @@ The look changes how a level looks, never what it says or how it plays.
 ## Rules
 
 - **Everything is drawn in code.** No downloaded images, textures or fonts.
-- **Never scale or move a physics body** for an effect; animate a stand-in or rotate. That keeps the bot's run identical.
+- **Never scale or move a physics body** for an effect; animate a stand-in or rotate. That keeps the bot's run identical. Shake with `hf.shake()`, which moves the picture and not the camera.
+- **A shader sprite needs a stand-in.** `hf.fx()` gives nothing without WebGL: keep the plain sprites it replaces and hide them only when it is there.
 - **The HUD stays crisp:** anything with scroll factor 0 goes to the HUD camera via `ready()`; a single-screen scene names its HUD in `ready({ hud })`.
 - **Looks read `hf.state`, not the scene.** If a look needs a number, the scene hands it over with `hf.set()`.
 - **A quality bar, not a copy.** Aim for the polish of a modern big-budget game; use no other game's logos, fonts, characters, interface or recognisable art.

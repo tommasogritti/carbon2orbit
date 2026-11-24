@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { D, S, C2, el, line, poly, rr, lg, rg, rng, drawStand } from '../art';
 import { texAt, soft, add, halo } from '../hifi';
 import type { HiFi, Look } from '../hifi';
+import { fxSet } from '../hifiFx';
 
 // ------------------------------------------------------------------ Rutherford hot-fire: the Auckland test stand at night
 // The plain backdrop is a night scene (stars over dark hills, one floodlight on the stand), and that is the light kept
@@ -52,7 +53,7 @@ function core(c: C2) { soft(c, 1.2); c.fillStyle = lg(c, 0, 0, 0, 44, [0, 'rgba(
 function cone(c: C2) { soft(c, 4); c.fillStyle = lg(c, 0, 0, 0, 130, [0, 'rgba(220,232,255,.5)'], [0.5, 'rgba(220,232,255,.16)'], [1, 'rgba(220,232,255,0)']); c.beginPath(); c.moveTo(74, 0); c.lineTo(86, 0); c.lineTo(150, 130); c.lineTo(10, 130); c.closePath(); c.fill(); soft(c, 0); }
 
 type Em = Phaser.GameObjects.Particles.ParticleEmitter; type Im = Phaser.GameObjects.Image;
-let o: { diamonds: Im; core: Im; splash: Im; pool: Im; jets: Em[]; smoke: Em; sparks: Em; sx: number; sy: number } | undefined;
+let o: { diamonds: Im; core: Im; flame?: Im; lit: boolean; splash: Im; pool: Im; jets: Em[]; smoke: Em; sparks: Em; sx: number; sy: number } | undefined;
 export const standLook: Look = {
   build(scene) {
     texAt(scene, 'hf_st_sky', 320, 140, D, sky); texAt(scene, 'hf_st_apron', 320, 46, D, apron); texAt(scene, 'hf_st_things', 320, 180, D, things);
@@ -82,13 +83,19 @@ export const standLook: Look = {
     const sparks = hf.above(s.add.particles(X, DEFLECT, 'puff', { speedX: { min: -130, max: 130 }, speedY: { min: -120, max: -20 }, gravityY: 260, lifespan: { min: 300, max: 800 }, scale: { start: S * 0.09, end: 0 }, tint: 0xffd27a, blendMode: 'ADD', frequency: 40, emitting: false }), 'flame');
     const splash = hf.above(puff(X, DEFLECT + 2, 4.4, 1.5, 0xffd9a0, 0), 'flame');
     const cr = hf.above(s.add.image(X, NOZZLE, 'hf_st_core').setOrigin(0.5, 0).setScale(S).setBlendMode('ADD').setAlpha(0), 'flame'), di = hf.above(s.add.image(X, NOZZLE + 1, 'hf_st_diamonds').setOrigin(0.5, 0).setScale(S).setBlendMode('ADD').setAlpha(0), 'flame');
-    const cam = s.cameras.main; o = { diamonds: di, core: cr, splash, pool, jets, smoke, sparks, sx: cam.scrollX, sy: cam.scrollY };
+    // on WebGL the flame is the shader's (hifiFx.ts): the same over-expanded jet, with diamonds that stand still while the gas tears through them
+    const flame = hf.fx('plume', X, NOZZLE, 180, 120)?.setOrigin(0.5, 0).setVisible(false);
+    if (flame) { hf.above(flame, 'flame'); (hf.tags.flame as Em | undefined)?.setVisible(false); }
+    const cam = s.cameras.main; o = { diamonds: di, core: cr, flame, lit: false, splash, pool, jets, smoke, sparks, sx: cam.scrollX, sy: cam.scrollY };
   },
   step(hf) {
     if (!o) return;
     const p = hf.state.pc || 0, t = hf.t, fl = 0.86 + 0.14 * Math.sin(t * 61) * Math.sin(t * 37), hot = Phaser.Math.Clamp((p - 0.04) * 1.4, 0, 1);
-    hf.power(0, hot * fl); hf.heat(X, 106, 52, hot);
-    o.core.setAlpha(hot * fl).setScale(S * (0.8 + 0.3 * p), S * (0.5 + 0.55 * p)); o.diamonds.setAlpha(hot * hot * fl).setScale(S * (0.9 + 0.2 * p), S * (0.55 + 0.5 * p));
+    hf.power(0, hot * fl); hf.heat(X, 106, 52, hot * (o.flame ? 0.5 : 1)); // the shader's flame has its own turbulence
+    o.core.setAlpha(o.flame ? 0 : hot * fl).setScale(S * (0.8 + 0.3 * p), S * (0.5 + 0.55 * p)); o.diamonds.setAlpha(o.flame ? 0 : hot * hot * fl).setScale(S * (0.9 + 0.2 * p), S * (0.55 + 0.5 * p));
+    if (o.flame) { o.flame.setVisible(hot > 0).setAlpha(Math.min(1, hot * 2)); fxSet(o.flame, 0.4 + 0.6 * p, 0, (DEFLECT - NOZZLE) / 120, 0, 1, 0.9); }
+    if (hot > 0 && !o.lit) { hf.shock(X, DEFLECT, 0.7); hf.flash(0.3); } // ignition: the air takes the blow before the eye has the light
+    o.lit = hot > 0;
     o.splash.setAlpha(hot * 0.8 * fl); o.pool.setAlpha(hot * 0.3 * fl);
     for (const j of o.jets) { j.emitting = p > 0.25; j.frequency = 30 - 18 * p; }
     o.smoke.emitting = p > 0.08; o.sparks.emitting = p > 0.5;

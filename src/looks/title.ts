@@ -3,6 +3,7 @@ import { D, S, C2, el, line, lg, rg, rng } from '../art';
 import { texAt, soft, add, halo } from '../hifi';
 import type { Look } from '../hifi';
 import { spaceTextures, SPACE } from './flight';
+import { fxSet } from '../hifiFx';
 
 // ------------------------------------------------------------------ The title screen: an Electron climbing into an orbital sunrise
 // The title is no one day of the story, so its light is the game's choice: the moment a rocket climbing out of the
@@ -57,7 +58,7 @@ function aurora(c: C2) { // the southern lights, low over the night side: curtai
 function glint(c: C2) { add(c, () => { for (const [dx, dy] of [[1, 0], [0, 1]]) { c.fillStyle = lg(c, 8 - dx * 8, 8 - dy * 8, 8 + dx * 8, 8 + dy * 8, [0, 'rgba(255,255,255,0)'], [0.5, 'rgba(255,255,255,.95)'], [1, 'rgba(255,255,255,0)']); c.fillRect(dx ? 0 : 7.7, dy ? 0 : 7.7, dx ? 16 : 0.6, dy ? 16 : 0.6); } }); line(c, 8, 8, 8, 8, '#fff', 0.1); }
 
 type Im = Phaser.GameObjects.Image;
-let o: { sun: Im; rays: Im; dark: Im; arc: Im; aur: Im; plume: Im; core: Im; wash: Im; glint: Im; ghosts: Im[]; embers: Phaser.GameObjects.Particles.ParticleEmitter } | undefined;
+let o: { sun: Im; rays: Im; dark: Im; arc: Im; aur: Im; plume: Im; core: Im; wash: Im; jet?: Im; glint: Im; ghosts: Im[]; embers: Phaser.GameObjects.Particles.ParticleEmitter } | undefined;
 export const titleLook: Look = {
   build(scene) {
     texAt(scene, 'hf_tt_sky', 320, 180, D, sky); texAt(scene, 'hf_tt_sun', 160, 160, D, sun); texAt(scene, 'hf_tt_arc', 400, 60, D, crescent); texAt(scene, 'hf_tt_aurora', 124, 36, 2, aurora); texAt(scene, 'hf_tt_glint', 16, 16, D, glint); texAt(scene, 'hf_tt_night', 400, 130, 2, night);
@@ -71,7 +72,7 @@ export const titleLook: Look = {
     { x: 300, y: 150, r: 320, color: 0xffe2b0, i: 1.0 },   // the sun, low on the right
   ],
   heroLight: { r: 78, color: 0xffa24a, i: 2.4, dx: DIR[0] * 10, dy: DIR[1] * 10 }, // the plume, lighting the rocket that makes it
-  grade: { threshold: 0.8, bloom: 0.55, exposure: 1.04, contrast: 1.1, saturation: 1.12, shadows: [0.86, 0.95, 1.2], highs: [1.08, 1.0, 0.9], vignette: 0.5, grain: 0.028, fringe: 0.006 },
+  grade: { threshold: 0.8, bloom: 0.55, exposure: 1.04, contrast: 1.1, saturation: 1.12, shadows: [0.86, 0.95, 1.2], highs: [1.08, 1.0, 0.9], vignette: 0.5, grain: 0.028, fringe: 0.006, streak: 0.4 },
   live(hf) {
     const s = hf.scene, r = rng(8), tw = (targets: object, cfg: object) => s.tweens.add({ targets, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', ...cfg });
     const puff = (x: number, y: number, kx: number, ky: number, tint: number, a: number) => s.add.image(x, y, 'puff').setScale(S * kx, S * ky).setTint(tint).setBlendMode('ADD').setAlpha(a);
@@ -90,7 +91,10 @@ export const titleLook: Look = {
     const wash = hf.below(puff(0, 0, 9, 9, 0xff8a3a, 0), 'flame'), plume = hf.above(puff(0, 0, 3, 5.4, 0xffb060, 0), 'flame').setRotation((24 * Math.PI) / 180), core = hf.above(puff(0, 0, 1, 1.6, 0xfff4e0, 0), 'flame').setRotation((24 * Math.PI) / 180);
     const embers = hf.above(s.add.particles(0, 0, 'puff', { speed: { min: 30, max: 90 }, angle: { min: 100, max: 128 }, lifespan: { min: 500, max: 1300 }, scale: { start: S * 0.1, end: 0 }, alpha: { start: 1, end: 0 }, tint: [0xffd9a0, 0xff9a4a], blendMode: 'ADD', frequency: 34, emitting: false }), 'flame');
     (hf.tags.smoke as Phaser.GameObjects.Particles.ParticleEmitter | undefined)?.setParticleTint(0x8a84a0); // the trail, warmed by the sunrise it is climbing into
-    o = { sun: sunIm, rays, dark, arc, aur, plume, core, wash, glint: gl, ghosts, embers };
+    // on WebGL the flame is the shader's (hifiFx.ts), shock diamonds and all
+    const jet = hf.fx('plume', 0, 0, 40, 76)?.setOrigin(0.5, 0).setRotation((24 * Math.PI) / 180);
+    if (jet) { hf.above(jet, 'flame'); (hf.tags.flame as Phaser.GameObjects.Particles.ParticleEmitter | undefined)?.setVisible(false); }
+    o = { sun: sunIm, rays, dark, arc, aur, plume, core, wash, jet, glint: gl, ghosts, embers };
   },
   step(hf) {
     if (!o) return;
@@ -101,8 +105,10 @@ export const titleLook: Look = {
     hf.power(1, 0.9 + 0.1 * Math.sin(t * 0.7));
     o.glint.setPosition(hs.x, hs.y);
     const tx = st.x + DIR[0] * 8, ty = st.y + DIR[1] * 8;
-    o.plume.setPosition(tx, ty).setAlpha(on * 0.64 * fl); o.core.setPosition(st.x + DIR[0] * 2.4, st.y + DIR[1] * 2.4).setAlpha(on * fl); o.wash.setPosition(tx + DIR[0] * 10, ty + DIR[1] * 10).setAlpha(on * 0.17 * fl);
+    o.plume.setPosition(tx, ty).setAlpha(on * (o.jet ? 0.26 : 0.64) * fl); o.core.setPosition(st.x + DIR[0] * 2.4, st.y + DIR[1] * 2.4).setAlpha(o.jet ? 0 : on * fl);
+    if (o.jet) { o.jet.setPosition(st.x + DIR[0] * 1.2, st.y + DIR[1] * 1.2).setVisible(on > 0); fxSet(o.jet, on, 0.1, 9, 0, 1); }
+    hf.rays(sx, sy, 0.5, 0xffe2b8, 30); // the sun's shafts, cut off below by the edge of the Earth o.wash.setPosition(tx + DIR[0] * 10, ty + DIR[1] * 10).setAlpha(on * 0.17 * fl);
     o.embers.setPosition(tx, ty); o.embers.emitting = on > 0;
-    hf.heat(tx + DIR[0] * 12, ty + DIR[1] * 12, 34, on * 0.9);
+    if (o.jet) hf.heat(tx + DIR[0] * 34, ty + DIR[1] * 34, 34, on * 0.45); else hf.heat(tx + DIR[0] * 12, ty + DIR[1] * 12, 34, on * 0.9); // the shader's flame has its own turbulence: the hot air trails behind it
   },
 };

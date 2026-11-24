@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { W, H, HX, hifiOn } from './core';
 import { D, S, C2, lg, rg } from './art';
+import { fxSprite, FxKind } from './hifiFx';
 
 // The hi-fi layer: a cinematic look a level can opt into, without changing how it plays.
 // A level's theme names a Look (hifiLooks.ts); the scene makes one HiFi and calls a handful of hooks.
@@ -10,14 +11,18 @@ import { D, S, C2, lg, rg } from './art';
 //   - a deep parallax stack with soft, hazy far layers, light shafts, dust and an out-of-focus foreground;
 //   - Light2D lighting on the ground, the hero and the enemies, with normal maps generated from each texture;
 //   - contact shadows and floor reflections, and squash, stretch and lean on the hero;
-//   - one post pass over the play camera: thresholded bloom, a colour grade, vignette and film grain.
+//   - one post pass over the play camera: thresholded bloom, a colour grade, vignette and film grain; and, where a look
+//     asks: shafts of light that whatever stands before the sun cuts into (`rays`), the sideways streak of a film lens
+//     (`Grade.streak`), pressure waves that bend the picture as they pass (`shock`), a camera that shakes (`shake`) and
+//     an exposure that is caught out by a sudden light (`flash`);
+//   - sprites drawn by a shader of their own (hifiFx.ts): a rocket plume with its shock diamonds (`fx`).
 // The HUD moves to its own camera so the post pass never touches it (the map and the title bring their own way: `ownHud`). Without WebGL the art and the
 // animation stay and the lighting and post pass are skipped. Players switch it with the Graphics button or G
 // (remembered, high by default); `?hifi=0` turns it off for one visit.
 
 
 
-export interface Grade { threshold: number; bloom: number; exposure: number; contrast: number; saturation: number; shadows: [number, number, number]; highs: [number, number, number]; vignette: number; grain: number; fringe: number }
+export interface Grade { threshold: number; bloom: number; exposure: number; contrast: number; saturation: number; shadows: [number, number, number]; highs: [number, number, number]; vignette: number; grain: number; fringe: number; /** The streak a film lens draws sideways through anything bright (none unless given). */ streak?: number }
 type Obj = Phaser.GameObjects.GameObject;
 /** `w` is the width in units of the parallax layer a thing rides on (as for a level's own layers); leave it out for world space. */
 export interface LayerDef { key: string; w: number; add?: boolean; alpha?: number; depth?: number; y?: number; /** Light it with Light2D, with a normal map from its outline. */ lit?: boolean }
@@ -146,17 +151,49 @@ void main () {
   c += (texture2D(uMainSampler, outTexCoord + uDir * 3.2308) + texture2D(uMainSampler, outTexCoord - uDir * 3.2308)) * 0.070270;
   gl_FragColor = c;
 }`;
-const FINAL = `#define SHADER_NAME HIFI_FINAL
-${VARY} uniform sampler2D uBloom; uniform float uTime; uniform float uBloomAmt; uniform float uExposure; uniform float uContrast; uniform float uSaturation;
-uniform vec3 uShadows; uniform vec3 uHighs; uniform float uVignette; uniform float uGrain; uniform float uFringe; uniform vec4 uHeat;
+// Shafts of light. Each point looks along its line to the light, over the stretch of it that lies nearest the light: the
+// more of that stretch is bright, the more light reaches the point. Whatever stands close before the light (a mast, a
+// rocket, the edge of the Earth) so throws a shaft of shadow away from it, and the light wraps round its edges.
+const RAYS = `#define SHADER_NAME HIFI_RAYS
+${VARY} uniform vec4 uSun; uniform float uTime;
 void main () {
-  vec2 uv = outTexCoord;
+  vec2 ar = vec2(1.7778, 1.0), d = outTexCoord - uSun.xy; float far = length(d * ar);
+  vec2 stp = d * min(1.0, uSun.z / max(far, 0.0001)) / 32.0;
+  vec2 p = uSun.xy + stp * fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233)) + uTime) * 43758.5453);   // a different start for every point: the steps never show as bands
+  vec3 acc = vec3(0.0);
+  for (int i = 0; i < 32; i++) { acc += texture2D(uMainSampler, p).rgb; p += stp; }
+  acc /= 32.0;
+  gl_FragColor = vec4(acc * acc * uSun.z / (far + uSun.z) * smoothstep(uSun.w, 0.0, far), 1.0);
+}`;
+// The streak of an anamorphic lens: what is bright, drawn out a long way sideways and hardly at all up and down. Two
+// passes at quarter size, the second with a longer stride, reach a third of the frame for the price of fifty small taps.
+const STREAK = `#define SHADER_NAME HIFI_STREAK
+${VARY} uniform vec2 uPx;
+void main () {
+  vec3 c = vec3(0.0); float tw = 0.0;
+  for (int i = -12; i <= 12; i++) { float f = float(i), w = exp(-abs(f) / 4.5); c += texture2D(uMainSampler, outTexCoord + vec2(f * uPx.x, 0.0)).rgb * w; tw += w; }
+  gl_FragColor = vec4(c / tw * uPx.y, 1.0);
+}`;
+const FINAL = `#define SHADER_NAME HIFI_FINAL
+${VARY} uniform sampler2D uBloom; uniform sampler2D uRays; uniform sampler2D uStreaks; uniform float uTime; uniform float uBloomAmt; uniform float uExposure; uniform float uContrast; uniform float uSaturation;
+uniform vec3 uShadows; uniform vec3 uHighs; uniform float uVignette; uniform float uGrain; uniform float uFringe; uniform vec4 uHeat;
+uniform vec3 uRayCol; uniform float uStreak; uniform vec3 uShake; uniform vec4 uShock0; uniform vec4 uShock1; uniform vec4 uShock2;
+vec2 wave (vec2 uv, vec4 s) {                                             // a pressure wave: a ring that pushes the picture outward as it passes
+  vec2 d = (uv - s.xy) * vec2(1.7778, 1.0); float r = length(d) - s.z;
+  return s.w * r * exp(-r * r * 700.0) * d / (length(d) + 0.0001) * vec2(0.5625, 1.0);
+}
+void main () {
+  vec2 uv = (outTexCoord - 0.5) * (1.0 - uShake.z) + 0.5 + uShake.xy;      // the camera shakes here, after the HUD has gone its own way: the instruments hold still
+  uv -= wave(uv, uShock0) + wave(uv, uShock1) + wave(uv, uShock2);
   float hk = uHeat.w * smoothstep(uHeat.z, 0.0, length((uv - uHeat.xy) * vec2(1.7778, 1.0)));   // hot air over a flame bends what is behind it
   uv += hk * vec2(sin(uv.y * 110.0 - uTime * 31.0) + sin(uv.y * 47.0 + uTime * 19.0), cos(uv.x * 83.0 - uTime * 23.0)) * 0.0022;
   vec2 d = uv - 0.5; float r2 = dot(d, d);
   vec2 f = d * r2 * uFringe;                                              // a little colour fringing toward the corners, like a real lens
   vec3 col = vec3(texture2D(uMainSampler, uv + f).r, texture2D(uMainSampler, uv).g, texture2D(uMainSampler, uv - f).b);
-  col += texture2D(uBloom, uv).rgb * uBloomAmt;
+  vec3 glow = texture2D(uBloom, uv).rgb;
+  col += glow * uBloomAmt;
+  col += texture2D(uRays, uv).rgb * uRayCol;
+  col += max(texture2D(uStreaks, uv).rgb - glow * 0.9, 0.0) * uStreak * vec3(0.55, 0.78, 1.0);   // the streak belongs to small bright things, not to a bright sky; it runs cool, as it does through real glass
   col *= uExposure;
   float l = dot(col, vec3(0.299, 0.587, 0.114));
   col *= mix(uShadows, vec3(1.0), smoothstep(0.0, 0.45, l));               // split toning: shadows one way,
@@ -170,19 +207,28 @@ void main () {
 }`;
 class HiFiPost extends Phaser.Renderer.WebGL.Pipelines.PostFXPipeline {
   grade?: Grade; time = 0; heat = [0.5, 0.5, 0.1, 0];
-  constructor(game: Phaser.Game) { super({ game, name: 'HiFiPost', shaders: [{ name: 'bright', fragShader: BRIGHT }, { name: 'blur', fragShader: BLUR }, { name: 'final', fragShader: FINAL }] } as any); }
+  /** Shafts of light: where the light is on screen, how big it is and how far from it shafts are seen (both in screen heights), then their colour (black is off). */
+  sun = [0.5, 0.5, 0.12, 1.2, 0, 0, 0];
+  shake = [0, 0, 0]; flash = 0; /** The lens streak for now, where the look moves it; the grade's own otherwise. */ streak?: number; shocks = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]];
+  constructor(game: Phaser.Game) { super({ game, name: 'HiFiPost', renderTarget: [{ scale: 1 }, { scale: 0.5 }, { scale: 0.25 }, { scale: 0.25 }], shaders: [{ name: 'bright', fragShader: BRIGHT }, { name: 'blur', fragShader: BLUR }, { name: 'final', fragShader: FINAL }, { name: 'rays', fragShader: RAYS }, { name: 'streak', fragShader: STREAK }] } as any); }
   onDraw(src: Phaser.Renderer.WebGL.RenderTarget) {
-    const g = this.grade, [bright, blur, fin] = this.shaders, a = this.halfFrame1, b = this.halfFrame2;
+    const g = this.grade, [bright, blur, fin, rays, streak] = this.shaders, a = this.halfFrame1, b = this.halfFrame2, [, c, q1, q2] = this.renderTargets, sun = this.sun, sk = this.streak ?? g?.streak ?? 0;
     if (!g) { this.bindAndDraw(src); return; }
+    this.time = (this.time + 1 / 60) % 100;
     this.set1f('uThreshold', g.threshold, bright); this.bindAndDraw(src, a, true, true, bright);
+    const lit = sun[4] + sun[5] + sun[6] > 0;                              // the shafts are cut from what is bright before it is blurred, so a mast or a rocket throws a clean one
+    if (lit) { this.set4f('uSun', sun[0], sun[1], sun[2], sun[3], rays); this.set1f('uTime', this.time, rays); this.bindAndDraw(a, c, true, true, rays); }
+    if (sk) { this.set2f('uPx', 1.5 / q1.width, 1, streak); this.bindAndDraw(a, q1, true, true, streak); this.set2f('uPx', 5 / q1.width, 7, streak); this.bindAndDraw(q1, q2, true, true, streak); }
     for (const k of [1, 2.2, 4]) { // three widening blurs at half size: a broad, soft glow for the price of a few small passes
       this.set2f('uDir', k / a.width, 0, blur); this.bindAndDraw(a, b, true, true, blur);
       this.set2f('uDir', 0, k / a.height, blur); this.bindAndDraw(b, a, true, true, blur);
     }
-    this.time = (this.time + 1 / 60) % 100;
-    this.set1i('uBloom', 1, fin); this.set1f('uTime', this.time, fin); this.set1f('uBloomAmt', g.bloom, fin); this.set1f('uExposure', g.exposure, fin); this.set1f('uContrast', g.contrast, fin); this.set1f('uSaturation', g.saturation, fin);
+    this.set1i('uBloom', 1, fin); this.set1i('uRays', 2, fin); this.set1i('uStreaks', 3, fin);
+    this.set1f('uTime', this.time, fin); this.set1f('uBloomAmt', g.bloom, fin); this.set1f('uExposure', g.exposure * (1 + this.flash), fin); this.set1f('uContrast', g.contrast, fin); this.set1f('uSaturation', g.saturation, fin);
     this.set3f('uShadows', ...g.shadows, fin); this.set3f('uHighs', ...g.highs, fin); this.set1f('uVignette', g.vignette, fin); this.set1f('uGrain', g.grain, fin); this.set1f('uFringe', g.fringe, fin); this.set4f('uHeat', this.heat[0], this.heat[1], this.heat[2], this.heat[3], fin);
-    this.bindTexture(a.texture, 1);
+    this.set3f('uRayCol', lit ? sun[4] : 0, lit ? sun[5] : 0, lit ? sun[6] : 0, fin); this.set1f('uStreak', sk, fin); this.set3f('uShake', this.shake[0], this.shake[1], this.shake[2], fin);
+    this.shocks.forEach((s, i) => this.set4f('uShock' + i, s[0], s[1], s[2], s[3], fin));
+    this.bindTexture(a.texture, 1); this.bindTexture(c.texture, 2); this.bindTexture(q2.texture, 3);
     this.bindAndDraw(src, undefined, true, true, fin);
   }
 }
@@ -199,10 +245,12 @@ export class HiFi {
   private own = new WeakSet<object>(); private ui?: Phaser.Cameras.Scene2D.Camera; private actors: Actor[] = []; private glows: { o: Sprite; g: Sprite }[] = [];
   private lamps: { l: Phaser.GameObjects.Light; def: LightDef; f: number; k: number }[] = []; private heroLamp?: Phaser.GameObjects.Light; private hero?: Sprite; private dust?: Phaser.GameObjects.Particles.ParticleEmitter;
   private flaring: { g: Sprite; l?: Phaser.GameObjects.Light; d: FlareDef; ph: number }[] = []; private still: boolean; private sorted = false; private lateHud = false; private post?: HiFiPost;
+  private sunAt?: number[]; private lens?: number; private trauma = 0; private glare = 0; private waves: { x: number; y: number; power: number; age: number }[] = []; private drawn: Sprite[] = [];
   constructor(readonly scene: Phaser.Scene, readonly look: Look, readonly world: World) {
     this.gl = scene.game.renderer.type === Phaser.WEBGL; this.tiles = look.tiles || ''; this.still = world.LW <= W;
     if (!scene.textures.exists('hf_shadow')) {
       texAt(scene, 'hf_shadow', 24, 6, 2, (c) => { const g = c.createRadialGradient(12, 3, 0, 12, 3, 12); g.addColorStop(0, 'rgba(2,3,10,.75)'); g.addColorStop(0.6, 'rgba(2,3,10,.28)'); g.addColorStop(1, 'rgba(2,3,10,0)'); c.save(); c.translate(0, 2.25); c.scale(1, 0.25); c.fillStyle = g; c.fillRect(0, -9, 24, 24); c.restore(); });
+      texAt(scene, 'hf_px', 1, 1, 4, (c) => { c.fillStyle = '#fff'; c.fillRect(0, 0, 1, 1); });
       texAt(scene, 'hf_pit', 4, 36, 2, (c) => { const g = c.createLinearGradient(0, 0, 0, 36); g.addColorStop(0, 'rgba(6,7,16,.0)'); g.addColorStop(0.25, 'rgba(5,6,14,.85)'); g.addColorStop(1, '#030409'); c.fillStyle = g; c.fillRect(0, 0, 4, 36); });
     }
     if (!BUILT.has(look)) { BUILT.add(look); look.build(scene); }
@@ -243,10 +291,29 @@ export class HiFi {
   power(i: number, k: number) { if (this.lamps[i]) this.lamps[i].k = k; }
   /** Hot air: bends the picture round a point in the world, `r` units wide; `amt` 0 switches it off. */
   heat(x: number, y: number, r: number, amt: number) { const v = this.scene.cameras.main.worldView; if (this.post) this.post.heat = [(x - v.x) / v.width, 1 - (y - v.y) / v.height, r / v.height, amt]; }
+  /**
+   * Shafts of light from a point in the world (the sun, a floodlight, a plume in the dark), in `tint` at strength `amt`.
+   * Whatever stands between the light and the eye cuts into them. `size` is how big the light itself is, in units: only
+   * what is bright within it counts as the light. `reach` is how far from it shafts show, in screen heights. `amt` 0 switches them off.
+   */
+  rays(x: number, y: number, amt: number, tint = 0xffffff, size = 22, reach = 1.2) { this.sunAt = amt > 0 ? [x, y, reach, ((tint >> 16) & 255) / 255 * amt, ((tint >> 8) & 255) / 255 * amt, (tint & 255) / 255 * amt, size] : undefined; }
+  /** A pressure wave from a point in the world: a ring that bends the picture as it travels out. Three at a time. */
+  shock(x: number, y: number, power = 1) { this.waves.push({ x, y, power, age: 0 }); if (this.waves.length > 3) this.waves.shift(); }
+  /** Shakes the picture, never the HUD and never the scene's camera: 0 to 1, and it dies away by itself. Call it each step for a rumble that lasts. */
+  shake(k: number) { this.trauma = Math.max(this.trauma, Math.min(1, k)); }
+  /** The lens streak, where a look moves it as the scene darkens or brightens (`Grade.streak` is where it starts). */
+  streak(k: number) { this.lens = k; }
+  /** A sudden light that catches the exposure out (1 doubles it); it settles within the second. */
+  flash(k: number) { this.glare = Math.max(this.glare, k); }
+  /**
+   * A sprite drawn by a shader of its own (hifiFx.ts), `w` by `h` units: place, turn, tint and fade it like any image, and
+   * hand it its numbers with `fxSet()`. Without WebGL there is none, and the look keeps its plain stand-in.
+   */
+  fx(kind: FxKind, x: number, y: number, w: number, h: number) { if (!this.gl) return undefined; const o = fxSprite(this.scene, kind, x, y, w, h); this.drawn.push(o); return o; }
   private stop() {
     this.scene.events.off('addedtoscene', this.claim, this); this.scene.events.off('postupdate', this.step, this);
     if (this.gl && this.look.ambient !== undefined) this.scene.lights.disable();
-    this.actors = []; this.glows = []; this.lamps = []; this.flaring = []; this.post = undefined;
+    this.actors = []; this.glows = []; this.lamps = []; this.flaring = []; this.waves = []; this.drawn = []; this.post = undefined;
   }
   /** Scroll factor of a layer `w` units wide: just fast enough to show all of itself over the level. */
   f(w: number) { return this.still ? 1 : (w - W) / (this.world.LW - W); }
@@ -306,7 +373,7 @@ export class HiFi {
       // everything pinned to the screen is HUD: it leaves the play camera for the HUD camera
       if (this.ui) for (const c of s.children.list as any[]) if (c.scrollFactorX === 0 && !this.own.has(c)) c.cameraFilter = cam.id;
       this.hud(...(o.hud || []));
-      cam.setPostPipeline('HiFiPost'); this.post = cam.getPostPipeline('HiFiPost') as HiFiPost; this.post.grade = look.grade; this.post.heat = [0.5, 0.5, 0.1, 0];
+      cam.setPostPipeline('HiFiPost'); this.post = cam.getPostPipeline('HiFiPost') as HiFiPost; this.post.grade = look.grade; this.post.heat = [0.5, 0.5, 0.1, 0]; this.post.sun = [0.5, 0.5, 0.12, 1.2, 0, 0, 0]; this.post.shake = [0, 0, 0]; this.post.flash = 0; this.post.streak = undefined; this.post.shocks = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]];
     }
     look.live?.(this);
     this.sorted = true; this.lateHud = !!o.lateHud; // the look's own things are world; what the scene adds later is as it said
@@ -354,6 +421,14 @@ export class HiFi {
       return true;
     });
     this.look.step?.(this, dt);
+    this.drawn = this.drawn.filter((o) => { if (!o.active) return false; (o.pipelineData as any).t = this.t; return true; });
+    const p = this.post; if (!p) return;
+    const v = s.cameras.main.worldView, sx = (x: number) => (x - v.x) / v.width, sy = (y: number) => 1 - (y - v.y) / v.height, q = this.trauma * this.trauma, t = this.t;
+    p.sun = this.sunAt ? [sx(this.sunAt[0]), sy(this.sunAt[1]), this.sunAt[6] / v.height, this.sunAt[2], this.sunAt[3], this.sunAt[4], this.sunAt[5]] : [0.5, 0.5, 0.12, 1.2, 0, 0, 0];
+    p.shake = [q * 0.0045 * (Math.sin(t * 67) + Math.sin(t * 41.3 + 1)), q * 0.006 * (Math.sin(t * 59 + 2) + Math.sin(t * 33.7)), q * 0.026]; // zoomed in a little while it shakes, so no edge shows
+    this.trauma = Math.max(0, this.trauma - dt * 1.6); this.glare *= Math.exp(-dt * 6); p.flash = this.glare; p.streak = this.lens;
+    this.waves = this.waves.filter((w) => (w.age += dt) < 1.5);
+    p.shocks = [0, 1, 2].map((i) => { const w = this.waves[i]; return w ? [sx(w.x), sy(w.y), 0.02 + w.age * 0.95, w.power * (1 - w.age / 1.5) ** 2] : [0, 0, 0, 0]; });
   }
 }
 
