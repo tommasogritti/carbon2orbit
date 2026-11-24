@@ -14,6 +14,9 @@ const LEVEL = 0.85;
 function ac(): AudioContext {
   if (ctx) return ctx;
   ctx = new AudioContext();
+  // iOS treats Web Audio as "ambient" sound, which the ring/silent switch on the side of the phone mutes. A game's
+  // music is "playback": it plays whatever the switch says, and the 🔊 button is how a player silences it. (Safari 16.4+.)
+  try { const s = (navigator as { audioSession?: { type: string } }).audioSession; if (s) s.type = 'playback'; } catch { /* older browsers: the switch decides */ }
   wire(ctx, isMuted ? 0 : LEVEL);
   return ctx;
 }
@@ -27,8 +30,14 @@ function wire(c: BaseAudioContext, level: number) {
   noiseBuf = c.createBuffer(1, c.sampleRate * 2, c.sampleRate);
   const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
 }
-/** Browsers only start audio after a user gesture; call this from the first key press or tap. */
-export function unlock() { const c = ac(); if (c.state === 'suspended') void c.resume(); }
+/**
+ * Browsers only start audio after a user gesture; call this from every key press, click and tap (it is cheap once the
+ * sound is running). Not only "suspended": iOS puts the context in "interrupted" after a phone call or a trip to
+ * another app, and it stays silent until the next gesture resumes it.
+ */
+export function unlock() { const c = ac(); if (c.state !== 'running') c.resume().catch(() => { /* not a gesture the browser accepts; the next one will be */ }); }
+/** Back from another tab or app: start the sound again where the browser allows it without a tap. */
+if (typeof document !== 'undefined') document.addEventListener('visibilitychange', () => { if (ctx && !document.hidden && ctx.state !== 'running') ctx.resume().catch(() => { /* the next tap resumes it */ }); });
 export const muted = () => isMuted;
 export function setMuted(m: boolean) {
   isMuted = m; const c = ac(); master.gain.setTargetAtTime(m ? 0 : LEVEL, c.currentTime, 0.03);
