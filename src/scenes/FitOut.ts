@@ -4,6 +4,9 @@ import { snd, music, stopLoops, loop, Loop } from '../audio';
 import { P, tex, lg, rg, rr, el, poly, line, text, rng, OUT } from '../art';
 import type { C2 } from '../art';
 import type { LevelDef } from '../content';
+import { parts } from '../art';
+import { hifi, HiFi } from '../hifi';
+import { LOOKS } from '../hifiLooks';
 
 const AUTO = new URLSearchParams(location.search).has('auto');
 // ---- act one: the yard, seen side-on
@@ -29,19 +32,24 @@ const LEG = (c: C2) => { rr(c, 1.9, 0, 1.2, 6, 0.2, '#8b93a7', OUT, 0.2); el(c, 
 interface Theme {
   music: string; role: string; heads: [lift: string, trial: string];
   /** The yard from the side (act one) and the basin from above (act two), each 320 x 180. */
-  yard: (c: C2) => void; basin: (c: C2) => void;
+  yard: (c: C2, part?: number) => void; basin: (c: C2, part?: number) => void;
+  /** Hi-fi looks (hifiLooks.ts), one per act. */ hifi: { lift?: string; trial?: string };
   hull: [top: string, bottom: string, boot: string];
   liftTitle: string; liftText: (knocks: number, secs: number) => string;
   trialTitle: string; trialText: (secs: number, scrapes: number) => string;
   eggSay: string;
 }
-/** South Louisiana: a fabrication shed, a gantry, bald cypress hung with Spanish moss on the far bank, and brown water. */
-function ameliaYard(c: C2) {
+/**
+ * South Louisiana: a fabrication shed, a gantry, bald cypress hung with Spanish moss on the far bank, and brown water.
+ * In parts, for the hi-fi look (looks/yard.ts): 1 the sky, 2 the far bank, 4 the water, 8 the shed and the quay, 16 the gantry and its pier.
+ */
+export function ameliaYard(real: C2, part = 31) {
+  const pick = parts(real, part); let c = pick(1);
   c.fillStyle = lg(c, 0, 0, 0, 136, [0, '#7fb6dc'], [0.6, '#cfe0d8'], [1, '#f1dfb4']); c.fillRect(0, 0, 320, 136);
   c.fillStyle = rg(c, 250, 58, 4, 70, [0, 'rgba(255,246,214,.95)'], [0.2, 'rgba(255,240,200,.45)'], [1, 'rgba(255,240,200,0)']); c.fillRect(170, 0, 150, 130);
   const r = rng(41);
   // the far bank: marsh grass, then cypress with moss
-  rr(c, 100, 112, 220, 26, 0, lg(c, 0, 112, 0, 138, [0, '#7d9163'], [1, '#55693f']));
+  c = pick(2); rr(c, 100, 112, 220, 26, 0, lg(c, 0, 112, 0, 138, [0, '#7d9163'], [1, '#55693f']));
   for (let x = 104; x < 324; x += 7 + r() * 9) { // bald cypress: a flared foot, a straight trunk, a flat feathery crown, moss hanging from it
     const h = 20 + r() * 16, w = 6 + r() * 5, y = 115 - r() * 2, g1 = r() > 0.5 ? '#4f7a55' : '#5b8659', g2 = '#3e6648';
     poly(c, [x - 1.8, y, x - 0.6, y - 4, x - 0.5, y - h * 0.7, x + 0.5, y - h * 0.7, x + 0.6, y - 4, x + 1.8, y], '#5a4732');
@@ -50,11 +58,11 @@ function ameliaYard(c: C2) {
   }
   for (let x = 100; x < 320; x += 1.6) line(c, x, 116 + r() * 2, x + (r() - 0.5), 112.6 + r() * 2, r() > 0.5 ? '#9aa86a' : '#7c8f58', 0.35);
   // the water: brown-green, slow
-  c.fillStyle = lg(c, 0, WY, 0, 180, [0, '#77805a'], [0.35, '#4f5d41'], [1, '#29332a']); c.fillRect(QX - 2, WY, 204, 180 - WY);
+  c = pick(4); c.fillStyle = lg(c, 0, WY, 0, 180, [0, '#77805a'], [0.35, '#4f5d41'], [1, '#29332a']); c.fillRect(QX - 2, WY, 204, 180 - WY);
   rr(c, QX - 2, 117, 204, 20, 0, lg(c, 0, 117, 0, 137, [0, 'rgba(119,128,90,0)'], [1, 'rgba(119,128,90,1)']));
   for (let i = 0; i < 80; i++) { const x = QX + r() * 200, y = WY + 1 + r() * 42, l = 3 + r() * 9; line(c, x, y, x + l, y, `rgba(220,226,190,${0.08 + r() * 0.16})`, 0.35); }
   // the shed and the laydown area
-  rr(c, -2, 62, 78, 66, 0, lg(c, 0, 62, 0, 128, [0, '#b9c6cf'], [1, '#8d9aa5']), OUT, 0.3); poly(c, [-2, 62, 37, 50, 76, 62], '#9aa7b2', OUT, 0.3);
+  c = pick(8); rr(c, -2, 62, 78, 66, 0, lg(c, 0, 62, 0, 128, [0, '#b9c6cf'], [1, '#8d9aa5']), OUT, 0.3); poly(c, [-2, 62, 37, 50, 76, 62], '#9aa7b2', OUT, 0.3);
   for (let x = 1; x < 76; x += 2.4) line(c, x, 63, x, 127, 'rgba(60,72,84,.2)', 0.3);
   rr(c, 18, 84, 40, 44, 0.6, lg(c, 18, 0, 58, 0, [0, '#1d232e'], [0.5, '#2c3442'], [1, '#161b24']), OUT, 0.3); for (let y = 88; y < 127; y += 4) line(c, 18.4, y, 57.6, y, 'rgba(255,255,255,.05)', 0.3);
   rr(c, 21, 70, 34, 8, 0.8, '#f4f2ea', OUT, 0.25); text(c, 'AMELIA YARD', 38, 74.2, 4.2, '#1b3a6b', 700);
@@ -67,23 +75,24 @@ function ameliaYard(c: C2) {
   for (const y of [QY + 4, QY + 12]) { el(c, QX + 0.4, y, 1.8, 2.6, '#15171f', OUT, 0.3); el(c, QX + 0.4, y, 0.8, 1.4, '#3a3f4f'); }
   for (const x of [QX - 8, QX - 30]) { rr(c, x - 1.4, QY - 2.2, 2.8, 2.4, 0.5, '#2a2e3c', OUT, 0.25); rr(c, x - 2, QY - 2.8, 4, 0.9, 0.4, '#3a4057', OUT, 0.2); }
   // the gantry: a truss on two legs, one on the quay and one on a concrete pier in the water
-  rr(c, 302, 126, 16, 12, 0.6, lg(c, 0, 126, 0, 138, [0, '#b5b2a6'], [1, '#77756c']), OUT, 0.3);
+  c = pick(16); rr(c, 302, 126, 16, 12, 0.6, lg(c, 0, 126, 0, 138, [0, '#b5b2a6'], [1, '#77756c']), OUT, 0.3);
   for (const [x, d] of [[6, 1], [314, -1]] as [number, number][]) { poly(c, [x - 1.4, GY + 5, x + 1.4, GY + 5, x + 1.4 - d * 3.4, 127, x - 1.4 - d * 3.4, 127], '#e2b93a', OUT, 0.3); poly(c, [x - 1, GY + 5, x + 1, GY + 5, x + 5 * d, 127, x + 3 * d, 127], '#f2d14a', OUT, 0.3); line(c, x - d * 2.6, 96, x + d * 3.4, 96, '#b99422', 0.7); line(c, x - d * 1.4, 62, x + d * 1.8, 62, '#b99422', 0.7); }
   rr(c, 2, GY - 6, 316, 1.6, 0.3, '#f2d14a', OUT, 0.25); rr(c, 2, GY + 2, 316, 2.2, 0.3, '#f2d14a', OUT, 0.25);
   for (let x = 2; x < 316; x += 7) { line(c, x, GY + 2, x + 3.5, GY - 4.6, '#d9b530', 0.5); line(c, x + 3.5, GY - 4.6, x + 7, GY + 2, '#d9b530', 0.5); }
   // a brown pelican on the pier: Louisiana is the Pelican State
   c.save(); c.translate(303, 119); el(c, 0, 2.6, 3.2, 2.4, '#6f5f4c', OUT, 0.25); el(c, 1.8, -0.6, 1.3, 1.5, '#f1ead2', OUT, 0.25); poly(c, [2.6, -0.8, 7, 0.9, 2.6, 1], '#c9a15a', OUT, 0.2); line(c, 0.4, 0.8, 1.6, 0.6, '#f1ead2', 1); el(c, 2.2, -1, 0.25, 0.25, '#15171f'); line(c, -0.4, 4.8, -0.4, 6.8, '#3a3f4f', 0.4); line(c, 1, 4.8, 1, 6.8, '#3a3f4f', 0.4); c.restore();
 }
-function ameliaBasin(c: C2) {
-  const r = rng(53);
+/** The same yard from above. In parts, for the hi-fi look (looks/basin.ts): 1 the water, 2 the far bank, 4 the quay and what stands on it, and the gantry's feet. */
+export function ameliaBasin(real: C2, part = 7) {
+  const pick = parts(real, part), r = rng(53); let c = pick(1);
   c.fillStyle = lg(c, 0, 20, 0, 180, [0, '#6f7b56'], [1, '#48573f']); c.fillRect(0, 0, 320, 180);
   for (let i = 0; i < 260; i++) { const x = QEDGE + r() * 280, y = BANK + r() * 144, l = 2 + r() * 7; c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + l / 2, y - 0.8, x + l, y); c.strokeStyle = `rgba(214,222,184,${0.06 + r() * 0.13})`; c.lineWidth = 0.35; c.stroke(); }
   // the far bank along the top: marsh, and the crowns of the cypress
-  c.fillStyle = lg(c, 0, 0, 0, BANK, [0, '#55693f'], [1, '#7d9163']); c.fillRect(0, 0, 320, BANK - 2);
+  c = pick(2); c.fillStyle = lg(c, 0, 0, 0, BANK, [0, '#55693f'], [1, '#7d9163']); c.fillRect(0, 0, 320, BANK - 2);
   for (let x = QEDGE; x < 320; x += 1.5) line(c, x, BANK - 2.6 + r() * 2, x + (r() - 0.5), BANK - 0.4 + r() * 1.6, r() > 0.5 ? '#9aa86a' : '#7c8f58', 0.4);
   for (let x = QEDGE + 4; x < 324; x += 6 + r() * 7) el(c, x, 22 + r() * 6, 4 + r() * 4, 3.4 + r() * 3, r() > 0.5 ? '#3f6a48' : '#4f7a55', 'rgba(20,40,26,.5)', 0.25);
   // the quay down the left: concrete, the shed's roof, bollards, tyres, and the marks where the loads stood
-  c.fillStyle = lg(c, 0, 0, QEDGE, 0, [0, '#8f8d83'], [1, '#bdbaae']); c.fillRect(0, 0, QEDGE, 180); rr(c, QEDGE - 1.4, 0, 1.8, 180, 0, '#5b4226');
+  c = pick(4); c.fillStyle = lg(c, 0, 0, QEDGE, 0, [0, '#8f8d83'], [1, '#bdbaae']); c.fillRect(0, 0, QEDGE, 180); rr(c, QEDGE - 1.4, 0, 1.8, 180, 0, '#5b4226');
   for (let y = 30; y < 180; y += 24) line(c, 0, y, QEDGE - 1.4, y, 'rgba(0,0,0,.08)', 0.3);
   rr(c, -2, 88, 26, 70, 0.6, lg(c, -2, 0, 24, 0, [0, '#93a0ab'], [0.5, '#c8d3da'], [1, '#aebbc5']), OUT, 0.3); line(c, 11, 88, 11, 158, 'rgba(40,50,60,.5)', 0.4); for (let y = 91; y < 158; y += 3) line(c, -1.4, y, 23.4, y, 'rgba(60,72,84,.16)', 0.3);
   for (let y = 60; y < 180; y += 40) { el(c, QEDGE - 5, y, 1.6, 1.6, '#2a2e3c', OUT, 0.25); el(c, QEDGE - 5, y, 0.7, 0.7, '#5b6275'); }
@@ -96,7 +105,7 @@ function ameliaBasin(c: C2) {
 const THEMES: Record<string, Theme> = {
   amelia: {
     music: 'factory', role: 'At the yard · on the crane', heads: ['BOLLINGER SHIPYARDS · AMELIA, LA · FIT-OUT', 'BOLLINGER SHIPYARDS · AMELIA, LA · THRUSTER TRIAL'],
-    yard: ameliaYard, basin: ameliaBasin, hull: ['#3a3f4c', '#15171f', '#8a3a2a'],
+    yard: ameliaYard, basin: ameliaBasin, hifi: { lift: 'yard', trial: 'basin' }, hull: ['#3a3f4c', '#15171f', '#8a3a2a'],
     liftTitle: 'Fitted out', liftText: (k, s) => `Everything on the list is aboard, in ${Math.floor(s / 60)} min ${String(Math.round(s % 60)).padStart(2, '0')} s on the crane${k ? `, with ${k} knock${k > 1 ? 's' : ''} along the way` : ' and without a single knock'}. The barge that came in as Oceanus has its new name on the side.`,
     trialTitle: 'She holds station', trialText: (s, n) => `Every box held, in ${Math.floor(s / 60)} min ${String(Math.round(s % 60)).padStart(2, '0')} s${n ? `, after ${n} brush${n > 1 ? 'es' : ''} with the quay` : ' and never a touch on the quay'}. A platform that can hold station is one a rocket can aim for.`,
     eggSay: 'The old name comes off: OCEANUS',
@@ -132,7 +141,7 @@ function deckPlan(c: C2, th: Theme, list: ReturnType<typeof itemsOf>, cabin?: nu
  */
 export class FitOutScene extends Phaser.Scene {
   def!: LevelDef; p: any; th!: Theme; act: 'lift' | 'trial' = 'lift'; ended = false; t = 0; knocks = 0; cool = 0; egg = false; started = false;
-  g!: Phaser.GameObjects.Graphics; hud!: Phaser.GameObjects.Graphics; call!: Phaser.GameObjects.Text; stat!: Phaser.GameObjects.Text; hum!: Loop; water?: Loop;
+  hf?: HiFi; world: Phaser.GameObjects.GameObject[] = []; g!: Phaser.GameObjects.Graphics; hud!: Phaser.GameObjects.Graphics; call!: Phaser.GameObjects.Text; stat!: Phaser.GameObjects.Text; hum!: Loop; water?: Loop;
   // act one
   items: Item[] = []; tx = 60; vx = 0; L = LSAFE; ph = 0; om = 0; hx = 60; hy = 60; lvx = 0; carry?: Item; trimA = 0; deckY = DECK; hull!: Phaser.GameObjects.Container; nameT!: Phaser.GameObjects.Text; trolley!: Phaser.GameObjects.Image; hook!: Phaser.GameObjects.Image; warn = 0;
   bot = { i: -1 }; labels: Phaser.GameObjects.Text[] = [];
@@ -152,6 +161,7 @@ export class FitOutScene extends Phaser.Scene {
   }
   create() {
     cam(this); stopLoops(); music.play(this.th.music); this.hum = loop('whine'); this.hum.set(0);
+    const hf = (this.hf = hifi(this, LOOKS[this.th.hifi[this.act] || ''])); this.world = []; // the yard, the hull and the loads take the look; the bars, the gauges and every word stay on the HUD camera
     for (const [k, d] of Object.entries(KINDS)) if (!this.textures.exists('fo_' + k)) tex(this, 'fo_' + k, d.w, d.h, d.draw);
     if (!this.textures.exists('fo_leg')) tex(this, 'fo_leg', 5, 10, LEG);
     if (!this.textures.exists('fo_cabin')) tex(this, 'fo_cabin', 10, 8, CABIN);
@@ -163,35 +173,45 @@ export class FitOutScene extends Phaser.Scene {
     this.call = T(this, W / 2, this.act === 'lift' ? 150 : 158, '', '#ffe98a', 5.4, '700').setOrigin(0.5, 0).setAlign('center').setWordWrapWidth(300).setShadow(0, 1, '#000000', 4).setDepth(21);
     if (this.act === 'lift') this.createLift(); else this.createTrial();
     who(this, { ...this.def, role: this.def.role || this.th.role }, this.act === 'lift' ? 4 : 66, 22);
+    if (hf) { this.tell(); hf.ready({ hud: this.children.list.filter((o) => !this.world.includes(o)) }); }
   }
+  /** What the look animates from, each step. */
+  tell() {
+    if (!this.hf) return;
+    if (this.act === 'lift') this.hf.set({ x: this.hx, y: this.hy, tx: this.tx, v: this.vx, carry: this.carry ? 1 : 0, got: this.items.filter((i) => i.state === 2).length, knocks: this.knocks, deck: this.deckY, done: this.ended ? 1 : 0 });
+    else { const s = this.steps[Math.min(this.si, this.steps.length - 1)], wd = this.wind(); this.hf.set({ x: this.x, y: this.y, hd: this.hd, f0: this.f[0], f1: this.f[1], f2: this.f[2], wx: wd.x, wy: wd.y, si: this.si, knocks: this.knocks, bx: s.at[0], by: s.at[1], bl: BL, bw: BW }); }
+  }
+  /** A jolt: in hi-fi the picture shakes and the words hold still. */
+  jolt(ms: number, k: number) { if (this.hf?.gl) this.hf.shake(k * 100); else this.cameras.main.shake(ms, k); }
   say(s: string) { this.call.setText(s); }
-  knock(msg: string) { if (this.cool > 0) return; this.cool = 0.9; this.knocks++; snd.clank(); this.cameras.main.shake(140, 0.004); this.say(msg); }
+  knock(msg: string) { if (this.cool > 0) return; this.cool = 0.9; this.knocks++; snd.clank(); this.jolt(140, 0.004); this.say(msg); }
 
   // ------------------------------------------------------------------ act one: the crane
   createLift() {
-    const key = 'fo_yard_' + this.p.theme, p = this.p, th = this.th;
-    if (!this.textures.exists(key)) tex(this, key, W, H, th.yard);
-    img(this, 0, 0, key).setOrigin(0);
+    const key = 'fo_yard_' + this.p.theme, p = this.p, th = this.th, hf = this.hf, wd = this.world;
+    if (!this.textures.exists(key)) tex(this, key, W, H, (c) => th.yard(c));
+    if (hf) { const n = this.children.length; hf.backdrop(); wd.push(...this.children.list.slice(n)); } else img(this, 0, 0, key).setOrigin(0); // the look's layers are the world too
     // the hull: raked ends, a boot-topping stripe, bitts; it sinks and trims as the weight goes on
     const hk = 'fo_hull_' + p.theme;
     if (!this.textures.exists(hk)) tex(this, hk, HL + 2, DEPTH + 3, (c) => { poly(c, [1, 1.4, HL + 1, 1.4, HL - 7, DEPTH + 1, 9, DEPTH + 1], lg(c, 0, 1, 0, DEPTH + 1, [0, th.hull[0]], [1, th.hull[1]]), OUT, 0.4); poly(c, [5.4, DEPTH - 3.4, HL - 3.4, DEPTH - 3.4, HL - 7, DEPTH + 1, 9, DEPTH + 1], th.hull[2]); rr(c, 0.4, 0.4, HL + 1.2, 1.8, 0.4, '#8d949e', OUT, 0.3); for (let x = 14; x < HL; x += 22) line(c, x, 2.6, x, DEPTH - 3.6, 'rgba(255,255,255,.06)', 0.3); for (const x of [8, HL - 6]) for (let k = 0; k < 4; k++) line(c, x, 4 + k * 1.8, x + 1.4, 4 + k * 1.8, 'rgba(244,246,250,.7)', 0.3); });
-    this.hull = this.add.container(BX, DECK).setDepth(2);
-    this.hull.add(img(this, 0, -0.4, hk).setOrigin(0.5, 0));
-    if (p.hull.cabin !== undefined) this.hull.add(img(this, (p.hull.cabin * HL) / 2, 0, 'fo_cabin').setOrigin(0.5, 1));
+    this.hull = this.add.container(BX, DECK).setDepth(2); const shell = img(this, 0, -0.4, hk).setOrigin(0.5, 0); hf?.shade(shell, 3, 2);
+    this.hull.add(shell);
+    if (p.hull.cabin !== undefined) { const cab = img(this, (p.hull.cabin * HL) / 2, 0, 'fo_cabin').setOrigin(0.5, 1); hf?.shade(cab); this.hull.add(cab); }
     this.nameT = T(this, -HL / 2 + 16, 4, p.hull.was || p.hull.name, '#e8e6df', 4.6, '700'); this.hull.add(this.nameT);
     if (p.hull.was) this.tweens.add({ targets: this.nameT, alpha: 0.6, duration: 900, yoyo: true, repeat: -1 }); // the old name glints: there is something to find here
     if (!this.textures.exists('fo_water')) tex(this, 'fo_water', 204, 46, (c) => { c.fillStyle = lg(c, 0, 0, 0, 46, [0, 'rgba(119,128,90,.5)'], [0.3, 'rgba(79,93,65,.82)'], [1, 'rgba(41,51,42,.96)']); c.fillRect(0, 0, 204, 46); const r = rng(9); for (let i = 0; i < 26; i++) { const x = r() * 200, l = 4 + r() * 10; line(c, x, 0.6 + r() * 2, x + l, 0.6 + r() * 2, 'rgba(230,236,200,.4)', 0.35); } });
-    const sea = img(this, QX - 2, WY, 'fo_water').setOrigin(0).setDepth(3);
+    const sea = img(this, QX - 2, WY, hf ? hf.key('fo_water') : 'fo_water').setOrigin(0).setDepth(3);
     this.tweens.add({ targets: sea, x: QX - 4, duration: 2600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     // the list, laid out along the quay in the order it is given
     let x = 5;
     for (const d of itemsOf(p)) {
       const k = KINDS[d.kind]; x += k.w / 2;
-      this.items.push({ ...d, w: k.w, h: k.h, home: x, x, y: QY, state: 0, o: img(this, x, QY, 'fo_' + d.kind).setOrigin(0.5, 1).setDepth(4) });
+      this.items.push({ ...d, w: k.w, h: k.h, home: x, x, y: QY, state: 0, o: img(this, x, QY, 'fo_' + d.kind).setOrigin(0.5, 1).setDepth(4) }); hf?.shade(this.items[this.items.length - 1].o);
       x += k.w / 2 + 2.4;
     }
     this.trolley = img(this, this.tx, GY + 1, 'fo_trolley').setOrigin(0.5, 0).setDepth(6); this.hook = img(this, 0, 0, 'fo_hook').setOrigin(0.5, 0).setDepth(6);
     this.g = this.add.graphics().setDepth(5);
+    wd.push(this.hull, sea, this.trolley, this.hook, this.g, ...this.items.map((i) => i.o)); hf?.tag({ hull: this.hull, sea, trolley: this.trolley, hook: this.hook });
     // the list as chips along the bottom
     panel(this, 4, 161, W - 8, 15, 0.86).setDepth(20);
     const cw = (W - 16) / this.items.length;
@@ -223,7 +243,7 @@ export class FitOutScene extends Phaser.Scene {
     if (Math.abs(this.lvx) > SWAY) return deny('Still swinging: steady the load first.');
     if (!this.fitted(it.needs)) return deny(`${it.label} goes over the ${this.items.find((i) => i.key === it.needs)!.label.toLowerCase()}: fit that first.`);
     if (heavy) { this.warn = 1.6; snd.alarm(); return this.say(`Too much weight at the ${it.s > 0 ? 'bow' : 'stern'}: she would trim too far. Fit something at the other end first.`); }
-    it.state = 2; this.carry = undefined; snd.stage(); this.cameras.main.shake(90, 0.002);
+    it.state = 2; this.carry = undefined; snd.stage(); this.jolt(90, 0.002);
     it.o.setPosition((it.s * HL) / 2, 0).setRotation(0).setDepth(0); this.hull.add(it.o);
     if (it.kind === 'thruster') { const leg = img(this, (it.s * HL) / 2, DEPTH - 3, 'fo_leg').setOrigin(0.5, 0).setAlpha(0); this.hull.addAt(leg, 0); this.tweens.add({ targets: leg, alpha: 1, y: DEPTH + 0.4, duration: 600 }); }
     if (it.needs) this.hull.bringToTop(it.o);
@@ -232,7 +252,7 @@ export class FitOutScene extends Phaser.Scene {
     if (!left) this.liftDone();
   }
   liftDone() {
-    this.ended = true; this.hum.set(0);
+    this.ended = true; this.hum.set(0); this.tell();
     const p = this.p, stars = this.knocks <= 1 && this.t <= p.par ? 3 : this.knocks <= 4 ? 2 : 1;
     if (p.hull.was) this.tweens.add({ targets: this.nameT, alpha: 0, duration: 400, onComplete: () => { this.nameT.setText(p.hull.name).setColor('#ffffff'); this.tweens.add({ targets: this.nameT, alpha: 1, duration: 600 }); snd.pickup(); } });
     this.time.delayedCall(2200, () => finish(this, this.def, { success: true, stars, egg: this.egg, title: this.th.liftTitle, text: this.th.liftText(this.knocks, this.t) + (stars < 3 ? ` For three stars: no more than one knock, inside ${Math.round(p.par / 60)} minutes.` : '') }));
@@ -277,7 +297,7 @@ export class FitOutScene extends Phaser.Scene {
     this.hull.setPosition(BX, this.deckY).setRotation(this.trimA);
     for (const f of this.items) if (f.state === 2) { const sl = this.slot(f.s); f.x = sl.x; f.y = sl.y; }
     this.warn = Math.max(0, this.warn - dt);
-    this.drawLift();
+    this.drawLift(); this.tell();
   }
   drawLift() {
     const g = this.g, p = this.p; g.clear();
@@ -325,14 +345,15 @@ export class FitOutScene extends Phaser.Scene {
   // ------------------------------------------------------------------ act two: the thruster trial
   createTrial() {
     const p = this.p, key = 'fo_basin_' + p.theme, bk = 'fo_deck_' + this.def.id;
-    if (!this.textures.exists(key)) tex(this, key, W, H, this.th.basin);
+    if (!this.textures.exists(key)) tex(this, key, W, H, (c) => this.th.basin(c));
     if (!this.textures.exists(bk)) tex(this, bk, BL, BW, (c) => deckPlan(c, this.th, itemsOf(p), p.hull?.cabin));
-    img(this, 0, 0, key).setOrigin(0);
+    const hf = this.hf; if (hf) { const n = this.children.length; hf.backdrop(); this.world.push(...this.children.list.slice(n)); } else img(this, 0, 0, key).setOrigin(0);
     this.steps = p.steps; [this.x, this.y] = p.start; this.hd = 0;
     this.g = this.add.graphics().setDepth(1);
-    this.barge = img(this, this.x, this.y, bk).setDepth(3);
+    this.barge = img(this, this.x, this.y, bk).setDepth(3); hf?.shade(this.barge, 2, 1.6);
     if (!this.textures.exists('fo_girder')) tex(this, 'fo_girder', 304, 5, (c) => { rr(c, 0, 0.3, 304, 0.9, 0.2, '#f2d14a', OUT, 0.2); rr(c, 0, 3.8, 304, 0.9, 0.2, '#f2d14a', OUT, 0.2); for (let x = 0; x < 304; x += 6) { line(c, x, 0.8, x + 3, 4.2, '#d9b530', 0.45); line(c, x + 3, 4.2, x + 6, 0.8, '#d9b530', 0.45); } });
-    img(this, 8, 70, 'fo_girder').setOrigin(0, 0.5).setDepth(4).setAlpha(0.5); // the gantry of act one, overhead
+    const girder = img(this, 8, 70, 'fo_girder').setOrigin(0, 0.5).setDepth(4).setAlpha(0.5); // the gantry of act one, overhead
+    this.world.push(this.g, this.barge, girder); hf?.tag({ traces: this.g, barge: this.barge, girder });
     panel(this, 4, 22, 58, 30, 0.86).setDepth(20); T(this, 8, 24.4, 'WIND', '#aab4d4', 4.2, '700').setDepth(21);
     this.water = loop('sea'); this.water.set(0.6);
     this.say(this.steps[0].say);
@@ -360,10 +381,10 @@ export class FitOutScene extends Phaser.Scene {
     // holding
     if (this.inBox()) { this.holdT += dt; if (this.holdT >= s.hold) { this.si++; this.holdT = 0; snd.pickup(); if (this.si >= this.steps.length) return this.trialDone(); this.say(this.steps[this.si].say); } }
     if (this.t > p.limit) { this.ended = true; this.water?.set(0); this.hum.set(0); return void finish(this, this.def, { success: false, title: 'The trial ran out of day', text: 'The hull has to sit in each box, pointing the right way, until the ring fills. Thrust early and in short bursts: she is heavy, the thrusters take a moment to answer, and nothing stops a slide but a push the other way.' }); }
-    this.drawTrial(corners, wd);
+    this.drawTrial(corners, wd); this.tell();
   }
   trialDone() {
-    this.ended = true; this.water?.set(0); this.hum.set(0);
+    this.ended = true; this.water?.set(0); this.hum.set(0); this.tell();
     const p = this.p, stars = this.t <= p.par && this.knocks === 0 ? 3 : this.t <= p.par * 1.6 ? 2 : 1;
     this.say('Trial complete.');
     this.time.delayedCall(1400, () => finish(this, this.def, { success: true, stars, title: this.th.trialTitle, text: this.th.trialText(this.t, this.knocks) + (stars < 3 ? ` For three stars: inside ${Math.floor(p.par / 60)} min ${String(p.par % 60).padStart(2, '0')} s without touching the quay.` : '') }));

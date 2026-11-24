@@ -86,8 +86,9 @@ export class PlatformScene extends Phaser.Scene {
     // test positions: an engine over the trench that fires on a cycle. Cross between firings.
     (p.fires || []).forEach((tx: number, i: number) => {
       const x = tx * TS + 8, gy = ((p.ground as number[][]).find(([a, b]) => tx >= a && tx <= b)?.[2] ?? 9) * TS;
-      const stand = img(this, x, gy, 'firestand').setOrigin(0.5, 1).setDepth(1); hf?.tag({ ['fire' + i]: stand }); // a look lights the stand, and lights the place from it while it burns
+      const stand = img(this, x, gy, 'firestand').setOrigin(0.5, 1).setDepth(1);
       const fx = this.add.particles(x, gy - 54, 'puff', { speedY: { min: 150, max: 230 }, speedX: { min: -9, max: 9 }, lifespan: { min: 200, max: 290 }, scale: { start: S * 0.75, end: S * 0.25 }, color: [0xffffff, 0xcfe9ff, 0x7fb4ff, 0x3f6fd0], alpha: { start: 1, end: 0 }, blendMode: 'ADD', frequency: 8, quantity: 2, emitting: false }).setDepth(3);
+      hf?.tag({ ['fire' + i]: stand, ['flame' + i]: fx }); // a look lights the stand, lights the place from it while it burns, and may draw the flame itself
       this.fires.push({ x, t: i * 1.3, fx, lamp: this.add.circle(x - 9.4, gy - 48.6, 1.2, 0x7cc56b).setDepth(2), on: false });
     });
     if (this.fires.length) this.roar = loop('rumble');

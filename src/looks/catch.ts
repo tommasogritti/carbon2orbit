@@ -84,10 +84,13 @@ export const catchLook: Look = {
     const st = hf.state, s = hf.scene, t = hf.t, ship = hf.tags.ship as Im;
     o.swells[0].tilePositionX += dt * 9; o.swells[1].tilePositionX -= dt * 5;
     o.mirror.setPosition(ship.x, ship.y + 8.2).setRotation(-ship.rotation); o.foam.setPosition(ship.x - 2, ship.y + 8.4).setAlpha(0.42 + 0.14 * Math.sin(t * 2.3)); o.wake.setPosition(ship.x, ship.y + 8.6);
-    if (st.caught && !o.caught) { // the hook takes the line: a flash of the sun on it, and a shower off the cable
+    hf.rays(SUN[0], SUN[1], 0.22, 0xfff0d2, 30); // the morning sun's shafts: the helicopter, the canopy and the stage cut into them as they cross it
+    if (st.caught && !o.caught) { // the hook takes the line: a flash of the sun on it, a shower off the cable, and nearly a tonne coming onto the airframe
+      hf.shake(0.4); hf.flash(0.08);
       o.ping.setPosition(st.kx, st.ky).setAlpha(0.95).setScale(S * 0.6); s.tweens.add({ targets: o.ping, alpha: 0, scale: S * 3.4, duration: 520, ease: 'Quad.easeOut' }); o.sparks.explode(14, st.kx, st.ky);
     }
     if (st.wet && !o.wet) { // into the sea: spray that hangs in the light, and foam going out
+      hf.shake(0.25);
       o.mist.explode(26, st.bx, SEA + 1); o.ring.setPosition(st.bx, SEA + 2.4).setAlpha(0.95).setScale(0.1); s.tweens.add({ targets: o.ring, scaleX: 1, scaleY: 0.7, alpha: 0, duration: 2200, ease: 'Quad.easeOut' });
     }
     o.caught = st.caught; o.wet = st.wet;

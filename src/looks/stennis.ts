@@ -4,6 +4,7 @@ import { HX } from '../core';
 import { stennisFar, stennisMid } from '../backdrops';
 import { texAt, paintNormals, soft, add, halo, sheet } from '../hifi';
 import type { Look, LightDef } from '../hifi';
+import { fxSet } from '../hifiFx';
 
 // ------------------------------------------------------------------ Archimedes and the tank: a Gulf-coast afternoon
 // The level runs from Mississippi to Virginia and from 2024 to 2026, so no one hour is true of it, and no source gives
@@ -87,7 +88,7 @@ function tiles(scene: Phaser.Scene) {
 }
 
 type Img = Phaser.GameObjects.Image; type Em = Phaser.GameObjects.Particles.ParticleEmitter;
-let o: { fires: { x: number; y: number; lv: number; core: Img; splash: Img; cells: Img[]; steam: Em }[]; water: Phaser.GameObjects.TileSprite[] } | undefined;
+let o: { fires: { x: number; y: number; lv: number; on: number; core: Img; splash: Img; cells: Img[]; steam: Em; jet?: Img }[]; water: Phaser.GameObjects.TileSprite[] } | undefined;
 export const stennisLook: Look = {
   build(scene) {
     texAt(scene, 'hf_st_sky', SKY, 180, 2, sky); texAt(scene, 'hf_st_far', FAR, 180, 3, far); texAt(scene, 'hf_st_mid', MID, 180, 4, (c) => mid(c, scene));
@@ -143,22 +144,28 @@ export const stennisLook: Look = {
       const st = hf.tags['fire' + i] as Img | undefined; if (!st) return []; hf.shade(st);
       const x = st.x, y = st.y, glow = (dy: number, w: number, h: number, tint: number) => s.add.image(x, y + dy, 'puff').setScale(S * w, S * h).setTint(tint).setBlendMode('ADD').setDepth(3.1).setAlpha(0);
       fire[i].x = x; fire[i].y = y - 30;
-      return [{ x, y, lv: 0, core: glow(-30, 2.4, 7, 0x5f98ff), splash: glow(-2, 8, 2.2, 0x86b2ff), cells: [0, 1, 2, 3].map((n) => glow(-48 + n * 10, 0.9, 0.55, 0xa8d0ff)),
+      // on WebGL the flame is the shader's: methane burning clean and blue, shock diamonds standing in it, cut off by the trench
+      const jet = hf.fx('plume', x, y - 54, 76, 112)?.setOrigin(0.5, 0).setDepth(3).setVisible(false); if (jet) (hf.tags['flame' + i] as Em | undefined)?.setVisible(false);
+      return [{ x, y, lv: 0, on: 0, jet, core: glow(-30, 2.4, 7, 0x5f98ff), splash: glow(-2, 8, 2.2, 0x86b2ff), cells: [0, 1, 2, 3].map((n) => glow(-48 + n * 10, 0.9, 0.55, 0xa8d0ff)),
         steam: s.add.particles(x, y - 3, 'puff', { speedX: { min: -70, max: 70 }, speedY: { min: -30, max: -6 }, lifespan: { min: 700, max: 1300 }, scale: { start: S * 0.5, end: S * 2.4 }, alpha: { start: 0.13, end: 0 }, tint: 0xc8dcff, frequency: 34, emitting: false }).setDepth(2.5) }];
     });
     o = { fires, water };
   },
   step(hf, dt) {
     if (!o) return;
-    const t = hf.t; let hot = 0, hx = 0, hy = 0;
+    const t = hf.t, view = hf.scene.cameras.main.worldView; let hot = 0, hx = 0, hy = 0;
     o.fires.forEach((f, i) => { // a test position lights its surroundings for the second it burns
-      const on = hf.state['fire' + i] ? 1 : 0, fl = 0.86 + 0.14 * Math.sin(t * 57 + i) * Math.sin(t * 31);
+      const on = hf.state['fire' + i] ? 1 : 0, fl = 0.86 + 0.14 * Math.sin(t * 57 + i) * Math.sin(t * 31), near = Phaser.Math.Clamp(1.3 - Math.abs(f.x - view.centerX) / 190, 0, 1); // how much of it reaches the lens
       f.lv += (on - f.lv) * Math.min(1, dt * (on ? 22 : 9)); hf.power(i, f.lv);
-      f.core.setAlpha(f.lv * 0.3 * fl); f.splash.setAlpha(f.lv * 0.34 * fl).setScale(S * (7 + fl * 2), S * 2.2);
-      f.cells.forEach((c, n) => c.setAlpha(f.lv * (0.5 - n * 0.1) * fl).setScale(S * (0.9 + 0.16 * Math.sin(t * 43 + n * 2)), S * 0.5));
+      f.core.setAlpha(f.jet ? 0 : f.lv * 0.3 * fl); f.splash.setAlpha(f.lv * 0.34 * fl).setScale(S * (7 + fl * 2), S * 2.2);
+      f.cells.forEach((c, n) => c.setAlpha(f.jet ? 0 : f.lv * (0.5 - n * 0.1) * fl).setScale(S * (0.9 + 0.16 * Math.sin(t * 43 + n * 2)), S * 0.5));
+      if (f.jet) { f.jet.setVisible(f.lv > 0.02).setAlpha(Math.min(1, f.lv * 1.4)); fxSet(f.jet, 0.5 + 0.5 * f.lv, 0, 54 / 112, i * 7.3, 1.3, 1.7, 1); }
+      if (on && !f.on && near > 0) { hf.shock(f.x, f.y - 6, 0.55 * near); hf.flash(0.16 * near); } // ignition: the air takes the blow, and the eye the light
+      if (on) hf.shake(0.36 * near); f.on = on;
       f.steam.emitting = !!on; if (f.lv > hot) { hot = f.lv; hx = f.x; hy = f.y - 24; }
     });
-    hf.heat(hx, hy, 46, hot * 0.9);
+    hf.heat(hx, hy, 46, hot * (o.fires[0]?.jet ? 0.5 : 0.9)); // the shader's flame has its own turbulence
+    hf.rays(hf.wx(SKY, SUN[0]), SUN[1], 0.2, 0xfff0d0, 34); // the afternoon sun: the stands, the tower and the pines cut into its shafts
     for (const w of o.water) { w.tilePositionX += 9 * dt * 4; w.y = 150 + Math.sin(t * 1.1 + w.x) * 0.5; }
   },
 };

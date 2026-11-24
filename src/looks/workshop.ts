@@ -126,7 +126,7 @@ export const workshopLook: Look = {
   mirror: 0.2,
   reflect: { key: 'hf_ws_refl', w: WALL, alpha: 0.42 },
   motes: { tint: 0xffe2b8, count: 120 },
-  grade: { threshold: 0.74, bloom: 0.55, exposure: 1.08, contrast: 1.14, saturation: 1.08, shadows: [0.84, 0.95, 1.18], highs: [1.08, 1.0, 0.9], vignette: 0.55, grain: 0.03, fringe: 0.006 },
+  grade: { threshold: 0.74, bloom: 0.55, exposure: 1.08, contrast: 1.14, saturation: 1.08, shadows: [0.84, 0.95, 1.18], highs: [1.08, 1.0, 0.9], vignette: 0.55, grain: 0.03, fringe: 0.006, streak: 0.22 }, // the streak: a welder's arc, a bulb, a star in the window
   live(hf) {
     const s = hf.scene, tw = (targets: object, cfg: object) => s.tweens.add({ targets, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', ...cfg });
     const lit = (x: number, y: number, sx: number, sy: number, tint: number, a: number) => hf.on(WALL, x, y, 'puff').setScale(S * sx, S * sy).setTint(tint).setBlendMode('ADD').setDepth(-4.7).setAlpha(a);

@@ -3,8 +3,11 @@ import { W, H, T, held, just, finish, cam, img, panel, who } from '../core';
 import { snd, music, stopLoops, loop, Loop } from '../audio';
 import { P } from '../art';
 import type { LevelDef } from '../content';
+import { hifi, HiFi } from '../hifi';
+import { LOOKS } from '../hifiLooks';
 
 const AUTO = new URLSearchParams(location.search).has('auto');
+const LOOK = 'lab'; // the laboratory's hi-fi look (looks/lab.ts)
 const PX = 122, PY = 34, PW = 186, PH = 84; // the plot
 const XL = 3, XR = -2.4; // log10 of pressure in millibar at the left and right edges: sea level to near-vacuum
 const X = (lp: number) => PX + ((XL - lp) / (XL - XR)) * PW, Y = (v: number) => PY + PH - (Math.min(v, 520) / 520) * PH;
@@ -19,7 +22,7 @@ interface Sw { key: string; name: string; on: boolean; what: string }
  */
 export class ArcLabScene extends Phaser.Scene {
   def!: LevelDef; p: any; sw: Sw[] = []; sel = 0; lp = XL; sweep = -1; arced = false; sweeps = 0; wasted = 0; tasks: { text: string; done: boolean }[] = []; ended = false; arcT = 0; botT = 0; botI = 0; fixOpen = false;
-  g!: Phaser.GameObjects.Graphics; list!: Phaser.GameObjects.Text; call!: Phaser.GameObjects.Text; swT: Phaser.GameObjects.Text[] = []; read!: Phaser.GameObjects.Text; hum!: Loop;
+  g!: Phaser.GameObjects.Graphics; list!: Phaser.GameObjects.Text; call!: Phaser.GameObjects.Text; swT: Phaser.GameObjects.Text[] = []; read!: Phaser.GameObjects.Text; hum!: Loop; hf?: HiFi;
   constructor() { super('ArcLab'); }
   /** The controls panel (H or the ? button): what the keys do right now, in this level and this phase. Shape agreed with core's showHelp. */
   help(): { title: string; rows: [keys: string, does: string][]; note?: string } {
@@ -38,19 +41,23 @@ export class ArcLabScene extends Phaser.Scene {
   arcs(lp: number) { return this.on('fault') && this.volts() > this.limit(this.on('fix') ? XL : lp); }
   create() {
     cam(this); stopLoops(); music.play('space'); this.hum = loop('whine'); this.hum.set(0.1, 0.1);
-    img(this, 0, 0, 'bg_review').setOrigin(0);
-    panel(this, 4, 4, W - 8, 16, 0.9); T(this, 9, 6.6, this.p.heading as string, '#ffffff', 6.2, '700');
-    panel(this, 4, 24, 110, 100, 0.9); this.list = T(this, 8, 27, '', '#ffffff', 4.5, '700').setWordWrapWidth(102).setLineSpacing(0.6);
-    panel(this, 118, 24, 198, 100, 0.9);
+    const hf = (this.hf = hifi(this, LOOKS[LOOK])); // the room, the panels and the plot take the look; every word stays on the HUD camera
+    const world: Phaser.GameObjects.GameObject[] = [img(this, 0, 0, hf ? hf.key('bg_review') : 'bg_review').setOrigin(0)];
+    world.push(panel(this, 4, 4, W - 8, 16, 0.9)); T(this, 9, 6.6, this.p.heading as string, '#ffffff', 6.2, '700');
+    world.push(panel(this, 4, 24, 110, 100, 0.9)); this.list = T(this, 8, 27, '', '#ffffff', 4.5, '700').setWordWrapWidth(102).setLineSpacing(0.6);
+    const plot = panel(this, 118, 24, 198, 100, 0.9);
     T(this, PX, PY - 7.6, 'VOLTS · game scale', '#aab4d4', 4, '700'); T(this, PX, PY + PH + 1.6, 'SEA LEVEL', '#aab4d4', 3.8, '700'); T(this, PX + PW, PY + PH + 1.6, 'VACUUM', '#aab4d4', 3.8, '700').setOrigin(1, 0); T(this, PX + PW / 2, PY + PH + 1.6, 'PRESSURE →  falling, as on the way up', '#8fa3c8', 3.8, '700').setOrigin(0.5, 0);
     this.read = T(this, PX + PW, PY - 7.6, '', '#ffffff', 4.4, '700').setOrigin(1, 0);
-    panel(this, 4, 128, W - 8, 30, 0.9);
+    world.push(plot, panel(this, 4, 128, W - 8, 30, 0.9));
     this.sw.forEach((s, i) => this.swT.push(T(this, 12 + i * 77, 131, '', '#ffffff', 4.6, '700').setWordWrapWidth(70)));
-    this.g = this.add.graphics();
+    this.g = this.add.graphics(); world.push(this.g);
     this.call = T(this, 212, 160.6, '', '#ffe98a', 5.2, '700').setOrigin(0.5, 0).setAlign('center').setWordWrapWidth(204).setShadow(0, 1, '#000000', 3);
     who(this, { ...this.def, role: this.def.role || 'CEO · with the review team' }, 4, 158);
     this.say('← → choose a condition · SPACE switches it · ↑ ↓ change the pressure by hand · ENTER runs an ascent sweep');
+    if (hf) { hf.tag({ room: world[0], plot, traces: this.g }); this.tell(); hf.ready({ hud: this.children.list.filter((o) => !world.includes(o)), lateHud: true }); }
   }
+  /** What the look animates from: where the pressure cursor meets the breakdown curve, the arc, the sweep, and which conditions are on. */
+  tell() { this.hf?.set({ x: X(this.on('fix') ? XL : this.lp), y: Y(this.limit(this.lp)), arc: this.arcT, sweep: this.sweep, live: this.on('fault') ? 1 : 0, gas: this.on('gas') ? 1 : 0, done: this.ended ? 1 : 0 }); }
   say(s: string) { this.call.setText(s); }
   tick(i: number, msg: string) { if (this.tasks[i].done) return false; this.tasks[i].done = true; snd.pickup(); this.say(msg); return true; }
   endSweep() {
@@ -62,7 +69,7 @@ export class ArcLabScene extends Phaser.Scene {
     if (!useful) { this.wasted++; this.say(this.arced ? 'It arced again. That was already known.' : !this.tasks[0].done ? 'Nothing. Something that was there in flight is missing here.' : 'Nothing new from that one. Change one condition at a time.'); }
     if (this.tasks.slice(0, -1).every((q) => q.done) && !this.fixOpen) { this.fixOpen = true; this.say(this.call.text + '\nAll three are needed. Now the fix: switch on the sealed battery frame.'); }
     if (this.tasks.every((q) => q.done)) {
-      this.ended = true;
+      this.ended = true; this.tell();
       const stars = this.sweeps <= this.tasks.length + 1 ? 3 : this.sweeps <= this.tasks.length + 4 ? 2 : 1;
       this.time.delayedCall(1400, () => finish(this, this.def, { success: true, stars, egg: this.wasted === 0, title: 'Cause found, fix proven', text: `${this.sweeps} sweeps, ${this.wasted} of them wasted. An arc needs a gap to jump, enough voltage, and gas at the wrong pressure; take any one away and it cannot form.` }));
     }
@@ -73,7 +80,7 @@ export class ArcLabScene extends Phaser.Scene {
     const vis = this.sw.filter((s) => s.key !== 'fix' || this.fixOpen);
     if (this.sweep >= 0) { // pressure falls as it does on the way to space
       this.sweep += dt / 2.6; this.lp = XL + (XR - XL) * Math.min(1, this.sweep); this.hum.set(0.4, 0.2 + this.sweep * 0.6);
-      if (this.arcs(this.lp) && !this.arced) { this.arced = true; this.arcT = 0.9; snd.boom(); this.cameras.main.flash(200, 255, 255, 255); this.cameras.main.shake(250, 0.008); }
+      if (this.arcs(this.lp) && !this.arced) { this.arced = true; this.arcT = 0.9; snd.boom(); this.cameras.main.flash(200, 255, 255, 255); if (this.hf?.gl) this.hf.shake(0.8); else this.cameras.main.shake(250, 0.008); } // in hi-fi the picture shakes and the words hold still
       if (this.sweep >= 1) this.endSweep();
     } else {
       let dSel = (just('right') ? 1 : 0) - (just('left') ? 1 : 0), flip = just('a'), run = just('b');
@@ -100,9 +107,10 @@ export class ArcLabScene extends Phaser.Scene {
     if (this.on('ripple')) { g.lineStyle(0.5, 0x7fd0ff, 0.9).beginPath(); for (let i = 0; i <= PW; i += 1) { const y = Y(this.p.dc + this.p.ripple * Math.abs(Math.sin(i * 0.5 + this.time.now / 90))); if (i) g.lineTo(PX + i, y); else g.moveTo(PX + i, y); } g.strokePath(); }
     const px = X(this.on('fix') ? XL : this.lp); g.lineStyle(0.8, 0xffffff, 0.9).lineBetween(px, PY, px, PY + PH); g.fillStyle(0xffffff).fillTriangle(px - 2, PY - 0.4, px + 2, PY - 0.4, px, PY + 3);
     if (this.on('fix') && this.sweep >= 0) { const ox = X(this.lp); g.lineStyle(0.5, 0x8fa3c8, 0.6).lineBetween(ox, PY, ox, PY + PH); } // outside falls; inside the frame it does not
-    if (this.arcT > 0) { const ax = px, ay = Y(this.limit(this.lp)); g.lineStyle(1.2, 0xffffff, 1).beginPath().moveTo(ax - 6, ay - 8); for (let k = 0; k < 6; k++) g.lineTo(ax - 6 + k * 2.4 + (Math.random() - 0.5) * 3, ay - 8 + k * 3.2 + (Math.random() - 0.5) * 3); g.strokePath(); g.fillStyle(0xbfe3ff, 0.5).fillCircle(ax, ay, 6 + Math.random() * 3); }
+    if (this.arcT > 0 && !this.hf?.tags.arc) { const ax = px, ay = Y(this.limit(this.lp)); g.lineStyle(1.2, 0xffffff, 1).beginPath().moveTo(ax - 6, ay - 8); for (let k = 0; k < 6; k++) g.lineTo(ax - 6 + k * 2.4 + (Math.random() - 0.5) * 3, ay - 8 + k * 3.2 + (Math.random() - 0.5) * 3); g.strokePath(); g.fillStyle(0xbfe3ff, 0.5).fillCircle(ax, ay, 6 + Math.random() * 3); }
     this.read.setText(`${live ? '' : 'INSULATION INTACT · '}CURVE: ${this.on('gas') ? 'helium + nitrogen' : 'dry air'} · PEAK ${v} V`).setColor(live ? '#ffe98a' : '#8fa3c8');
     this.list.setText(this.tasks.map((q) => `${q.done ? '✓' : '☐'} ${q.text}`).join('\n') + `\n\nSWEEPS ${this.sweeps}`);
+    this.tell();
     vis.forEach((s, i) => { const sel = i === this.sel && this.sweep < 0, x = 8 + i * 77; g.fillStyle(s.on ? 0x1f5a34 : 0x1b2236, 0.95).fillRoundedRect(x, 130, 74, 26, 3); g.lineStyle(sel ? 0.9 : 0.4, sel ? 0xffe98a : 0x5f7fb0, 1).strokeRoundedRect(x, 130, 74, 26, 3); this.swT[this.sw.indexOf(s)].setText(`${s.on ? '● ON' : '○ OFF'}\n${s.name}`).setColor(s.on ? '#ffffff' : '#aab4d4').setDepth(2); });
   }
 }

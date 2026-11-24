@@ -3,6 +3,7 @@ import { D, S, C2, el, line, lg, rg, rng } from '../art';
 import { texAt, soft, add, halo } from '../hifi';
 import type { Grade, Look } from '../hifi';
 import { spaceTextures, SPACE, puffy, CloudTone } from './flight';
+import { fxSet } from '../hifiFx';
 
 // ------------------------------------------------------------------ Return To Sender: from the edge of space to the Pacific, 20 November 2020
 // The level's own account gives the hour: Electron lifted off at 3:20 pm New Zealand time, and the stage was in the water
@@ -58,7 +59,7 @@ const ember = (c: C2) => { c.fillStyle = lg(c, 0, 30, 0, 58, [0, 'rgba(255,90,30
 
 type Im = Phaser.GameObjects.Image; type Em = Phaser.GameObjects.Particles.ParticleEmitter;
 const VEILS: [number, number, number][] = [[10.4, 28, 0], [8.6, 96, 1], [6.3, 34, 0], [4.9, 120, 1], [3.4, 40, 0], [2.6, 88, 1]]; // each bank: its height in km, how fast it passes, and whether it passes in front
-let o: { sun: Im; ghosts: Im[]; shock: Im; wake: Im; streams: Em; embers: Em; streaks: Em; rimR: Im; rimL: Im; hot: Im; haze: Im; glitter: Em; mirror: Im; foam: Im; veils: Im[]; ksGlow: Im; ring: Im; mist: Em; down: boolean } | undefined;
+let o: { sun: Im; ghosts: Im[]; shock: Im; bow?: Im; chute: number; wake: Im; streams: Em; embers: Em; streaks: Em; rimR: Im; rimL: Im; hot: Im; haze: Im; glitter: Em; mirror: Im; foam: Im; veils: Im[]; ksGlow: Im; ring: Im; mist: Em; down: boolean } | undefined;
 const mix = (a: number, b: number, k: number) => a + (b - a) * k, rgb = (a: number, b: number, k: number) => (Math.round(mix((a >> 16) & 255, (b >> 16) & 255, k)) << 16) | (Math.round(mix((a >> 8) & 255, (b >> 8) & 255, k)) << 8) | Math.round(mix(a & 255, b & 255, k));
 
 export const reentryLook: Look = {
@@ -95,13 +96,14 @@ export const reentryLook: Look = {
     const rimR = s.add.image(0, 0, 'hf_re_rim').setScale(S * 0.74).setBlendMode('ADD').setTint(0xfff0d0), rimL = s.add.image(0, 0, 'hf_re_rim').setScale(S * 0.74).setBlendMode('ADD').setTint(0x7fb0ff).setFlipX(true), hot = s.add.image(0, 0, 'hf_re_hot').setScale(S * 0.74).setBlendMode('ADD').setAlpha(0);
     boo.add([rimR, rimL, hot]);
     const sh = hf.below(s.add.image(BX, 84, 'hf_re_shock').setOrigin(0.5, 78 / 84).setScale(0.5).setBlendMode('ADD').setAlpha(0), 'boo'); // behind the stage, so its dark shape still reads against the glow
+    const bow = hf.fx('entry', BX, 84, 50, 60)?.setOrigin(0.5, 0.9).setVisible(false); if (bow) hf.below(bow, 'boo'); // on WebGL the shock layer is the shader's: it boils, and streams back up the track
     const streams = hf.below(s.add.particles(BX, 84, 'puff', { x: { min: -9, max: 9 }, speedY: { min: -300, max: -170 }, speedX: { min: -22, max: 22 }, lifespan: { min: 240, max: 520 }, scaleX: { start: S * 0.14, end: S * 0.05 }, scaleY: { start: S * 1.1, end: S * 0.5 }, alpha: { start: 0.8, end: 0 }, color: [0xffffff, 0xffd89a, 0xff7a34, 0x8a2a0c], blendMode: 'ADD', frequency: 13, emitting: false } as any), 'boo');
     const embers = s.add.particles(BX, 84, 'puff', { x: { min: -4, max: 4 }, speedY: { min: -250, max: -110 }, speedX: { min: -46, max: 46 }, lifespan: { min: 500, max: 1200 }, scale: { start: S * 0.1, end: 0 }, alpha: { start: 1, end: 0 }, tint: [0xffe2b0, 0xff9a4a], blendMode: 'ADD', frequency: 30, emitting: false });
     const streaks = s.add.particles(0, 0, 'puff', { x: { min: 0, max: 320 }, y: 196, speedY: { min: -900, max: -560 }, lifespan: 420, scaleX: S * 0.035, scaleY: { min: S * 1.4, max: S * 3 }, alpha: { start: 0.34, end: 0 }, tint: 0xffffff, frequency: 26, emitting: false } as any); // thicker air going past
     const ksGlow = hf.below(puff(0, 0, 0.5, 1.1, 0xbfdcff, 0), 'ks');
     const rg2 = s.add.image(BX, 300, 'hf_re_ring').setScale(0.1).setAlpha(0), mist = s.add.particles(BX, 152, 'puff', { speedY: { min: -70, max: -14 }, speedX: { min: -44, max: 44 }, gravityY: 60, lifespan: { min: 900, max: 1900 }, scale: { start: S * 0.5, end: S * 2.2 }, alpha: { start: 0.42, end: 0 }, tint: 0xeef6ff, emitting: false });
     Object.assign(GRADE, { threshold: 0.8, bloom: 0.62, vignette: 0.5, saturation: 1.12 });
-    o = { sun: sunIm, ghosts, shock: sh, wake: wk, streams, embers, streaks, rimR, rimL, hot, haze: hz, glitter, mirror, foam, veils, ksGlow, ring: rg2, mist, down: false };
+    o = { sun: sunIm, ghosts, shock: sh, bow, chute: 0, wake: wk, streams, embers, streaks, rimR, rimL, hot, haze: hz, glitter, mirror, foam, veils, ksGlow, ring: rg2, mist, down: false };
   },
   step(hf) {
     if (!o) return;
@@ -118,7 +120,11 @@ export const reentryLook: Look = {
     o.hot.setAlpha(hot * (0.5 + 0.4 * up) * fl);
     // the wall
     const ex = st.x, ey = st.y + 3 + 19 * up; // the lowest point of the stage, whichever way up it is
-    o.shock.setPosition(ex, ey + 3).setAlpha(hot * fl).setScale(0.5 * (1.5 - 0.5 * up) * (0.96 + 0.08 * fl), 0.5 * (0.7 + 0.3 * up));
+    o.shock.setPosition(ex, ey + 3).setAlpha(o.bow ? 0 : hot * fl).setScale(0.5 * (1.5 - 0.5 * up) * (0.96 + 0.08 * fl), 0.5 * (0.7 + 0.3 * up));
+    if (o.bow) { o.bow.setPosition(ex, ey + 3).setVisible(hot > 0.01).setScale((50 * (1.5 - 0.5 * up)) / 4, (60 * (0.7 + 0.3 * up)) / 4); fxSet(o.bow, hot, 2); }
+    // what the air does to the picture: it shakes while the wall lasts, each parachute snatches at it, and against a black sky the lens streaks
+    hf.shake(hot * 0.32); if (st.chute > o.chute) hf.shake(st.chute > 1 ? 0.7 : 0.5); o.chute = st.chute;
+    hf.streak(0.45 * (1 - day)); hf.rays(SUN[0], SUN[1], 0.2 + 0.1 * (1 - day), 0xfff6dc, 30);
     o.wake.setPosition(ex, ey).setAlpha(hot * 0.5 * fl).setScale(0.5 + 0.5 * (1 - up), 0.84 + 0.1 * Math.sin(t * 23));
     o.streams.setPosition(ex, ey - 2); o.streams.emitting = hot > 0.2; o.embers.setPosition(st.x, st.y); o.embers.emitting = hot > 0.3;
     hf.heat(st.x, st.y - 46, 32, hot * 0.6); // over the wake, clear of the stage: its attitude has to read
@@ -132,7 +138,7 @@ export const reentryLook: Look = {
     // the kick stage, still burning for orbit
     const ks = hf.tags.ks as Phaser.GameObjects.Container; if (ks.active) o.ksGlow.setPosition(ks.x, ks.y + 6.4).setAlpha(ks.alpha * 0.7 * fl); else o.ksGlow.setAlpha(0);
     if (st.down && !o.down) { // into the water: spray that hangs, and a ring of foam going out
-      o.down = true; o.mist.explode(30); o.ring.setPosition(BX, seaY + 3).setAlpha(0.95);
+      o.down = true; hf.shake(0.3); o.mist.explode(30); o.ring.setPosition(BX, seaY + 3).setAlpha(0.95);
       s.tweens.add({ targets: o.ring, scaleX: 1.1, scaleY: 0.8, alpha: 0, duration: 2400, ease: 'Quad.easeOut' });
     }
   },

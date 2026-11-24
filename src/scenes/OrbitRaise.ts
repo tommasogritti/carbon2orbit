@@ -39,7 +39,7 @@ export class OrbitRaiseScene extends Phaser.Scene {
     this.hud = T(this, 9, 6.5, '', '#ffffff', 7, '700'); T(this, 9, 17, 'APOGEE', '#aab4d4', 5.2, '700');
     who(this, { ...this.def, role: this.def.role || 'CEO · in Mission Control' }, 4, 38);
     this.call = T(this, W / 2, H - 10, 'SPACE in the green zone = perigee burn', '#ffe98a', 8, '700').setOrigin(0.5).setShadow(0, 1, '#000000', 3);
-    if (hf) { hf.shade(this.craft, 2, 2); hf.tag({ stars, orbit: this.g, earth, moon, craft: this.craft }); hf.set({ x: 0, y: 0, rot: 0, fired: 0, done: 0 }); hf.ready({ hud: [pan, this.bar, ...names, ...this.children.list.slice(worldN)] }); }
+    if (hf) { hf.shade(this.craft, 2, 2); hf.tag({ stars, orbit: this.g, earth, moon, craft: this.craft, burn: this.burn }); hf.set({ x: 0, y: 0, rot: 0, fired: 0, done: 0 }); hf.ready({ hud: [pan, this.bar, ...names, ...this.children.list.slice(worldN)] }); }
   }
   pos(th: number, ra = this.ra) {
     const a = (ra + RP) / 2, e = (ra - RP) / (ra + RP);

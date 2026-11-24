@@ -112,7 +112,7 @@ export class CruiseScene extends Phaser.Scene {
     who(this, { ...this.def, role: this.def.role || 'CEO · Rocket Lab built Blue and Gold' }, 4, H - 26);
     if (hf) { // the diagram and the spacecraft stay in the world; every word and the panel go to the HUD
       const world: Phaser.GameObjects.GameObject[] = [stars, sun, st, earth, mars, this.g, this.flame, this.puff, this.gold, this.blue];
-      hf.shade(this.blue, 2, 2); hf.shade(this.gold, 2, 2); hf.tag({ stars, sun, earth, mars, blue: this.blue, gold: this.gold }); hf.set({ x: this.x, y: this.y, rot: 0, main: 0, next: 0, won: 0, started: 0 }); hf.ready({ hud: this.children.list.filter((q) => !world.includes(q)) });
+      hf.shade(this.blue, 2, 2); hf.shade(this.gold, 2, 2); hf.tag({ stars, sun, earth, mars, blue: this.blue, gold: this.gold, flame: this.flame }); hf.set({ x: this.x, y: this.y, rot: 0, main: 0, next: 0, won: 0, started: 0 }); hf.ready({ hud: this.children.list.filter((q) => !world.includes(q)) });
     }
   }
   update(_t: number, dms: number) {

@@ -77,7 +77,7 @@ function ground(c: C2, x0: number, hf: HiFi, strip: HTMLCanvasElement, TOP: numb
 }
 
 type Em = Phaser.GameObjects.Particles.ParticleEmitter;
-let o: { shadow: Phaser.GameObjects.Image; roost: Em } | undefined;
+let o: { shadow: Phaser.GameObjects.Image; roost: Em; air: number } | undefined;
 export const farmLook: Look = {
   build(scene) {
     texAt(scene, 'hf_fm_sky', SKY, 180, 2, sky); texAt(scene, 'hf_fm_far', FAR, 180, 3, far); texAt(scene, 'hf_fm_mid', MID, 180, 4, mid); texAt(scene, 'hf_fm_flax', 72, 46, 1.5, flax);
@@ -106,12 +106,14 @@ export const farmLook: Look = {
     // under and behind the bike: its shadow on the ground, and the dirt the back wheel throws
     const shadow = hf.below(s.add.image(0, 0, 'hf_shadow').setScale(0.75, 0.6).setDepth(3.9), 'bike');
     const roost = s.add.particles(0, 0, 'puff', { speedX: { min: -110, max: -30 }, speedY: { min: -70, max: -14 }, gravityY: 320, lifespan: { min: 300, max: 650 }, scale: { start: S * 0.13, end: S * 0.05 }, color: [0x7a5a34, 0x5a4022, 0x8fbf5c], frequency: 22, emitting: false }).setDepth(3.5);
-    o = { shadow, roost };
+    o = { shadow, roost, air: 0 };
   },
   step(hf) {
     if (!o) return;
     const st = hf.state, h = hf.world.height!, gy = h(st.x), over = gy > 180, gap = Math.max(0, gy - st.y);
     o.shadow.setVisible(!over).setPosition(st.x, gy + 0.6).setRotation(over ? 0 : Math.atan2(h(st.x + 2) - h(st.x - 2), 4)).setAlpha(0.8 / (1 + gap / 16)).setScale(0.75 * (1 - Math.min(0.4, gap / 90)), 0.6);
     o.roost.setPosition(st.x - 9 * Math.cos(st.rot), st.y - 1 - 9 * Math.sin(st.rot)); o.roost.emitting = !st.air && st.thr > 0 && st.v > 24;
+    if (o.air && !st.air) hf.shake(0.3); o.air = st.air; // both wheels back on the hill
+    hf.rays(hf.wx(SKY, SUN[0]), SUN[1], 0.22, 0xfff6dc, 30); // the sun over the open sea: the rider and the flax cut into its shafts as the track turns toward it
   },
 };

@@ -79,7 +79,7 @@ export const hatSetLook: Look = {
     { x: 160, y: 70, r: 200, color: 0xbcd0ff, i: 0.25 },  // what the lit ribs throw back
   ],
   motes: { tint: 0xbcd0ff, count: 40 },
-  grade: { threshold: 0.84, bloom: 0.6, exposure: 0.96, contrast: 1.12, saturation: 1.08, shadows: [0.84, 0.92, 1.22], highs: [1.04, 1.02, 1.0], vignette: 0.55, grain: 0.03, fringe: 0.005 },
+  grade: { threshold: 0.84, bloom: 0.6, exposure: 0.96, contrast: 1.12, saturation: 1.08, shadows: [0.84, 0.92, 1.22], highs: [1.04, 1.02, 1.0], vignette: 0.55, grain: 0.03, fringe: 0.005, streak: 0.25 },
   live(hf) {
     const s = hf.scene, back = <T extends Phaser.GameObjects.GameObject>(q: T) => hf.below(q, 'peter');
     const keyCone = back(s.add.image(160, 0, 'hf_hs_key').setOrigin(0.5, 0).setBlendMode('ADD').setAlpha(0.22));
@@ -93,7 +93,7 @@ export const hatSetLook: Look = {
     if (!o) return;
     const st = hf.state, t = hf.t, run = (st.pulse || 0) > 0 ? 1 : 0, eat = st.reach || 0;
     o.warm += ((st.step >= 4 ? 1 : 0) - o.warm) * Math.min(1, dt * 1.5);
-    hf.power(0, 1 + 0.15 * o.warm + run * 0.04 * Math.sin(t * 90)); // the blender's hum shakes the table, and the light on it
+    hf.power(0, 1 + 0.15 * o.warm + run * 0.04 * Math.sin(t * 90)); if (run) hf.shake(0.2); // the blender's hum shakes the table, the light on it, and the camera
     o.key.setAlpha(0.2 + 0.08 * o.warm + 0.03 * eat).setTint(o.warm > 0.5 ? 0xffe8cc : 0xffffff);
     o.motor.setAlpha(run ? 0.6 + 0.3 * Math.sin(t * 40) : st.step === 2 ? 0.25 : 0).setTint((st.heat || 0) > 0.66 ? 0xff5a3c : 0x7cf08a);
     for (let i = 1; i <= 4; i++) hf.power(i, 1 + 0.06 * Math.sin(t * 0.7 + i));
