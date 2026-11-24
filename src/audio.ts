@@ -133,6 +133,7 @@ export const snd = {
   seco: () => { tone({ f: 100, to: 45, dur: 0.3, type: 'sine', vol: 0.25 }); tone({ f: 784, dur: 0.5, type: 'sine', vol: 0.1, at: 0.15 }); tone({ f: 1175, dur: 0.7, type: 'sine', vol: 0.08, at: 0.3 }); },
   staticBurst: () => noise({ dur: 0.07, vol: 0.2, type: 'bandpass', f: 600 + Math.random() * 5000, q: 1.2 }),
   boom: () => { noise({ dur: 1.6, vol: 0.7, f: 2400, to: 90, a: 0.004 }); tone({ f: 140, to: 28, dur: 1.2, type: 'sine', vol: 0.6 }); noise({ dur: 0.5, vol: 0.3, type: 'highpass', f: 3000, at: 0.02 }); },
+  far: () => { noise({ dur: 2.6, vol: 0.34, f: 380, to: 60, a: 0.06 }); tone({ f: 62, to: 26, dur: 2.2, type: 'sine', vol: 0.42, a: 0.04 }); noise({ dur: 1.2, vol: 0.08, type: 'bandpass', f: 900, to: 300, q: 0.6, at: 0.3 }); }, // an explosion a long way off: all rumble, no crack
   burn: (q = 1) => { noise({ dur: 0.5, vol: 0.28, type: 'bandpass', f: 500 + q * 500, to: 220, q: 0.7, a: 0.02 }); tone({ f: 70 + q * 40, to: 45, dur: 0.45, type: 'sine', vol: 0.28 }); tone({ f: 520 + q * 520, dur: 0.35, type: 'sine', vol: 0.07, at: 0.05 }); },
   dud: () => { tone({ f: 130, to: 70, dur: 0.2, type: 'sawtooth', vol: 0.14, lp: 700 }); },
   // mini-games
@@ -255,6 +256,20 @@ const SONGS: Record<string, Song> = {
       [[0, 82, 2], [2, 86, 2], [4, 89, 4], [8, 86, 4], [12, 82, 4]], [[0, 84, 6], [6, 88, 2], [8, 91, 8]],
       [[0, 77, 2], [2, 81, 2], [4, 84, 4], [8, 89, 4], [12, 93, 4]], [[0, 91, 4], [4, 88, 4], [8, 84, 8]],
       [[0, 89, 4], [4, 86, 4], [8, 82, 4], [12, 86, 4]], [[0, 86, 8], [8, 82, 4], [12, 79, 4]],
+    ],
+  },
+  // A beach party: four on the floor in C major, an octave-hopping bass and a tune to whistle
+  party: {
+    name: 'party', bpm: 124, pad: 0.6,
+    chords: [[48, 4, 7], [45, 3, 7], [41, 4, 7], [43, 4, 7], [48, 4, 7], [45, 3, 7], [41, 4, 7], [43, 4, 7]],
+    bass: [0, _, 12, _, 0, _, 12, 7, 0, _, 12, _, 0, 7, 12, 7],
+    arp: [_, 1, 2, _, 1, 2, _, 1, 2, _, 1, 2, 3, 2, 1, _],
+    drums: { k: 'x...x...x...x...', s: '....x.......x...', h: '..x...x...x...xx' },
+    lead: [
+      [[0, 76, 2], [2, 79, 2], [4, 84, 3], [8, 81, 2], [10, 79, 2], [12, 76, 4]], [[0, 81, 3], [4, 84, 2], [6, 81, 2], [8, 79, 4], [12, 76, 2], [14, 79, 2]],
+      [[0, 77, 2], [2, 81, 2], [4, 84, 4], [8, 81, 2], [10, 77, 2], [12, 81, 4]], [[0, 79, 3], [4, 83, 2], [6, 86, 2], [8, 83, 4], [12, 79, 4]],
+      [[0, 84, 2], [2, 88, 2], [4, 84, 2], [6, 79, 2], [8, 84, 4], [12, 88, 4]], [[0, 88, 3], [4, 84, 2], [6, 81, 2], [8, 84, 6], [14, 81, 2]],
+      [[0, 81, 2], [2, 84, 2], [4, 89, 4], [8, 88, 2], [10, 84, 2], [12, 81, 4]], [[0, 86, 4], [4, 83, 4], [8, 79, 2], [10, 83, 2], [12, 86, 4]],
     ],
   },
   // Stennis to Wallops: a slow shuffle in E, for the Gulf coast and the long wait

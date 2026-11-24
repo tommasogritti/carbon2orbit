@@ -42,7 +42,7 @@ export function patchImg(id: string) {
 }
 export const W = 320;
 export const H = 180;
-export const SCENE_FOR: Record<string, string> = { platform: 'Platform', launch: 'Launch', hotfire: 'Hotfire', 'heli-catch': 'Heli', 'orbit-raise': 'OrbitRaise', sprint: 'Sprint', 'fault-finder': 'FaultFinder', splashdown: 'Splashdown', cruise: 'Cruise', 'countdown-race': 'CountdownRace', ride: 'Ride', 'orbit-ops': 'OrbitOps', 'dual-count': 'DualCount', 'arc-lab': 'ArcLab', 'edit-bay': 'EditBay', 'slot-finder': 'SlotFinder', 'hat-trick': 'HatTrick', 'fit-out': 'FitOut' };
+export const SCENE_FOR: Record<string, string> = { platform: 'Platform', launch: 'Launch', hotfire: 'Hotfire', 'heli-catch': 'Heli', 'orbit-raise': 'OrbitRaise', sprint: 'Sprint', 'fault-finder': 'FaultFinder', splashdown: 'Splashdown', cruise: 'Cruise', 'countdown-race': 'CountdownRace', ride: 'Ride', 'orbit-ops': 'OrbitOps', 'dual-count': 'DualCount', 'arc-lab': 'ArcLab', 'edit-bay': 'EditBay', 'slot-finder': 'SlotFinder', 'hat-trick': 'HatTrick', 'fit-out': 'FitOut', sandbar: 'Sandbar' };
 export const FONT = UI;
 
 export const plain = (s: string) => s;
@@ -385,7 +385,7 @@ export function finish(scene: Phaser.Scene, def: LevelDef, r: { success: boolean
   const eggFound = scored ? save.eggs[def.id] : r.egg;
   const egg = def.egg ? (eggFound ? `<p class="fact"><b>Easter egg found:</b> ${def.egg}</p>` : `<p class="src">There is an easter egg hidden in this level…</p>`) : '';
   const bonus = def.unlocks && scored ? byId(def.unlocks) : undefined; // in free play every secret is already on the map
-  const secret = !bonus ? '' : save.unlocks[bonus.id] ? `<p class="fact unlock"><b>${fresh ? 'Secret unlocked' : 'Secret found'}:</b> “${bonus.title}” is now on the map, branching off this node.</p>` : `<p class="src">A blueprint is hidden somewhere in this level. You will need a power-up to reach it.</p>`;
+  const secret = !bonus ? '' : save.unlocks[bonus.id] ? `<p class="fact unlock"><b>${fresh ? 'Secret unlocked' : 'Secret found'}:</b> “${bonus.title}” is now on the map, branching off this node.</p>` : `<p class="src">${def.params?.secretHint || 'A blueprint is hidden somewhere in this level. You will need a power-up to reach it.'}</p>`;
   const html = `${r.success ? patchImg(def.id) : ''}<div class="kicker">${def.title.toUpperCase()} · ${r.success ? 'MISSION SUCCESS' : 'ANOMALY'}</div><h1>${r.title}</h1>${stars}<p>${r.text}</p>${r.success ? `<p class="fact"><b>What really happened:</b> ${def.after}</p>` : ''}${speedLine}${r.success ? watchLink(def) : ''}${egg}${r.success ? secret : ''}`;
   const back = () => scene.scene.start('Map', { title: false }); // without data Phaser reuses the boot data and the title card comes back
   const retry = () => scene.scene.start(scene.scene.key, { def });

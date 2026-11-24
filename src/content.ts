@@ -4,7 +4,7 @@ export type Kind = 'platform' | 'launch' | 'minigame' | 'card' | 'person';
 export interface LevelDef {
   id: string;
   kind: Kind;
-  mechanic?: 'platform' | 'launch' | 'hotfire' | 'heli-catch' | 'orbit-raise' | 'sprint' | 'fault-finder' | 'splashdown' | 'cruise' | 'countdown-race' | 'ride' | 'orbit-ops' | 'dual-count' | 'arc-lab' | 'edit-bay' | 'slot-finder' | 'hat-trick' | 'fit-out';
+  mechanic?: 'platform' | 'launch' | 'hotfire' | 'heli-catch' | 'orbit-raise' | 'sprint' | 'fault-finder' | 'splashdown' | 'cruise' | 'countdown-race' | 'ride' | 'orbit-ops' | 'dual-count' | 'arc-lab' | 'edit-bay' | 'slot-finder' | 'hat-trick' | 'fit-out' | 'sandbar';
   parent?: string; // bonus nodes only: the map node they branch from
   unlocks?: string; // platform levels: the bonus node opened by finding this level's hidden blueprint
   status: 'flown' | 'in-progress' | 'announced';
@@ -234,7 +234,7 @@ export const LEVELS: LevelDef[] = [
     },
   },
   {
-    id: 'going-public', kind: 'platform', mechanic: 'platform', status: 'flown', hero: 'adam', role: 'Chief Financial Officer · 2021',
+    id: 'going-public', kind: 'platform', mechanic: 'platform', status: 'flown', unlocks: 'high-tide', hero: 'adam', role: 'Chief Financial Officer · 2021',
     title: 'RKLB rings the bell', date: '2021-08-25', place: 'Long Beach, California', map: { x: 607, y: 274 },
     intro: 'In March 2021 Rocket Lab announces two things at once: a merger with the SPAC Vector Acquisition Corporation, and Neutron, the bigger reusable rocket Beck had said he would never build. Going public is a paper chase, and paper is the finance chief’s department. Pandemic travel limits mean nobody is going to Times Square: on listing day the Nasdaq opening bell will be rung by video link. This level belongs to Adam Spice: carry the listing across the Long Beach headquarters and have everything at the bell before the market opens.',
     how: 'You play Adam Spice. Arrows to run, Space to jump. Collect the five things the listing needs and reach the bell. Jump on bears and rolls of red tape to see them off; wait out the red candles falling from the tickers; mind the funding gaps. Power-ups float in bubbles: the hard hat and hi-vis vest make you untouchable, and the bubble with Peter’s face brings Peter Beck in to run ahead of you and clear the way.',
@@ -249,7 +249,8 @@ export const LEVELS: LevelDef[] = [
       parts: [[5, 6, 'Merger agreement'], [19, 6, 'PIPE commitments'], [22, 4, 'Form S-4'], [38, 4, 'Shareholder vote'], [50, 6, 'RKLB ticker']],
       hazards: [], sheep: [], egg: [35, 6], goal: 60,
       enemies: [['bear', 7, 11], ['candles', 25, 25], ['redtape', 39, 42], ['candles', 48, 48], ['bear', 53, 57]],
-      powerups: [['H', 16, 8], ['C', 32, 8]],
+      powerups: [['H', 16, 8], ['C', 32, 8]], secret: [41, 1], secretKey: 'paperboat', secretSay: 'A paper boat, folded from a spare page. Secret unlocked',
+      secretHint: 'Something folded out of paper is hidden in this level, higher up than the paperwork goes. No power-up needed: a good jump will do.',
       signs: [],
     },
   },
@@ -668,6 +669,31 @@ export const BONUS: LevelDef[] = [
     fact: 'The same account says that after the thirteenth flight was lost in 2020, Sir Peter Beck recorded a personal video apology to customers.',
     after: '',
     sources: [RL + 'updates/trust-me-its-gonna-take-off-inside-electrons-first-100-launches/'],
+  },
+  {
+    id: 'high-tide', kind: 'minigame', mechanic: 'sandbar', status: 'flown', parent: 'going-public',
+    title: 'High Tide', date: '2026-05-28', place: 'off Cocoa Beach, Florida', map: { x: 772, y: 306 },
+    intro: 'On Wednesday 27 May 2026 Rocket Lab’s shares close at $150.23, the highest close they have had. This level imagines the evening after. A handful of retail shareholders take a dinghy with a superyacht’s name out to a sandbar off Cocoa Beach, the kind that only shows when the tide is out, and set up a party on it. The party, the sandbar, the boats and everyone on them are invented, and so are the tide’s times. What they can see is not: about 13 km up the coast, on Launch Complex 36 at Cape Canaveral, a Blue Origin New Glenn is standing on its pad for an engine test.',
+    how: 'You play one of the fans. ← → walk; Space picks up what you are standing beside and puts it down again. While the tide is out, the boats land things at the water’s edge: carry each one to its outline on the sand before nine o’clock. Hold Space beside the inflatable to pump it up. ↑ hops over a ghost crab; a pinch makes you drop what you are carrying. Enter, beside the telescope, has a look. When the tide turns, everything goes back to the boats at the water’s edge: the lowest things go under first, and each boat holds only so many. Three stars for the whole party up before nine and nothing lost to the tide.',
+    fact: 'Atlantic ghost crabs are real: they live in burrows above the tide line on Florida’s beaches, are busiest at night and can run at more than a metre a second. A bar that floods on every tide would hold no burrows, so the ones here are the game’s.',
+    after: 'At about 9 p.m. Eastern time on Thursday 28 May 2026, which was 01:00 UTC on the 29th, a New Glenn exploded on Launch Complex 36 at Cape Canaveral Space Force Station as a static-fire test began. The first stage, a booster named No, It’s Necessary, and the fuelled second stage were destroyed, and the pad was badly damaged. Nobody was hurt, and the satellites due to fly on it were not yet at the pad. The Associated Press reported homes shaking in Cape Canaveral and Cocoa Beach. Rocket Lab’s shares had closed at their record of $150.23 the evening before. The sell-off in space stocks started the next morning: Rocket Lab fell more than 6% during Friday 29 May and another 14.7% on Monday 1 June, and the press tied both to the explosion. It changed nothing in Rocket Lab’s own business, and it does not explain the rest of the year: SpaceX listed on 12 June, in October Neutron’s first flight moved to 2027, and by late November the shares were about 70% below the record. Sound needs about 38 seconds to cover 13 km; the game makes you wait four.',
+    egg: 'Through the telescope: New Glenn, on the pad. Rocket Lab knew this rocket. On 13 November 2025 a New Glenn launched NASA’s two ESCAPADE spacecraft, which Rocket Lab built; in November 2026 they left for Mars on their own engines.',
+    sources: [WP + '2026_New_Glenn_rocket_explosion', 'https://spaceflightnow.com/2026/05/29/blue-origins-new-glenn-rocket-explodes-during-prelaunch-testing-at-cape-canaveral/', 'https://www.pbs.org/newshour/science/blue-origin-rocket-explodes-on-the-launch-pad-during-an-engine-firing-test', 'https://finance.yahoo.com/markets/stocks/article/ast-spacemobile-rocket-lab-tumble-following-blue-origin-rocket-explosion-154850590.html', 'https://finance.yahoo.com/markets/stocks/articles/rocket-lab-rklb-loses-14-044109330.html', 'https://www.fool.com/investing/2026/06/01/why-rocket-lab-stock-plummeted-today/', 'https://www.macrotrends.net/stocks/charts/RKLB/rocket-lab/stock-price-history', 'https://stockanalysis.com/stocks/rklb/history/', 'https://www.npr.org/2026/06/12/nx-s1-5855004/stock-ai-spacex-ipo-elon-musk', 'https://www.sec.gov/Archives/edgar/data/0001819994/000181999426000067/rklb-10142026ex991.htm', WP + 'ESCAPADE', WP + 'New_Glenn', WP + 'Atlantic_ghost_crab'],
+    params: {
+      theme: 'cocoa', start: 190, need: 3,
+      // the sand's surface, left to right: a long shallow slope up to a crest, and a short drop behind it
+      bar: [[14, 168], [30, 156], [52, 150.5], [84, 146], [120, 141.5], [160, 136], [200, 131], [230, 128.5], [250, 129.5], [272, 135], [288, 146], [298, 160], [306, 170]],
+      tide: { start: 140, low: 153, high: 124, out: 86, in: 54 }, // water levels (screen y) and the seconds each half lasts
+      clock: [19.5, 21], dusk: [20.2, 21.2], // local time at the start and at the turn; when night falls
+      boats: [['dinghy', 'left', 5], ['pedalo', 'right', 4]],
+      // key, kind, label, where its outline is, weight, which boat lands it, at which second
+      items: [
+        ['fire', 'fire', 'Bonfire', 212, 1, 0, 1], ['bar', 'bar', 'Cocktail bar', 238, 3, 0, 3], ['palms', 'palms', 'Palm trees', 263, 2, 0, 10], ['floor', 'floor', 'Dance floor', 172, 3, 1, 17], ['speaker', 'speaker', 'Speaker', 195, 2, 1, 24],
+        ['disco', 'disco', 'Disco ball', 150, 1, 0, 30], ['banner', 'banner', 'Banner', 128, 2, 0, 38], ['scope', 'scope', 'Telescope', 104, 1, 0, 46], ['table', 'table', 'Restaurant', 84, 3, 0, 54], ['rocket', 'rocket', 'Inflatable', 60, 1, 0, 62],
+      ],
+      guests: [204, 230, 250, 182, 172, 162, 222, 97],
+      crabs: [[8, 1], [18, -1], [28, 1], [37, -1], [47, 1], [57, -1], [66, 1]], // second, and the side it comes from
+    },
   },
 ];
 /**

@@ -153,9 +153,9 @@ export class PlatformScene extends Phaser.Scene {
       this.physics.add.overlap(this.me, it, () => { this.burst(it.x, it.y, 0x9fe6ff); it.destroy(); if (code === 'C' && mateC?.trait) this.giveMate(mateC); else this.givePower(code); });
     }
     if (p.secret) {
-      const sc = (this.secretObj = this.physics.add.staticImage(p.secret[0] * TS + 8, p.secret[1] * TS + 8, 'secret').setScale(S).refreshBody().setDepth(3));
+      const sc = (this.secretObj = this.physics.add.staticImage(p.secret[0] * TS + 8, p.secret[1] * TS + 8, p.secretKey || 'secret').setScale(S).refreshBody().setDepth(3));
       this.tweens.add({ targets: sc, angle: 12, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-      this.physics.add.overlap(this.me, sc, () => { this.burst(sc.x, sc.y, 0xffe98a); this.burst(sc.x, sc.y, 0x9fe6ff); sc.destroy(); this.secret = true; snd.secret(); this.say('Blueprint found! Secret unlocked'); });
+      this.physics.add.overlap(this.me, sc, () => { this.burst(sc.x, sc.y, 0xffe98a); this.burst(sc.x, sc.y, 0x9fe6ff); sc.destroy(); this.secret = true; snd.secret(); this.say(p.secretSay || 'Blueprint found! Secret unlocked'); });
     }
     this.jetFx = this.add.particles(0, 0, 'puff', { speedY: { min: 60, max: 110 }, speedX: { min: -8, max: 8 }, lifespan: 260, scale: { start: S * 0.3, end: S * 0.05 }, color: [0xffffff, 0xffd27a, 0xff6b2c], alpha: { start: 1, end: 0 }, blendMode: 'ADD', frequency: 14, emitting: false }).setDepth(4);
     // hazards and sheep

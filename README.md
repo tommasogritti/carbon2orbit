@@ -10,7 +10,7 @@ From a rocket bike in a Dunedin workshop to the hundredth Electron, and on to Ne
 An unofficial, open-source browser game. Fan project, not affiliated with Rocket Lab.
 
 <!-- counts:start: written by `npm run readme` -->
-`30 playable levels` · `18 kinds of play` · `every fact sourced` · `art and sound made in code`
+`31 playable levels` · `19 kinds of play` · `every fact sourced` · `art and sound made in code`
 <!-- counts:end -->
 
 </div>
@@ -118,6 +118,7 @@ Secrets, unlocked by finding a hidden blueprint:
 | The Hungry Hippo arrives | Story card | Archimedes and the tank |
 | Kinéis: five for five | Story card | No Time Toulouse |
 | Inside the first hundred | Story card | Go Find the Launch Site |
+| High Tide | Mini-game: a party against the tide | RKLB rings the bell |
 
 People to meet, on small nodes beside the path:
 

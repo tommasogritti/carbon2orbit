@@ -56,9 +56,10 @@ index.html ─ src/main.ts ─ Boot ─┬─ Title ── Map ──(Enter on a
 | `slot-finder` | `SlotFinder.ts` | Slide and stretch one meeting across several half-hidden diaries, send invitations, and fit the follow-up work in before a release time | §10.14 |
 | `hat-trick` | `HatTrick.ts` | Act one: stay in a moving camera frame while gathering things to wear and carry. Act two: a dish made by hand at a table: steer scissors along cut lines, pulse a blender in time, pour to a line against a lag, taste | §10.15 |
 | `fit-out` | `FitOut.ts` | Act one: a gantry crane with a swinging load sets a list of things on their marks on a hull that trims as the weight goes on. Act two: hold the fitted hull in a series of boxes on its thrusters, against wind | §10.16 |
+| `sandbar` | `Sandbar.ts` | While the tide is out, carry what the boats land to its outline on the sand before a set time; after the turn, get it all back into the boats before the water reaches it, lowest first | §10.17 |
 | `hotfire`, `heli-catch`, `orbit-raise`, `sprint`, `fault-finder`, `splashdown`, `cruise`, `countdown-race` | one file each | Single-purpose mini-games | §10.2 to §10.8 |
 
-The first six, `edit-bay`, `slot-finder`, `hat-trick` and `fit-out` are **reusable**: a second level can use them with different params and art. A level can also be told in several acts: `params.then = { mechanic, params, intro?, how? }` hands a successful act to the next scene, and nothing is saved until the last act ends.
+The first six, `edit-bay`, `slot-finder`, `hat-trick`, `fit-out` and `sandbar` are **reusable**: a second level can use them with different params and art. A level can also be told in several acts: `params.then = { mechanic, params, intro?, how? }` hands a successful act to the next scene, and nothing is saved until the last act ends.
 
 ## Conventions every scene follows
 
@@ -140,7 +141,7 @@ Story, intro, result, leaderboard and controls are DOM cards over the canvas (`s
 
 - **Fan project.** Official mission patches are in `src/assets/patches/`, listed with their mission and source page in `patches.json`; `patchImg()` shows them on a level's cards with a credit and link, and the launch scene puts the first one on the fairing. No other Rocket Lab logos or media are committed: official photos appear only from a player's own files in the git-ignored `src/assets/official/`. `?clean=1` leaves both out.
 - **Facts carry sources.** Every level lists `sources`; text about real people states facts, never invented speech.
-- **Peter Beck is the main character.** Another person leads a level through `hero`, or joins as a running mate through `params.buddy` (spec §7.0a).
+- **Peter Beck is the main character.** Another person leads a level through `hero`, or joins as a running mate through `params.buddy` (spec §7.0a). One level, High Tide, is led by an invented fan who is nobody real: the scene draws them itself and shows its own name plate, so `hero` and `CHARACTERS` are not involved.
 
 ## Testing and tools
 
