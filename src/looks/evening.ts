@@ -98,7 +98,7 @@ export const evening = (p: Pad, e: Eve): Look => ({
   swap: { ...SPACE, sky_dusk: e.key + '_sky', sky_night: e.key + '_sky', [p.site]: e.key + '_site', cloud1: e.key + '_cloud1', cloud2: e.key + '_cloud2', cloud3: e.key + '_cloud3' },
   grade: e.grade,
   live(hf) {
-    ascentLive(hf, { sun: [e.west, p.hz + 40], glint: { x: e.west, y0: p.hz - 99, y1: p.hz - 84, tint: e.glint, w: e.glintW }, flare: 0, sunTint: e.twilight ? 0xff9a60 : 0x20406a, plume: 1.5, sunless: !e.twilight, airTint: e.air });
+    ascentLive(hf, { sun: [e.west, p.hz + 40], glint: { x: e.west, y0: p.hz - 99, y1: p.hz - 84, tint: e.glint, w: e.glintW }, flare: 0, sunTint: e.twilight ? 0xff9a60 : 0x20406a, plume: 1.5, sunless: !e.twilight, airTint: e.air, streak: 0.5, shine: 0.5 });
     (hf.tags.earth as Img | undefined)?.setTint(e.limb);
     const s = hf.scene, puff = (size: number, tint: number) => s.add.image(154, 0, 'puff').setScale(S * size).setTint(tint).setBlendMode('ADD').setAlpha(0);
     const reds = p.reds.map(([x], i) => { const b = hf.above(puff(i ? 0.45 : 0.7, 0xff4030).setX(x), 'ground'); s.tweens.add({ targets: b, alpha: { from: 1, to: 0.15 }, duration: 900, yoyo: true, repeat: -1, delay: (i % 3) * 300, ease: 'Sine.easeInOut' }); return b; }); // the red lights breathe

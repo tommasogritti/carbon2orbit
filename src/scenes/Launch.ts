@@ -140,7 +140,7 @@ export class LaunchScene extends Phaser.Scene {
     this.hint = T(this, RX, 50.5, '', '#cfd6ea', 5.2, '700').setOrigin(0.5).setDepth(21).setShadow(0, 1, '#000000', 3).setAlign('center');
     who(this, { ...this.def, role: this.def.role || 'CEO · calling the launch' }, 4, 52);
     this.say(this.ung ? 'Aim the rail against the wind' : 'Terminal count');
-    if (hf) { hf.tag({ sky, dark: this.dark, stars: this.stars, earth: this.earth, ground: this.ground, smoke: this.smoke, rocket: this.rocket }); hf.set({ rx: RX, alt: 0, base: 136, ry: 136, rot: 0, burn: 0, up: 0 }); hf.ready({ hud: this.children.list.slice(worldN), lateHud: true }); }
+    if (hf) { hf.tag({ sky, dark: this.dark, stars: this.stars, earth: this.earth, ground: this.ground, smoke: this.smoke, rocket: this.rocket, flame: this.flame, flame2: this.flame2 }); hf.set({ rx: RX, alt: 0, base: 136, ry: 136, rot: 0, burn: 0, up: 0 }); hf.ready({ hud: this.children.list.slice(worldN), lateHud: true }); }
   }
   say(s: string) { this.call.setText(s); }
   /** For the controls panel: launch control changes with the vehicle and the phase. */
@@ -365,7 +365,7 @@ export class LaunchScene extends Phaser.Scene {
     this.rocket.y = ry; this.rocket.rotation = Math.PI / 2 - s.pitch;
     const base = ry + gY(a);
     this.ground.y = base; this.ground.setVisible(base < H + 110);
-    this.hf?.set({ alt: a, base, ry, rot: this.rocket.rotation, burn: burning ? s.throttle : 0, up: up ? 1 : 0 });
+    this.hf?.set({ alt: a, base, ry, rot: this.rocket.rotation, burn: burning ? s.throttle : 0, up: up ? 1 : 0, nz: up ? 13 * this.rocket.scale : 0, q: v.qLimit ? s.q / v.qLimit : 0 });
     for (const c of this.clouds) { c.o.y = base - gY(c.alt) - 20; c.o.setVisible(c.o.y > -30 && c.o.y < H + 30); }
     const k = clamp((a - 8) / 80, 0, 1);
     this.dark.setAlpha(k); this.stars.setAlpha(k);
