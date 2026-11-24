@@ -15,7 +15,7 @@ import { fxSprite, FxKind } from './hifiFx';
 //     asks: shafts of light that whatever stands before the sun cuts into (`rays`), the sideways streak of a film lens
 //     (`Grade.streak`), pressure waves that bend the picture as they pass (`shock`), a camera that shakes (`shake`) and
 //     an exposure that is caught out by a sudden light (`flash`);
-//   - sprites drawn by a shader of their own (hifiFx.ts): a rocket plume with its shock diamonds (`fx`).
+//   - sprites drawn by a shader of their own (hifiFx.ts): a rocket plume with its shock diamonds, the shock layer of a re-entry, an electric arc (`fx`).
 // The HUD moves to its own camera so the post pass never touches it (the map and the title bring their own way: `ownHud`). Without WebGL the art and the
 // animation stay and the lighting and post pass are skipped. Players switch it with the Graphics button or G
 // (remembered, high by default); `?hifi=0` turns it off for one visit.
@@ -317,6 +317,8 @@ export class HiFi {
   }
   /** Scroll factor of a layer `w` units wide: just fast enough to show all of itself over the level. */
   f(w: number) { return this.still ? 1 : (w - W) / (this.world.LW - W); }
+  /** Where in the world a point at `x` on the parallax layer `w` units wide is right now (for `rays`, whose light may ride on a far layer). */
+  wx(w: number, x: number) { const f = this.f(w); return HX * (1 - f) + x + this.scene.cameras.main.scrollX * (1 - f); }
   /** Puts a texture on the parallax layer `w` units wide, at that layer's own coordinates. */
   on(w: number, x: number, y: number, key: string) {
     const f = this.f(w), o = this.scene.add.image(HX * (1 - f) + x, y, key).setScale(1 / (RES[key] || D)).setScrollFactor(f, 1);

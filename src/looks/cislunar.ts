@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { D, S, C2, el, line, lg, rg, rng, planet } from '../art';
 import { texAt, soft, add, halo } from '../hifi';
 import type { Look } from '../hifi';
+import { fxSet } from '../hifiFx';
 
 // ------------------------------------------------------------------ CAPSTONE to the Moon: between the Earth and the Moon, 28 June to 4 July 2022
 // This is space, and a diagram of it (the Earth, the Moon and the orbits are not to scale), so there is no hour and no
@@ -73,7 +74,7 @@ export function plume(c: C2) { soft(c, 0.8); c.fillStyle = lg(c, 0, 0, 0, 22, [0
 export function glint(c: C2) { add(c, () => { for (const [dx, dy] of [[1, 0], [0, 1]]) { c.fillStyle = lg(c, 8 - dx * 8, 8 - dy * 8, 8 + dx * 8, 8 + dy * 8, [0, 'rgba(255,255,255,0)'], [0.5, 'rgba(255,255,255,.95)'], [1, 'rgba(255,255,255,0)']); c.fillRect(dx ? 0 : 7.7, dy ? 0 : 7.7, dx ? 16 : 0.6, dy ? 16 : 0.6); } }); halo(c, 8, 8, 2.4, '255,255,255', 1); }
 
 type Im = Phaser.GameObjects.Image; type Em = Phaser.GameObjects.Particles.ParticleEmitter;
-let o: { weather: Phaser.GameObjects.TileSprite; plume: Im; flash: Im; trail: Em; lamp?: Phaser.GameObjects.Light; glint: Im; satGlint: Im; fired: number; hot: number } | undefined;
+let o: { weather: Phaser.GameObjects.TileSprite; plume: Im; jet?: Im; flash: Im; trail: Em; lamp?: Phaser.GameObjects.Light; glint: Im; satGlint: Im; fired: number; hot: number } | undefined;
 
 export const cislunarLook: Look = {
   build(scene) {
@@ -87,7 +88,7 @@ export const cislunarLook: Look = {
     { x: 470, y: -150, r: 700, color: 0xfff2dc, i: 1.5 },  // the Sun, far off beyond the Moon
     { x: EX, y: EY, r: 74, color: 0x5fa0ff, i: 1.2 },      // the Earth's own light on anything passing close
   ],
-  grade: { threshold: 0.7, bloom: 0.7, exposure: 1.05, contrast: 1.1, saturation: 1.14, shadows: [0.86, 0.94, 1.2], highs: [1.06, 1.0, 0.92], vignette: 0.5, grain: 0.028, fringe: 0.006 },
+  grade: { threshold: 0.7, bloom: 0.7, exposure: 1.05, contrast: 1.1, saturation: 1.14, shadows: [0.86, 0.94, 1.2], highs: [1.06, 1.0, 0.92], vignette: 0.5, grain: 0.028, fringe: 0.006, streak: 0.1 },
   live(hf) {
     const s = hf.scene;
     const puff = (x: number, y: number, kx: number, ky: number, tint: number, a: number) => s.add.image(x, y, 'puff').setScale(S * kx, S * ky).setTint(tint).setBlendMode('ADD').setAlpha(a);
@@ -100,18 +101,20 @@ export const cislunarLook: Look = {
     // Photon: the way it has come, its engine when it fires, and the Sun on its panels now and then
     const trail = hf.below(s.add.particles(0, 0, 'puff', { lifespan: 1500, scale: { start: S * 0.16, end: 0 }, alpha: { start: 0.7, end: 0 }, tint: 0x9fc8ff, blendMode: 'ADD', frequency: 22 }), 'craft');
     const pl = hf.below(s.add.image(0, 0, 'hf_cl_plume').setOrigin(0.5, 0).setScale(S * 1.5, S * 1.3).setBlendMode('ADD').setAlpha(0), 'craft'), flash = hf.below(puff(0, 0, 3, 3, 0xb8dcff, 0), 'craft');
+    const jet = hf.fx('plume', 0, 0, 20, 26)?.setOrigin(0.5, 0).setVisible(false); if (jet) { hf.below(jet, 'craft'); (hf.tags.burn as Em | undefined)?.setVisible(false); } // on WebGL the shader's flame: in a vacuum, a pale bell that opens at once
     const gl = s.add.image(0, 0, 'hf_cl_glint').setScale(S * 0.9).setBlendMode('ADD').setAlpha(0), satGlint = s.add.image(0, 0, 'hf_cl_glint').setScale(S * 0.7).setBlendMode('ADD').setAlpha(0);
     const lamp = hf.gl ? s.lights.addLight(0, 0, 60, 0xb8dcff, 0) : undefined;
-    o = { weather, plume: pl, flash, trail, lamp, glint: gl, satGlint, fired: hf.state.fired || 0, hot: 0 };
+    o = { weather, plume: pl, jet, flash, trail, lamp, glint: gl, satGlint, fired: hf.state.fired || 0, hot: 0 };
   },
   step(hf, dt) {
     if (!o) return;
     const st = hf.state, t = hf.t, h = st.rot - Math.PI / 2, bx = st.x - Math.cos(h) * 3.2, by = st.y - Math.sin(h) * 3.2, fl = 0.85 + 0.15 * Math.sin(t * 67) * Math.sin(t * 41);
     o.weather.tilePositionX -= dt * 5;
-    if (st.fired > o.fired) o.hot = 1; o.fired = st.fired; o.hot = Math.max(0, o.hot - dt * 1.7); // a burn: the engine lights, and everything near it for a moment
-    const k = o.hot * o.hot;
-    o.plume.setPosition(bx, by).setRotation(st.rot).setAlpha(Math.min(1, o.hot * 1.6) * fl).setScale(S * (0.9 + 0.4 * o.hot), S * (0.4 + 0.5 * o.hot));
-    o.flash.setPosition(bx, by).setAlpha(k * 0.55).setScale(S * (1.2 + 1.6 * k));
+    if (st.fired > o.fired) { o.hot = 1; hf.flash(0.18); } o.fired = st.fired; o.hot = Math.max(0, o.hot - dt * 1.7); // a burn: the engine lights, and everything near it for a moment
+    const k = o.hot * o.hot; hf.streak(0.1 + 0.3 * o.hot); // the lens streaks through the flame while it lasts; the Earth is too broad a light for it
+    if (o.jet) { o.jet.setPosition(bx, by).setRotation(st.rot).setVisible(o.hot > 0.02).setAlpha(Math.min(1, o.hot * 2)); fxSet(o.jet, o.hot, 1, 9, 3); }
+    o.plume.setPosition(bx, by).setRotation(st.rot).setAlpha(o.jet ? 0 : Math.min(1, o.hot * 1.6) * fl).setScale(S * (0.9 + 0.4 * o.hot), S * (0.4 + 0.5 * o.hot));
+    o.flash.setPosition(bx, by).setAlpha(k * (o.jet ? 0.22 : 0.55)).setScale(S * (1.2 + 1.6 * k));
     o.lamp?.setPosition(bx, by).setIntensity(3 * o.hot * fl);
     o.trail.setPosition(st.x, st.y); o.trail.emitting = !st.done;
     o.glint.setPosition(st.x + 1.5, st.y - 1.5).setAlpha(Math.max(0, Math.sin(t * 0.9 + st.x * 0.02)) ** 8 * 0.9).setRotation(t * 0.3); // a panel catching the Sun as the stage turns

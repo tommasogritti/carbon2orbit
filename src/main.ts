@@ -29,6 +29,7 @@ import { EditBayScene } from './scenes/EditBay';
 import { SlotFinderScene } from './scenes/SlotFinder';
 import { HatTrickScene } from './scenes/HatTrick';
 import { FitOutScene } from './scenes/FitOut';
+import { SandbarScene } from './scenes/Sandbar';
 import { makeCreators } from './creators';
 
 class Boot extends Phaser.Scene {
@@ -50,7 +51,7 @@ Promise.all(['500', '600', '700'].map((w) => document.fonts.load(`${w} 16px "Cha
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, fullscreenTarget: 'stage' },
     render: { antialias: true, roundPixels: false },
     physics: { default: 'arcade', arcade: { gravity: { x: 0, y: 620 } } },
-    scene: [Boot, TitleScene, MapScene, PlatformScene, LaunchScene, HotfireScene, HeliScene, OrbitRaiseScene, SprintScene, FaultFinderScene, SplashdownScene, CruiseScene, CountdownRaceScene, RideScene, OrbitOpsScene, DualCountScene, ArcLabScene, EditBayScene, SlotFinderScene, HatTrickScene, FitOutScene],
+    scene: [Boot, TitleScene, MapScene, PlatformScene, LaunchScene, HotfireScene, HeliScene, OrbitRaiseScene, SprintScene, FaultFinderScene, SplashdownScene, CruiseScene, CountdownRaceScene, RideScene, OrbitOpsScene, DualCountScene, ArcLabScene, EditBayScene, SlotFinderScene, HatTrickScene, FitOutScene, SandbarScene],
   });
   initInput(game);
   document.getElementById('credits')?.addEventListener('click', (e) => { (e.currentTarget as HTMLElement).blur(); showCredits(game); });

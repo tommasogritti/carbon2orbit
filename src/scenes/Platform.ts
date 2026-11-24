@@ -86,8 +86,9 @@ export class PlatformScene extends Phaser.Scene {
     // test positions: an engine over the trench that fires on a cycle. Cross between firings.
     (p.fires || []).forEach((tx: number, i: number) => {
       const x = tx * TS + 8, gy = ((p.ground as number[][]).find(([a, b]) => tx >= a && tx <= b)?.[2] ?? 9) * TS;
-      const stand = img(this, x, gy, 'firestand').setOrigin(0.5, 1).setDepth(1); hf?.tag({ ['fire' + i]: stand }); // a look lights the stand, and lights the place from it while it burns
+      const stand = img(this, x, gy, 'firestand').setOrigin(0.5, 1).setDepth(1);
       const fx = this.add.particles(x, gy - 54, 'puff', { speedY: { min: 150, max: 230 }, speedX: { min: -9, max: 9 }, lifespan: { min: 200, max: 290 }, scale: { start: S * 0.75, end: S * 0.25 }, color: [0xffffff, 0xcfe9ff, 0x7fb4ff, 0x3f6fd0], alpha: { start: 1, end: 0 }, blendMode: 'ADD', frequency: 8, quantity: 2, emitting: false }).setDepth(3);
+      hf?.tag({ ['fire' + i]: stand, ['flame' + i]: fx }); // a look lights the stand, lights the place from it while it burns, and may draw the flame itself
       this.fires.push({ x, t: i * 1.3, fx, lamp: this.add.circle(x - 9.4, gy - 48.6, 1.2, 0x7cc56b).setDepth(2), on: false });
     });
     if (this.fires.length) this.roar = loop('rumble');
@@ -152,9 +153,9 @@ export class PlatformScene extends Phaser.Scene {
       this.physics.add.overlap(this.me, it, () => { this.burst(it.x, it.y, 0x9fe6ff); it.destroy(); if (code === 'C' && mateC?.trait) this.giveMate(mateC); else this.givePower(code); });
     }
     if (p.secret) {
-      const sc = (this.secretObj = this.physics.add.staticImage(p.secret[0] * TS + 8, p.secret[1] * TS + 8, 'secret').setScale(S).refreshBody().setDepth(3));
+      const sc = (this.secretObj = this.physics.add.staticImage(p.secret[0] * TS + 8, p.secret[1] * TS + 8, p.secretKey || 'secret').setScale(S).refreshBody().setDepth(3));
       this.tweens.add({ targets: sc, angle: 12, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-      this.physics.add.overlap(this.me, sc, () => { this.burst(sc.x, sc.y, 0xffe98a); this.burst(sc.x, sc.y, 0x9fe6ff); sc.destroy(); this.secret = true; snd.secret(); this.say('Blueprint found! Secret unlocked'); });
+      this.physics.add.overlap(this.me, sc, () => { this.burst(sc.x, sc.y, 0xffe98a); this.burst(sc.x, sc.y, 0x9fe6ff); sc.destroy(); this.secret = true; snd.secret(); this.say(p.secretSay || 'Blueprint found! Secret unlocked'); });
     }
     this.jetFx = this.add.particles(0, 0, 'puff', { speedY: { min: 60, max: 110 }, speedX: { min: -8, max: 8 }, lifespan: 260, scale: { start: S * 0.3, end: S * 0.05 }, color: [0xffffff, 0xffd27a, 0xff6b2c], alpha: { start: 1, end: 0 }, blendMode: 'ADD', frequency: 14, emitting: false }).setDepth(4);
     // hazards and sheep

@@ -866,6 +866,12 @@ export function makeBackdrops(scene: Phaser.Scene) {
   tex(scene, 'mc_beam', 60, 28, (c) => { c.fillStyle = lg(c, 0, 0, 60, 0, [0, 'rgba(255,250,228,.55)'], [1, 'rgba(255,250,228,0)']); c.beginPath(); c.moveTo(0, 12); c.lineTo(60, 0); c.lineTo(60, 28); c.lineTo(0, 16); c.closePath(); c.fill(); }); // her camera light, thrown ahead
   bubble('pw_W', (c) => { c.beginPath(); c.moveTo(5, 8.4); c.bezierCurveTo(5, 2.6, 13, 2.6, 13, 8.4); c.closePath(); c.fillStyle = '#b83a2e'; c.fill(); c.strokeStyle = OUT; c.lineWidth = 0.3; c.stroke(); rr(c, 4.4, 7.4, 9.2, 2, 0.8, '#c8463a', OUT, 0.25); rr(c, 5, 10, 8, 5, 2, '#323c52', OUT, 0.3); line(c, 5.4, 12.4, 12.6, 12.4, 'rgba(10,14,24,.7)', 0.4); });
   bubble('pw_U', (c) => { rr(c, 4.6, 4, 8.8, 7, 1.6, lg(c, 4.6, 0, 13.4, 0, [0, '#fff2b8'], [0.4, '#f2c230'], [1, '#8a6210']), OUT, 0.3); line(c, 4.8, 7.4, 13.2, 7.4, 'rgba(90,60,10,.5)', 0.3); poly(c, [7.6, 11, 10.4, 11, 11.2, 14, 6.8, 14], '#8b93a7', OUT, 0.25); poly(c, [7.6, 14, 10.4, 14, 9, 16.4], '#9fd6f5'); });
+  tex(scene, 'paperboat', 18, 18, (c) => { // a paper boat, folded from a page: the way to the sandbar
+    c.fillStyle = rg(c, 9, 9, 1, 9, [0, 'rgba(255,220,120,.9)'], [1, 'rgba(255,220,120,0)']); c.fillRect(0, 0, 18, 18);
+    poly(c, [9, 3.4, 12.6, 10.4, 5.4, 10.4], '#ffffff', OUT, 0.35); poly(c, [9, 3.4, 9, 10.4, 5.4, 10.4], '#dfe6f2');
+    poly(c, [2.6, 9.6, 15.4, 9.6, 12.8, 13.8, 5.2, 13.8], '#f4f6fa', OUT, 0.35); poly(c, [2.6, 9.6, 9, 11.4, 15.4, 9.6, 9, 10.4], '#cfd8e6');
+    for (const y of [11.6, 12.6]) line(c, 6.4, y, 11.6, y, 'rgba(60,80,120,.45)', 0.25);
+  });
   tex(scene, 'secret', 18, 18, (c) => { // a rolled blueprint, glowing
     c.fillStyle = rg(c, 9, 9, 1, 9, [0, 'rgba(255,220,120,.9)'], [1, 'rgba(255,220,120,0)']); c.fillRect(0, 0, 18, 18);
     c.save(); c.translate(9, 9); c.rotate(-0.5); rr(c, -6.4, -3, 12.8, 6, 1, '#2d5fa8', OUT, 0.35); line(c, -4, -1, 3, -1, '#dbe9ff', 0.4); line(c, -4, 1, 1, 1, '#dbe9ff', 0.4); el(c, 4, 0, 1.3, 1.3, undefined, '#dbe9ff', 0.4); el(c, -6.4, 0, 1.2, 3, '#4d7fd0', OUT, 0.3); el(c, 6.4, 0, 1.2, 3, '#4d7fd0', OUT, 0.3); c.restore();

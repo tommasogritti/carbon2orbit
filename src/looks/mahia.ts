@@ -104,6 +104,7 @@ export const mahiaLook: Look = {
     const t = hf.t, LW = hf.world.LW, span = LW + 400;
     sun[0].x = ((t * 16 + 260) % span) - 200; sun[1].x = ((t * 16 + 260 + span * 0.52) % span) - 200; // the sun patches travel with the cloud, left to right
     o.rain.frequency = 5 + 16 * (0.5 + 0.5 * Math.sin(t * 0.33 + 1)); // squalls come through and ease
+    hf.rays(hf.wx(SKY, GAP[0]), GAP[1], 0.3, 0xffecc0, 40, 1.0); // the tear in the cloud: its shafts are cut by the scud going over and by whatever stands on the skyline
     for (const w of o.sea) { w.tilePositionX += 26 * dt * 4; w.y = 150 + Math.sin(t * 1.7 + w.x) * 1.1; }
   },
 };

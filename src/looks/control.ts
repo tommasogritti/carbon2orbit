@@ -108,7 +108,7 @@ export const controlLook: Look = {
   mirror: 0.3,
   reflect: { key: 'hf_mc_refl', w: WALL, alpha: 0.32 },
   motes: { tint: 0xc8d4ff, count: 60 },
-  grade: { threshold: 0.72, bloom: 0.55, exposure: 1.0, contrast: 1.12, saturation: 1.06, shadows: [0.86, 0.94, 1.2], highs: [1.06, 1.0, 0.95], vignette: 0.5, grain: 0.03, fringe: 0.006 },
+  grade: { threshold: 0.72, bloom: 0.55, exposure: 1.0, contrast: 1.12, saturation: 1.06, shadows: [0.86, 0.94, 1.2], highs: [1.06, 1.0, 0.95], vignette: 0.5, grain: 0.03, fringe: 0.006, streak: 0.2 }, // the streak: street lamps, headlights and the Moon
   live(hf) {
     const s = hf.scene, tw = (targets: object, cfg: object) => s.tweens.add({ targets, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', ...cfg });
     const lit = (x: number, y: number, sx: number, sy: number, tint: number, a: number) => hf.on(WALL, x, y, 'puff').setScale(S * sx, S * sy).setTint(tint).setBlendMode('ADD').setDepth(-4.7).setAlpha(a);

@@ -44,8 +44,8 @@ function kerb(c: C2) {
 }
 
 type Img = Phaser.GameObjects.Image;
-let o: { far: Phaser.GameObjects.TileSprite; beam: Img; lamp: Img; jet: Img; gate: Img; wind: Phaser.GameObjects.Particles.ParticleEmitter; sx: number; sy: number } | undefined;
-const GRADE = { threshold: 0.66, bloom: 0.72, exposure: 1.06, contrast: 1.12, saturation: 1.12, shadows: [0.86, 0.94, 1.2] as [number, number, number], highs: [1.1, 1.0, 0.88] as [number, number, number], vignette: 0.55, grain: 0.03, fringe: 0.006 };
+let o: { far: Phaser.GameObjects.TileSprite; beam: Img; lamp: Img; jet: Img; gate: Img; wind: Phaser.GameObjects.Particles.ParticleEmitter } | undefined;
+const GRADE = { threshold: 0.66, bloom: 0.72, exposure: 1.06, contrast: 1.12, saturation: 1.12, shadows: [0.86, 0.94, 1.2] as [number, number, number], highs: [1.1, 1.0, 0.88] as [number, number, number], vignette: 0.55, grain: 0.03, fringe: 0.006, streak: 0.14 }; // the streak: street lamps, the headlamp and the crowd's flashes on a wet night
 export const sprintLook: Look = {
   build(scene) {
     texAt(scene, 'hf_sp_sky', 320, 132, 2, sky); texAt(scene, 'hf_sp_far', 320, 132, 3, buildings); texAt(scene, 'hf_sp_street', 320, 180, D, kerb);
@@ -55,7 +55,7 @@ export const sprintLook: Look = {
   swap: { street: 'hf_sp_street' },
   grade: GRADE,
   live(hf) {
-    const s = hf.scene, cam = s.cameras.main, r = rng(3), puff = (size: number, tint: number) => s.add.image(0, 0, 'puff').setScale(S * size).setTint(tint).setBlendMode('ADD').setAlpha(0);
+    const s = hf.scene, r = rng(3), puff = (size: number, tint: number) => s.add.image(0, 0, 'puff').setScale(S * size).setTint(tint).setBlendMode('ADD').setAlpha(0);
     hf.below(s.add.image(0, 0, 'hf_sp_sky').setOrigin(0).setScale(0.5), 'street');
     const far = hf.below(s.add.tileSprite(0, 0, 320 * 3, 132 * 3, 'hf_sp_far').setOrigin(0).setScale(1 / 3), 'street');
     for (let i = 0; i < 10; i++) { const t = hf.below(puff(0.1 + r() * 0.08, 0xdfe8ff).setPosition(r() * 320, r() * 40), 'street'); s.tweens.add({ targets: t, alpha: { from: 0.9, to: 0.1 }, duration: 500 + r() * 1400, yoyo: true, repeat: -1 }); }
@@ -66,7 +66,7 @@ export const sprintLook: Look = {
     const beam = hf.above(s.add.image(0, 0, 'hf_sp_beam').setOrigin(0, 0.5).setScale(0.5).setBlendMode('ADD'), 'car'), lamp = hf.above(puff(1.1, 0xfff0c8), 'car');
     const jet = hf.below(puff(3, 0xdfe8ff), 'bike'), gate = hf.below(puff(7, 0xffe6b0), 'flag');
     const wind = hf.above(s.add.particles(0, 0, 'puff', { x: 330, y: { min: 100, max: 178 }, speedX: { min: -900, max: -600 }, lifespan: 600, scaleX: { min: S * 1.2, max: S * 2.6 }, scaleY: S * 0.035, alpha: { start: 0.5, end: 0 }, tint: 0xcfdcff, blendMode: 'ADD', frequency: 40, emitting: false }), 'bike'); // the air going past
-    o = { far, beam, lamp, jet, gate, wind, sx: cam.scrollX, sy: cam.scrollY };
+    o = { far, beam, lamp, jet, gate, wind };
   },
   step(hf) {
     if (!o) return;
@@ -76,7 +76,7 @@ export const sprintLook: Look = {
     o.jet.setPosition(bike.x - 30, bike.y - 12).setAlpha(thr * (0.26 + 0.06 * Math.sin(t * 47))).setScale(S * 5, S * 2.2);
     o.gate.setPosition(flag.x, flag.y - 52).setAlpha(flag.visible ? 0.3 : 0);
     o.wind.emitting = v > 16; o.wind.frequency = Math.max(8, 70 - v * 1.4);
-    GRADE.fringe = 0.006 + Math.min(0.009, v * 0.0002); // the faster it goes, the less the lens keeps up
-    if (hf.gl) hf.scene.cameras.main.setScroll(o.sx + Math.sin(t * 67) * 0.16 * thr, o.sy + Math.sin(t * 83 + 1) * 0.2 * thr); // the valve open shakes the picture; the read-outs, on their own camera, stay still
+    GRADE.fringe = 0.006 + Math.min(0.009, v * 0.0002); hf.streak(0.14 + Math.min(0.3, v * 0.01)); // the faster it goes, the less the lens keeps up, and the further every light is drawn out
+    hf.shake(0.3 * thr); // the valve open shakes the picture; the read-outs, on their own camera, stay still
   },
 };

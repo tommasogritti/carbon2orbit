@@ -14,17 +14,18 @@ import type { Look } from '../hifi';
 const SCREEN = [4, 20, 312, 116], MON = [0, 1, 2, 3, 4, 5, 6].map((i) => 112 + i * 30), HARNESS = [213, 106];
 const hue = (i: number) => (i % 3 ? 0x7fd0ff : 0xff8a70);
 
-function room(c: C2) {
-  const r = rng(13), [sx, sy, sw, sh] = SCREEN;
+/** The review room in the dark, with a housing on the wall for each display (`frames`: x, y, w, h), brackets under the big one at `stands`, and its light spilling down the wall from `spill`. */
+export const roomFor = (frames: number[][], stands: number[], spill: number) => (c: C2) => {
+  const r = rng(13);
   // the wall: acoustic panels in the dark, and the housings the three displays sit in
   c.fillStyle = lg(c, 0, 0, 0, 146, [0, '#05070f'], [0.7, '#0b1020'], [1, '#111a30']); c.fillRect(0, 0, 320, 146);
   for (let x = 0; x < 320; x += 20) for (let y = 0; y < 146; y += 18) { rr(c, x + 0.4, y + 0.4, 19.2, 17.2, 0.6, `rgba(120,150,220,${0.012 + r() * 0.02})`); line(c, x + 0.6, y + 0.7, x + 19.4, y + 0.7, 'rgba(160,190,255,.05)', 0.25); }
-  for (const [x, y, w, h] of [[sx, sy, sw, sh], [4, 4, 196, 14], [204, 4, 112, 14]]) {
+  for (const [x, y, w, h] of frames) {
     rr(c, x - 2.4, y - 2.4, w + 4.8, h + 4.8, 4.6, lg(c, 0, y - 2.4, 0, y + h + 2.4, [0, '#2a3350'], [0.5, '#141a2e'], [1, '#0a0e1c']), 'rgba(0,0,0,.7)', 0.4);
     rr(c, x - 0.8, y - 0.8, w + 1.6, h + 1.6, 3.4, '#03050b'); line(c, x + 2, y - 2, x + w - 2, y - 2, 'rgba(170,196,255,.3)', 0.3);
   }
-  for (const x of [60, 160, 260]) { rr(c, x - 3, 138.4, 6, 7.6, 0.4, '#141a2e'); rr(c, x - 5, 144.6, 10, 1.6, 0.4, '#1c2440'); } // the brackets the big display stands on
-  add(c, () => { c.fillStyle = lg(c, 0, 137, 0, 150, [0, 'rgba(110,170,255,.18)'], [1, 'rgba(110,170,255,0)']); c.fillRect(0, 137, 320, 13); }); // its light, spilling down the wall under it
+  for (const x of stands) { rr(c, x - 3, 138.4, 6, 7.6, 0.4, '#141a2e'); rr(c, x - 5, 144.6, 10, 1.6, 0.4, '#1c2440'); } // the brackets the big display stands on
+  add(c, () => { c.fillStyle = lg(c, 0, spill, 0, spill + 13, [0, 'rgba(110,170,255,.18)'], [1, 'rgba(110,170,255,0)']); c.fillRect(0, spill, 320, 13); }); // its light, spilling down the wall under it
   // the floor: carpet tiles running away from us, and the displays lying in it as a sheen
   c.fillStyle = lg(c, 0, 146, 0, 180, [0, '#0e1730'], [0.4, '#0a1022'], [1, '#05070f']); c.fillRect(0, 146, 320, 34);
   for (let x = -300; x < 640; x += 26) line(c, 160 + (x - 160) * 0.42, 146, x, 180, 'rgba(140,170,240,.06)', 0.4);
@@ -40,7 +41,7 @@ function room(c: C2) {
   MON.forEach((x, i) => { halo(c, x + 10, 158, 16, i % 3 ? '127,208,255' : '255,138,112', 0.3); line(c, x + 2.2, 154.2, x + 17.8, 154.2, 'rgba(255,255,255,.5)', 0.2); });
   // close to the lens and out of focus: the backs of the chairs along the console row
   soft(c, 1.8); for (const x of [150, 212, 300]) { rr(c, x - 8, 172, 16, 12, 3, 'rgba(2,3,8,.96)'); rr(c, x - 9.4, 176, 2, 6, 1, 'rgba(2,3,8,.96)'); rr(c, x + 7.4, 176, 2, 6, 1, 'rgba(2,3,8,.96)'); line(c, x - 6, 172.6, x + 6, 172.6, 'rgba(127,208,255,.3)', 0.4); } soft(c, 0);
-}
+};
 function lines(c: C2) { for (let y = 0; y < 116; y += 1) { c.fillStyle = 'rgba(0,4,14,.5)'; c.fillRect(0, y + 0.5, 312, 0.5); } } // the display's own rows
 function glass(c: C2) { // the room, faintly, in the glass of the display
   c.save(); rr(c, 0, 0, 312, 116, 3); c.clip();
@@ -54,7 +55,7 @@ type Im = Phaser.GameObjects.Image;
 let o: { rim: Im; sweep: Im; cursor: Im; hot: Im; wrong: number; flash: number; sx: number; sy: number } | undefined;
 export const reviewLook: Look = {
   build(scene) {
-    texAt(scene, 'hf_rv_room', 320, 180, D, room); texAt(scene, 'hf_rv_lines', 312, 116, D, lines); texAt(scene, 'hf_rv_glass', 312, 116, 2, glass); texAt(scene, 'hf_rv_rim', 332, 136, 2, rim);
+    texAt(scene, 'hf_rv_room', 320, 180, D, roomFor([SCREEN, [4, 4, 196, 14], [204, 4, 112, 14]], [60, 160, 260], 137)); texAt(scene, 'hf_rv_lines', 312, 116, D, lines); texAt(scene, 'hf_rv_glass', 312, 116, 2, glass); texAt(scene, 'hf_rv_rim', 332, 136, 2, rim);
     texAt(scene, 'hf_rv_sweep', 312, 14, 1, (c) => { c.fillStyle = lg(c, 0, 0, 0, 14, [0, 'rgba(160,210,255,0)'], [0.8, 'rgba(160,210,255,.1)'], [1, 'rgba(200,230,255,.2)']); c.fillRect(0, 0, 312, 14); });
   },
   layers: [],
