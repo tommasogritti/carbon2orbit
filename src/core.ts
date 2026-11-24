@@ -112,7 +112,9 @@ export function initInput(game: Phaser.Game) {
       const u = new URL(location.href); u.searchParams.delete('dev'); location.href = u.toString(); // reload with the new setting
     });
   }
-  window.addEventListener('pointerdown', unlock);
+  // A mouse press lets audio start at once; a finger only when it lifts (pointerup, touchend, click), so a phone that
+  // heard nothing but "pointerdown" stayed silent. Capture phase: a control that stops the event must not stop the sound.
+  for (const ev of ['pointerdown', 'pointerup', 'touchend', 'click'] as const) window.addEventListener(ev, () => unlock(), { capture: true, passive: true });
   window.addEventListener('keydown', (e) => {
     unlock(); // browsers only allow sound after a key press or tap
     if ((e.target as HTMLElement | null)?.tagName === 'INPUT') { if (e.code === 'Enter') { overlayConfirm(); e.preventDefault(); } return; } // typing a name: keys are text, not controls
