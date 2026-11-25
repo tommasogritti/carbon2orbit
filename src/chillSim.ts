@@ -10,7 +10,8 @@
  *              `sticky` one ignores its first command, and liquid let into a line whose drain is open goes down the drain.
  *  - `chill`   a cryogenic test (a chilldown): meter liquid into a warm line. What goes in boils, the vapour is the line's pressure,
  *              and the relief valve lifts at 1. The colder the line, the more flow it takes; the tank at the far end is
- *              warm again when the liquid first reaches it. Each lift trips the flow valve shut and vents some of the store.
+ *              warm again when the liquid first reaches it. Each lift trips the flow valve shut for a few seconds and
+ *              vents some of the store: more, the harder the line was being pushed.
  *  - `press`   a pressure test: raise the pressure a step at a time and hold each step. A leak shows as a sag below the
  *              step and a sniffer reading at one joint, and grows faster the higher the pressure; a joint is only worked
  *              on once its line has been vented right down, to the safe mark. Left alone, the joint lets go.
@@ -60,7 +61,7 @@ const smooth = (u: number) => { u = clamp(u, 0, 1); return u * u * (3 - 2 * u); 
 export const strikes = (s: Sim) => s.lifts + s.bursts + s.spills;
 
 export function newSim(params: Params): Sim {
-  const p = { acts: ['lineup', 'chill', 'press'] as Act[], notches: 8, travel: 0.45, liftLoss: 0.09, drainLoss: 0.04, steps: 4, hold: 3, band: 0.03, safe: 0.08, joints: ['Flange 1', 'Flange 2', 'Flange 3', 'Flange 4', 'Quick disconnect'], leaks: [], par: 210, limit: 480, maxBursts: 3, ...params };
+  const p = { acts: ['lineup', 'chill', 'press'] as Act[], notches: 8, travel: 0.45, liftLoss: 0.07, drainLoss: 0.015, steps: 4, hold: 3, band: 0.03, safe: 0.08, joints: ['Flange 1', 'Flange 2', 'Flange 3', 'Flange 4', 'Quick disconnect'], leaks: [], par: 300, limit: 600, maxBursts: 3, ...params };
   const first = p.acts[0];
   const lines = p.lines.map((d): Line => {
     const v = {} as Record<Valve, V>;
@@ -82,8 +83,14 @@ function enter(s: Sim, act: Act | 'done') {
   }
 }
 export const lineupOk = (l: Line) => VALVES.every((k) => l.v[k].open === LINEUP[k] && !l.v[k].t);
+/** How chilled the line is when the thing at its far end begins to feel the cold: the warmth it adds comes in gradually from here. */
+const ARRIVE = 0.78;
+/** Seconds the pressure takes to answer a change of flow: long enough to see it coming. */
+const LAG = 1.8;
+/** Seconds a tripped flow valve stays shut after a relief valve lifts: rushing is slower than waiting. */
+const TRIP = 3.5;
 /** How warm the metal is that the flow meets, 0 to about 1.1: the line while it chills, then the tank as the liquid reaches it. */
-export function warmth(l: Line) { return Math.max(0, 1 - l.chill) + 0.1 + l.d.warm * (1 - l.tank) * smooth((l.chill - 0.9) / 0.1); }
+export function warmth(l: Line) { return Math.max(0, 1 - l.chill) + 0.1 + l.d.warm * (1 - l.tank) * smooth((l.chill - ARRIVE) / (1 - ARRIVE)); }
 /** The pressure this line would settle at with the flow valve on notch `n`. */
 export const settles = (s: Sim, l: Line, n: number) => (n / s.p.notches) * warmth(l) * l.d.gain;
 /** The wall temperature of the line in °C, from ambient to the fluid's boiling point. */
@@ -102,13 +109,13 @@ export function throttle(s: Sim, i: number, d: number) {
   const q = clamp(l.q + d, 0, s.p.notches); if (q === l.q) return false;
   l.q = q; return true;
 }
-/** Raise the pressure a step (d = 1) or vent down a step (d = -1). Up is refused until the present step has been held. */
+/** Raise the pressure to the next step not yet held (d = 1), or vent the line right down (d = -1). Up is refused until the present step has been held. */
 export function pressure(s: Sim, i: number, d: number): true | 'hold' | 'top' | 'bottom' | 'busy' | 'leak' {
   const l = s.lines[i];
   if (s.act !== 'press' || l.busy > 0) return 'busy';
-  if (d > 0) { if (l.set >= s.p.steps) return 'top'; if (l.set > l.held) return l.leak ? 'leak' : 'hold'; l.set++; l.holdT = 0; return true; }
+  if (d > 0) { if (l.set >= s.p.steps) return 'top'; if (l.set > l.held) return l.leak ? 'leak' : 'hold'; l.set = Math.min(s.p.steps, l.held + 1); l.holdT = 0; return true; }
   if (l.set <= 0) return 'bottom';
-  l.set--; l.holdT = 0; return true;
+  l.set = 0; l.holdT = 0; return true;
 }
 /** Work on a joint: only with the line at or below the safe mark. */
 export function tighten(s: Sim, i: number, joint: number): true | 'pressure' | 'busy' {
@@ -133,15 +140,15 @@ export function step(s: Sim, dt: number) {
       if (spill) { l.store = Math.max(0, l.store - P.drainLoss * dt); if (!l.spilling) { s.spills++; s.ev.push({ kind: 'spill', line: i }); } }
       l.spilling = spill;
     } else if (s.act === 'chill') {
-      const f = l.q / P.notches, w = warmth(l), heat = f * w, arrive = smooth((l.chill - 0.9) / 0.1);
+      const f = l.q / P.notches, w = warmth(l), heat = f * w, arrive = smooth((l.chill - ARRIVE) / (1 - ARRIVE));
       const was = l.chill;
       if (l.chill < 1) l.chill = Math.min(1, l.chill + heat * l.d.cool * dt);
       if (arrive > 0 && !l.loaded) { l.tank = Math.min(1, l.tank + f * (1.05 - l.tank) * arrive * l.d.tankCool * dt); l.level = Math.min(1, l.level + f * arrive * l.d.fill * Math.pow(l.tank, 1.5) * dt); }
       l.store = Math.max(0, l.store - f * l.d.use * dt);
-      l.p += ((heat * l.d.gain - l.p) / 1.1) * dt;
-      if (!l.near && l.chill >= 0.8) { l.near = true; s.ev.push({ kind: 'near', line: i }); }
+      l.p += ((heat * l.d.gain - l.p) / LAG) * dt;
+      if (!l.near && l.chill >= ARRIVE - 0.1) { l.near = true; s.ev.push({ kind: 'near', line: i }); }
       if (was < 1 && l.chill >= 1) s.ev.push({ kind: 'liquid', line: i });
-      if (l.p >= 1) { s.lifts++; l.lift = 1.6; l.q = 0; l.p = 0.5; l.store = Math.max(0, l.store - P.liftLoss); s.ev.push({ kind: 'lift', line: i }); }
+      if (l.p >= 1) { s.lifts++; l.lift = TRIP; l.q = 0; l.p = 0.5; l.store = Math.max(0, l.store - P.liftLoss * clamp(heat * l.d.gain, 1, 2.5)); s.ev.push({ kind: 'lift', line: i }); } // the harder it was pushed, the more goes up the stack
       if (!l.loaded && l.level >= 1) { l.loaded = true; l.q = 0; s.ev.push({ kind: 'loaded', line: i }); }
       if (!l.loaded && l.store <= 0 && !s.failed) { s.failed = 'empty'; s.ev.push({ kind: 'empty', line: i }); }
     } else {
@@ -153,7 +160,7 @@ export function step(s: Sim, dt: number) {
       } else if (l.set > l.held && Math.abs(l.pp - pt) < P.band) {
         l.holdT += dt;
         const k = P.leaks.findIndex(([li, , st, after], n) => !s.sprung[n] && li === i && st === l.set && l.holdT >= after);
-        if (k >= 0) { s.sprung[k] = true; l.leak = { joint: P.leaks[k][1], sev: 0, grow: P.leaks[k][4] ?? 0.057 }; l.holdT = 0; s.ev.push({ kind: 'leak', line: i, joint: P.leaks[k][1] }); }
+        if (k >= 0) { s.sprung[k] = true; l.leak = { joint: P.leaks[k][1], sev: 0, grow: P.leaks[k][4] ?? 0.03 }; l.holdT = 0; s.ev.push({ kind: 'leak', line: i, joint: P.leaks[k][1] }); }
         else if (l.holdT >= P.hold) { l.held = l.set; l.holdT = 0; s.ev.push({ kind: 'held', line: i }); }
       }
     }
@@ -164,8 +171,8 @@ export function step(s: Sim, dt: number) {
   s.settle = done ? s.settle + dt : 0;
   if (s.settle > 0.8) { s.ai++; enter(s, P.acts[s.ai] || 'done'); }
 }
-/** Stars for a finished run: three inside par with at most one strike, two with at most three. */
-export function stars(s: Sim) { const k = strikes(s); return k <= 1 && s.t <= s.p.par ? 3 : k <= 3 ? 2 : 1; }
+/** Stars for a finished run: three inside par with at most two strikes, two with at most five. */
+export function stars(s: Sim) { const k = strikes(s); return k <= 2 && s.t <= s.p.par ? 3 : k <= 5 ? 2 : 1; }
 
 /**
  * The bot: what a careful operator does, through the same commands the player has. It shuts drains before it opens
@@ -182,7 +189,7 @@ export function bot(s: Sim, dt: number) {
     for (let i = 0; i < s.lines.length; i++) {
       const l = s.lines[i]; if (l.loaded || l.lift > 0) continue;
       // near the tank, plan for the warmth the liquid is about to meet
-      const ahead: Line = l.chill > 0.78 && l.chill < 1 ? { ...l, chill: 1 } : l;
+      const ahead: Line = l.chill > ARRIVE - 0.1 && l.chill < 1 ? { ...l, chill: 1 } : l;
       let n = 0; while (n < s.p.notches && Math.max(settles(s, l, n + 1), settles(s, ahead, n + 1)) <= 0.84) n++;
       if (n !== l.q) { throttle(s, i, n > l.q ? 1 : -1); s.botT = 0; return; }
     }

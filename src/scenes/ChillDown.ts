@@ -106,8 +106,28 @@ export class ChillDownScene extends Phaser.Scene {
   help(): { title: string; rows: [keys: string, does: string][]; note?: string } {
     const two = this.sim.lines.length > 1, pick: [string, string][] = two ? [['↑ ↓', 'Choose a line.']] : [];
     if (this.act === 'lineup') return { title: 'Functional test: the line-up', rows: [...pick, ['← →', 'Choose a valve.'], ['Space', 'Command the chosen valve open or shut. It takes a moment to travel.']], note: 'Each line needs a way open from the farm to the far end (supply and fill), its drain shut, its vent open and the pressurant shut. Shut a drain before you open the supply above it. A valve that does not answer wants commanding again.' };
-    if (this.act === 'chill') return { title: 'Cryogenic test: chilldown', rows: [...pick, ['→', 'Open the flow valve a notch.'], ['←', 'Close it a notch.'], ['Enter', 'Shut the flow valve at once.']], note: 'Liquid boils in a warm line, and the vapour is the pressure on the gauge. The small arrow beside the gauge shows where the pressure is heading. Keep it out of the red: open up as the line frosts over, and ease back before the liquid reaches the far end, which is still warm.' };
-    return { title: 'Pressure test: step, hold, look for leaks', rows: [...pick, ['← →', 'Move along the joints and the two valves at the far end.'], ['Space on PRESSURANT', 'Raise the pressure a step, once the present step has been held.'], ['Space on VENT', 'Vent the line down a step.'], ['Space on a joint', 'Re-make it: only with the line vented down to the safe mark.']], note: 'A step is held when the ring closes. A leak shows as pressure sagging under its step and a sniffer lighting up at one joint; it grows faster the higher the pressure.' };
+    if (this.act === 'chill') return { title: 'Cryogenic test: chilldown', rows: [...pick, ['→', 'Open the flow valve a notch.'], ['←', 'Close it a notch.'], ['Enter', 'Shut the flow valve at once.']], note: 'Liquid boils in a warm line, and the vapour is the pressure on the gauge. The white arrow beside the gauge shows where the pressure is heading with the valve as it is now: keep the arrow under the red line and the pressure will stay there too. Open up as the line frosts over, and close a notch or two when the arrow climbs again as the liquid reaches the far end, which is still warm. A lift trips the flow valve shut for a few seconds and vents part of the store: more, the harder you were pushing.' };
+    return { title: 'Pressure test: step, hold, look for leaks', rows: [...pick, ['← →', 'Move along the joints and the two valves at the far end.'], ['Space on PRESSURANT', 'Raise the pressure to the next step, once the present step has been held.'], ['Space on VENT', 'Vent the line right down.'], ['Space on a joint', 'Re-make it: only with the line vented right down.'], ['I', 'A hint: which joint, and what to do next.']], note: 'A step is held when the ring closes. A leak shows as pressure sagging under its step and a sniffer lighting up at one joint; it grows faster the higher the pressure.' };
+  }
+  /** A hint (I, or the 💡 button): the next thing to do where the player is now, named. It costs nothing. */
+  hint(): { title: string; text: string } | undefined {
+    const s = this.sim, N = s.p.notches;
+    if (this.act === 'lineup') {
+      for (const l of s.lines) for (const k of ['drain', 'press', 'vent', 'fill', 'supply'] as Valve[]) if (l.v[k].open !== LINEUP[k] && !l.v[k].t) return { title: `${l.d.short}: ${LINEUP[k] ? 'open' : 'shut'} ${TAG[k]}`, text: `On the ${l.d.short} line, move to ${TAG[k]} (← →, and ↑ ↓ to change line) and press Space.${k === 'drain' ? ' Drains come first: liquid let into a line whose drain is open goes down the drain.' : k === 'supply' ? ' The supply goes last, once the drain below it is shut.' : ''} A valve that does not answer wants Space again.` };
+      return { title: 'Lined up', text: 'Every valve is where it should be. The next test starts by itself.' };
+    }
+    if (this.act === 'chill') {
+      const best = (l: Sim['lines'][0]) => { let n = 0; while (n < N && settles(s, l, n + 1) <= 0.85) n++; return n; };
+      const open = s.lines.filter((l) => !l.loaded), l = open.find((q) => settles(s, q, q.q) > 1) || open.sort((a, b) => Math.abs(best(b) - b.q) - Math.abs(best(a) - a.q))[0];
+      if (!l) return { title: 'Cold right through', text: 'Both lines are done. The next test starts by itself.' };
+      const n = best(l);
+      return { title: `${l.d.short}: flow ${n} of ${N}`, text: `Right now the ${l.d.short} line takes ${n} of ${N} notches (it is on ${l.q}): ${n > l.q ? '→ to open' : n < l.q ? '← to close' : 'leave it there for the moment'}. The number goes up as the line frosts over, and comes down for a while when the liquid reaches the ${this.th.unit[1]}. You never need the number: keep the white arrow beside the gauge just under the red line, and look at the other line every few seconds.` };
+    }
+    const leaky = s.lines.find((l) => l.leak);
+    if (leaky) { const j = s.p.joints[leaky.leak!.joint]; return { title: `${leaky.d.short}: the leak is at ${j.toLowerCase()}`, text: leaky.pp > s.p.safe ? `Go to the ${leaky.d.short} line (↑ ↓), move to VENT (← →) and press Space once: the line vents right down. When the gauge reaches the blue mark, move to ${j.toLowerCase()} (${leaky.leak!.joint < 4 ? `the ${['first', 'second', 'third', 'fourth'][leaky.leak!.joint]} joint from the left` : 'the last joint before the ' + this.th.unit[1]}) and press Space.` : `The ${leaky.d.short} line is vented. Move to ${j.toLowerCase()} (${leaky.leak!.joint < 4 ? `the ${['first', 'second', 'third', 'fourth'][leaky.leak!.joint]} joint from the left` : 'the last joint before the ' + this.th.unit[1]}) with ← → and press Space. Then Space on PRESSURANT to bring the pressure back.` }; }
+    const ready = s.lines.find((l) => l.set <= l.held && l.held < s.p.steps);
+    if (ready) return { title: `${ready.d.short}: next step`, text: `On the ${ready.d.short} line (↑ ↓), move to PRESSURANT (← →) and press Space. Then leave it alone until the ring closes.` };
+    return { title: 'Wait for the ring', text: 'Each step has to hold until its ring closes. While you wait, watch both gauges: one that sinks under its yellow mark means a joint on that line is leaking.' };
   }
   init(d: { def: LevelDef }) { this.def = d.def; this.th = THEMES[d.def.params.theme]; this.sim = newSim(d.def.params); this.line = 0; this.k = 0; this.ended = false; this.hinted = {}; this.alarmT = 0; this.clock = 0; this.rows = []; this.actT = []; }
   /** A row's top, and its pipe's height. One line sits in the middle of the panel. */
@@ -164,19 +184,19 @@ export class ChillDownScene extends Phaser.Scene {
     for (const e of s.ev as Ev[]) {
       const l = 'line' in e ? s.lines[e.line] : undefined, n = l?.d.short;
       if (e.kind === 'act') {
-        this.k = e.act === 'press' ? ITEMS.press.indexOf('press') : 0;
+        this.k = e.act === 'press' ? ITEMS.press.indexOf('press') : e.act === 'lineup' ? ITEMS.lineup.indexOf('drain') : 0;
         this.actT.forEach((t, i) => t.setColor(i === s.ai ? '#ffe98a' : i < s.ai ? '#7cc56b' : '#7483a6'));
         if (e.act !== 'done' && s.ai > 0) snd.select();
-        if (e.act === 'lineup') this.say(`FUNCTIONAL TEST. Give each line a way from the farm to the ${u}, drain shut, vent open, pressurant shut.\n← → choose a valve · ↑ ↓ change line · SPACE commands it`);
-        else if (e.act === 'chill') { music.play(this.th.music, 1); this.say('CRYOGENIC TEST. The lines are warm: start each from a trickle and open up as it frosts over.\n→ opens the flow valve a notch · ← closes one · ↑ ↓ change line · ENTER shuts it at once'); }
-        else if (e.act === 'press') { music.play(this.th.music, 2); this.say(`PRESSURE TEST. ${S_} steps to test pressure, each one held. Watch the joints.\nSPACE on PRESSURANT raises a step · on VENT lowers one · on a joint re-makes it, once vented right down`); }
+        if (e.act === 'lineup') this.say(`FUNCTIONAL TEST. Shut each DRAIN first. Then give each line a way from the farm to the ${u} (SUPPLY and FILL open), VENT open, PRESSURANT shut.\n← → choose a valve · ↑ ↓ change line · SPACE commands it · I for a hint`);
+        else if (e.act === 'chill') { music.play(this.th.music, 1); this.say('CRYOGENIC TEST. Two or three notches to start, more as a line frosts over. Keep the white arrow under the red line.\n→ opens the flow valve a notch · ← closes one · ↑ ↓ change line · ENTER shuts it at once'); }
+        else if (e.act === 'press') { music.play(this.th.music, 2); this.say(`PRESSURE TEST. ${S_} steps to test pressure, each one held. Watch the joints.\nSPACE on PRESSURANT raises a step · on VENT vents the line right down · on a joint re-makes it, once vented`); }
         else this.done();
       } else if (e.kind === 'moved') snd.click();
       else if (e.kind === 'stuck') { snd.deny(); this.say(`${n} ${TAG[e.valve]} did not answer. That is what a functional test is for: command it again.`); }
       else if (e.kind === 'spill') { snd.alarm(); this.say(`${n} is going down the drain! Shut the drain valve.`); }
-      else if (e.kind === 'near') this.say(`${n}: the cold is nearly at the ${u}, and the ${u} is still warm. Ease the valve back before the liquid gets there.`);
+      else if (e.kind === 'near') this.say(`${n}: the cold is nearly at the ${u}, and the ${u} is still warm. Watch the white arrow climb, and close a notch or two as it nears the red line.`);
       else if (e.kind === 'liquid') { snd.pickup(); this.say(`${n}: liquid at the ${u}. Open up again as it cools.`); }
-      else if (e.kind === 'lift') { snd.boom(); this.cameras.main.shake(260, 0.006); this.rows[e.line].plume.explode(26); this.rows[e.line].puff.explode(14); this.say(`${n} RELIEF VALVE LIFTED: too much liquid into warm metal. The flow valve has tripped shut and part of the store has gone up the stack. Start again from a trickle.`); }
+      else if (e.kind === 'lift') { snd.boom(); this.cameras.main.shake(260, 0.006); this.rows[e.line].plume.explode(26); this.rows[e.line].puff.explode(14); this.say(`${n} RELIEF VALVE LIFTED: too much liquid into warm metal. The flow valve has tripped shut for a few seconds and part of the store has gone up the stack. Start again from two notches.`); }
       else if (e.kind === 'loaded') { snd.power(); this.say(`${n}: cold right through the ${u}, and running clear.`); }
       else if (e.kind === 'held') { snd.pickup(); this.say(l!.held >= S_ ? `${n}: at test pressure, and holding.` : `${n}: step ${l!.held} of ${S_} held. Next step.`); }
       else if (e.kind === 'fixed') { snd.clank(); this.say(`${n}: ${s.p.joints[e.joint].toLowerCase()} re-made. Bring the pressure back up.`); }
@@ -190,7 +210,7 @@ export class ChillDownScene extends Phaser.Scene {
     this.rows.forEach((r) => { r.plume.emitting = true; r.puff.emitting = true; }); // everything is vented down at the end of the day
     this.say('Every step held. Test complete: venting down.');
     const left = s.lines.map((l) => `${l.d.short} ${Math.round(l.store * 100)}%`).join(', '), clean = strikes(s) === 0 && s.wasted === 0;
-    this.time.delayedCall(1700, () => finish(this, this.def, { success: true, stars: stars(s), egg: clean, title: this.th.title, text: this.th.text(mmss(s.t), s.lifts, s.bursts, s.spills, left) + (stars(s) < 3 ? ` Three stars: no more than one strike, inside ${mmss(s.p.par)}.` : '') }));
+    this.time.delayedCall(1700, () => finish(this, this.def, { success: true, stars: stars(s), egg: clean, title: this.th.title, text: this.th.text(mmss(s.t), s.lifts, s.bursts, s.spills, left) + (stars(s) < 3 ? ` Three stars: no more than two strikes, inside ${mmss(s.p.par)}.` : '') }));
   }
   fail() {
     this.ended = true; this.draw(); this.hiss.set(0); this.hum.set(0); const [title, text] = this.th.fail[this.sim.failed!];
@@ -213,7 +233,7 @@ export class ChillDownScene extends Phaser.Scene {
         if (just('a')) {
           const it = items[this.k];
           if (act === 'lineup') { if (command(s, i, it as Valve)) snd.select(); else snd.deny(); }
-          else if (typeof it === 'number') { const r = tighten(s, i, it); if (r === 'pressure') { snd.deny(); this.say(`Not under pressure. Vent ${l.d.short} right down first (SPACE on VENT, to the blue mark).`); } else if (r !== true) snd.deny(); }
+          else if (typeof it === 'number') { const r = tighten(s, i, it); if (r === 'pressure') { snd.deny(); this.say(`Not under pressure. Vent ${l.d.short} first: SPACE on VENT, then wait for the gauge to reach the blue mark.`); } else if (r !== true) snd.deny(); }
           else {
             const r = pressure(s, i, it === 'press' ? 1 : -1);
             if (r === true) snd.select(); else { snd.deny(); if (r === 'hold') this.say(`${l.d.short}: this step has not been held yet. Wait for the ring to close.`); else if (r === 'leak') this.say(`${l.d.short} will not hold: it is leaking. Find the joint, vent down, re-make it.`); else if (r === 'top') this.say(`${l.d.short} is at test pressure. It only has to hold.`); }
@@ -223,8 +243,8 @@ export class ChillDownScene extends Phaser.Scene {
     }
     step(s, dt); this.hear();
     // a leak nobody has gone after gets one prompt, and no more
-    s.lines.forEach((l, i) => { if (l.leak && l.leak.sev > 0.32 && !this.hinted[i + ':' + l.leak.joint]) { this.hinted[i + ':' + l.leak.joint] = true; this.say(`${l.d.short} is sagging under its step. One of its sniffers has a reading.`); } });
-    if (act === 'chill' && s.lines.some((l) => l.p > 0.88) && (this.alarmT -= dt) <= 0) { this.alarmT = 0.5; snd.alarm(); }
+    s.lines.forEach((l, i) => { if (l.leak && l.leak.sev > 0.12 && !this.hinted[i + ':' + l.leak.joint]) { this.hinted[i + ':' + l.leak.joint] = true; snd.alarm(); this.say(`${l.d.short} is sagging under its step: a joint is leaking. Find the lit sniffer, vent the line (SPACE on VENT), then SPACE on that joint.`); } });
+    if (act === 'chill' && s.lines.some((l) => !l.loaded && l.lift <= 0 && (l.p > 0.9 || settles(s, l, l.q) > 1)) && (this.alarmT -= dt) <= 0) { this.alarmT = 0.5; snd.alarm(); }
     const vent = Math.max(...s.lines.map((l) => (act === 'chill' ? l.p * 0.7 + (l.lift > 0 ? 0.6 : 0) : act === 'press' ? (l.leak ? 0.25 + l.leak.sev * 0.5 : 0) : l.spilling ? 0.6 : 0)));
     this.hiss.set(Math.min(1, vent)); this.hum.set(act === 'chill' ? Math.max(...s.lines.map((l) => l.q / s.p.notches)) * 0.5 : 0, 0.3);
     if (s.failed) return this.fail();
@@ -268,7 +288,7 @@ export class ChillDownScene extends Phaser.Scene {
         g.fillStyle(0x8b93a7, 1).lineStyle(0.3, 0x0b0e18, 1);
         if (j < 4) g.fillRect(x - 1, A - 3.3, 2, 6.6).strokeRect(x - 1, A - 3.3, 2, 6.6); else for (const dx of [-1.9, 0.5]) g.fillRect(x + dx, A - 4.3, 1.4, 8.6).strokeRect(x + dx, A - 4.3, 1.4, 8.6); // a quick disconnect: two halves that part
         if (act !== 'press') return;
-        if (leak >= 0) { const k = Math.min(1, leak * 1.4); fg.fillStyle(mix(0xf2d14a, 0xff3a2a, k), 0.5 + 0.5 * Math.abs(Math.sin(now * (4 + k * 8)))).fillCircle(x, ly, 0.7 + k * 1.3); for (let w = 0; w < 3; w++) { const u = (now * 0.9 + w / 3) % 1; fg.fillStyle(0xffffff, (1 - u) * (0.15 + k * 0.6)).fillCircle(x + Math.sin(u * 5 + w) * (1 + k * 2), ly - 1.5 - u * (3 + k * 5), 0.5 + u * (0.8 + k)); } }
+        if (leak >= 0) { const k = Math.min(1, leak * 1.4); fg.fillStyle(mix(0xf2d14a, 0xff3a2a, k), 0.5 + 0.5 * Math.abs(Math.sin(now * (4 + k * 8)))).fillCircle(x, ly, 1.3 + k * 1.1); fg.lineStyle(0.5, 0xffb347, 0.9 * (1 - ((now * 1.4) % 1))).strokeCircle(x, A, 4 + ((now * 1.4) % 1) * 5); for (let w = 0; w < 3; w++) { const u = (now * 0.9 + w / 3) % 1; fg.fillStyle(0xffffff, (1 - u) * (0.15 + k * 0.6)).fillCircle(x + Math.sin(u * 5 + w) * (1 + k * 2), ly - 1.5 - u * (3 + k * 5), 0.5 + u * (0.8 + k)); } }
         else fg.fillStyle(l.fixed.includes(j) ? P.lgreen : 0x2f6b3a, 1).fillCircle(x, ly, 0.7);
         if (l.mended > 0 && l.fixed[l.fixed.length - 1] === j) fg.lineStyle(0.5, P.lgreen, l.mended / 2).strokeCircle(x, A, 5 + (2 - l.mended) * 2);
         if (sel) fg.lineStyle(0.7, 0xffe98a, 1).strokeRoundedRect(x - 4.4, A - 9.4, 8.8, 15, 1.6);
@@ -303,19 +323,19 @@ export class ChillDownScene extends Phaser.Scene {
         g.fillStyle(P.blue, 1); for (let x = XG - 3; x < XG + 7; x += 2) g.fillRect(x, yv(s.p.safe) - 0.15, 1.2, 0.4); // the safe mark
         g.fillStyle(0xffe98a, 1).fillTriangle(XG - 3.4, yv(pt) - 1.8, XG - 3.4, yv(pt) + 1.8, XG - 0.4, yv(pt));
         R.gauge.setText(`${Math.round(l.pp * 100)}%\nOF TEST`).setColor(hex(col));
-        R.status.setText(l.held >= St ? 'AT TEST PRESSURE · HOLDING' : l.busy > 0 && l.set === 0 && l.pp > 0.02 && !l.leak && l.mended <= 0 ? 'VENTED · SEAL REPLACED' : l.leak && l.pp <= s.p.safe ? 'VENTED RIGHT DOWN · SAFE TO WORK ON' : l.leak ? 'SAGGING · NOT HOLDING' : l.set > l.held && ok ? `STEP ${l.set} OF ${St} · HOLDING ${Math.max(0, s.p.hold - l.holdT).toFixed(1)} s` : l.set > l.held ? `STEP ${l.set} OF ${St} · RISING` : `STEP ${l.held} OF ${St} HELD`).setColor(l.leak ? (l.pp <= s.p.safe ? '#7fb4ff' : '#ffb070') : '#ffffff');
+        R.status.setText(l.held >= St ? 'AT TEST PRESSURE · HOLDING' : l.busy > 0 && l.set === 0 && l.pp > 0.02 && !l.leak && l.mended <= 0 ? 'VENTED · SEAL REPLACED' : l.leak && l.pp <= s.p.safe ? 'VENTED · SPACE ON THE LIT JOINT' : l.leak ? 'LEAKING · VENT IT (SPACE ON VENT)' : l.set > l.held && ok ? `STEP ${l.set} OF ${St} · HOLDING ${Math.max(0, s.p.hold - l.holdT).toFixed(1)} s` : l.set > l.held ? `STEP ${l.set} OF ${St} · RISING` : `STEP ${l.held} OF ${St} HELD`).setColor(l.leak ? (l.pp <= s.p.safe ? '#7fb4ff' : '#ffb070') : '#ffffff');
         R.temp.setText('LOCKED UP · UNDER GAS PRESSURE');
       } else {
         g.fillStyle(0x4a3a18, 1).fillRect(XG + 1, yv(1), 5, yv(0.8) - yv(1)); g.fillStyle(P.red, 1).fillRect(XG - 1, yv(1) - 0.3, 9, 0.6);
         const col = l.lift > 0 ? (Math.floor(now * 8) % 2 ? P.red : 0xffffff) : l.p > 0.8 ? P.orange : P.lgreen;
-        if (act === 'chill') { g.fillStyle(col, 1).fillRoundedRect(XG + 1, yv(l.p), 5, Math.max(0.2, gy + gh - yv(l.p)), 1); const h = yv(settles(s, l, l.q)); if (!l.loaded) g.fillStyle(0xffffff, 1).fillTriangle(XG - 3.4, h - 1.8, XG - 3.4, h + 1.8, XG - 0.4, h); }
+        if (act === 'chill') { g.fillStyle(col, 1).fillRoundedRect(XG + 1, yv(l.p), 5, Math.max(0.2, gy + gh - yv(l.p)), 1); const over = settles(s, l, l.q) > 1, h = yv(settles(s, l, l.q)); if (!l.loaded) g.fillStyle(over ? (Math.floor(now * 8) % 2 ? P.red : 0xffffff) : 0xffffff, 1).fillTriangle(XG - (over ? 4.6 : 3.4), h - (over ? 2.6 : 1.8), XG - (over ? 4.6 : 3.4), h + (over ? 2.6 : 1.8), XG - 0.4, h); }
         R.gauge.setText(act === 'chill' ? `${Math.round(l.p * 100)}%\nOF RELIEF` : 'LINE\nPRESS.').setColor(act === 'chill' ? hex(col) : '#aab4d4');
         if (act === 'lineup') {
           const ok = (b: boolean) => (b ? '✓' : '☐');
           R.status.setText(`${ok(v.supply.open && v.fill.open)} WAY TO THE ${this.th.unit[0]}   ${ok(!v.drain.open)} DRAIN SHUT   ${ok(v.vent.open)} VENT OPEN   ${ok(!v.press.open)} GAS SHUT`).setColor(Object.entries(LINEUP).every(([k, o]) => v[k as Valve].open === o) ? '#7cc56b' : '#ffffff');
           R.temp.setText(`LINE WALL +20 °C`);
         } else {
-          R.status.setText(l.lift > 0 ? 'RELIEF VALVE LIFTED · FLOW TRIPPED' : l.loaded ? 'COLD RIGHT THROUGH' : l.chill < 1 ? (l.q ? 'CHILLING THE LINE' : 'FLOW VALVE SHUT') : l.tank < 0.85 ? (l.q ? `CHILLING THE ${this.th.unit[0]}` : 'FLOW VALVE SHUT') : l.q ? `LIQUID THROUGH THE ${this.th.unit[0]}` : 'FLOW VALVE SHUT').setColor(l.lift > 0 ? '#ff8a70' : l.loaded ? '#7cc56b' : l.q ? '#ffffff' : '#ffe98a');
+          R.status.setText(l.lift > 0 ? `RELIEF VALVE LIFTED · FLOW TRIPPED ${Math.ceil(l.lift)} s` : !l.loaded && settles(s, l, l.q) > 1 ? 'TOO MUCH FLOW: CLOSE A NOTCH (←)' : l.loaded ? 'COLD RIGHT THROUGH' : l.chill < 1 ? (l.q ? 'CHILLING THE LINE' : 'FLOW VALVE SHUT') : l.tank < 0.85 ? (l.q ? `CHILLING THE ${this.th.unit[0]}` : 'FLOW VALVE SHUT') : l.q ? `LIQUID THROUGH THE ${this.th.unit[0]}` : 'FLOW VALVE SHUT').setColor(l.lift > 0 || (!l.loaded && settles(s, l, l.q) > 1) ? '#ff8a70' : l.loaded ? '#7cc56b' : l.q ? '#ffffff' : '#ffe98a');
           const t = Math.round(wallC(l)); R.temp.setText(`LINE WALL ${t > 0 ? '+' : '−'}${Math.abs(t)} °C${l.chill >= 1 ? '' : l.chill > 0.8 ? ` · ${this.th.unit[0]} STILL WARM` : ''}`);
         }
       }

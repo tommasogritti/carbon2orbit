@@ -8,6 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "sim": "node scripts/launch-sim.mjs",
+    "chill": "node scripts/chill-sim.mjs",
     "readme": "node scripts/readme-levels.mjs"
   },
   "dependencies": {

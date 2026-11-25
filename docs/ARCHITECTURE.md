@@ -152,6 +152,7 @@ Story, intro, result, leaderboard and controls are DOM cards over the canvas (`s
 | `npm run dev` | Dev server |
 | `npm run build` | Type-check and build; must pass before a commit |
 | `npm run sim` | Fly the launch physics headless with the autopilot and print timelines and margins |
+| `npm run chill` | Play every `chill-down` level headless with the bot and with models of slow players; fails when the bot misses three stars or a slow player cannot finish |
 | `?level=<id>` | Jump straight into a level |
 | `?level=<id>&auto=1` | Let the bot play it; `window.__g2o.last` holds the result |
 | Free play (`P`, ☰, footer switch or `?free=1`) | Every node open and a list to pick from (`showPicker` in `src/scenes/Map.ts`); `finish()` and the cards save nothing while `free.on` (`src/core.ts`) |
