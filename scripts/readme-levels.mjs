@@ -19,6 +19,7 @@ const PLAY = {
   'countdown-race': 'Mini-game: race the count', 'orbit-ops': 'Mini-game: spacecraft burns', 'dual-count': 'Mini-game: two launch counts',
   'arc-lab': 'Mini-game: lab experiment', 'edit-bay': 'Mini-game: edit an interview', 'slot-finder': 'Mini-game: find a meeting slot',
   'hat-trick': 'Mini-game: blend and eat a hat', 'fit-out': 'Mini-game: shipyard crane and thruster trial', sandbar: 'Mini-game: a party against the tide',
+  'chill-down': 'Mini-game: cryogenic fluids console',
 };
 const PLAYABLE = new Set(['platform', 'launch', 'minigame']);
 const clean = (s) => String(s).replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/\|/g, '\\|');

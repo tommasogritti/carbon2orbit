@@ -27,6 +27,7 @@ index.html ─ src/main.ts ─ Boot ─┬─ Title ── Map ──(Enter on a
 | `src/scenes/Title.ts` | The title screen. |
 | `src/scenes/<Mechanic>.ts` | One scene per mechanic (table below). |
 | `src/launchSim.ts` | The launch physics, pure TypeScript with no Phaser, shared by `Launch.ts` and `scripts/launch-sim.mjs`. |
+| `src/chillSim.ts` | The loading console's model and its bot (valves, chill-down, relief valves, pressure steps, leaks), pure TypeScript with no Phaser, used by `ChillDown.ts`. |
 | `scripts/readme-levels.mjs` | `npm run readme`: writes the README's level table and the level counts from `src/content.ts`; `-- --check` fails when they are out of date. |
 | `src/creators.ts` | The YouTube creators of the Q2 2024 and Q1 2026 interviews (Mrs. Iglesias, who leads the Q1 2026 level, among them): portraits, chips and the cast drawings. |
 | `src/art.ts`, `src/backdrops.ts` | All textures. `art.ts` has the drawing helpers, characters, rockets, map; `backdrops.ts` has level backdrops, enemies, power-up bubbles. |
@@ -57,9 +58,10 @@ index.html ─ src/main.ts ─ Boot ─┬─ Title ── Map ──(Enter on a
 | `hat-trick` | `HatTrick.ts` | Act one: stay in a moving camera frame while gathering things to wear and carry. Act two: a dish made by hand at a table: steer scissors along cut lines, pulse a blender in time, pour to a line against a lag, taste | §10.15 |
 | `fit-out` | `FitOut.ts` | Act one: a gantry crane with a swinging load sets a list of things on their marks on a hull that trims as the weight goes on. Act two: hold the fitted hull in a series of boxes on its thrusters, against wind | §10.16 |
 | `sandbar` | `Sandbar.ts` | While the tide is out, carry what the boats land to its outline on the sand before a set time; after the turn, get it all back into the boats before the water reaches it, lowest first | §10.17 |
+| `chill-down` | `ChillDown.ts` + `chillSim.ts` | A loading console over a piping diagram, one or two cryogenic lines, up to three tests: line up the valves; meter liquid into a warm line against a relief valve; raise the pressure in held steps and find the leaking joint | §10.18 |
 | `hotfire`, `heli-catch`, `orbit-raise`, `sprint`, `fault-finder`, `splashdown`, `cruise`, `countdown-race` | one file each | Single-purpose mini-games | §10.2 to §10.8 |
 
-The first six, `edit-bay`, `slot-finder`, `hat-trick`, `fit-out` and `sandbar` are **reusable**: a second level can use them with different params and art. A level can also be told in several acts: `params.then = { mechanic, params, intro?, how? }` hands a successful act to the next scene, and nothing is saved until the last act ends.
+The first six, `edit-bay`, `slot-finder`, `hat-trick`, `fit-out`, `sandbar` and `chill-down` are **reusable**: a second level can use them with different params and art. A level can also be told in several acts: `params.then = { mechanic, params, intro?, how? }` hands a successful act to the next scene, and nothing is saved until the last act ends.
 
 ## Conventions every scene follows
 
@@ -141,7 +143,7 @@ Story, intro, result, leaderboard and controls are DOM cards over the canvas (`s
 
 - **Fan project.** Official mission patches are in `src/assets/patches/`, listed with their mission and source page in `patches.json`; `patchImg()` shows them on a level's cards with a credit and link, and the launch scene puts the first one on the fairing. No other Rocket Lab logos or media are committed: official photos appear only from a player's own files in the git-ignored `src/assets/official/`. `?clean=1` leaves both out.
 - **Facts carry sources.** Every level lists `sources`; text about real people states facts, never invented speech.
-- **Peter Beck is the main character.** Another person leads a level through `hero`, or joins as a running mate through `params.buddy` (spec §7.0a). One level, High Tide, is led by an invented fan who is nobody real: the scene draws them itself and shows its own name plate, so `hero` and `CHARACTERS` are not involved.
+- **Peter Beck is the main character.** Another person leads a level through `hero`, or joins as a running mate through `params.buddy` (spec §7.0a). One level, High Tide, is led by an invented fan who is nobody real: the scene draws them itself and shows its own name plate, so `hero` and `CHARACTERS` are not involved. Two levels give the player a game role on the name plate instead of a person: the edit desk (Four channels, one call) and the fluids console (Chill Down, which has nobody in it at all).
 
 ## Testing and tools
 
@@ -150,6 +152,7 @@ Story, intro, result, leaderboard and controls are DOM cards over the canvas (`s
 | `npm run dev` | Dev server |
 | `npm run build` | Type-check and build; must pass before a commit |
 | `npm run sim` | Fly the launch physics headless with the autopilot and print timelines and margins |
+| `npm run chill` | Play every `chill-down` level headless with the bot and with models of slow players; fails when the bot misses three stars or a slow player cannot finish |
 | `?level=<id>` | Jump straight into a level |
 | `?level=<id>&auto=1` | Let the bot play it; `window.__g2o.last` holds the result |
 | Free play (`P`, ☰, footer switch or `?free=1`) | Every node open and a list to pick from (`showPicker` in `src/scenes/Map.ts`); `finish()` and the cards save nothing while `free.on` (`src/core.ts`) |

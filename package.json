@@ -1,13 +1,14 @@
 {
   "name": "carbon2orbit",
   "private": true,
-  "version": "0.10.0",
+  "version": "0.11.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "sim": "node scripts/launch-sim.mjs",
+    "chill": "node scripts/chill-sim.mjs",
     "readme": "node scripts/readme-levels.mjs"
   },
   "dependencies": {
