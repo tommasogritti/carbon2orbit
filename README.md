@@ -10,7 +10,7 @@ From a rocket bike in a Dunedin workshop to the hundredth Electron, and on to Ne
 An unofficial, open-source browser game. Fan project, not affiliated with Rocket Lab.
 
 <!-- counts:start: written by `npm run readme` -->
-`31 playable levels` · `19 kinds of play` · `every fact sourced` · `art and sound made in code`
+`32 playable levels` · `20 kinds of play` · `every fact sourced` · `art and sound made in code`
 <!-- counts:end -->
 
 </div>
@@ -66,7 +66,7 @@ A touch pad appears on phones.
 ## The levels
 
 <!-- levels:start: written by `npm run readme` from src/content.ts; do not edit by hand -->
-All 37 stops on the map, in story order:
+All 38 stops on the map, in story order:
 
 | # | Level | Year | Where | Play |
 | --- | --- | --- | --- | --- |
@@ -106,7 +106,8 @@ All 37 stops on the map, in story order:
 | 34 | VICTUS HAZE | 2026 | LC-1, Māhia | Mini-game: race the count |
 | 35 | The Mountain God Rises | 2026 | LC-1, Māhia | Launch control |
 | 36 | Archimedes and the tank | 2024–2026 | Stennis → Middle River → Wallops | Platform |
-| 37 | Neutron: first flight (locked until it flies) | no earlier than 2027 | LC-3, Wallops Island, Virginia | Launch control |
+| 37 | Chill Down | 2026 | LC-3, Wallops Island, Virginia | Mini-game: cryogenic fluids console |
+| 38 | Neutron: first flight (locked until it flies) | no earlier than 2027 | LC-3, Wallops Island, Virginia | Launch control |
 
 Secrets, unlocked by finding a hidden blueprint:
 
