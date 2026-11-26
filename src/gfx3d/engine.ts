@@ -32,8 +32,10 @@ export interface Frame {
     site: number; padKm: number; lamps: number; smoke: number; // 1 headland, 2 flat coast; the pad's height, km; floodlights 0..1; seconds since ignition or -1
     boom: number;              // seconds since the vehicle broke up, or -1
     frost?: number; tilt?: number; // frost on the cold tanks, 0..1; the strongback's lean, radians
-    pay?: number;              // the kind of payload: 0 one satellite, 1 CubeSats on a dispenser, 3 a radar satellite, 4 three microsatellites
+    pay?: number;              // the kind of payload: 0 one satellite, 1 CubeSats on a dispenser, 3 a radar satellite, 4 three microsatellites, 5 a re-entry capsule (on a spacecraft with solar wings)
     kick?: [number, number];   // the kick stage alone: 1 with its payload, 2 without; and how far the last payload released has drifted, m (or -1)
+    /** 2: not a rocket but a capsule coming down over land (site 3). `pad` is then where it lands, and `north` how far north of the range that is, km. */
+    mode?: number; north?: number;
   };
 }
 
@@ -157,7 +159,7 @@ export class Engine {
       uRes: [st.w, st.h], uJit: jit, uTime: f.time, uFrame: this.frame % 1024, uCam: f.cam, uCamM: m, uTan: tan, uAlt: camAlt, uXZ: camXZ,
       uWave: [f.travel[0] * 1000 + f.cam[0], f.travel[1] * 1000 + f.cam[2]], uSun: f.sun, uBody: f.body, uVel: f.vel, uHot: f.hot, uScorch: f.scorch, uGlow: f.glow, uRcs: f.rcs,
       uChA: f.chuteAxis, uDrogue: f.drogue, uMain: f.main, uSea: f.alt * 1000, uSplash: f.splash, uS2: f.s2, uShip: f.ship || [1e6, 0, 0], uHeli: f.heli ? f.heli.pos : [1e6, 0, 0], uHeliM: f.heli ? f.heli.m : [1, 0, 0, 0, 1, 0, 0, 0, 1], uHook: f.heli ? f.heli.hook : [1e6, -30, 0], uRotor: f.heli ? f.heli.rotor : 0, uTrail: f.trail || 0,
-      ...(f.launch ? { uMode: 1, uS1: f.launch.s1 || [1e6, 0, 0], uFair: f.launch.fairing, uPlume: [...f.launch.plume, Math.min(1, 0.4 / f.exposure)], uPad: f.launch.pad, uPadK: [(f.launch.pad[0] - f.cam[0]) / 1000, (f.launch.pad[2] - f.cam[2]) / 1000], uSite: [f.launch.site, f.launch.padKm, f.launch.lamps, f.launch.smoke], uBoom: f.launch.boom, uKick: f.launch.kick || [0, -1], uPay: f.launch.pay || 0, uFrost: f.launch.frost || 0, uTilt: f.launch.tilt || 0 } : { uMode: 0, uS1: [0, 0, 0], uFair: -1, uPlume: [0, 0, 0, 0], uPad: [0, 0, 0], uPadK: [0, 0], uSite: [0, 0, 0, -1], uBoom: -1, uKick: [0, -1], uFrost: 0, uTilt: 0, uPay: 0 }),
+      ...(f.launch ? { uMode: f.launch.mode || 1, uS1: f.launch.s1 || [1e6, 0, 0], uFair: f.launch.fairing, uPlume: [...f.launch.plume, Math.min(1, 0.4 / f.exposure)], uPad: f.launch.pad, uPadK: [(f.launch.pad[0] - f.cam[0]) / 1000, (f.launch.pad[2] - f.cam[2]) / 1000], uSite: [f.launch.site, f.launch.padKm, f.launch.lamps, f.launch.smoke], uBoom: f.launch.boom, uKick: f.launch.kick || [0, -1], uPay: f.launch.pay || 0, uFrost: f.launch.frost || 0, uTilt: f.launch.tilt || f.launch.north || 0 } : { uMode: 0, uS1: [0, 0, 0], uFair: -1, uPlume: [0, 0, 0, 0], uPad: [0, 0, 0], uPadK: [0, 0], uSite: [0, 0, 0, -1], uBoom: -1, uKick: [0, -1], uFrost: 0, uTilt: 0, uPay: 0 }),
       uCloudN: Math.round(40 + 32 * this.quality), uAtmN: Math.round(12 + 12 * this.quality), uN3: [this.n3, 0, true], uWx: [this.wx, 1], uN2: [this.n2, 2], uPatchT: [this.patch || this.n2, 3], uPatchA: f.launch && this.patch ? this.patchA : 0,
     }, ['uCloudN', 'uAtmN', 'uMode']);
     this.draw(st);

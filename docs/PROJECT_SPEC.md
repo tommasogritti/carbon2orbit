@@ -657,6 +657,15 @@ The rules, numbers and scoring of §10.1 and §10.2c are unchanged; only the pic
 | --- | --- | --- |
 | `fallback` | mechanic to play when the renderer cannot run or SD or HD is chosen | none |
 
+
+### 10.22 `orbit-ops` in XG graphics (built 26 Nov 2026)
+The rules, numbers and scoring of `orbit-ops` are unchanged; only the picture is, and the bot flies the same plan. In XG graphics *Outback Delivery* is drawn by `src/gfx3d` (`scenes/orbit3d.ts`) in three shots: Pioneer over the Earth while its burns are made (it turns its engine against the way it must be pushed, and turns the capsule forward for the release); the capsule's fall, seen from behind as it leaves, from ahead while it burns, and from behind again; and the last of the fall under a parachute on to the ground. The ground-track map, the flight plan and the orbit's numbers are redrawn as consoles, and once the capsule is away its altitude, speed, distance to touchdown and heating replace the orbit's numbers.
+
+- **True to the flight:** the capsule came down at night (1:02 am local time on 28 February 2025, per Southern Launch and the South Australian government), so the range is on the night side and the landing is in the dark. The range lies about 40 km in from the coast of the Great Australian Bight.
+- **The game's own:** the shapes of Pioneer (a kick-stage deck with a foil-wrapped bus and two solar wings) and of the capsule (a blunt heat shield under a cone, 0.9 m across) and its parachute; the light in orbit (the sun kept near the plane's edge so the spacecraft is always lit); the coast, paddocks, mallee and salt pans, laid out from general geography and not from a map; the brightness of the night ground, shown as a camera with its gain up would see it.
+- **Time:** the fall from release to 15 km is shown in about 22 seconds (the 2D picture takes about 6), the ground goes by 2.6 times quicker than life, and the last of the fall under the parachute is shown in about 6 seconds from 90 m up; the result card follows about 9 seconds after the scene's touchdown. The capsule is ballistic, so the landing point moves only by the integrator's step: the bot lands 27 km from the range in XG and 37 km in SD and HD, three stars in each.
+- **Open:** not watched in motion by a person; no fan review of this picture yet; where a capsule misses the coast and comes down in the sea, the picture shows it on the water with its parachute and no splash.
+
 ### 10.4 `sprint` (secret mini-game)
 Side view of a night street. Hold to open the peroxide valve (about four seconds of propellant); the bike's wobble grows with speed and is corrected with left and right; cross the flag upright. A rival car accelerates alongside. Unlocked by the blueprint in The Rocket Bike.
 

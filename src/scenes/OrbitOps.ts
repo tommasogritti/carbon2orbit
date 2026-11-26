@@ -1,21 +1,22 @@
 import Phaser from 'phaser';
-import { W, H, T, held, just, finish, cam, img, panel, who } from '../core';
+import { W, H, T, held, just, finish, cam, img, panel, who, xgOn } from '../core';
 import { snd, music, stopLoops, loop, Loop } from '../audio';
 import { P, S } from '../art';
 import type { LevelDef } from '../content';
 import { MU, RE } from '../launchSim';
 import { hifi, HiFi } from '../hifi';
 import { LOOKS } from '../hifiLooks';
+import { OrbitOps3D } from './orbit3d';
 
 const AUTO = new URLSearchParams(location.search).has('auto');
 const DEG = Math.PI / 180, WE = 360 / 86164; // Earth turns this many degrees a second
-const MX = 10, MY = 30, MW = 300, MH = 112, L0 = -30; // the map on screen, and the longitude at its left edge
+export const MX = 10, MY = 30, MW = 300, MH = 112, L0 = -30; // the map on screen, and the longitude at its left edge
 const wrap = (d: number) => ((((d + 180) % 360) + 360) % 360) - 180;
 const X = (lon: number) => MX + ((((lon - L0) % 360) + 360) % 360) * (MW / 360), Y = (lat: number) => MY + (90 - lat) * (MH / 180);
 const km = (m: number) => (m / 1000).toFixed(0);
 
 /** A spacecraft in its orbital plane: position and velocity in metres, time in seconds. u is the angle from the ascending node. */
-class Orb {
+export class Orb {
   x = 0; y = 0; vx = 0; vy = 0; t = 0;
   static circular(alt: number, uDeg: number) { const o = new Orb(), r = RE + alt, v = Math.sqrt(MU / r), u = uDeg * DEG; o.x = r * Math.cos(u); o.y = r * Math.sin(u); o.vx = -v * Math.sin(u); o.vy = v * Math.cos(u); return o; }
   copy() { return Object.assign(new Orb(), this); }
@@ -55,6 +56,8 @@ const THEMES: Record<string, { /** The hi-fi look (hifiLooks.ts), if the theme h
 export class OrbitOpsScene extends Phaser.Scene {
   def!: LevelDef; p: any; th!: (typeof THEMES)[string]; o!: Orb; cap?: Orb; steps: Step[] = []; si = 0; inc = 97.5; node = 0; U1 = 0; uT = 0; ended = false; used = 0; relAlt = 0; lit = false; phasing = 0; lastVr = 0; trail: number[][] = []; pred?: { lat: number; lon: number; miss: number; along: number }; predT = 0; botBurn = false; missed = 0;
   g!: Phaser.GameObjects.Graphics; craft!: Phaser.GameObjects.Image; info!: Phaser.GameObjects.Text; list!: Phaser.GameObjects.Text; call!: Phaser.GameObjects.Text; rumble!: Loop; hf?: HiFi;
+  /** XG graphics: the picture in 3D (orbit3d.ts), and what the map shows this frame, for its console. */
+  x3?: OrbitOps3D; ui: { x: number; y: number; ahead: number[][]; mark?: [number, number, boolean]; pred?: [number, number, boolean]; cap?: [number, number] } = { x: 0, y: 0, ahead: [] };
   constructor() { super('OrbitOps'); }
   /** The controls panel (H or the ? button): what the keys do right now, in this level and this phase. Shape agreed with core's showHelp. */
   help(): { title: string; rows: [keys: string, does: string][]; note?: string } {
@@ -84,7 +87,7 @@ export class OrbitOpsScene extends Phaser.Scene {
   }
   create() {
     cam(this); stopLoops(); music.play(this.th.music); this.rumble = loop('rumble');
-    const hf = (this.hf = hifi(this, LOOKS[this.th.hifi || ''])), K = (k: string) => (hf ? hf.key(k) : k); // the look redraws the map and the sky behind it
+    const xg = xgOn(), hf = (this.hf = xg ? undefined : hifi(this, LOOKS[this.th.hifi || ''])), K = (k: string) => (hf ? hf.key(k) : k); // the look redraws the map and the sky behind it
     this.cameras.main.setBackgroundColor('#05060c'); const stars = img(this, 0, 0, K('stars')).setOrigin(0).setAlpha(0.6);
     panel(this, 4, 4, W - 8, 20, 0.9); T(this, 9, 6, this.def.title.toUpperCase() + ' · GROUND TRACK', '#ffffff', 6, '700'); this.call = T(this, 9, 14, '', '#ffe98a', 5.4, '700');
     const map = img(this, MX, MY, K(this.th.map)).setOrigin(0);
@@ -95,7 +98,10 @@ export class OrbitOpsScene extends Phaser.Scene {
     who(this, { ...this.def, role: this.def.role || this.th.role }, W - 108, 28);
     this.say('SPACE burns. Each burn belongs at one place on the orbit: watch for the marker on the track.');
     if (hf) { const world: Phaser.GameObjects.GameObject[] = [stars, map, ring, dot, this.g, this.craft]; hf.tag({ stars, map, craft: this.craft }); hf.set({ t: this.o.t, phasing: 0, lit: 0, x: 0, y: 0, rot: 0, dir: 1, cap: 0, cx: 0, cy: 0, calt: 0 }); hf.ready({ hud: this.children.list.filter((q) => !world.includes(q)) }); } // the map and what is drawn on it stay in the world; panels and words go to the HUD
+    this.x3 = undefined; if (xg) try { this.x3 = new OrbitOps3D(this); } catch (e) { console.error(e); } // XG graphics: the spacecraft, the Earth and the capsule's fall in 3D, over this scene
   }
+  /** Dev: the 3D frame as a JPEG data URL. */
+  shot(q?: number) { return this.x3?.shot(q); }
   say(s: string) { this.call.setText(s); }
   update(_t: number, dms: number) {
     if (this.ended) return;
@@ -113,7 +119,7 @@ export class OrbitOpsScene extends Phaser.Scene {
     const slow = step.do === 'release' && o.vr < 0 && o.alt < step.alt! * 1000 + 90e3;
     const md = dt * (this.lit ? 40 : slow ? 30 : 420);
     this.lastVr = o.vr; o.step(md, this.lit ? dir * a : 0); if (this.lit) this.used += a * md;
-    this.rumble.set(this.lit ? 0.3 : 0, 0.15);
+    this.rumble.set(this.lit ? 0.3 : this.x3 && this.cap ? this.x3.hot * 0.45 : 0, 0.15);
     // ---- step done?
     const e2 = o.el();
     if (!this.cap && step.do !== 'release' && !this.lit && (AUTO ? metNow : settled)) {
@@ -126,7 +132,7 @@ export class OrbitOpsScene extends Phaser.Scene {
     }
     if (o.alt < 100e3 && !this.cap) return this.lose(this.pred ? 'The capsule was still attached when Pioneer met the atmosphere. Release it on the way down, at the altitude the plan gives.' : 'Pioneer dropped into the atmosphere before the plan was flown.');
     // ---- the capsule's fall
-    if (this.cap) { this.cap.step(dt * 110); if (this.cap.alt < 15e3) return this.touchdown(); }
+    if (this.cap) { this.cap.step(dt * (this.x3 ? this.x3.rate : 110)); if (this.cap.alt < 15e3) return this.touchdown(); }
     this.predT -= dt; if (this.predT <= 0 || this.lit) { this.predT = 0.12; const l = this.landing(this.cap || o); this.pred = l ? this.score(l.u, l.t, l.sw, (this.cap || o).u) : undefined; }
     this.draw(e2, here, step);
   }
@@ -156,9 +162,10 @@ export class OrbitOpsScene extends Phaser.Scene {
     const c = o.copy(), ahead: number[][] = []; for (let i = 0; i < 70 && c.alt > 20e3; i++) { ahead.push([X(this.lon(c.u, c.t)), Y(this.lat(c.u))]); c.step(90); } path(ahead, 0xffffff, 0.8, 0.5);
     // the marker for where this step's burn belongs
     const mark = (u: number, t: number, col: number) => { const mx = X(this.lon(u, t)), my = Y(this.lat(u)); g.lineStyle(0.8, col, 1).strokeCircle(mx, my, 3 + Math.sin(this.time.now / 150)); };
-    if (!this.phasing && !this.cap) { const m = o.copy(); let v0 = m.vr, n = 0; const want = (): boolean => (step.do === 'lower' ? Math.abs(wrap(m.u - this.U1 - 4)) < 3 : step.do === 'raise' ? v0 < 0 && m.vr >= 0 : step.do === 'deorbit' ? v0 > 0 && m.vr <= 0 : m.vr < 0 && m.alt <= step.alt! * 1000); while (n++ < 400 && !want()) { v0 = m.vr; m.step(20); } if (n < 400) mark(m.u, m.t, here ? P.lgreen : 0xffe98a); }
+    if (!this.phasing && !this.cap) { const m = o.copy(); let v0 = m.vr, n = 0; const want = (): boolean => (step.do === 'lower' ? Math.abs(wrap(m.u - this.U1 - 4)) < 3 : step.do === 'raise' ? v0 < 0 && m.vr >= 0 : step.do === 'deorbit' ? v0 > 0 && m.vr <= 0 : m.vr < 0 && m.alt <= step.alt! * 1000); while (n++ < 400 && !want()) { v0 = m.vr; m.step(20); } if (n < 400) { mark(m.u, m.t, here ? P.lgreen : 0xffe98a); this.ui.mark = [X(this.lon(m.u, m.t)), Y(this.lat(m.u)), here]; } else this.ui.mark = undefined; } else this.ui.mark = undefined;
     if (this.pred) { const px = X(this.pred.lon), py = Y(this.pred.lat); g.lineStyle(0.8, this.pred.miss < 80 ? P.lgreen : P.orange, 1).lineBetween(px - 3, py - 3, px + 3, py + 3).lineBetween(px - 3, py + 3, px + 3, py - 3); }
     if (this.cap) { const cx = X(this.lon(this.cap.u, this.cap.t)), cy = Y(this.lat(this.cap.u)); g.fillStyle(0xffffff).fillCircle(cx, cy, 1.3); }
+    this.ui.x = x; this.ui.y = y; this.ui.ahead = ahead; this.ui.pred = this.pred ? [X(this.pred.lon), Y(this.pred.lat), this.pred.miss < 80] : undefined; this.ui.cap = this.cap ? [X(this.lon(this.cap.u, this.cap.t)), Y(this.lat(this.cap.u))] : undefined;
     this.craft.setPosition(x, y).setRotation(Math.atan2(Y(this.lat(o.u + 2)) - y, X(this.lon(o.u + 2, o.t + 30)) - x));
     if (this.lit) g.fillStyle(0xffb347, 0.9).fillCircle(x, y, 2.2 + Math.random());
     this.hf?.set({ t: o.t, phasing: Math.max(0, this.phasing), lit: this.lit ? 1 : 0, x, y, rot: this.craft.rotation, dir: step.do === 'raise' ? 1 : -1, ...(this.cap ? { cap: 1, cx: X(this.lon(this.cap.u, this.cap.t)), cy: Y(this.lat(this.cap.u)), calt: this.cap.alt / 1000 } : {}) });
@@ -171,8 +178,9 @@ export class OrbitOpsScene extends Phaser.Scene {
     const s = this.score(this.cap!.u, this.cap!.t, 0, this.cap!.u), relErr = Math.abs(this.relAlt - this.steps[this.steps.length - 1].alt! * 1000) / 1000, where = this.p.target.name as string;
     this.draw(this.o.el(), false, this.steps[this.steps.length - 1]);
     const ch = img(this, X(s.lon), Y(s.lat) - 6, 'chute').setScale(S * 0.3); this.tweens.add({ targets: ch, y: ch.y + 6, duration: 1400 });
-    if (s.miss > 900) return void this.time.delayedCall(1500, () => finish(this, this.def, { success: false, title: `${s.miss.toFixed(0)} km off the range`, text: 'The capsule came down a long way from anyone waiting for it. Stop the de-orbit burn as the landing marker reaches the range: more burn brings it down sooner along the track.' }));
+    const hold = this.x3 ? this.x3.land() : 0; // XG: the last of the fall under the parachute is shown before the result
+    if (s.miss > 900) return void this.time.delayedCall(1500 + hold, () => finish(this, this.def, { success: false, title: `${s.miss.toFixed(0)} km off the range`, text: 'The capsule came down a long way from anyone waiting for it. Stop the de-orbit burn as the landing marker reaches the range: more burn brings it down sooner along the track.' }));
     const stars = s.miss <= 70 && relErr <= 20 && !this.missed ? 3 : s.miss <= 260 ? 2 : 1; snd.seco();
-    this.time.delayedCall(1700, () => finish(this, this.def, { success: true, stars, egg: s.miss <= 40, title: this.th.title, text: this.th.text(s.miss, where) + ` Released at ${km(this.relAlt)} km after ${this.used.toFixed(0)} m/s of manoeuvres.${stars < 3 ? ' For three stars: land within 70 km, release within 20 km of the planned altitude, and make every burn at its marker.' : ''}` }));
+    this.time.delayedCall(1700 + hold, () => finish(this, this.def, { success: true, stars, egg: s.miss <= 40, title: this.th.title, text: this.th.text(s.miss, where) + ` Released at ${km(this.relAlt)} km after ${this.used.toFixed(0)} m/s of manoeuvres.${stars < 3 ? ' For three stars: land within 70 km, release within 20 km of the planned altitude, and make every burn at its marker.' : ''}` }));
   }
 }
