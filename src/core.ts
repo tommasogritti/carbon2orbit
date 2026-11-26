@@ -130,7 +130,7 @@ export function initInput(game: Phaser.Game) {
     if (overlayOpen()) {
       if (k === 'b' || k === 'a') {
         const f = document.activeElement; // a level picked in the free-play list with Tab, then Enter or Space
-        if (!e.repeat) { if (f instanceof HTMLButtonElement && f.matches('#overlay button.pick')) f.click(); else overlayConfirm(); }
+        if (!e.repeat) { if (f instanceof HTMLButtonElement && f.matches('#overlay button.pick, #overlay button.sort')) f.click(); else overlayConfirm(); }
         e.preventDefault();
       }
       return;

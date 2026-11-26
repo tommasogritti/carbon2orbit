@@ -154,7 +154,7 @@ Must = needed for the first public release. Should = after that. A requirement m
 - **C3 (Should)** Every PR gets a preview URL of the built game *(not built)*.
 - **C4 (Must)** The repo includes a README, `AGENTS.md`, the add-level skill, the architecture doc and a licence. A contributing guide, code of conduct and issue forms are *(not built)*.
 - **C5 (Should)** Scaffolding commands for a new level or card *(not built; the skill tells an agent to copy a neighbouring level instead)*.
-- **C6b (Should)** Free play: for players without time for the whole story. `P`, the ☰ corner button or the footer switch opens every node and a list of them by kind; picking one moves the marker there and opens its card. Nothing is scored or saved (stars, points, eggs, secrets, people, map position), and the result card says so. Added 23 Nov 2026.
+- **C6b (Should)** Free play: for players without time for the whole story. `P`, the ☰ corner button or the footer switch opens every node and a list of them, by kind or (a switch above the list) as one timeline by date; picking one moves the marker there and opens its card. Nothing is scored or saved (stars, points, eggs, secrets, people, map position), and the result card says so. Added 23 Nov 2026.
 - **C6 (Should)** Developer mode: jump to any level, unlock everything, skip a level. `?level=<id>` and `?auto=1` (bot play) exist for checks.
 
 ### Local development

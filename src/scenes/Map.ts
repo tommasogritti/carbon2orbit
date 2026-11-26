@@ -59,29 +59,57 @@ export function freePlay(game: Phaser.Game) {
   sc.scene.start('Map', { title: false, pick: true });
 }
 
-/** The free-play list: every node on the map, by kind, in story order. Picking one moves the marker there and opens its card. */
+/**
+ * When a node happened, as a sortable number: the first year in its date, then month and day when given
+ * ('2018-01-21', '2024-08', '1995–2000', 'about 2015', 'no earlier than 2027'). A bare year sorts at the start of it.
+ */
+export const when = (d: LevelDef) => {
+  const m = d.date.match(/(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?/);
+  return m ? +m[1] * 10000 + +(m[2] || 0) * 100 + +(m[3] || 0) : Infinity;
+};
+/** How the free-play list is laid out: by kind (story order inside each) or as one timeline. Kept for the session only. */
+let pickOrder: 'kind' | 'date' = 'kind';
+
+/** The free-play list: every node on the map, by kind or by date. Picking one moves the marker there and opens its card. */
 export function showPicker(scene: MapScene) {
   if (overlayOpen()) return;
   snd.select();
   const year = (d: LevelDef) => d.date.match(/\d{4}/)?.[0] ?? d.date;
-  const chip = (d: LevelDef) => {
+  const chip = (d: LevelDef, sub: string) => {
     const locked = !playable(d), seen = save.done[d.id] || save.met[d.id];
-    return `<button class="pick" data-id="${d.id}"${locked ? ' disabled' : ''}><i class="k-${locked ? 'locked' : d.kind}"></i><b>${d.title}</b><small>${locked ? 'coming ' + d.date : year(d)}${seen ? ' · ✓' : ''}</small></button>`;
+    return `<button class="pick" data-id="${d.id}"${locked ? ' disabled' : ''}><i class="k-${locked ? 'locked' : d.kind}"></i><b>${d.title}</b><small>${locked ? 'coming ' + d.date : sub}${seen ? ' · ✓' : ''}</small></button>`;
   };
-  const groups: [string, LevelDef[]][] = [
+  const byKind = (): [string, LevelDef[]][] => [
     ['Platform levels', LEVELS.filter((d) => d.kind === 'platform')], ['Launch control', LEVELS.filter((d) => d.kind === 'launch')],
     ['Mini-games', LEVELS.filter((d) => d.kind === 'minigame')], ['Story cards', LEVELS.filter((d) => d.kind === 'card')],
     ['Secrets', BONUS], ['People to meet', PEOPLE],
   ];
+  const byDate = (): [string, LevelDef[]][] => { // one timeline, a heading per year; same-date nodes keep story order
+    const all = [...LEVELS, ...BONUS, ...PEOPLE].sort((a, b) => when(a) - when(b)), out: [string, LevelDef[]][] = [];
+    for (const d of all) { const y = year(d); if (out.at(-1)?.[0] === y) out.at(-1)![1].push(d); else out.push([y, [d]]); }
+    return out;
+  };
+  const kindName = (d: LevelDef) => (BONUS.includes(d) ? 'secret' : KIND_LABEL[d.kind].toLowerCase());
+  const list = () => (pickOrder === 'kind' ? byKind() : byDate())
+    .map(([name, ds]) => `<h2>${name}</h2><div class="picks">${ds.map((d) => chip(d, pickOrder === 'kind' ? year(d) : kindName(d))).join('')}</div>`).join('');
+  const seg = (o: typeof pickOrder, label: string) => `<button class="sort${pickOrder === o ? ' on' : ''}" data-order="${o}" aria-pressed="${pickOrder === o}">${label}</button>`;
   showCard(
     `<div class="kicker"><span class="badge k-free">FREE PLAY</span>NOTHING IS SCORED</div><h1>Pick a level</h1>` +
     `<p>Every level, story card and person is open, in any order. Stars, points and secrets are not kept, and your story save stays as it was. ✓ marks what you have already played.</p>` +
-    `<div class="picker">${groups.map(([name, list]) => `<h2>${name}</h2><div class="picks">${list.map(chip).join('')}</div>`).join('')}</div>`,
+    `<div class="sorts" role="group" aria-label="Sort the list">Sort: ${seg('kind', 'By kind')}${seg('date', 'By date')}</div>` +
+    `<div class="picker">${list()}</div>`,
     [{ label: 'Back to the map', fn: () => {} }, { label: 'Leave free play', alt: true, fn: () => { setFree(false); scene.scene.restart({ title: false }); } }],
   );
-  document.querySelectorAll<HTMLButtonElement>('#overlay button.pick').forEach((b) => b.addEventListener('click', () => {
+  const wire = () => document.querySelectorAll<HTMLButtonElement>('#overlay button.pick').forEach((b) => b.addEventListener('click', () => {
     const d = nodes().find((n) => n.id === b.dataset.id); if (!d) return;
     closeCard(); scene.jump(d); snd.select(); openLevel(scene, d);
+  }));
+  wire();
+  document.querySelectorAll<HTMLButtonElement>('#overlay button.sort').forEach((b) => b.addEventListener('click', () => {
+    const o = b.dataset.order as typeof pickOrder; if (o === pickOrder) return;
+    pickOrder = o; snd.select();
+    document.querySelectorAll<HTMLButtonElement>('#overlay button.sort').forEach((s) => { const on = s.dataset.order === o; s.classList.toggle('on', on); s.setAttribute('aria-pressed', String(on)); });
+    document.querySelector('#overlay .picker')!.innerHTML = list(); wire();
   }));
 }
 
