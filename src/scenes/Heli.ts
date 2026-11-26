@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { W, H, T, held, finish, cam, img, panel, who } from '../core';
+import { W, H, T, held, finish, cam, img, panel, who, xgOn } from '../core';
 import { snd, music, stopLoops, loop, Loop } from '../audio';
 import { P, S } from '../art';
 import type { LevelDef } from '../content';
@@ -17,6 +17,8 @@ export class HeliScene extends Phaser.Scene {
   constructor() { super('Heli'); }
   init(d: { def: LevelDef }) { this.def = d.def; this.pass = 1; this.state = 'fall'; this.bt = 0; this.hv = { x: 0, y: 0 }; this.timer = 0; this.wet = false; }
   create() {
+    // a level whose first choice is the 3D catch comes here only as its fallback: with XG graphics back on, hand it back
+    if (this.def.mechanic === 'catch' && xgOn()) return void this.scene.start('Catch', { def: this.def });
     cam(this);
     stopLoops(); music.play('heli'); this.rotorS = loop('rotor'); loop('sea').set(0.5);
     const hf = (this.hf = hifi(this, LOOKS[LOOK])), K = (k: string) => (hf ? hf.key(k) : k); // the look redraws the sky, the clouds and the sea

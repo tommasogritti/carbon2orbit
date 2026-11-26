@@ -5,6 +5,7 @@ import { P, S } from '../art';
 import type { LevelDef } from '../content';
 import { hifi, HiFi } from '../hifi';
 import { LOOKS } from '../hifiLooks';
+import { xgOn } from '../core';
 
 const AUTO = new URLSearchParams(location.search).has('auto');
 const G = 9.81, MACH = 300; // a round figure for the speed of sound in the upper air
@@ -35,6 +36,8 @@ export class SplashdownScene extends Phaser.Scene {
   }
   init(d: { def: LevelDef }) { this.def = d.def; this.h = 78e3; this.v = 2150; this.th = 180; this.om = Phaser.Math.Between(0, 1) ? 5 : -5; this.gas = 1; this.dmg = 0; this.chute = 0; this.ripped = false; this.t = 0; this.ended = false; this.clouds = []; this.said = {}; this.lateFlip = false; }
   create() {
+    // a level whose first choice is the 3D descent comes here only as its fallback: with XG graphics back on, hand it back
+    if (this.def.mechanic === 'descent' && xgOn()) return void this.scene.start('Descent', { def: this.def });
     cam(this); stopLoops(); music.play('heli'); this.wind = loop('rumble'); this.hiss = loop('hiss');
     this.cameras.main.setBackgroundColor('#04050c');
     const hf = (this.hf = hifi(this, LOOKS[LOOK])), K = (k: string) => (hf ? hf.key(k) : k); // the look redraws space, the sky, the clouds and the sea
