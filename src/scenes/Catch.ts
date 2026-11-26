@@ -11,7 +11,7 @@ const sstep = (a: number, b: number, x: number) => { const t = clamp((x - a) / (
 const add = (a: V3, b: V3): V3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]], sub = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], mul = (a: V3, k: number): V3 => [a[0] * k, a[1] * k, a[2] * k];
 const cross = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]], dot = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const SUN: V3 = norm([-0.32, 0.643, -0.69]);
-const CABLE = 16, RUN = 900, WIN = 8, TOL_X = 2.6, TOL_Y = 4, SINK = 11; // metres: the line under the helicopter, the run-in, how near the hook must pass; m/s: how fast the stage comes down
+const CABLE = 46, RUN = 900, WIN = 8, TOL_X = 2.6, TOL_Y = 4, SINK = 11; // metres: the line under the helicopter, the run-in, how near the hook must pass; m/s: how fast the stage comes down
 
 /**
  * A mid-air catch in three dimensions, drawn by the game's own renderer (src/gfx3d): this scene is the rules, the keys
@@ -25,7 +25,7 @@ export class CatchScene extends Phaser.Scene {
   def!: LevelDef; pass = 1; state: 'run' | 'caught' | 'away' | 'missed' | 'drop' | 'down' | 'over' = 'run'; win = false; bt = 0; t = 0; timer = 0; phase0 = 0;
   ex = 0; ey = 0; vx = 0; vy = 0; z = RUN; h = 1900; sink = SINK; tSplash = -1; callText = ''; rotor = 0; flash = 0; warp = 1; swing = 0; up = 0;
   camP: V3 = [0, 0, 0]; camL: V3 = [0, 0, 0]; fov = 56; orbit = 0; fresh = true;
-  eng?: Engine; box?: HTMLDivElement; hudC?: HTMLCanvasElement; rotorS!: Loop; sea!: Loop; score?: Score; ready = false; idle = 0; settle = false;
+  eng?: Engine; box?: HTMLDivElement; hudC?: HTMLCanvasElement; rotorS!: Loop; sea!: Loop; score?: Score; ready = false; idle = 0; fdt = 1 / 60; lastP = -1; settle = false;
   constructor() { super('Catch'); }
   help(): { title: string; rows: [keys: string, does: string][]; note?: string } {
     return { title: 'Helicopter catch', rows: [['← →', 'Fly the hook left and right'], ['↑ ↓', 'Fly it up and down']], note: 'The helicopter runs in by itself, from below: the stage comes down to you. The green ring is the estimate of where its line will be when you arrive; the yellow cross is where your hook will pass. Put the cross in the ring early, then trim as the estimate settles. You get three passes.' };
@@ -144,8 +144,8 @@ export class CatchScene extends Phaser.Scene {
     if (withHeli) { const k = sstep(RUN, 0, this.z); wantP = add(g.hook, [11 - 3 * k, 11 - 2 * k, lerp(36, 30, k)]); wantL = add(g.hook, [-2.5, 5.5 - 2 * k + 15 * g.slope, -24]); wantF = 55 + 9 * g.slope; }
     else if (g.down) { const az = (38 + this.orbit) * RAD; wantP = [-6 + Math.sin(az) * 34, 5, Math.cos(az) * 34]; wantL = [-6, 3, 0]; wantF = 44; }
     else { const az = (24 + this.orbit) * RAD, lowK = sstep(500, 120, this.h); wantP = [Math.sin(az) * 58, lerp(-8, 5, lowK), Math.cos(az) * 58]; wantL = [0, lerp(14, 9, lowK), 0]; wantF = 46; }
-    const k = this.fresh || this.settle ? 1 : 1 - Math.exp(-(1 / 60) * (withHeli ? 5 : 1.6));
-    if (!this.scene.isPaused() || this.settle || this.fresh) { for (let i = 0; i < 3; i++) { this.camP[i] = lerp(this.camP[i], wantP[i], k); this.camL[i] = lerp(this.camL[i], wantL[i], k); } this.fov = lerp(this.fov, wantF, k); if (!withHeli) this.orbit += (1 / 60) * (g.down ? 2.2 : 1.4); this.fresh = false; }
+    const k = this.fresh || this.settle ? 1 : 1 - Math.exp(-this.fdt * (withHeli ? 5 : 1.6));
+    if (!this.scene.isPaused() || this.settle || this.fresh) { for (let i = 0; i < 3; i++) { this.camP[i] = lerp(this.camP[i], wantP[i], k); this.camL[i] = lerp(this.camL[i], wantL[i], k); } this.fov = lerp(this.fov, wantF, k); if (!withHeli) this.orbit += this.fdt * (g.down ? 2.2 : 1.4); this.fresh = false; }
     const cam3: V3 = [this.camP[0], Math.max(this.camP[1], 2.2 - g.centre), this.camP[2]];
     const breathe = 1 + 0.012 * Math.sin(this.t * 4.3), caught = st === 'caught';
     let main = caught ? 0.62 + 0.07 * Math.sin(this.t * 23) : breathe; if (g.down) main *= 1 - sstep(0.2, 2.4, g.ts);
@@ -162,6 +162,7 @@ export class CatchScene extends Phaser.Scene {
   present() {
     if (!this.ready || !this.box) return;
     if (this.scene.isPaused()) { if (++this.idle > 40) return; } else this.idle = 0;
+    { const now = this.time.now; this.fdt = this.lastP < 0 ? 1 / 60 : Phaser.Math.Clamp((now - this.lastP) / 1000, 0, 0.1); this.lastP = now; } // real seconds since the last picture: the display may refresh at 60 or 120
     this.fit(); const f = this.frame(); this.eng!.render(f); this.hud(f);
   }
   /** Dev: the frame as a JPEG data URL, for the checks that run without a visible tab. */
