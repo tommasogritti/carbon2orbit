@@ -31,7 +31,7 @@ export class DescentScene extends Phaser.Scene {
   travel = 0; warp = 1; sink = 0.36; inX = 0; inY = 0; said: Record<string, boolean> = {}; callText = ''; promptText = ''; promptOk = false;
   tChute = [-1, -1]; tSplash = -1; lost = -1; flash = 0; glow = 0; scorch = 0; roll = 0;
   rig: Rig = { az: -24, el: 13, dist: 27, fov: 46, lx: 2, ly: 0.5 }; orbit = 0;
-  eng?: Engine; box?: HTMLDivElement; hudC?: HTMLCanvasElement; wind!: Loop; hiss!: Loop; sea!: Loop; ready = false; idle = 0; score?: Score; /** Dev: jump the camera straight to its set-up, for stills. */ settle = false;
+  eng?: Engine; box?: HTMLDivElement; hudC?: HTMLCanvasElement; wind!: Loop; hiss!: Loop; sea!: Loop; ready = false; idle = 0; fdt = 1 / 60; lastP = -1; score?: Score; /** Dev: jump the camera straight to its set-up, for stills. */ settle = false;
   P!: { h0: number; v0: number; wall: [number, number]; drogueMach: number; mainV: number; drag: number[]; theme: string };
   constructor() { super('Descent'); }
   /** The controls panel (H or the ? button): what the keys do right now. */
@@ -178,8 +178,8 @@ export class DescentScene extends Phaser.Scene {
       : km > this.P.wall[0] ? { az: -24, el: 13, dist: 27, fov: 46, lx: 2, ly: 0.5 }
       : km > this.P.wall[1] ? { az: 30, el: -5, dist: 17.5, fov: 60, lx: -1.5, ly: 1.2 }
       : { az: 8, el: 5, dist: 30, fov: 48, lx: 0, ly: 1 };
-    const k = this.settle ? 1 : 1 - Math.exp(-(1 / 60) * (this.chute === 2 && !down ? 0.9 : 1.5)); const r = this.rig;
-    if (!this.scene.isPaused() || this.settle) { for (const key of Object.keys(r) as (keyof Rig)[]) r[key] = lerp(r[key], goal[key], k); this.orbit += (1 / 60) * (down ? 2.2 : 1.1); }
+    const k = this.settle ? 1 : 1 - Math.exp(-this.fdt * (this.chute === 2 && !down ? 0.9 : 1.5)); const r = this.rig;
+    if (!this.scene.isPaused() || this.settle) { for (const key of Object.keys(r) as (keyof Rig)[]) r[key] = lerp(r[key], goal[key], k); this.orbit += this.fdt * (down ? 2.2 : 1.1); }
     const az = (r.az + this.orbit) * RAD, el = r.el * RAD;
     const cam3: V3 = [r.lx + Math.sin(az) * Math.cos(el) * r.dist, r.ly + Math.sin(el) * r.dist, Math.cos(az) * Math.cos(el) * r.dist];
     cam3[1] = Math.max(cam3[1], 2.2 - centre); // never under the sea
@@ -197,6 +197,7 @@ export class DescentScene extends Phaser.Scene {
   present() {
     if (!this.ready || !this.box) return;
     if (this.scene.isPaused()) { if (++this.idle > 40) return; } else this.idle = 0; // a paused picture settles, then costs nothing
+    { const now = this.time.now; this.fdt = this.lastP < 0 ? 1 / 60 : Phaser.Math.Clamp((now - this.lastP) / 1000, 0, 0.1); this.lastP = now; } // real seconds since the last picture: the display may refresh at 60 or 120
     this.fit(); this.eng!.render(this.frame()); this.hud();
   }
   /** Dev: the frame as a JPEG data URL (world and instruments), for the checks that run without a visible tab. */

@@ -60,7 +60,7 @@ export class Engine {
   private progs: Record<string, Prog> = {};
   private n3!: WebGLTexture; private wx!: WebGLTexture; private n2!: WebGLTexture;
   private sceneT?: Target; private hist: Target[] = []; private bloom: Target[] = [];
-  private frame = 0; private prev?: { m: number[]; cam: V3 }; private reset = true;
+  private frame = 0; private prev?: { m: number[]; cam: V3 }; private reset = true; private last = -1;
   private timer: any; private query: WebGLQuery | null = null; private pending: WebGLQuery | null = null;
   /** Share of the canvas's pixels the scene is ray-marched at; the engine moves it to hold the frame time. */
   scale = 0.72; gpuMs = 0; quality = 1; lost = false;
@@ -131,7 +131,8 @@ export class Engine {
   /** Size the canvas in device pixels; the targets follow at the next frame. */
   resize(w: number, h: number) { w = Math.max(16, Math.round(w)); h = Math.max(16, Math.round(h)); if (this.canvas.width !== w || this.canvas.height !== h) { this.canvas.width = w; this.canvas.height = h; this.reset = true; } }
   private targets() {
-    const W = this.canvas.width, H = this.canvas.height, sw = Math.max(8, Math.round(W * this.scale / 2) * 2), sh = Math.max(8, Math.round(H * this.scale / 2) * 2);
+    const W = this.canvas.width, H = this.canvas.height; this.scale = Math.min(this.scale, Math.sqrt(1.1e6 / (W * H)));   // never ray-march more than about a million pixels: a 4K canvas is filled from a smaller picture over time
+    const sw = Math.max(8, Math.round(W * this.scale / 2) * 2), sh = Math.max(8, Math.round(H * this.scale / 2) * 2);
     if (!this.sceneT || this.sceneT.w !== sw || this.sceneT.h !== sh) { this.free(this.sceneT); this.sceneT = this.target(sw, sh); }
     if (!this.hist[0] || this.hist[0].w !== W || this.hist[0].h !== H) {
       this.hist.forEach((t) => this.free(t)); this.bloom.forEach((t) => this.free(t));
@@ -164,7 +165,8 @@ export class Engine {
     }, ['uCloudN', 'uAtmN', 'uMode']);
     this.draw(st);
     // gather it at full size over time
-    const [h0, h1] = this.frame % 2 ? [this.hist[0], this.hist[1]] : [this.hist[1], this.hist[0]], pv = this.prev || { m, cam: f.cam }, dt = 1 / 60;
+    const [h0, h1] = this.frame % 2 ? [this.hist[0], this.hist[1]] : [this.hist[1], this.hist[0]], pv = this.prev || { m, cam: f.cam }, dt = this.last < 0 || this.reset ? 1 / 60 : Math.min(Math.max(f.time - this.last, 0), 0.1); // the scene's own clock: the display may refresh at 60, 120 or anything else
+    this.last = f.time;
     const camD = sub(f.cam, pv.cam), worldD: V3 = [camD[0] + f.speed[0] * 1000 * dt, camD[1] - f.drop * dt, camD[2] + f.speed[1] * 1000 * dt];
     this.use('taa', { uCur: [st.tex, 0], uHist: [h0.tex, 1], uCurRes: [st.w, st.h], uJit: jit, uCamM: m, uPrevM: pv.m, uCamD: camD, uWorldD: worldD, uTan: tan, uAspect: W / H, uReset: this.reset ? 1 : 0 });
     this.draw(h1); this.prev = { m, cam: f.cam }; this.reset = false;
@@ -188,7 +190,7 @@ export class Engine {
   private adapt() {
     if (++this.since < 12) return;
     const ms = this.gpuMs;
-    if (ms > 12.5) { if (this.scale > 0.4) this.scale = Math.max(0.4, this.scale * Math.max(0.8, Math.sqrt(11 / ms))); else this.quality = Math.max(0, this.quality - 0.25); this.since = 0; this.gpuMs = 0; }
+    if (ms > 12.5) { if (this.scale > 0.28) this.scale = Math.max(0.28, this.scale * Math.max(0.7, Math.sqrt(11 / ms))); else this.quality = Math.max(0, this.quality - 0.25); this.since = 0; this.gpuMs = 0; }
     else if (ms < 7.5) { if (this.quality < 1) this.quality = Math.min(1, this.quality + 0.25); else if (this.scale < 1) this.scale = Math.min(1, this.scale * 1.08); this.since = 0; this.gpuMs = 0; }
   }
   /** Start the history again: after a cut, so nothing of the last shot ghosts into the next. */

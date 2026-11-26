@@ -237,20 +237,25 @@ float coast(vec2 q){
   vec2 m = mapEN(q); float l = length(q);
   float n = textureLod(uN2, q / 9.0 + 0.3, 0.0).r - 0.5, n2 = textureLod(uN2, q / 2.1 + 0.7, 0.0).g - 0.5, n3 = textureLod(uN2, q / 47.0 + 0.13, 0.0).r - 0.5;
   float w = n * 1.5 * smoothstep(0.6, 8.0, l) + n2 * 0.3 * smoothstep(0.12, 1.0, l) + n3 * 7.0 * smoothstep(6.0, 40.0, l);
-  if (uSite.x > 2.5) {                                                        // q.x runs north along the capsule's track from where it comes down; the range is some 40 km in from the shore of the Bight
-    float s = q.x + uTilt + 40.0, bay = 11.0 * exp(-pow((q.y - 16.0) / 9.0, 2.0)) * smoothstep(26.0, 0.0, s);        // with one bay let into it
-    return s - bay + n * 1.5 + n2 * 0.3 + n3 * 9.0 * smoothstep(-30.0, 10.0, -s + 20.0);
+  if (uSite.x > 2.5) {                                                        // q.x runs along the capsule's track (north-north-west) from where it comes down, q.y to its right; the shore is 31 km back along the track from the range
+    float s = q.x + uTilt + 31.5 + 2.2 * max(q.y - 10.0, 0.0) - 0.9 * max(-q.y - 30.0, 0.0);                         // it runs away south-east on the right, and comes north on the left
+    float bay = 4.0 * (exp(-pow((q.y + 16.0) / 5.0, 2.0)) + exp(-pow(q.y / 5.0, 2.0))) * smoothstep(14.0, 0.0, s);   // Tourville Bay and Denial Bay
+    float isle = 2.2 - length(vec2(q.y + 6.0, (q.x + uTilt + 45.5) * 0.9));                                           // St Peter Island
+    return max(s - bay + n * 1.2 + n2 * 0.3 + n3 * 4.0 * smoothstep(40.0, 0.0, s), isle + n2 * 0.4);
   }
   if (uSite.x < 1.5) {
-    float pen = 5.9 - sdSeg2(m, vec2(-0.5, 5.6), vec2(-3.5, 15.5)) - 1.2 * smoothstep(6.0, 16.0, m.y);              // the peninsula
-    float neck = 0.9 - sdSeg2(m, vec2(-4.5, 19.5), vec2(-7.5, 27.0));                                               // its sand isthmus
-    vec2 d = m - vec2(-62.0, -70.0); float west = -(d.x * 0.869 - d.y * 0.495);                                      // the east coast, running north-north-east
-    float main = min(west, length(m - vec2(-40.0, -15.0)) - 50.0);                                                   // with Hawke Bay taken out of it
-    return max(max(pen + w, neck + w * 0.25), main + w);
+    float pen = 0.55 + 0.4 * clamp(m.y, 0.0, 12.75) - sdSeg2(m, vec2(0.05, 0.25), vec2(4.8, 14.5));                    // the peninsula: a triangle with the pad at its southern point, 11 km across at Table Cape
+    float isle = 0.4 - sdSeg2(m, vec2(0.1, -2.8), vec2(0.1, -4.7));                                                  // Portland Island, off the point
+    float neck = 1.3 - sdSeg2(m, vec2(1.5, 19.0), vec2(2.2, 23.5));                                                  // its sand isthmus
+    vec2 d = m - vec2(-62.0, -70.0); float south = -(d.x * 0.869 - d.y * 0.495);                                     // the east coast: south of Hawke Bay, running north-north-east
+    float north = -((m.x - 2.0) * 0.992 - (m.y - 24.0) * 0.124);                                                     // and north of the isthmus, running nearly north
+    float main = min(mix(south, north, smoothstep(-45.0, -35.0, m.y)), length(m - vec2(-30.0, -25.0)) - 50.0);       // with Hawke Bay taken out of it
+    return max(max(max(pen + w, isle + n2 * 0.2), neck + w * 0.25), main + w);
   }
   vec2 dir = vec2(0.38, 0.925); float s = dot(m, dir), u = -(m.x * dir.y - m.y * dir.x) + 0.27;                      // along the shore, and inland of it
-  float uw = clamp((s + 88.0) * 0.9, 0.0, 45.0) + max(s, 0.0) * 0.25;                                               // the Delmarva's bay shore
-  return max(min(u, uw - u), u - uw - 28.0) + w * 0.45;
+  u += 10.5 * smoothstep(3.0, 9.0, s);                                                                              // Chincoteague and Assateague stand out to sea, north of the pad
+  float uw = clamp((s + 90.0) * 1.2, 0.0, 23.0) + 0.9 * clamp(s - 2.0, 0.0, 35.0) + max(s - 37.0, 0.0) * 0.25;      // the Delmarva's bay shore: 23 km across here, wider to the north
+  return max(min(u, uw - u), u - uw - 28.0 - 0.3 * clamp(s + 60.0, 0.0, 60.0)) + w * 0.45;                           // and Chesapeake Bay beyond it
 }
 /** Height of the land, km; negative where it is sea. */
 float landH(vec2 q){
@@ -354,7 +359,7 @@ vec2 mapBody(vec3 p){
   float k = PI / 4.0, a = mod(ang + k * 0.5, k) - k * 0.5;
   float nz = min(nozzle(vec3(r * cos(a) - 0.41, p.y + 6.08, r * sin(a))), nozzle(p + vec3(0.0, 6.08, 0.0))); if (nz < d) { d = nz; m = 3.0; }
   float k3 = PI / 2.0, a3 = mod(ang + k3 * 0.5, k3) - k3 * 0.5;
-  float pod = sdBox(vec3(r * cos(a3) - 0.625, p.y - 5.45, r * sin(a3)), vec3(0.035, 0.13, 0.075)) - 0.015; if (pod < d) { d = pod; m = 4.0; }
+  float pod = sdBox(vec3(r * cos(a3) - 0.625, p.y - 5.45, r * sin(a3)), vec3(0.035, 0.13, 0.075)) - 0.015; if (pod < d && uMode != 1) { d = pod; m = 4.0; }   // thruster pods: on the boosters that come back, not on the launches drawn here
   return vec2(d, m);
 }
 vec2 mapChute(vec3 p, vec3 A, float R, float Ln, float infl, float n, float mat){
@@ -373,17 +378,21 @@ vec2 mapChute(vec3 p, vec3 A, float R, float Ln, float infl, float n, float mat)
 }
 /** The fairing: 1.2 m across and 2.5 m tall, a short barrel under a tangent ogive that comes to a point. */
 float fairing(vec3 p){ float u = clamp(p.y - 9.4, 0.0, 1.75), rr = sqrt(max(8.1225 - u * u, 0.0)) - 2.25; return max(max((length(p.xz) - max(rr, 0.0)) * 0.8, 8.6 - p.y), p.y - 11.14) - 0.012; }
-/** A re-entry capsule (the game's own shape): a blunt heat shield under a cone, 0.9 m across. p from the middle of its widest ring; the shield faces -Y. */
+/** A re-entry capsule, 0.9 m across: the heat shield is a steep blunted cone (white, charred after the fall), the aft body a short cone in gold foil. p from the middle of its widest ring; the shield's nose is at -Y. */
 vec2 capsule(vec3 p){
-  float r = length(p.xz), sh = length(p - vec3(0.0, 0.66, 0.0)) - 0.8, co = (r - (0.452 - (p.y - 0.02) * 0.6)) * 0.857;
-  float d = max(max(sh, co), p.y - 0.5) - 0.012;
-  d = max(d, -(sdCyl(p - vec3(0.0, 0.5, 0.0), 0.11, 0.02)));                   // the parachute's hatch in the top
-  return vec2(d, p.y < 0.035 ? 11.0 : 10.0);
+  float r = length(p.xz);
+  float fore = max(max((r - (0.45 + p.y * 0.82)) * 0.773, p.y), -p.y - 0.42);                                         // the shield: a cone of about 50 degrees, cut off short
+  fore = min(fore, length(p - vec3(0.0, -0.395, 0.0)) - 0.128);                                                      // and closed with a rounded nose
+  float aft = max(max((r - (0.45 - p.y * 0.75)) * 0.8, -p.y), p.y - 0.2);                                            // the aft body: a short cone, in foil
+  float d = min(fore, aft) - 0.01;
+  return vec2(d, p.y > 0.0 ? 8.0 : 10.0);
 }
 /** The payload, standing on the kick stage's plate (p from the plate). one: just a single satellite of that kind, for the one drifting off. */
 vec2 payload(vec3 p, float one){
   vec2 r = vec2(1e9, 8.0);
-  if (uPay > 4.5) return capsule(vec3(p.x, 0.52 - p.y, p.z));                 // a capsule, heat shield outward
+  if (uPay > 6.5) { float r = length(p.xz); return vec2(max(max((r - (0.36 - p.y * 0.3)) * 0.95, -p.y), p.y - 0.95) - 0.02, 2.0); }   // a test article nobody has described: a plain dark shroud
+  if (uPay > 5.5) { float bx = sdBox(p - vec3(0.0, 0.07, 0.0), vec3(0.2, 0.07, 0.2)) - 0.01; return vec2(min(bx, sdCyl(p - vec3(0.24, 0.1, 0.24), 0.05, 0.1)), 4.0); }   // no satellite: instruments bolted to the plate
+  if (uPay > 4.5) return capsule(vec3(p.x, 0.2 - p.y, p.z));                  // a capsule, heat shield outward
   if (uPay < 0.5) { r = vec2(sdBox(p - vec3(0.0, 0.46, 0.0), vec3(0.3, 0.42, 0.3)) - 0.03, 8.0); float pan = sdBox(vec3(abs(p.x) - 0.75, p.y - 0.46, p.z), vec3(0.42, 0.34, 0.012)); if (pan < r.x) r = vec2(pan, 9.0); }
   else if (uPay < 1.5) {
     if (one > 0.5) return vec2(sdBox(p - vec3(0.0, 0.46, 0.0), vec3(0.05, 0.17, 0.05)) - 0.005, 9.0);
@@ -404,7 +413,7 @@ vec2 payload(vec3 p, float one){
 /** A rocket going up: stage one (while it is there), stage two with its vacuum engine, and the fairing or what was under it. */
 vec2 mapStack(vec3 pw){
   vec3 p = pw * uBody; vec2 r = vec2(1e9, 1.0);
-  if (uKick.x > 0.5) {                                                        // the kick stage alone: a flat carbon deck, four tanks, one small engine, and what it carries
+  if (uKick.x > 0.5) {                                                        // the kick stage alone: a flat carbon deck, six tanks, one small engine, and what it carries
     float ang = atan(p.z, p.x), rr = length(p.xz);
     r = vec2(sdCyl(p - vec3(0.0, 8.76, 0.0), 0.52, 0.035), 1.0);                                                    // a flat carbon plate, the full width of the rocket
     float rim = max(abs(rr - 0.56) - 0.035, abs(p.y - 8.72) - 0.09); if (rim < r.x) r = vec2(rim, 10.0);             // in a white ring frame
@@ -414,10 +423,10 @@ vec2 mapStack(vec3 pw){
     float k6 = PI / 3.0, a6 = mod(ang + k6 * 0.5, k6) - k6 * 0.5;
     float tank = length(vec3(rr * cos(a6) - 0.34, p.y - 8.56, rr * sin(a6))) - 0.13; if (tank < r.x) r = vec2(tank, 10.0);   // tanks under it
     float nz = max(sdCone(p - vec3(0.0, 8.46, 0.0), 0.14, 0.11, 0.035), -sdCone(p - vec3(0.0, 8.44, 0.0), 0.14, 0.10, 0.028)); if (nz < r.x) r = vec2(nz, 3.0);
-    if (uPay > 4.5) {                                                         // a spacecraft, not a stage: two solar wings on booms
-      float wing = sdBox(vec3(abs(p.x) - 1.3, p.y - 8.62, p.z), vec3(0.56, 0.3, 0.012)); if (wing < r.x) r = vec2(wing, 9.0);
-      float boom = sdSeg(vec3(abs(p.x), p.y, p.z), vec3(0.5, 8.66, 0.0), vec3(0.76, 8.62, 0.0)) - 0.018; if (boom < r.x) r = vec2(boom, 4.0);
-      float foil = sdCyl(p - vec3(0.0, 8.6, 0.0), 0.5, 0.11); if (foil < r.x) r = vec2(foil, 8.0);                    // the bus under the deck, in foil
+    if (abs(uPay - 5.0) < 0.5) {                                              // a spacecraft, not a stage: solar panels hinged at the deck and folded out flat, like a skirt
+      vec2 a2 = abs(p.xz); vec2 pq = a2.x > a2.y ? a2 : a2.yx;
+      float wing = sdBox(vec3(pq.x - 1.16, p.y - 8.7, pq.y), vec3(0.56, 0.012, 0.36)); if (wing < r.x) r = vec2(wing, 9.0);
+      float foil = sdBox(p - vec3(0.0, 8.58, 0.0), vec3(0.37, 0.13, 0.37)) - 0.02; if (foil < r.x) r = vec2(foil, 8.0);   // the bus under the deck: a box in gold foil
     }
     if (uKick.x < 1.5) { vec2 pl = payload(p - vec3(0.0, 8.9, 0.0), 0.0); if (pl.x < r.x) r = pl; }
     if (uKick.y >= 0.0) { vec3 q = p - vec3(0.35 * uKick.y, 9.38 + uKick.y, 0.0); float a = uKick.y * 0.3; q.xy = mat2(cos(a), -sin(a), sin(a), cos(a)) * q.xy; vec2 pl = payload(q + vec3(0.0, 0.46, 0.0), 1.0); if (pl.x < r.x) r = pl; }
@@ -429,7 +438,7 @@ vec2 mapStack(vec3 pw){
   float nz = max(sdCone(p - vec3(0.0, 5.55, 0.0), 0.4, 0.42, 0.1), -sdCone(p - vec3(0.0, 5.52, 0.0), 0.4, 0.40, 0.085)); if (nz < r.x) r = vec2(nz, 3.0);
   if (uFair < 0.0) { float f = fairing(p); if (f < r.x) r = vec2(f, 1.0); }
   else {
-    float ks = sdCyl(p - vec3(0.0, 8.74, 0.0), 0.5, 0.14); if (ks < r.x) r = vec2(ks, 2.0);                        // the kick stage's deck
+    float ks = sdCyl(p - vec3(0.0, 8.74, 0.0), 0.5, 0.14); if (ks < r.x) r = vec2(ks, 4.0);                        // the kick stage's deck
     vec2 pl = payload(p - vec3(0.0, 8.9, 0.0), 0.0); if (pl.x < r.x) r = pl;                                       // the payload
     if (uFair < 3.0) for (int i = 0; i < 2; i++) {                                                                 // the two halves, falling behind
       float sg = i == 0 ? 1.0 : -1.0, a = sg * 0.55 * uFair; vec3 q = p - vec3(sg * (0.35 + 3.0 * uFair), -6.0 * uFair * uFair, 0.0);
@@ -607,11 +616,11 @@ vec3 shadeLand(vec3 p, vec3 rd, float t){
   } else if (uSite.x > 2.5) {
     float tone = textureLod(uN2, (floor(q / 1.6) + 0.5) / 512.0, 0.0).a, belt = texture(uN2, q / 7.0 + 0.2).r, far = texture(uN2, q / 31.0 + 0.5).g;
     alb = mix(vec3(0.40, 0.17, 0.08), vec3(0.50, 0.27, 0.13), smoothstep(0.3, 0.7, n1)) * (0.8 + 0.4 * n3);                       // red earth
-    float pdk = (1.0 - smoothstep(30.0, 55.0, c + 20.0 * far)) * smoothstep(0.3, 1.5, c);
+    float pdk = (1.0 - smoothstep(20.0, 32.0, c + 8.0 * far)) * smoothstep(0.3, 1.5, c);
     alb = mix(alb, mix(vec3(0.50, 0.41, 0.22), vec3(0.42, 0.25, 0.13), step(0.55, tone)) * (0.85 + 0.3 * n2), pdk * 0.85);        // paddocks near the coast: stubble, or turned earth
     float mallee = smoothstep(0.46, 0.58, belt * 0.65 + n2 * 0.35 + 0.12 * smoothstep(25.0, 60.0, c)) * (1.0 - 0.6 * pdk);
     alb = mix(alb, vec3(0.06, 0.085, 0.045) * (0.7 + 0.6 * n3), mallee * 0.85);                                                  // mallee scrub in belts, thicker inland
-    alb = mix(alb, vec3(0.62, 0.58, 0.53) * (0.9 + 0.2 * n2), smoothstep(0.70, 0.76, far) * smoothstep(6.0, 18.0, c));            // salt pans
+    alb = mix(alb, vec3(0.56, 0.36, 0.20) * (0.9 + 0.2 * n2), smoothstep(0.62, 0.74, far) * smoothstep(30.0, 50.0, c) * (1.0 - mallee));   // sand dunes, north of the dog fence
   } else {
     float cell = texture(uN2, q / 5.0).b, tone = textureLod(uN2, (floor(q / 0.9) + 0.5) / 512.0, 0.0).a;                                    // fields, a kilometre or so across
     alb = mix(vec3(0.27, 0.23, 0.14), vec3(0.11, 0.17, 0.06), step(0.5, tone)) * (0.85 + 0.3 * n1);
@@ -645,7 +654,7 @@ vec3 shadeLand(vec3 p, vec3 rd, float t){
   vec3 sunC = sunT(altOf(p), dot(up, uSun)) * SUN * cloudShadow(p);
   vec3 E = sunC * max(dot(N, uSun), 0.0) + vec3(0.16, 0.27, 0.5) * SUN * 0.12 * (0.6 + 0.4 * N.y) * gDay;
   E += lampsE(p * 1000.0 + uCam, N);
-  if (uMode == 2) E += vec3(0.55, 0.66, 1.0) * 0.55 * (0.6 + 0.4 * N.y) * (1.0 - gDay);   // starlight, as a camera with the gain up sees it
+  if (uMode == 2) E += vec3(0.55, 0.66, 1.0) * mix(0.07, 0.55, smoothstep(40.0, 8.0, uAlt)) * (0.6 + 0.4 * N.y) * (1.0 - gDay);   // starlight, as a camera with the gain up sees it
   vec3 col = alb / PI * E;
   if (wet > 0.01) { vec3 H = normalize(uSun - rd); col += sunC * wet * min(ggx(max(dot(up, H), 0.0), 0.16), 300.0) * 0.02 + skyAt(up, reflect(rd, up)) * wet * 0.25; }   // still water takes the sky
   return col;
@@ -750,14 +759,14 @@ vec3 shadeVeh(vec3 p, vec3 rd, float m){
   else if (m < 6.5) {
     vec3 q = p - gA; float s = dot(q, uChA); vec3 lat = q - uChA * s; float nn = m < 5.5 ? 8.0 : 16.0;
     float gi = floor((atan(dot(lat, gBz), dot(lat, gBx)) + PI) / (2.0 * PI / nn));
-    base = mod(gi, 2.0) < 0.5 ? vec3(0.92, 0.33, 0.07) : vec3(0.9, 0.9, 0.86);
+    base = mod(gi, 2.0) < 0.5 && uMode != 2 ? vec3(0.92, 0.33, 0.07) : vec3(0.9, 0.9, 0.86);   // the capsule's parachute is plain white
     rough = 0.85; coat = 0.0; thru = 0.55;
   } else if (m < 7.5) { base = vec3(0.8); rough = 0.8; coat = 0.0; }
-  else if (m < 8.5) { base = vec3(0.92, 0.66, 0.24); metal = 1.0; rough = 0.3 + 0.2 * n; coat = 0.0; }
-  else if (m < 9.5) { vec2 cg = abs(fract(pb.xy * vec2(8.0, 6.0)) - 0.5); base = vec3(0.012, 0.02, 0.07) * (1.0 - 0.6 * step(0.46, max(cg.x, cg.y))); rough = 0.18; coat = 1.0; }   // solar cells
+  else if (m < 8.5) { base = vec3(0.92, 0.66, 0.24); metal = 1.0; rough = 0.3 + 0.2 * n; coat = 0.0; if (uMode == 2) base = mix(base, vec3(0.25, 0.2, 0.15), uScorch * 0.6); }
+  else if (m < 9.5) { vec2 cg = abs(fract((abs((N * uBody).y) > 0.7 ? pb.xz : pb.xy) * vec2(8.0, 6.0)) - 0.5); base = vec3(0.012, 0.02, 0.07) * (1.0 - 0.6 * step(0.46, max(cg.x, cg.y))); rough = 0.18; coat = 1.0; }   // solar cells
   else if (m < 10.5) {
     base = vec3(0.78, 0.79, 0.8) * (0.9 + 0.2 * n); rough = 0.45; coat = 0.25;                                // white paint
-    if (uMode == 2) { float sc = uScorch * smoothstep(0.75, 0.05, pb.y + n * 0.5); base = mix(base, vec3(0.09, 0.07, 0.06), sc * 0.85); rough = mix(rough, 0.8, sc); coat *= 1.0 - sc; }
+    if (uMode == 2) { float sc = uScorch * (0.75 + 0.5 * n); base = mix(base, vec3(0.085, 0.08, 0.08) * (0.7 + 0.6 * n), min(sc, 1.0)); rough = mix(rough, 0.85, min(sc, 1.0)); coat *= 1.0 - min(sc, 1.0); }   // the shield comes back charred dark grey
   } else { base = mix(vec3(0.27, 0.21, 0.16), vec3(0.03, 0.025, 0.02), uScorch) * (0.75 + 0.5 * n); rough = 0.9; coat = 0.0; }   // the heat shield: tan, then char
   float sh = shadow(p + N * 0.02, uSun), ao = occl(p, N), nl = dot(N, uSun), nv = max(dot(N, V), 0.03);
   vec3 sunC = sunT(uAlt, uSun.y) * SUN, H = normalize(uSun + V); float nh = max(dot(N, H), 0.0), vh = max(dot(V, H), 0.0);
@@ -776,11 +785,11 @@ vec3 shadeVeh(vec3 p, vec3 rd, float m){
   if (uMode == 1) { col += ((base * (1.0 - metal) / PI + 0.004) * lampsE(p, N) + (coat * 0.02 + metal * 0.1 * base) * lampsE(p, R)) * ao * 0.3; }
   col += base * (1.0 - metal) * hemi * ao + base * thru * hemi * 0.6;
   // the shock in front lights whatever faces it, and the windward skin glows
-  float face = max(dot(N, uVel), 0.0), hot = uHot * (m < 4.5 ? 1.0 : m > 9.5 ? 0.22 : 0.0);
+  float face = max(dot(N, uVel), 0.0), hot = uHot * (m < 4.5 ? 1.0 : m > 9.5 || (uMode == 2 && m > 7.5) ? 0.22 : 0.0);
   col += (base + 0.03) * vec3(1.0, 0.45, 0.2) * hot * (face * 0.8 + 0.2) * 30.0 * ao;
   col += vec3(1.0, 0.32, 0.07) * pow(face, 2.0) * hot * hot * 22.0 * (0.6 + 0.8 * n);
   if (m > 1.5 && m < 3.5) col += vec3(1.0, 0.25, 0.04) * uGlow * 5.0 * (0.4 + n);
-  if (m > 10.5 && uMode == 2) col += vec3(1.0, 0.27, 0.05) * uGlow * 7.0 * (0.4 + n);       // the shield, still glowing after the fire has gone
+  if (m > 9.5 && uMode == 2) col += vec3(1.0, 0.27, 0.05) * max(uGlow - uHot, 0.0) * 2.2 * smoothstep(0.05, -0.3, pb.y) * (0.4 + n);       // the shield, still glowing after the fire has gone
   return col;
 }
 
@@ -973,7 +982,7 @@ vec3 stars(vec3 d){
 
 void main(){
   Rc = RG + uAlt; Cc = vec3(0.0, -Rc, 0.0); gDay = smoothstep(-0.14, 0.04, uSun.y) * 0.985 + 0.015;
-  gA = uBody * vec3(0.0, uMode == 2 ? 0.5 : 6.1, 0.0); gBx = normalize(cross(uChA, vec3(0.0, 0.0, 1.0))); gBz = cross(uChA, gBx);
+  gA = uBody * vec3(0.0, uMode == 2 ? 0.2 : 6.1, 0.0); gBx = normalize(cross(uChA, vec3(0.0, 0.0, 1.0))); gBz = cross(uChA, gBx);
   vec2 pc = (gl_FragCoord.xy + uJit - 0.5 * uRes) / (0.5 * uRes.y);
   vec3 rd = normalize(uCamM * vec3(pc * uTan, 1.0));
   float jit = ign(gl_FragCoord.xy, uFrame), jit2 = ign(gl_FragCoord.yx + 17.0, uFrame);
@@ -983,7 +992,7 @@ void main(){
   {
     float t0 = 1e9, t1 = -1.0;
     #define BND(c, r) { vec2 b = sphere(uCam, rd, c, r); if (b.y > 0.0) { t0 = min(t0, max(b.x, 0.0)); t1 = max(t1, b.y); } }
-    if (uMode == 1) { if (uS1.x < 1e5) BND(uS1, 7.6) if (uBoom < 0.0) { if (uKick.x > 0.5) BND(uBody * vec3(0.0, 9.0, 0.0), (uPay > 4.5 ? 2.2 : 1.7) + max(uKick.y, 0.0) * 1.1) else BND(uBody * vec3(0.0, 8.2, 0.0), 3.7 + (uFair >= 0.0 && uFair < 3.0 ? 4.0 * uFair + 6.0 * uFair * uFair : 0.0)) } }
+    if (uMode == 1) { if (uS1.x < 1e5) BND(uS1, 7.6) if (uBoom < 0.0) { if (uKick.x > 0.5) BND(uBody * vec3(0.0, 9.0, 0.0), (abs(uPay - 5.0) < 0.5 ? 2.2 : 1.7) + max(uKick.y, 0.0) * 1.1) else BND(uBody * vec3(0.0, 8.2, 0.0), 3.7 + (uFair >= 0.0 && uFair < 3.0 ? 4.0 * uFair + 6.0 * uFair * uFair : 0.0)) } }
     else BND(vec3(0.0), uMode == 2 ? 1.1 : 7.6)
     if (uDrogue > 0.001 || uMain > 0.001) { float Ln = uMode == 2 ? (uMain > 0.001 ? 11.0 : 5.0) : uTrail > 0.001 ? 50.0 : uMain > 0.001 ? 23.0 : 10.0; vec2 c = sphere(uCam, rd, gA + uChA * Ln * 0.62, Ln * 0.62 + 2.0); if (c.y > 0.0) { t0 = min(t0, max(c.x, 0.0)); t1 = max(t1, c.y); } }
     if (t1 > 0.0) { float t = t0; for (int i = 0; i < 110; i++) { vec2 d = map(uCam + rd * t); if (d.x < 0.0012 * t) { tV = t; mV = d.y; break; } t += d.x * 0.9; if (t > t1) break; } }

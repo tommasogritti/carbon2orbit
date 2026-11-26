@@ -22,7 +22,7 @@ const GROUND = 0.05, QUICK = 2.6, FALL = 22, CHUTE = 6.2;
  */
 export class OrbitOps3D {
   eng: Engine; box: HTMLDivElement; hudC: HTMLCanvasElement; map?: CanvasImageSource;
-  t = 0; thr = 0; att = NaN; travel = 900; idle = 0; off = false; view: 'orbit' | 'fall' | 'land' = 'orbit';
+  t = 0; dt = 1 / 60; last = -1; thr = 0; att = NaN; travel = 900; idle = 0; off = false; view: 'orbit' | 'fall' | 'land' = 'orbit';
   /** How many seconds of the capsule's fall pass in one: the scene steps the capsule by this, so the fall lasts about FALL seconds. */
   rate = 26; hot = 0; glow = 0; scorch = 0; az = 0.55;
   tRel = -1; sw0 = 0; swept = 0; pu = 0; north = 0; tLand = -1; total = 1;
@@ -50,7 +50,7 @@ export class OrbitOps3D {
   land() { this.tLand = this.sc.time.now; this.view = 'land'; this.eng.cut(); return (CHUTE + 2.6) * 1000; }
   /** Follow the scene: the engine, the release, the capsule's fall. */
   track() {
-    const sc = this.sc, dt = 1 / 60, c = sc.cap; this.t += dt;
+    const sc = this.sc, now = sc.time.now, dt = (this.dt = this.last < 0 ? 1 / 60 : clamp((now - this.last) / 1000, 0, 0.1)), c = sc.cap; this.last = now; this.t += dt; // real seconds, whatever the display's refresh rate
     this.thr += ((sc.lit ? 1 : 0) - this.thr) * Math.min(1, dt * 8);
     if (c && this.tRel < 0) {                                                  // released: where it will come down, and how long that takes
       this.tRel = sc.time.now; this.pu = c.u; this.swept = 0;
@@ -62,8 +62,8 @@ export class OrbitOps3D {
     if (this.view === 'orbit' && c && sc.time.now - this.tRel > 2400) { this.view = 'fall'; this.eng.cut(); }
     if (this.view === 'orbit') this.travel += (sc.phasing > 0 ? 420 : 45) * dt;
     let hot = 0;
-    if (c && this.view !== 'land') { const v = c.speed, air = clamp((0.5 * 1.225 * Math.exp(-Math.max(0, c.alt) / 7200) * v * v) / 9000, 0, 1); hot = air * sstep(700, 2200, v); }
-    this.hot += (hot - this.hot) * 0.12; this.glow = Math.max(this.glow - dt * 0.09, this.hot); this.scorch = Math.max(this.scorch, sstep(0.1, 1, this.hot) * 0.95);
+    if (c && this.view !== 'land') { const v = c.speed; hot = Math.pow(clamp((Math.sqrt(1.225 * Math.exp(-Math.max(0, c.alt) / 7200)) * v * v * v) / 5e9, 0, 1), 1.2); } // heating goes as the root of the air's density and the cube of the speed: it peaks near 65 km and is gone by 30
+    this.hot += (hot - this.hot) * (1 - Math.exp(-dt * 7.5)); this.glow = Math.max(this.glow - dt * 0.09, this.hot); this.scorch = Math.max(this.scorch, sstep(0.1, 1, this.hot) * 0.95);
   }
   /** The sun for a place on the orbit: the plane stays near the edge of night (as a dawn-dusk orbit does), and the range is on the dark side, as it was. */
   sun(u: number): V3 { const ph = (u - this.sc.uT) * DEG, A = 0.22; return norm([-0.45 + A * Math.sin(ph), -A * Math.cos(ph) * 0.97, 0.86]); }
@@ -72,7 +72,7 @@ export class OrbitOps3D {
     const sc = this.sc, o = sc.o, t = this.t, step = sc.steps[Math.min(sc.si, sc.steps.length - 1)];
     const vt = (o.x * o.vy - o.y * o.vx) / o.r, gam = Math.atan2(o.vr, vt), pro = step.do === 'raise' || step.do === 'release' || !!sc.cap; // it points its engine against the way it must be pushed; for the release, the capsule forward
     const want = Math.PI / 2 - gam + (pro ? 0 : Math.PI);
-    this.att = isNaN(this.att) ? want : this.att + wrapRad(want - this.att) * (sc.scene.isPaused() ? 0 : 0.035);
+    this.att = isNaN(this.att) ? want : this.att + wrapRad(want - this.att) * (1 - Math.exp(-this.dt * 2.1));
     const th = this.att, by: V3 = [Math.sin(th), Math.cos(th), 0], bz: V3 = [0, 0, 1], bx = cross(by, bz), tgt = mul(by, 9.0);
     const az = 0.3 * Math.sin(t * 0.05) - 0.1, cam = add(tgt, [6.6 * Math.sin(az) - 1.4, 2.5 + 0.6 * Math.sin(t * 0.07), 6.6 * Math.cos(az)]);
     const rel = this.tRel < 0 ? -1 : ((sc.time.now - this.tRel) / 1000) * 1.3, fast = sc.phasing > 0;
@@ -90,10 +90,10 @@ export class OrbitOps3D {
     const vt = (c.x * c.vy - c.y * c.vx) / c.r, gam = Math.atan2(c.vr, vt), vel: V3 = [Math.cos(gam), Math.sin(gam), 0];
     const by = mul(vel, -1), bz: V3 = [0, 0, 1], bx = cross(by, bz);
     const K = QUICK / this.rate, remain = Math.max(0, this.sw0 - this.swept) * DEG * RE_KM * K, vvis = (Math.abs(vt) / 1000) * QUICK;
-    if (!this.sc.scene.isPaused()) { this.travel += vvis / 60; this.az += (lerp(0.55, 2.3, sstep(0.08, 0.6, this.hot)) - this.az) * 0.025; }
+    this.travel += vvis * this.dt; this.az += (lerp(0.55, 2.3, sstep(0.08, 0.6, this.hot)) - this.az) * (1 - Math.exp(-this.dt * 1.5));
     const az = this.az + 0.08 * Math.sin(t * 0.3), dir: V3 = norm([-vel[0] * Math.cos(az), -vel[1] * Math.cos(az) + 0.2, Math.sin(az)]);
     const cam = mul(dir, 7.6), look = mul(vel, lerp(1.6, -1.6, sstep(1.0, 2.2, az)));
-    const sun = this.sun(c.u), dark = sstep(0.04, -0.14, sun[1]), onLand = this.north > -36;
+    const sun = this.sun(c.u), dark = sstep(0.04, -0.14, sun[1]), onLand = this.north > -27;
     return {
       time: t, cam, look, fov: 34 + this.hot * 4, roll: -0.04, shake: this.hot * 0.5,
       alt: (onLand ? GROUND : 0) + alt / 1000, travel: [this.travel, 140], drop: -c.vr * this.rate, speed: [vvis, 0],
@@ -104,22 +104,23 @@ export class OrbitOps3D {
   }
   /** The last of the fall: seen from the ground, the capsule under its parachute, and the parachute going over once it is down. */
   landFrame(): Frame {
-    const t = this.t, tt = (this.sc.time.now - this.tLand) / 1000, down = sstep(0, 1.6, tt - CHUTE), h = 90 * Math.pow(Math.max(0, 1 - tt / CHUTE), 1.3), onLand = this.north > -36;
+    const t = this.t, tt = (this.sc.time.now - this.tLand) / 1000, down = sstep(0, 1.6, tt - CHUTE), h = 90 * Math.pow(Math.max(0, 1 - tt / CHUTE), 1.3), onLand = this.north > -27;
     const sway: V3 = norm([0.07 * Math.sin(tt * 1.3), 1, 0.05 * Math.cos(tt * 1.1)]), k = down * 1.2, ax: V3 = down > 0 ? norm([-Math.sin(k), Math.cos(k), -0.25 * down]) : sway;
-    const by: V3 = down > 0 ? norm([0.1 * down, 1, 0]) : sway, bz: V3 = norm(cross(cross(by, [0, 0, 1]), by)), bx = cross(by, bz);
+    const by: V3 = down > 0 ? norm([Math.sin(1.25 * down), Math.cos(1.25 * down), 0.2 * down]) : sway, // nose down under the parachute, then over on to its side
+      bz: V3 = norm(cross(cross(by, [0, 0, 1]), by)), bx = cross(by, bz);
     const c = this.sc.cap, sun = this.sun(c ? c.u : this.sc.uT);
     return {
       time: t, cam: [11, -h + 1.4, 14], look: [-2.5 * down, lerp(lerp(5, 1.6, down), 5, sstep(60, 150, h)), 0], fov: 46, roll: 0, shake: Math.exp(-Math.max(0, tt - CHUTE) * 5) * (tt > CHUTE ? 0.25 : 0),
-      alt: (onLand ? GROUND : 0) + (h + 0.15) / 1000, travel: [this.travel, 140], drop: tt < CHUTE ? 30 : 0, speed: [0, 0],
+      alt: (onLand ? GROUND : 0) + (h + 0.47) / 1000, travel: [this.travel, 140], drop: tt < CHUTE ? 30 : 0, speed: [0, 0],
       sun, body: [...bx, ...by, ...bz], vel: [0, -1, 0], hot: 0, scorch: this.scorch, glow: 0, rcs: [0, 0, 0, 0],
       chuteAxis: ax, drogue: 0, main: lerp(1, 0.32, down), splash: -1, s2: [0, 1, 0, 0], ship: null, exposure: 2.6, flash: 0,
-      launch: { mode: 2, s1: null, fairing: 99, plume: [0, 0, 0], pad: [0, -h - 0.15, 0], site: 3, padKm: GROUND, lamps: 0, smoke: -1, boom: -1, north: this.north, pay: 5 },
+      launch: { mode: 2, s1: null, fairing: 99, plume: [0, 0, 0], pad: [0, -h - 0.47, 0], site: 3, padKm: GROUND, lamps: 0, smoke: -1, boom: -1, north: this.north, pay: 5 },
     };
   }
   frame(): Frame { return this.view === 'land' ? this.landFrame() : this.view === 'fall' && this.sc.cap ? this.fallFrame() : this.orbitFrame(); }
   present() {
     if (this.off) return;
-    if (this.sc.scene.isPaused()) { if (++this.idle > 40) return; } else { this.idle = 0; this.track(); }
+    if (this.sc.scene.isPaused()) { this.dt = 0; if (++this.idle > 40) return; } else { this.idle = 0; this.track(); }
     this.fit(); this.eng.render(this.frame()); this.hud();
   }
   /** Dev: the frame as a JPEG data URL, for the checks that run without a visible tab. */

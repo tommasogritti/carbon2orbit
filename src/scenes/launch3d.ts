@@ -20,10 +20,13 @@ const LIGHT = {
   day: { sun: norm([-0.42, 0.6, 0.62]), exp: 0.27, lamps: 0 },
   dusk: { sun: norm([-0.8, -0.03, 0.42]), exp: 1.5, lamps: 0.7 },
   night: { sun: norm([-0.6, -0.45, 0.4]), exp: 2.6, lamps: 1 },
+  low: { sun: norm([-0.62, 0.2, 0.6]), exp: 0.34, lamps: 0 },
 };
+/** Flights whose real hour differs from the level's day, dusk or night: late-afternoon sun for the first flight (4:20 pm in May) and the hundredth (6:30 pm in November); full dark for the first from Virginia, 45 minutes after sunset. */
+const HOUR: Record<string, keyof typeof LIGHT> = { 'its-a-test': 'low', 'the-mountain-god-rises': 'low', 'lc-2': 'night' };
 const MOUNT = 8.7;
 /** What each flight's kick stage is drawn carrying (the game's own shapes, by kind): CubeSats on a dispenser, a radar satellite, three microsatellites; otherwise one satellite. */
-const PAYLOAD: Record<string, number> = { 'still-testing': 1, 'its-business-time': 1, 'lc-2': 4, 'paschens-law': 3, 'the-mountain-god-rises': 3 }; // metres from the pad's deck up to the vehicle's origin (the middle of stage one) as it stands
+const PAYLOAD: Record<string, number> = { 'its-a-test': 6, haste: 7, 'still-testing': 1, 'its-business-time': 1, 'lc-2': 4, 'paschens-law': 3, 'the-mountain-god-rises': 3 }; // metres from the pad's deck up to the vehicle's origin (the middle of stage one) as it stands
 
 /**
  * Launch control drawn by the game's own 3D renderer (src/gfx3d), for XG graphics: the count and the climb to SECO.
@@ -33,7 +36,7 @@ const PAYLOAD: Record<string, number> = { 'still-testing': 1, 'its-business-time
  */
 export class Launch3D {
   eng: Engine; box: HTMLDivElement; hudC: HTMLCanvasElement;
-  t = 0; thr = 0; tIgn = -1; tGo = -1; tSep = -1; tFair = -1; tBoom = -1; tLost = -1; idle = 0; settle = false; off = false; kTravel = 0; nRel = 0; tRel = -1; wasKick = false; th0 = 0;
+  t = 0; dt = 1 / 60; last = -1; thr = 0; tIgn = -1; tGo = -1; tSep = -1; tFair = -1; tBoom = -1; tLost = -1; idle = 0; settle = false; off = false; kTravel = 0; nRel = 0; tRel = -1; wasKick = false; th0 = 0;
   constructor(public sc: LaunchScene) {
     this.eng = getEngine();
     const box = (this.box = document.createElement('div')); box.id = 'gfx3d';
@@ -46,6 +49,7 @@ export class Launch3D {
     sc.game.events.on('postrender', draw);
     sc.events.once('shutdown', () => { sc.game.events.off('postrender', draw); box.remove(); this.off = true; });
   }
+  light() { const p = this.sc.p; return LIGHT[HOUR[this.sc.def.id] || (p.night ? 'night' : p.dusk ? 'dusk' : 'day')]; }
   fit() {
     const box = this.box, r = this.sc.game.canvas.getBoundingClientRect(), s = document.getElementById('stage')!.getBoundingClientRect();
     const key = `${r.left - s.left}|${r.top - s.top}|${r.width}|${r.height}`;
@@ -58,7 +62,7 @@ export class Launch3D {
   lost() { this.tLost = this.t; }
   /** Follow the scene: what has lit, gone or come off since the last frame. */
   track() {
-    const sc = this.sc, s = sc.s, dt = 1 / 60; this.t += dt;
+    const sc = this.sc, s = sc.s, now = sc.time.now, dt = (this.dt = this.last < 0 ? 1 / 60 : clamp((now - this.last) / 1000, 0, 0.1)); this.last = now; this.t += dt; // real seconds: a display may refresh at 60 or 120, and the dev fast-forward draws one step in several
     const burning = s.lit && !s.starved && !sc.ended;
     this.thr += ((burning ? Math.max(0.35, s.throttle) : 0) - this.thr) * Math.min(1, dt * 7);
     if (s.held && !s.lit) { this.tIgn = -1; this.tGo = -1; } else if (this.tIgn < 0) this.tIgn = this.t;
@@ -80,13 +84,13 @@ export class Launch3D {
     const by: V3 = [Math.sin(th), Math.cos(th), 0], bz: V3 = [0, 0, 1], bx = cross(by, bz), tgt = mul(by, 9.0);
     const az = 0.25 * Math.sin(t * 0.05) - 0.1, cam = add(tgt, [6.2 * Math.sin(az) - 1.5, 2.6 + 0.6 * Math.sin(t * 0.07), 6.2 * Math.cos(az)]);
     const n = d ? d.names.length : (sc.p.plan as { do: string }[] | undefined)?.filter((q) => q.do === 'deploy').length ?? 1, rel = this.tRel < 0 ? -1 : (this.t - this.tRel) * 1.6;
-    const boom = this.tBoom < 0 ? -1 : t - this.tBoom, burn = s.lit ? 1 : 0; this.thr += (burn - this.thr) * 0.2;
+    const boom = this.tBoom < 0 ? -1 : t - this.tBoom, burn = s.lit ? 1 : 0; this.thr += (burn - this.thr) * (1 - Math.exp(-this.dt * 13));
     // the sun where the launch left it, then round the sky as the stage goes round the Earth: a dusk flight meets the night, and then a sunrise
-    const l0 = sc.p.night ? LIGHT.night : sc.p.dusk ? LIGHT.dusk : LIGHT.day, a = Math.atan2(s.x, s.y) - this.th0, ca = Math.cos(a), sa = Math.sin(a);
+    const l0 = this.light(), a = Math.atan2(s.x, s.y) - this.th0, ca = Math.cos(a), sa = Math.sin(a);
     const sun: V3 = norm([l0.sun[0] * ca - l0.sun[1] * sa, l0.sun[0] * sa + l0.sun[1] * ca, l0.sun[2]]), dark = sstep(0.04, -0.14, sun[1]);
     return {
       time: t, cam, look: add(tgt, [1.2, -0.4, 0]), fov: 38, roll: 0, shake: this.thr * 0.02 + (boom >= 0 ? Math.exp(-boom * 2) * 0.8 : 0),
-      alt: s.alt / 1000, travel: [this.kTravel + 900, 140], drop: 0, speed: [0.045, 0],
+      alt: s.alt / 1000, travel: [this.kTravel + 900, 140], drop: 0, speed: [45, 0],
       sun, body: [...bx, ...by, ...bz], vel: [0, 1, 0], hot: 0, scorch: 0, glow: this.thr * 0.6, rcs: [0, 0, 0, 0],
       chuteAxis: [0, 1, 0], drogue: 0, main: 0, splash: -1, s2: [0, 1, 0, 0], ship: null, exposure: lerp(0.27, 1.7, dark), flash: boom >= 0 ? Math.exp(-boom * 5) * 0.6 : 0,
       launch: { s1: null, fairing: 99, plume: [this.thr, 1, 2], pad: [-1e7, -s.alt, 0], site: 0, padKm: 0, lamps: 0, smoke: -1, boom, kick: [this.nRel >= n ? 2 : 1, rel >= 0 && rel < 22 ? rel : -1], pay: PAYLOAD[sc.def.id] || 0 },
@@ -96,7 +100,7 @@ export class Launch3D {
     if (this.sc.kick) return this.kickFrame();
     const sc = this.sc, s = sc.s, p = sc.p, t = this.t, up = s.stage >= 1;
     const th = sc.rocket.rotation, by: V3 = [Math.sin(th), Math.cos(th), 0], bz: V3 = [0, 0, 1], bx = cross(by, bz);
-    const site = SITES_3D[p.site], light = p.night ? LIGHT.night : p.dusk ? LIGHT.dusk : LIGHT.day;
+    const site = SITES_3D[p.site], light = this.light();
     const pad: V3 = [-s.down, -s.alt - MOUNT, 0];
     const ts = this.tSep < 0 ? -1 : t - this.tSep, d1 = ts < 0 ? 0 : 1.2 * ts + 3.5 * ts * ts;
     const s1: V3 | null = ts < 0 ? [0, 0, 0] : d1 > 700 ? null : add(mul(by, -d1), mul(bx, -0.5 * ts));
@@ -126,7 +130,7 @@ export class Launch3D {
     const sc = this.sc, hide = this.tLost >= 0 && this.t - this.tLost > 1.6;
     this.box.style.display = hide ? 'none' : '';
     if (hide) return;
-    if (sc.scene.isPaused()) { if (++this.idle > 40) return; } else { this.idle = 0; this.track(); }
+    if (sc.scene.isPaused()) { this.dt = 0; if (++this.idle > 40) return; } else { this.idle = 0; this.track(); }
     this.fit(); const f = this.frame(); this.eng.render(f); this.hud(f);
   }
   /** Dev: the frame as a JPEG data URL, for the checks that run without a visible tab. */
