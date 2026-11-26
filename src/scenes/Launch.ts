@@ -1,11 +1,13 @@
 import Phaser from 'phaser';
-import { W, H, T, held, just, finish, cam, img, panel, who } from '../core';
+import { W, H, T, held, just, finish, cam, img, panel, who, xgOn } from '../core';
 import { snd, music, stopLoops, loop, Loop } from '../audio';
 import { P, S } from '../art';
 import type { LevelDef } from '../content';
 import * as L from '../launchSim';
 import { hifi, HiFi } from '../hifi';
 import { LOOKS } from '../hifiLooks';
+import { can3d } from '../gfx3d/engine';
+import { Launch3D, SITES_3D } from './launch3d';
 
 const AUTO = new URLSearchParams(location.search).has('auto');
 const DEG = Math.PI / 180, RX = 154; // the rocket's screen column
@@ -23,7 +25,7 @@ const GO_LABEL: Record<string, string> = { liftoff: 'LIFT-OFF · RELEASE HOLD-DO
 interface Scrub { at: number; lit?: boolean; text: string; resume: string }
 const STILL_TESTING: Scrub = { at: 1.2, lit: true, text: 'ABORT at T-2 · LOX too warm · scrubbed for the day', resume: '21 January 2018 · new attempt · T-8' }; // 12 December 2017: the real attempt was scrubbed, and flew 40 days later
 /** Directions (degrees from prograde) the kick stage points for each release, so no two satellites leave the same way. */
-const DEPLOY_DIR = [0, 180, 70, 250, 130, 310, 30, 210];
+export const DEPLOY_DIR = [0, 180, 70, 250, 130, 310, 30, 210];
 const fmt = (n: number) => Math.round(n).toLocaleString('en-NZ');
 /** One step of a kick-stage flight plan: burn to circularise at apogee, raise apogee, lower perigee, or let a payload go. */
 interface PlanStep { do: 'circ' | 'raise' | 'lower' | 'deploy'; alt?: number; name?: string; mass?: number }
@@ -56,7 +58,7 @@ export class LaunchScene extends Phaser.Scene {
   clouds: { o: Phaser.GameObjects.Image; alt: number }[] = []; streaks: Phaser.GameObjects.Rectangle[] = [];
   rocket!: Phaser.GameObjects.Container; s1!: Phaser.GameObjects.Image; s2?: Phaser.GameObjects.Image; flame!: Emitter; flame2!: Emitter; smoke!: Emitter;
   g!: Phaser.GameObjects.Graphics; clockT!: Txt; tele!: Txt; call!: Txt; prompt!: Txt; hint!: Txt; warpT!: Txt; dialT!: Txt; plotT!: Txt[]; lab: Txt[] = []; val: Txt[] = []; poll: Txt[] = []; tl: Txt[] = [];
-  rumble!: Loop; sea!: Loop; patch?: Phaser.GameObjects.Image; hf?: HiFi;
+  rumble!: Loop; sea!: Loop; patch?: Phaser.GameObjects.Image; hf?: HiFi; x3?: Launch3D; banner = '';
   ended = false; count = 12; pollT = 0; holdT = 0; resume = ''; nogo?: { i: number; at: number; shown: boolean; done: boolean }; missed = false; scrubbed = true; lastC = 99;
   warp = 1; trail: { d: number; a: number }[] = []; trailT = 0; said: Record<string, boolean> = {}; alarmT = 0; why = ''; sawQ = 0; seco0?: L.Orbit; margin = 0; stageDelay = 0;
   // sounding rocket
@@ -88,7 +90,8 @@ export class LaunchScene extends Phaser.Scene {
     stopLoops(); music.play('launch', 0);
     this.rumble = loop('rumble'); this.sea = loop('sea'); this.sea.set(0.8);
     const night = !!this.p.night, dusk = !!this.p.dusk, two = !this.ung;
-    const hf = (this.hf = hifi(this, LOOKS[(night || dusk ? EVE_LOOK[this.def.id] : LEVEL_LOOK[this.def.id] || SITE_LOOK[this.p.site]) || ''])), K = (k: string) => (hf ? hf.key(k) : k); // a look redraws these by name
+    const xg = xgOn() && can3d() && two && !!SITES_3D[this.p.site]; // XG graphics: the count and the climb are drawn in 3D (launch3d.ts), over this scene
+    const hf = (this.hf = hifi(this, xg ? undefined : LOOKS[(night || dusk ? EVE_LOOK[this.def.id] : LEVEL_LOOK[this.def.id] || SITE_LOOK[this.p.site]) || ''])), K = (k: string) => (hf ? hf.key(k) : k); // a look redraws these by name
     const sky = img(this, 0, 0, K(night ? 'sky_night' : dusk ? 'sky_dusk' : 'sky_day')).setOrigin(0);
     this.dark = this.add.rectangle(0, 0, W, H, 0x04050c, 0).setOrigin(0);
     this.stars = img(this, 0, 0, K('stars')).setOrigin(0).setAlpha(0);
@@ -141,7 +144,11 @@ export class LaunchScene extends Phaser.Scene {
     who(this, { ...this.def, role: this.def.role || 'CEO · calling the launch' }, 4, 52);
     this.say(this.ung ? 'Aim the rail against the wind' : 'Terminal count');
     if (hf) { hf.tag({ sky, dark: this.dark, stars: this.stars, earth: this.earth, ground: this.ground, smoke: this.smoke, rocket: this.rocket, flame: this.flame, flame2: this.flame2 }); hf.set({ rx: RX, alt: 0, base: 136, ry: 136, rot: 0, burn: 0, up: 0 }); hf.ready({ hud: this.children.list.slice(worldN), lateHud: true }); }
+    this.x3 = undefined; this.banner = '';
+    if (xg) try { this.x3 = new Launch3D(this); } catch (e) { console.error(e); }
   }
+  /** Dev: the 3D frame as a JPEG data URL. */
+  shot(q?: number) { return this.x3?.shot(q); }
   say(s: string) { this.call.setText(s); }
   /** For the controls panel: launch control changes with the vehicle and the phase. */
   help() {
@@ -474,7 +481,7 @@ export class LaunchScene extends Phaser.Scene {
     this.time.delayedCall(900, () => finish(this, this.def, { success: true, stars, title: `Apogee ${ap.toFixed(0)} km`, text: `Past the ${goal} km line, with the dart released ${late.toFixed(1)} s after burnout. The nose tip peaked at about ${Math.round(this.noseMax / 10) * 10} °C on the way up. Predicted impact ${range.toFixed(0)} km downrange: ${inZone ? 'inside the safety zone.' : `outside the ${this.zone[0]}–${this.zone[1]} km safety zone. Range safety will want a word.`}` }));
   }
   telemetryLoss() {
-    this.end(); this.say('');
+    this.end(); this.say(''); this.x3?.lost();
     const g = this.add.graphics().setDepth(30);
     this.time.addEvent({ delay: 60, repeat: 24, callback: () => { g.clear(); for (let i = 0; i < 40; i++) g.fillStyle(Math.random() < 0.5 ? 0xffffff : 0x10131c, 0.8).fillRect(0, Phaser.Math.Between(0, H), W, Phaser.Math.FloatBetween(0.5, 4)); snd.staticBurst(); } });
     this.time.delayedCall(1600, () => {
@@ -585,7 +592,7 @@ export class LaunchScene extends Phaser.Scene {
     const down = last.do !== 'lower' || o.pe <= last.alt! * 1000 + 5e3, clean = s.stress < 0.5 && s.heat < 0.2 && !this.missed;
     const stars = worst <= 15 && down && clean ? 3 : worst <= 50 ? 2 : 1;
     const notes = [worst > 15 ? `a payload was released ${worst.toFixed(0)} km off its orbit` : '', !down ? `the stage was left with its perigee at ${km(o.pe)} km, not ${fmt(last.alt!)}` : '', s.stress >= 0.5 ? `structural load reached ${(s.stress * 100).toFixed(0)}%` : '', this.missed ? 'a NO-GO went uncalled in the count' : ''].filter(Boolean);
-    T(this, 176, 32, 'PLAN COMPLETE', '#7cc56b', 9, '700').setOrigin(0.5).setDepth(44); this.kick!.tip.setText('');
+    this.banner = 'PLAN COMPLETE'; T(this, 176, 32, 'PLAN COMPLETE', '#7cc56b', 9, '700').setOrigin(0.5).setDepth(44); this.kick!.tip.setText('');
     this.time.delayedCall(1900, () => finish(this, this.def, { success: true, stars, egg: stars === 3 && worst <= 6, title: 'Two orbits, one kick stage', text: `${log.map((q) => `${q.name} released at ${km(q.ap)} × ${km(q.pe)} km`).join('; ')}. The stage was left in a ${km(o.ap)} × ${km(o.pe)} km orbit with ${((s.prop / this.v.stages[2].prop) * 100).toFixed(0)}% of its Curie propellant.${notes.length ? ' For three stars: ' + notes.join('; ') + '.' : ''}` }));
   }
   kickPicture(o: L.Orbit) {
@@ -661,6 +668,7 @@ export class LaunchScene extends Phaser.Scene {
     const text = `SECO left a ${km(this.seco0!.ap)} × ${km(this.seco0!.pe)} km transfer orbit with ${(this.margin * 100).toFixed(1)}% of stage-2 propellant in hand. ${kicked ? `Curie circularised it to ${km(o.ap)} × ${km(o.pe)} km on apogee pass ${passes}; target ${km(ha)} km. ` : ''}${d ? `All ${d.names.length} payloads released one at a time, each in its own direction` : (this.p.kickPayload || this.p.payload) + ' deployed'}.${this.p.sail ? ' ' + this.p.sailNote : ''}${corridor}${notes.length ? ' For three stars: ' + notes.join('; ') + '.' : ''}`;
     const k = this.kick;
     if (k) {
+      this.banner = this.p.hundred ? 'PAYLOAD DEPLOYED · 100 LAUNCHES!' : 'PAYLOAD DEPLOYED';
       T(this, 176, 32, this.p.hundred ? 'PAYLOAD DEPLOYED · 100 LAUNCHES!' : 'PAYLOAD DEPLOYED', '#7cc56b', 9, '700').setOrigin(0.5).setDepth(44); k.tip.setText('');
       const b = this.add.particles(k.craft.x, k.craft.y, 'puff', { speed: { min: 10, max: 50 }, lifespan: 500, scale: { start: S * 0.4, end: 0 }, color: [0xffffff, 0xffd9a0, 0xff9a4a], blendMode: 'ADD', emitting: false }).setDepth(44); b.explode(18);
     }

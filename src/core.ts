@@ -5,6 +5,7 @@ import type { LevelDef } from './content';
 import { D, S, UI, BUSTS } from './art';
 import { beep, snd, music, stopLoops, unlock, muted, setMuted, nextSoundtrack } from './audio';
 import { count } from './stats';
+import { can3d } from './gfx3d/engine';
 
 /** `?clean=1` leaves Rocket Lab's mission patches and the optional local photos out, for footage without their artwork. */
 const CLEAN = new URLSearchParams(location.search).has('clean');
@@ -42,7 +43,7 @@ export function patchImg(id: string) {
 }
 export const W = 320;
 export const H = 180;
-export const SCENE_FOR: Record<string, string> = { platform: 'Platform', launch: 'Launch', hotfire: 'Hotfire', 'heli-catch': 'Heli', 'orbit-raise': 'OrbitRaise', sprint: 'Sprint', 'fault-finder': 'FaultFinder', splashdown: 'Splashdown', cruise: 'Cruise', 'countdown-race': 'CountdownRace', ride: 'Ride', 'orbit-ops': 'OrbitOps', 'dual-count': 'DualCount', 'arc-lab': 'ArcLab', 'edit-bay': 'EditBay', 'slot-finder': 'SlotFinder', 'hat-trick': 'HatTrick', 'fit-out': 'FitOut', sandbar: 'Sandbar', 'chill-down': 'ChillDown' };
+export const SCENE_FOR: Record<string, string> = { platform: 'Platform', launch: 'Launch', hotfire: 'Hotfire', 'heli-catch': 'Heli', 'orbit-raise': 'OrbitRaise', sprint: 'Sprint', 'fault-finder': 'FaultFinder', splashdown: 'Splashdown', cruise: 'Cruise', 'countdown-race': 'CountdownRace', ride: 'Ride', 'orbit-ops': 'OrbitOps', 'dual-count': 'DualCount', 'arc-lab': 'ArcLab', 'edit-bay': 'EditBay', 'slot-finder': 'SlotFinder', 'hat-trick': 'HatTrick', 'fit-out': 'FitOut', sandbar: 'Sandbar', 'chill-down': 'ChillDown', descent: 'Descent', catch: 'Catch' };
 export const FONT = UI;
 
 export const plain = (s: string) => s;
@@ -234,14 +235,22 @@ export function toast(text: string) {
 }
 // ---------- graphics: high uses the hi-fi layer (hifi.ts) wherever a level has a look; G or the HD button ----------
 const GFX_KEY = 'carbon-to-orbit-graphics';
-let gfxHigh = (() => { try { return localStorage.getItem(GFX_KEY) !== 'standard'; } catch { return true; } })();
-if (new URLSearchParams(location.search).get('hifi') === '0') gfxHigh = false;
-export const hifiOn = () => gfxHigh;
-function showGfx() { const b = document.getElementById('gfx'); if (b) { b.textContent = gfxHigh ? 'HD' : 'SD'; b.classList.toggle('on', gfxHigh); } }
+// Three tiers. SD: the plain look. HD: the hi-fi layer. XG: HD, and the 3D renderer (src/gfx3d) in the levels that have
+// a 3D telling; offered only where the browser can run it, and the default there.
+type Gfx = 'standard' | 'high' | 'xg';
+const GFX_NAME: Record<Gfx, [short: string, long: string]> = { standard: ['SD', 'standard'], high: ['HD', 'high'], xg: ['XG', 'extreme (3D where a level has it)'] };
+let gfx: Gfx = (() => { try { const v = localStorage.getItem(GFX_KEY); return v === 'standard' || v === 'high' ? v : 'xg'; } catch { return 'xg' as Gfx; } })();
+{ const q = new URLSearchParams(location.search), g = q.get('gfx'); if (q.get('hifi') === '0' || g === 'sd') gfx = 'standard'; else if (g === 'hd') gfx = 'high'; else if (g === 'xg') gfx = 'xg'; }
+export const hifiOn = () => gfx !== 'standard';
+/** True when the player wants, and the browser can run, the 3D telling of a level that has one. */
+export const xgOn = () => gfx === 'xg' && can3d();
+const gfxNow = (): Gfx => (gfx === 'xg' && !can3d() ? 'high' : gfx);
+function showGfx() { const b = document.getElementById('gfx'); if (b) { b.textContent = GFX_NAME[gfxNow()][0]; b.classList.toggle('on', gfxNow() !== 'standard'); } }
 function toggleGfx(game: Phaser.Game) {
-  gfxHigh = !gfxHigh; snd.click(); showGfx();
-  try { localStorage.setItem(GFX_KEY, gfxHigh ? 'high' : 'standard'); } catch { /* private mode */ }
-  const sc = game.scene.getScenes(true)[0] as any, label = `Graphics: ${gfxHigh ? 'high' : 'standard'}`;
+  const order: Gfx[] = can3d() ? ['standard', 'high', 'xg'] : ['standard', 'high'];
+  gfx = order[(order.indexOf(gfxNow()) + 1) % order.length]; snd.click(); showGfx();
+  try { localStorage.setItem(GFX_KEY, gfx); } catch { /* private mode */ }
+  const sc = game.scene.getScenes(true)[0] as any, label = `Graphics: ${GFX_NAME[gfx][0]} · ${GFX_NAME[gfx][1]}`;
   if (!sc) return toast(label);
   // The map and the title screen lose nothing by being rebuilt, so they switch at once.
   if (sc.scene.key === 'Map') { toast(label); return sc.scene.restart({ title: false }); }
@@ -321,7 +330,7 @@ export function showHelp(game: Phaser.Game) {
   const sc = game.scene.getScenes(true)[0] as any;
   const h: Help | undefined = sc && (sc.help?.() || CONTROLS[sc.scene.key]);
   if (!h) return;
-  const rows: [string, string][] = [...h.rows, ['+ −', 'Game speed in a level: faster scores more, slower scores less'], ['H', 'Show or hide this panel'], ['M', 'Sound on or off'], ['T', 'Next soundtrack: four to choose from'], ['Esc', 'In a level: back to the map (asks first)'], ...((sc.hint ? [['I', 'A hint for where you are now']] : []) as [string, string][]), ['G', 'Graphics: high (HD) or standard (SD), for slower computers'], ...(DEV ? [['K', 'Developer mode: skip this level'] as [string, string]] : [])];
+  const rows: [string, string][] = [...h.rows, ['+ −', 'Game speed in a level: faster scores more, slower scores less'], ['H', 'Show or hide this panel'], ['M', 'Sound on or off'], ['T', 'Next soundtrack: four to choose from'], ['Esc', 'In a level: back to the map (asks first)'], ...((sc.hint ? [['I', 'A hint for where you are now']] : []) as [string, string][]), ['G', 'Graphics: SD (standard, for slower computers), HD (high) or XG (3D in the levels that have it)'], ...(DEV ? [['K', 'Developer mode: skip this level'] as [string, string]] : [])];
   sc.scene.pause(); helpOpen = true; snd.select();
   showCard(`<div class="kicker">CONTROLS · GAME PAUSED</div><h1>${h.title}</h1><table class="keys">${rows.map(([k, t]) => `<tr><td>${kbd(k)}</td><td>${t}</td></tr>`).join('')}</table>${h.note ? `<p class="how">${h.note}</p>` : ''}<p class="src">Arrows also work as W A S D, Space as Z, Enter as X.</p>`,
     [{ label: 'Back to the game', fn: () => { helpOpen = false; sc.scene.resume(); } }]);

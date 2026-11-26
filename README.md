@@ -81,10 +81,10 @@ All 38 stops on the map, in story order:
 | 9 | It’s Business Time | 2018 | LC-1, Māhia | Launch control |
 | 10 | Rosie the Robot (with Ashlee Vance as a running mate) | 2019 | Auckland production complex | Platform |
 | 11 | Pics Or It Didn’t Happen | 2020 | LC-1, Māhia → mission control, Auckland | Mini-game: failure investigation |
-| 12 | Return To Sender | 2020 | Pacific Ocean, downrange of Māhia | Mini-game: capsule recovery |
+| 12 | Return To Sender | 2020 | Pacific Ocean, downrange of Māhia | Mini-game: booster re-entry in 3D |
 | 13 | Eating the Hat | 2021 | Long Beach, California | Mini-game: blend and eat a hat |
 | 14 | RKLB rings the bell (played as Adam Spice; with Peter Beck as a running mate) | 2021 | Long Beach, California | Platform |
-| 15 | There And Back Again | 2022 | Pacific Ocean, off Māhia | Mini-game: helicopter catch |
+| 15 | There And Back Again | 2022 | Pacific Ocean, off Māhia | Mini-game: helicopter catch in 3D |
 | 16 | CAPSTONE to the Moon | 2022 | LC-1 → lunar transfer | Mini-game: orbit raising |
 | 17 | Virginia Is For Launch Lovers | 2023 | LC-2, Wallops Island, Virginia | Launch control |
 | 18 | When the Heavens Went on Sale | 2023 | New York | Story card |

@@ -50,6 +50,8 @@ export function recStream(sfxOnly = false) {
   if (!recDest) { recDest = c.createMediaStreamDestination(); if (sfxOnly) { const g = c.createGain(); g.gain.value = 0.7; sfxBus.connect(g).connect(recDest); } else out.connect(recDest); }
   return recDest.stream;
 }
+/** For a level that brings its own score (gfx3d/score.ts): the context and the music bus, so mute and the mix still apply. */
+export function musicOut() { const c = ac(); return { ctx: c, bus: musicBus as AudioNode }; }
 /** For tests: the context state and how many loops are running. */
 export const audioState = () => ({ state: ctx?.state, muted: isMuted, song: playing?.name, loops: loops.size });
 
