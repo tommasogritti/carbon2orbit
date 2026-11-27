@@ -14,3 +14,4 @@ src/assets/official/
 # local state of `wrangler dev` (leaderboard/README.md)
 .wrangler/
 .dev.vars
+.drive-cache/

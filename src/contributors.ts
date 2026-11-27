@@ -36,7 +36,7 @@ export function showCredits(game: Phaser.Game) {
     `<p>Carbon to Orbit is an open-source fan game. Everything in it, from the levels to the music, was built by the people below.</p>` +
     `<table class="people">${rows}</table>` +
     `<p class="watch">${out(REPO, 'Source on GitHub')} Add a level, fix a fact or report a bug. Your name goes on this page with your first merged change.</p>` +
-    `<p class="src">Code: MIT licence. Story text and the artwork the game draws: CC BY-SA 4.0. Mission patches © Rocket Lab, not covered by these licences. Photos are credited on their cards. A fan project, not affiliated with or endorsed by Rocket Lab.</p>`,
+    `<p class="src">Code: MIT licence. Story text and the artwork the game draws: CC BY-SA 4.0. Mission patches © Rocket Lab, not covered by these licences. Photos are credited on their cards. The road to Māhia is drawn from OpenStreetMap data, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a> (ODbL), and from the NZ 8 m Digital Elevation Model, sourced from the <a href="https://data.linz.govt.nz/" target="_blank" rel="noopener">LINZ Data Service</a> and licensed for reuse under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, with SRTM heights (NASA, public domain) at Wairoa. A fan project, not affiliated with or endorsed by Rocket Lab.</p>`,
     [{ label: 'Back to the game', fn: () => sc?.scene.resume() }],
   );
 }

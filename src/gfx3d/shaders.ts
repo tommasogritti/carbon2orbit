@@ -693,7 +693,7 @@ vec2 mapPad(vec3 p){
   U(max(sdBox(b - vec3(0.0, 9.0, 0.0), vec3(15.5, 3.0, 9.5)), abs(b.y - 7.0 - (9.0 - abs(b.z)) * 0.26) * 0.96 - 0.07), 7.0)   // the roof sheet, oversailing
   U(sdBox(b - vec3(-19.0, 2.1, 2.0), vec3(4.0, 2.1, 6.0)), 4.0)
   U(min(length(b - vec3(-19.0, 6.6, 2.0)) - 1.5, sdCyl(b - vec3(-19.0, 4.7, 2.0), 0.25, 0.6)), 5.0)
-  U(sdSeg(vec3(p.x, p.y, abs(p.z - 24.0) - 2.4), vec3(-22.0, 2.4, 0.0), vec3(-34.0, 2.4, 0.0)) - 1.7, 5.0)   // propellant tanks on saddles
+  if (uMode != 3) U(sdSeg(vec3(p.x, p.y, abs(p.z - 24.0) - 2.4), vec3(-22.0, 2.4, 0.0), vec3(-34.0, 2.4, 0.0)) - 1.7, 5.0)   // propellant tanks on saddles (in the drive, which brings one, the saddles stand empty)
   U(sdBox(vec3(abs(p.x + 28.0) - 4.0, p.y - 0.5, abs(p.z - 24.0) - 2.4), vec3(0.25, 0.5, 1.5)), 1.0)
   return r;
 }
