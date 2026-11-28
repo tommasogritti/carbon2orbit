@@ -10,7 +10,7 @@ From a rocket bike in a Dunedin workshop to the hundredth Electron, and on to Ne
 An unofficial, open-source browser game. Fan project, not affiliated with Rocket Lab.
 
 <!-- counts:start: written by `npm run readme` -->
-`32 playable levels` · `20 kinds of play` · `every fact sourced` · `art and sound made in code`
+`32 playable levels` · `21 kinds of play` · `every fact sourced` · `art and sound made in code`
 <!-- counts:end -->
 
 </div>
@@ -75,7 +75,7 @@ All 38 stops on the map, in story order:
 | 3 | Ātea-1 | 2009 | Great Mercury Island | Launch control |
 | 4 | Rutherford hot-fire | 2013–2016 | Auckland test stand | Mini-game: engine hot-fire |
 | 5 | Go Find the Launch Site (played as Shaun D’Mello) | about 2015 | Māhia Peninsula | Mini-game: off-road ride |
-| 6 | Road to Māhia | 2016 | Māhia Peninsula | Platform |
+| 6 | Road to Māhia | 2016 | Māhia Peninsula | Mini-game: a drive along the real road in 3D |
 | 7 | It’s a Test | 2017 | LC-1, Māhia | Launch control |
 | 8 | Still Testing | 2018 | LC-1, Māhia | Launch control |
 | 9 | It’s Business Time | 2018 | LC-1, Māhia | Launch control |

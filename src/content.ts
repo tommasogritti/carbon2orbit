@@ -4,7 +4,7 @@ export type Kind = 'platform' | 'launch' | 'minigame' | 'card' | 'person';
 export interface LevelDef {
   id: string;
   kind: Kind;
-  mechanic?: 'platform' | 'launch' | 'hotfire' | 'heli-catch' | 'orbit-raise' | 'sprint' | 'fault-finder' | 'splashdown' | 'cruise' | 'countdown-race' | 'ride' | 'orbit-ops' | 'dual-count' | 'arc-lab' | 'edit-bay' | 'slot-finder' | 'hat-trick' | 'fit-out' | 'sandbar' | 'chill-down' | 'descent' | 'catch';
+  mechanic?: 'platform' | 'launch' | 'hotfire' | 'heli-catch' | 'orbit-raise' | 'sprint' | 'fault-finder' | 'splashdown' | 'cruise' | 'countdown-race' | 'ride' | 'orbit-ops' | 'dual-count' | 'arc-lab' | 'edit-bay' | 'slot-finder' | 'hat-trick' | 'fit-out' | 'sandbar' | 'chill-down' | 'descent' | 'catch' | 'drive';
   parent?: string; // bonus nodes only: the map node they branch from
   unlocks?: string; // platform levels: the bonus node opened by finding this level's hidden blueprint
   status: 'flown' | 'in-progress' | 'announced';
@@ -113,24 +113,37 @@ export const LEVELS: LevelDef[] = [
     },
   },
   {
-    id: 'lc-1', kind: 'platform', mechanic: 'platform', status: 'flown', role: 'Founder and CEO · 2016', unlocks: 'kaitorete',
-    title: 'Road to Māhia', date: '2016-09-26', place: 'Māhia Peninsula', map: { x: 199, y: 240 },
+    id: 'lc-1', kind: 'minigame', mechanic: 'drive', status: 'flown', role: 'Founder and CEO · 2016', unlocks: 'kaitorete',
+    title: 'Road to Māhia', date: '2016-09-27', place: 'Māhia Peninsula', map: { x: 199, y: 240 },
     intro: 'Consents for the first-choice site, Kaitorete Spit near Christchurch, drag on, and Māhia can be licensed for far more launches. So the pad goes to Onenui Station, sheep and beef country on Tawapata South land at the tip of the Māhia Peninsula, at the end of a long coast road. Someone has to get the hardware there.',
-    how: 'Arrows to run, Space to jump. Collect the five pad components and reach the pad. Jump on rams, gulls and rolls of red tape to see them off; the ordinary sheep just bump you. Don’t fall in the sea. Power-ups float in bubbles: gumboots make you faster and give a second jump in mid-air, the hard hat and hi-vis vest make you untouchable. A hidden blueprint unlocks a secret on the map.',
-    fact: 'Launch Complex 1 is the world’s first private orbital launch site, licensed to launch as often as every 72 hours for 30 years.',
-    after: 'Launch Complex 1 officially opened on 26 September 2016, in wild weather, with no rocket on the pad yet: the first Electron arrived in February 2017. A second pad, LC-1B, hosted its first launch in February 2022 with “The Owl’s Night Continues”.',
-    egg: 'A garden gnome on a hilltop. In 2020, “Return to Sender” flew a 3D-printed gnome called Chompski for Valve’s Gabe Newell, who paid a dollar to charity for every livestream viewer.',
+    how: 'You drive the truck, with the pad’s liquid-oxygen tank on its deck, over six real stretches of the 83 km from Wairoa to Launch Complex 1. ↑ accelerate, ↓ brake, ← → steer, Space the horn, Enter the camera. Keep left. Hard corners, gravel and cattle stops taken fast strain the load’s straps: past the limit it shifts on its saddles and the run is over. The verge only slows you; a trip off the road costs 6 s. Sheep on the station road move for the horn. Three stars for 6:40 or less with the straps under 35%. A garden gnome watches State Highway 2 from a fence post, and a blueprint has blown off the deck at Māhia Beach: slow down to find them.',
+    fact: 'Launch Complex 1 is the world’s first private orbital launch site, licensed to launch as often as every 72 hours for 30 years. From Wairoa it is 83 km by road, and the end of it is a farm road across Onenui Station.',
+    after: 'The Minister for Economic Development, Steven Joyce, officially opened Launch Complex 1 on 27 September 2016, in wild weather, on farmland leased from Onenui Station of the Tawapata South Māori Incorporation. There was no rocket on the pad yet. The first Electron came along the same road: it was trucked from Rocket Lab’s Auckland facility and arrived late one evening in February 2017. Getting the site ready had been the road’s work too: in 2016 Rocket Lab contracted Wairoa’s council-owned Quality Roading and Services to upgrade the farm road and the site’s infrastructure. In 2020 the government granted funding to seal 4 km of the station road that leads to the site, and for traction sealing, drains and culverts on the Mahia East Coast Road. A second pad, LC-1B, hosted its first launch on 1 March 2022 (New Zealand time) with “The Owl’s Night Continues”. (The roads, their heights and what stands along them are drawn from OpenStreetMap and the LINZ elevation model. The truck, its driver, its load, the fine day, the signs, the sheep and the gnome are the game’s.)',
+    egg: 'A garden gnome on a fence post. In 2020, “Return to Sender” flew a 3D-printed gnome called Chompski for Valve’s Gabe Newell, who paid a dollar to charity for every livestream viewer.',
     photo: { file: 'lc1.jpg', caption: 'Launch Complex 1 on the Māhia Peninsula.', credit: 'Grumpy Eye, CC BY-SA 2.0', page: C + 'Rocket_Lab_Launch_Complex_1.jpg' },
-    sources: [WP + 'Rocket_Lab_Launch_Complex_1', WP + 'Rocket_Lab'],
+    sources: [WP + 'Rocket_Lab_Launch_Complex_1', WP + 'Rocket_Lab', 'https://www.nzherald.co.nz/hawkes-bay-today/news/ceo-proud-of-historic-project/Z7YOCIL2ZD43CQW27Z4GL4HQEI/', 'https://www.wairoadc.govt.nz/our-council/news/archive/article/390/major-investment-in-mahia-roading', 'https://www.heritage.org.nz/the-list/details/4852', 'https://nzta.govt.nz/roadcode/heavy-vehicle-road-code/road-code/about-limits/speed-limits', 'https://www.openstreetmap.org/copyright', 'https://www.opentopodata.org/datasets/nzdem/', WP + 'M%C4%81hia_Peninsula', 'https://m.scoop.co.nz/stories/PA1609/S00471/mahia-rocket-lab-launch-site-officially-opened.htm', 'https://satnews.com/2017/02/15/rocket-lab-milestone-successfully-completed-electron-arrives-at-rocket-lab-launch-complex-1/', 'https://www.nzta.govt.nz/roads-and-rail/traffic-control-devices-manual/part-5-traffic-control-devices-for-general-use-between-intersections/treatment-of-curves/special-vehicle-advisory-speeds'],
     params: {
-      theme: 'mahia', width: 72,
-      ground: [[0, 10, 9], [11, 18, 8], [21, 30, 9], [33, 40, 8], [41, 50, 9], [53, 71, 9]],
-      plats: [[16, 6, 2], [20, 2, 2], [22, 7, 3], [35, 6, 2], [46, 7, 3], [56, 7, 2]],
-      parts: [[14, 6, 'Strongback'], [23, 6, 'LOX tank'], [38, 6, 'Flame deflector'], [47, 6, 'Range antenna'], [57, 6, 'Launch mount']],
-      hazards: [], sheep: [44], egg: [36, 4], goal: 68,
-      enemies: [['redtape', 5, 8], ['gull', 26, 32], ['ram', 24, 28], ['gull', 33, 45], ['ram', 61, 65]],
-      powerups: [['B', 17, 5], ['H', 42, 8]], secret: [20, 1],
-      signs: [[3, 'sign2'], [9, 'sign3'], [54, 'sign']],
+      fallback: 'platform', par: 400, data: 'mahia', plate: ['Truck driver', 'Delivering to Launch Complex 1 · 2016'],
+      // the card that opens each stretch of the drive: what the level's sources say about it
+      notes: {
+        wairoa: 'The old Portland Island lighthouse, which once stood off the tip of the Māhia Peninsula, now stands by the river in Wairoa. Over the bridge, and east on State Highway 2.',
+        sh2: 'State Highway 2 runs east from Wairoa past Whakakī towards Nūhaka, where the road to Māhia turns off, some 31 km from Wairoa. Here it crosses the Tāhaenui River by Manutai Marae, on a one-lane bridge.',
+        blowhole: 'Nūhaka–Ōpoutama Road follows the cliffs above Hawke Bay. In 2020 the Wairoa District Council described it as an 11.3 km sealed road with drop-outs from coastal erosion over 1.7 km of it, the Blowhole among them.',
+        mahia: 'Ormond Drive into Māhia Beach, a settlement mostly of holiday houses and baches under Mokotahi Hill, then Mahia East Coast Road across the tombolo: the peninsula was once an island, and a neck of sand now joins it to the mainland.',
+        eastcoast: 'Mahia East Coast Road runs along the ocean side of the peninsula, a few metres above the beach.',
+        onenui: 'The farm road on Onenui Station, Tawapata South land. In 2016 Rocket Lab contracted Wairoa’s council-owned Quality Roading and Services to upgrade it for the launch site; in 2020 the government granted funding to seal 4 km of it.',
+      },
+      walkHow: 'Arrows to run, Space to jump. Collect the five pad components and reach the pad. Jump on rams, gulls and rolls of red tape to see them off; the ordinary sheep just bump you. Don’t fall in the sea. Power-ups float in bubbles: gumboots make you faster and give a second jump in mid-air, the hard hat and hi-vis vest make you untouchable. A hidden blueprint unlocks a secret on the map.',
+      walk: {
+        theme: 'mahia', width: 72,
+        ground: [[0, 10, 9], [11, 18, 8], [21, 30, 9], [33, 40, 8], [41, 50, 9], [53, 71, 9]],
+        plats: [[16, 6, 2], [20, 2, 2], [22, 7, 3], [35, 6, 2], [46, 7, 3], [56, 7, 2]],
+        parts: [[14, 6, 'Strongback'], [23, 6, 'LOX tank'], [38, 6, 'Flame deflector'], [47, 6, 'Range antenna'], [57, 6, 'Launch mount']],
+        hazards: [], sheep: [44], egg: [36, 4], goal: 68,
+        enemies: [['redtape', 5, 8], ['gull', 26, 32], ['ram', 24, 28], ['gull', 33, 45], ['ram', 61, 65]],
+        powerups: [['B', 17, 5], ['H', 42, 8]], secret: [20, 1],
+        signs: [[3, 'sign2'], [9, 'sign3'], [54, 'sign']],
+      },
     },
   },
   {

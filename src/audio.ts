@@ -117,6 +117,9 @@ export const snd = {
   powerEnd: () => { tone({ f: 660, to: 330, dur: 0.25, vol: 0.12 }); },
   secret: () => { [784, 988, 1175, 1568, 1976, 2349].forEach((f, i) => tone({ f, dur: 0.6, type: 'sine', vol: 0.12, at: i * 0.09 })); tone({ f: 196, dur: 1.2, vol: 0.16, at: 0.5 }); },
   crash: () => { noise({ dur: 0.7, vol: 0.5, f: 1800, to: 200 }); tone({ f: 200, to: 60, dur: 0.5, type: 'sawtooth', vol: 0.2, lp: 900 }); },
+  // the drive: a truck's two-note air horn, a jolt over a cattle stop
+  horn: () => { tone({ f: 142, to: 165, dur: 0.6, type: 'sawtooth', vol: 0.16, lp: 2400, a: 0.03 }); tone({ f: 180, to: 208, dur: 0.6, type: 'sawtooth', vol: 0.13, lp: 2400, a: 0.03 }); noise({ dur: 0.5, vol: 0.05, type: 'bandpass', f: 2400, a: 0.03 }); },
+  rattle: () => [0, 0.07, 0.15, 0.22].forEach((at) => noise({ dur: 0.07, vol: 0.22, type: 'bandpass', f: 380, q: 1.3, at })),
   bikeGo: () => { noise({ dur: 1.3, vol: 0.35, type: 'bandpass', f: 600, to: 3200, q: 0.8, a: 0.05 }); tone({ f: 90, to: 380, dur: 1.2, type: 'sawtooth', vol: 0.12, lp: 1200 }); },
   // launch control
   count: () => tone({ f: 880, dur: 0.12, type: 'sine', vol: 0.16 }),
@@ -153,7 +156,7 @@ export const snd = {
 
 // ---------------------------------------------------------------- continuous loops
 export interface Loop { set(level: number, tone?: number): void; stop(): void }
-type LoopKind = 'rumble' | 'rotor' | 'sea' | 'hiss' | 'whine';
+type LoopKind = 'rumble' | 'rotor' | 'sea' | 'hiss' | 'whine' | 'diesel' | 'tyres' | 'airhorn';
 const loops = new Set<Loop>();
 export function loop(kind: LoopKind): Loop {
   const c = ac(), t = c.currentTime, g = c.createGain(); g.gain.value = 0; g.connect(sfxBus);
@@ -176,6 +179,37 @@ export function loop(kind: LoopKind): Loop {
     sw.gain.value = 0.6; lg.gain.value = 0.4; lfo.connect(lg).connect(sw.gain); src().connect(lp).connect(sw).connect(g); peak = 0.11;
   } else if (kind === 'hiss') { // steam
     const hp = c.createBiquadFilter(); hp.type = 'bandpass'; hp.frequency.value = 5200; hp.Q.value = 0.9; src().connect(hp).connect(g); peak = 0.05;
+  } else if (kind === 'diesel') { // a six-cylinder truck engine: firing pulses, a deep hum, the turbo's whistle; tone is rpm 0..1 (idle to governed)
+    const pulse = osc('sawtooth', 40), pf = c.createBiquadFilter(), pg = c.createGain(); pf.type = 'lowpass'; pf.frequency.value = 320; pf.Q.value = 2; pg.gain.value = 0.55; pulse.connect(pf).connect(pg).connect(g);
+    const sub = osc('triangle', 20), sg = c.createGain(); sg.gain.value = 0.45; sub.connect(sg).connect(g);
+    const lp = c.createBiquadFilter(), ng = c.createGain(); lp.type = 'bandpass'; lp.frequency.value = 180; lp.Q.value = 0.8; ng.gain.value = 0.25; src().connect(lp).connect(ng).connect(g);
+    const turbo = osc('sine', 2400), tg = c.createGain(); tg.gain.value = 0; turbo.connect(tg).connect(g);
+    tune = (x) => { const f = 36 + 74 * x, n = c.currentTime; pulse.frequency.setTargetAtTime(f, n, 0.12); sub.frequency.setTargetAtTime(f / 2, n, 0.12); pf.frequency.setTargetAtTime(240 + 520 * x, n, 0.12); lp.frequency.setTargetAtTime(140 + 260 * x, n, 0.12); turbo.frequency.setTargetAtTime(1800 + 2600 * x, n, 0.3); tg.gain.setTargetAtTime(0.012 * x, n, 0.3); }; peak = 0.32;
+  } else if (kind === 'tyres') { // tyres on the road: a hiss on seal that rises with speed, a crunch on gravel; tone 0..1 is speed, above 1 gravel
+    const bp = c.createBiquadFilter(), hp = c.createBiquadFilter(), cr = c.createGain(), lfo = osc('square', 23), lg = c.createGain(); bp.type = 'bandpass'; bp.frequency.value = 700; bp.Q.value = 0.6; hp.type = 'highpass'; hp.frequency.value = 1200;
+    src().connect(bp).connect(g); cr.gain.value = 0; lg.gain.value = 0; lfo.connect(lg).connect(cr.gain); src().connect(hp).connect(cr).connect(g);
+    tune = (x) => { const n = c.currentTime, v = Math.min(x, 1), gr = x > 1 ? 1 : 0; bp.frequency.setTargetAtTime(400 + 900 * v, n, 0.2); lg.gain.setTargetAtTime(0.5 * gr * v, n, 0.2); lfo.frequency.setTargetAtTime(12 + 30 * v, n, 0.2); }; peak = 0.2;
+  } else if (kind === 'airhorn') { // a truck's air horn: two brass trumpets a third apart, overdriven by the air, with the rush of it
+    // set(1) blows it, set(0) lets go. The pitch sags a little as the air comes in, then settles; the two trumpets beat against each other.
+    const shaper = c.createWaveShaper(), curve = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = (i / 1023) * 2 - 1; curve[i] = Math.tanh(x * 3.2) * 0.9; } shaper.curve = curve;
+    const pre = c.createGain(); pre.gain.value = 0.9;
+    const t1 = osc('sawtooth', 165), t2 = osc('sawtooth', 208), t3 = osc('square', 330); const g3 = c.createGain(); g3.gain.value = 0.25;
+    t1.connect(pre); t2.connect(pre); t3.connect(g3).connect(pre);
+    const bell = c.createBiquadFilter(); bell.type = 'peaking'; bell.frequency.value = 820; bell.Q.value = 1.1; bell.gain.value = 9;   // the trumpets' bells
+    const body = c.createBiquadFilter(); body.type = 'bandpass'; body.frequency.value = 520; body.Q.value = 0.5;
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3600;
+    pre.connect(shaper).connect(body).connect(bell).connect(lp).connect(g);
+    const air = c.createBiquadFilter(); air.type = 'bandpass'; air.frequency.value = 2400; air.Q.value = 0.7; const ag = c.createGain(); ag.gain.value = 0.12; src().connect(air).connect(ag).connect(g);
+    const wob = osc('sine', 5.3), wg = c.createGain(); wg.gain.value = 1.6; wob.connect(wg); wg.connect(t1.frequency); wg.connect(t2.frequency);
+    let on = false;
+    const blow = (level: number) => {
+      const n = c.currentTime, want = level > 0.5;
+      if (want && !on) { for (const [o, f] of [[t1, 165], [t2, 208], [t3, 330]] as [OscillatorNode, number][]) { o.frequency.cancelScheduledValues(n); o.frequency.setValueAtTime(f * 0.86, n); o.frequency.linearRampToValueAtTime(f * 1.02, n + 0.09); o.frequency.linearRampToValueAtTime(f, n + 0.25); } g.gain.cancelScheduledValues(n); g.gain.setTargetAtTime(0.5, n, 0.025); }
+      if (!want && on) { g.gain.cancelScheduledValues(n); g.gain.setTargetAtTime(0, n, 0.06); for (const [o, f] of [[t1, 165], [t2, 208]] as [OscillatorNode, number][]) o.frequency.linearRampToValueAtTime(f * 0.93, n + 0.18); }
+      on = want;
+    };
+    const me: Loop = { set(level) { blow(level); }, stop() { if (!loops.delete(me)) return; g.gain.setTargetAtTime(0, c.currentTime, 0.05); nodes.forEach((x) => x.stop(c.currentTime + 0.4)); } };
+    loops.add(me); return me;
   } else { // whine: electric pump motor
     const o = osc('sawtooth', 300), bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = 3; o.connect(bp).connect(g);
     tune = (x) => { o.frequency.setTargetAtTime(160 + 900 * x, c.currentTime, 0.06); bp.frequency.setTargetAtTime(500 + 1800 * x, c.currentTime, 0.06); }; peak = 0.12;

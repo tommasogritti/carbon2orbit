@@ -693,7 +693,7 @@ vec2 mapPad(vec3 p){
   U(max(sdBox(b - vec3(0.0, 9.0, 0.0), vec3(15.5, 3.0, 9.5)), abs(b.y - 7.0 - (9.0 - abs(b.z)) * 0.26) * 0.96 - 0.07), 7.0)   // the roof sheet, oversailing
   U(sdBox(b - vec3(-19.0, 2.1, 2.0), vec3(4.0, 2.1, 6.0)), 4.0)
   U(min(length(b - vec3(-19.0, 6.6, 2.0)) - 1.5, sdCyl(b - vec3(-19.0, 4.7, 2.0), 0.25, 0.6)), 5.0)
-  U(sdSeg(vec3(p.x, p.y, abs(p.z - 24.0) - 2.4), vec3(-22.0, 2.4, 0.0), vec3(-34.0, 2.4, 0.0)) - 1.7, 5.0)   // propellant tanks on saddles
+  if (uMode != 3) U(sdSeg(vec3(p.x, p.y, abs(p.z - 24.0) - 2.4), vec3(-22.0, 2.4, 0.0), vec3(-34.0, 2.4, 0.0)) - 1.7, 5.0)   // propellant tanks on saddles (in the drive, which brings one, the saddles stand empty)
   U(sdBox(vec3(abs(p.x + 28.0) - 4.0, p.y - 0.5, abs(p.z - 24.0) - 2.4), vec3(0.25, 0.5, 1.5)), 1.0)
   return r;
 }
@@ -1141,6 +1141,7 @@ export const POST = `#version 300 es
 precision highp float;
 in vec2 vUV; out vec4 o;
 uniform sampler2D uTex, uBloom, uBloomS; uniform vec2 uPx; uniform float uExp, uTime, uShake, uFlash, uAspect, uGhost;
+uniform vec4 uGrade;   // vignette, saturation, split tone, sharpening (the drive sets its own; everything else keeps (0.34, 1.06, 1, 0.35))
 vec3 aces(vec3 x){ x = mat3(0.59719, 0.07600, 0.02840, 0.35458, 0.90834, 0.13383, 0.04823, 0.01566, 0.83777) * x; vec3 a = x * (x + 0.0245786) - 0.000090537, b = x * (0.983729 * x + 0.4329510) + 0.238081; x = a / b; return clamp(mat3(1.60475, -0.10208, -0.00327, -0.53108, 1.10813, -0.07276, -0.07367, -0.00605, 1.07602) * x, 0.0, 1.0); }
 float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 void main(){
@@ -1149,7 +1150,7 @@ void main(){
   vec2 ca = c * (0.0005 + 0.003 * uShake) * (0.4 + r2 * 2.2);
   vec3 col = vec3(texture(uTex, uv + ca).r, texture(uTex, uv).g, texture(uTex, uv - ca).b);
   vec3 n = texture(uTex, uv + vec2(uPx.x, 0.0)).rgb + texture(uTex, uv - vec2(uPx.x, 0.0)).rgb + texture(uTex, uv + vec2(0.0, uPx.y)).rgb + texture(uTex, uv - vec2(0.0, uPx.y)).rgb;
-  col = max(col + (col - n * 0.25) * 0.35, 0.0);                             // sharpen what the upsampling softened
+  col = max(col + (col - n * 0.25) * uGrade.w, 0.0);                         // sharpen what the upsampling softened
   vec3 bl = texture(uBloom, uv).rgb;
   col += bl * 0.11;
   // ghosts and a halo from the brightest things, through the middle of the lens
@@ -1160,11 +1161,11 @@ void main(){
   col += max(gh - uGhost, 0.0) * 0.03 * smoothstep(0.75, 0.2, sqrt(r2));
   col += max(texture(uBloomS, vec2(uv.x * 0.35 + 0.325, uv.y)).rgb - uGhost * 0.5, 0.0) * vec3(0.5, 0.7, 1.0) * 0.02;  // the sideways streak of the lens
   col *= uExp * (1.0 + uFlash * 2.5);
-  col *= mix(1.0, 0.66, smoothstep(0.15, 1.1, r2));
+  col *= mix(1.0, 1.0 - uGrade.x, smoothstep(0.15, 1.1, r2));
   col = aces(col * 1.7);
   col = mix(col, col * col * (3.0 - 2.0 * col), 0.22);
   float l = dot(col, vec3(0.2126, 0.7152, 0.0722));
-  col = mix(vec3(l), col, 1.06) * mix(vec3(0.97, 1.0, 1.05), vec3(1.04, 1.0, 0.95), smoothstep(0.1, 0.8, l)); // cool shadows, warm lights
+  col = mix(vec3(l), col, uGrade.y) * mix(vec3(1.0), mix(vec3(0.97, 1.0, 1.05), vec3(1.04, 1.0, 0.95), smoothstep(0.1, 0.8, l)), uGrade.z); // cool shadows, warm lights
   col = pow(max(col, 0.0), vec3(1.0 / 2.2));
   col += (hash(gl_FragCoord.xy + fract(uTime) * 91.7) - 0.5) * 0.022 + (hash(gl_FragCoord.yx * 1.3 + 3.1) - 0.5) / 255.0;
   o = vec4(col, 1.0);

@@ -648,7 +648,7 @@ export function makeBackdrops(scene: Phaser.Scene) {
     el(c, 8, 8, 6.6, 6.6, lg(c, 2, 2, 14, 14, [0, '#ff6a50'], [1, '#b0241a']), OUT, 0.4); el(c, 8, 8, 3, 3, '#f2e6c4', OUT, 0.3); el(c, 8, 8, 1.4, 1.4, '#8a6238');
     c.beginPath(); c.arc(8, 8, 5, 0.4, 2.2); c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 0.5; c.stroke(); line(c, 8, 1.4, 8, 3.2, 'rgba(0,0,0,.3)', 0.4);
   });
-  // the pad as it stood on opening day, 26 September 2016: no rocket yet (the first Electron arrived in February 2017)
+  // the pad as it stood on opening day, 27 September 2016 (New Zealand time): no rocket yet (the first Electron arrived in February 2017)
   tex(scene, 'pad_empty', 70, 100, (c) => {
     rr(c, 0, 94, 70, 6, 1, lg(c, 0, 94, 0, 100, [0, '#b8c0cc'], [1, '#6f7890']), OUT, 0.3);
     rr(c, 24, 14, 3, 80, 0.3, '#5b6275', OUT, 0.3); rr(c, 32, 14, 3, 80, 0.3, '#5b6275', OUT, 0.3);
