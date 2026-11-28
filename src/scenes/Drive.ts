@@ -267,7 +267,7 @@ export class DriveScene extends Phaser.Scene {
       time: this.t, cam: this.camP, look, fov, roll: 0, shake: this.bump * 0.3 + (tr.kind(this.s) & 1 ? clamp(this.v / 25, 0, 1) * 0.05 : 0),
       alt: truck[1] / 1000, travel: [og[0] + x / 1000, og[1] + z / 1000], drop: -vy, speed: [vx / 1000, vz / 1000],
       sun: this.sun, body: [1, 0, 0, 0, 1, 0, 0, 0, 1], vel: [0, 1, 0], hot: 0, scorch: 0, glow: 0, rcs: [0, 0, 0, 0], chuteAxis: [0, 1, 0], drogue: 0, main: 0, splash: -1, s2: [0, 1, 0, 0], ship: null,
-      exposure: 0.215, flash: 0,
+      exposure: 0.42, flash: 0, grade: [0.1, 1.04, 0.25, 0.5],
       drive: { truck, m: [...Rt, ...Up, ...F], drv: [this.steer, this.spin, this.brake, this.shift], sheep, pad: st.pad || [2e5, 0, 0, 0], bridge: [tr.bridge[0], tr.bridge[1], 0.9, 1.1], bridgeB: this.bridgeBox(), look: [this.dust, 0, 1, this.si] },
     };
   }

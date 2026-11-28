@@ -20,6 +20,8 @@ export interface Frame {
   chuteAxis: V3; drogue: number; main: number;
   splash: number; s2: [number, number, number, number]; ship: V3 | null;
   exposure: number; flash: number;
+  /** The look of the picture: vignette, saturation, split tone, sharpening. Omitted: (0.34, 1.06, 1, 0.35). */
+  grade?: [number, number, number, number];
   /** A helicopter: where it is, its axes (nose, up, starboard), where its hook hangs, and the rotor's angle. */
   heli?: { pos: V3; m: number[]; hook: V3; rotor: number };
   /** The drogue still flying above the main chute, 0 to 1. */
@@ -229,7 +231,7 @@ export class Engine {
     gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
     for (let i = this.bloom.length - 1; i > 0; i--) { const s = this.bloom[i]; this.use('up', { uTex: [s.tex, 0], uPx: [1 / s.w, 1 / s.h] }); this.draw(this.bloom[i - 1]); }
     gl.disable(gl.BLEND);
-    this.use('post', { uTex: [h1.tex, 0], uBloom: [this.bloom[0].tex, 1], uBloomS: [this.bloom[Math.min(3, this.bloom.length - 1)].tex, 2], uPx: [1 / W, 1 / H], uExp: f.exposure, uTime: f.time, uShake: f.shake, uFlash: f.flash, uAspect: W / H, uGhost: (f.launch || f.drive ? 1e4 : 1.6) / Math.max(f.exposure, 0.01) });
+    this.use('post', { uTex: [h1.tex, 0], uBloom: [this.bloom[0].tex, 1], uBloomS: [this.bloom[Math.min(3, this.bloom.length - 1)].tex, 2], uPx: [1 / W, 1 / H], uExp: f.exposure, uTime: f.time, uShake: f.shake, uFlash: f.flash, uAspect: W / H, uGhost: (f.launch || f.drive ? 1e4 : 1.6) / Math.max(f.exposure, 0.01), uGrade: f.grade || [0.34, 1.06, 1, 0.35] });
     this.draw(null, W, H);
     if (this.query) { gl.endQuery(this.timer.TIME_ELAPSED_EXT); this.pending = this.query; this.query = null; }
     else if (this.pending && gl.getQueryParameter(this.pending, gl.QUERY_RESULT_AVAILABLE)) {

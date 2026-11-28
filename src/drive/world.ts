@@ -62,7 +62,7 @@ export class Track {
     { const k0 = Float32Array.from(this.kap); for (let j = 0; j < m; j++) { let a = 0, c = 0; for (let q = -6; q <= 6; q++) { const jj = clamp(j + q, 0, m - 1), w = Math.exp(-(q * q) / 12); a += k0[jj] * w; c += w; } this.kap[j] = a / c; } }   // a bend's curvature builds over tens of metres
     // the centre line: dashed, with a no-overtaking line on the side of whichever traffic cannot see far enough ahead, round a
     // bend or over a rise (bit 2: the truck's way, drawn left of the centre; bit 4: the other way, drawn right of it)
-    const blind = (j: number, dir: number) => { for (let q = 0; q <= 32; q++) { const jj = clamp(j + dir * q, 0, m - 1); if (Math.abs(this.kap[jj]) > 1 / 320 && !(this.k[jj] & 16)) return true; } for (let q = 0; q <= 25; q += 5) { const a = clamp(j + dir * q, 0, m - 1), b = clamp(j + dir * (q + 10), 0, m - 1), c = clamp(j + dir * (q + 20), 0, m - 1); if (this.y[b] - (this.y[a] + this.y[c]) / 2 > 1.2) return true; } return false; };
+    const blind = (j: number, dir: number) => { for (let q = 0; q <= 25; q++) { const jj = clamp(j + dir * q, 0, m - 1); if (Math.abs(this.kap[jj]) > 1 / 220 && !(this.k[jj] & 16)) return true; } for (let q = 0; q <= 25; q += 5) { const a = clamp(j + dir * q, 0, m - 1), b = clamp(j + dir * (q + 10), 0, m - 1), c = clamp(j + dir * (q + 20), 0, m - 1); if (this.y[b] - (this.y[a] + this.y[c]) / 2 > 1.2) return true; } return false; };
     for (let j = 0; j < m; j++) { if (!(this.k[j] & 4)) continue; this.centre[j] = 1 | (blind(j, 1) ? 2 : 0) | (blind(j, -1) ? 4 : 0); }
     // the bridge: the longest run of bridge on the stage is drawn as a bridge; anything shorter is a culvert under the road
     let run = 0, bs = -1, best2: [number, number] = [1, 0];
@@ -208,7 +208,8 @@ export function buildStage(data: Data, idx: number, atlas?: TexImageSource): Sta
       if (!townK && dy > 0.1) gt -= 0.3 * Math.exp(-(((ad - sh - 1.0) / 0.8) ** 2)) * sstep(0.1, 0.6, dy);   // the water table on the high side
     }
     road[o] = d; road[o + 1] = s; road[o + 2] = h; road[o + 3] = gt;
-    mask[o] = Math.max(water[k], sea ? 255 : 0); mask[o + 1] = wood[k]; mask[o + 2] = scrub[k]; mask[o + 3] = sand[k];
+    // the sea 255, rivers and lagoons up to 158: a river's own outline wins where the coastline or the elevation model's gaps call it sea
+    mask[o] = sea && water[k] < 128 ? 255 : Math.round(water[k] * 0.62); mask[o + 1] = wood[k]; mask[o + 2] = scrub[k]; mask[o + 3] = sand[k];
     // the old railway: signed distance from its centre line (so the two rails stay sharp), 0..255 for -8..8 m; 0 where there is none
     const rr = railSegs.length ? railG.near(x, z, 8) : { i: -1, d: 9, t: 0 };
     let rv = 0; if (rr.i >= 0) { const sg = railG.seg, ex = sg[rr.i + 2] - sg[rr.i], ez = sg[rr.i + 3] - sg[rr.i + 1], side = (x - sg[rr.i]) * ez - (z - sg[rr.i + 1]) * ex >= 0 ? 1 : -1; rv = clamp(Math.round(((side * rr.d) / 8 * 0.5 + 0.5) * 254) + 1, 1, 255); }
@@ -255,6 +256,10 @@ export function buildStage(data: Data, idx: number, atlas?: TexImageSource): Sta
     }
     const wall = k === 1 ? (lv >= 2 ? 5.3 : 2.6 + rand() * 0.3) : lv;
     add({ k, x: cx, z: cz, y, a, b: hx, c: hz, d: k === 4 ? 0 : wall });
+    if (k === 1 && rand() < (isTown ? 0.35 : 0.45)) {                       // a car or ute in the drive beside the house
+      const side = rand() < 0.5 ? -1 : 1, ox = side * (hx + 2.2), oz = (rand() - 0.5) * hz, cx2 = cx + ox * Math.cos(a) - oz * Math.sin(a), cz2 = cz + ox * Math.sin(a) + oz * Math.cos(a);
+      if (nearRoad(cx2, cz2) > track.width(tex(road, cx2, cz2, 1)) / 2 + 3.5) add({ k: 19, x: cx2, z: cz2, y: ground(cx2, cz2) - 0.05, a: a + (rand() < 0.5 ? 0 : Math.PI), b: 0, c: 0, d: 0 });
+    }
     if (k === 1 && !isTown && rand() < 0.6) { const ox = (hx + 1.8) * (rand() < 0.5 ? -1 : 1), oz = (hz - 1.2) * (rand() < 0.5 ? -1 : 1), tx = cx + ox * Math.cos(a) - oz * Math.sin(a), tz = cz + ox * Math.sin(a) + oz * Math.cos(a); add({ k: 12, x: tx, z: tz, y: ground(tx, tz) - 0.1, a: 0, b: 0, c: 0, d: 0 }); }
   }
   // trees: the map's own (Wairoa's streets and riverbank), then bush, scrub and shelter where the map says there is some
@@ -294,11 +299,12 @@ export function buildStage(data: Data, idx: number, atlas?: TexImageSource): Sta
   const coastal = id === 'blowhole' || id === 'eastcoast' || id === 'mahia';
   for (let s = sStart; s < sEnd; s += stepS) for (const side of [-1, 1]) {
     const w2 = track.width(s) / 2, kind = track.kind(s); if (kind & 16) continue;
-    const h = hash(s * 0.37 + side, side * 3.3 + idx);
-    const dd = w2 + 2.2 + hash(s, side) * 7.5, [x, z] = track.pos(s, side * dd), gb = ground(x, z), ry = track.height(s);
+    const h = hash(s * 0.37 + side, side * 3.3 + idx), drift = vnoise(s / 35 + side * 7.3, idx * 3.1);
+    if (drift < 0.5) continue;                                                     // they grow in drifts
+    const dd = w2 + 2.0 + hash(s, side) * 6.5, [x, z] = track.pos(s, side * dd), gb = ground(x, z), ry = track.height(s);
     if (maskAt(x, z, 0) > 0.2 || gb < 0.3) continue;
     const bank = Math.abs(gb - ry) > 0.8 || maskAt(x, z, 2) > 0.3;
-    if (h < (coastal ? 0.16 : 0.05) * (bank ? 1.6 : 1)) add({ k: hash(s, 7) < 0.55 ? 10 : 11, x, z, y: gb - 0.15, a: hash(s, 3) * 6.28, b: 2.3 + hash(s, 5) * 1.2, c: 0, d: 0 });
+    if (h < (coastal ? 0.55 : 0.18) * (bank ? 1.4 : 1) * (drift - 0.45) * 2) add({ k: hash(s, 7) < 0.6 ? 10 : 11, x, z, y: gb - 0.15, a: hash(s, 3) * 6.28, b: 1.6 + hash(s, 5) * 0.6, c: 0, d: 0 });
   }
   if (coastal) for (let i = 0; i < 260; i++) {
     const x = bx + rand() * size, z = bz + rand() * size, g0 = ground(x, z);
@@ -374,7 +380,7 @@ export function buildStage(data: Data, idx: number, atlas?: TexImageSource): Sta
   const col = (bot: number, top: number, solid: number) => `rgb(${255 - clamp(Math.round(bot / 0.25), 0, 255)},${clamp(Math.round(top / 0.25), 0, 255)},${solid})`;
   for (const t of things) {
     if (t.k <= 4) {
-      const top = t.k === 4 ? 12.8 : t.k === 3 ? 3.6 * Math.max(1, t.d) + 0.7 : t.k === 2 ? 3.2 + Math.min(t.b, t.c) * 0.22 : t.d + Math.min(t.b, t.c) * 0.42 + 0.3;
+      const top = t.k === 4 ? 12.8 : t.k === 3 ? 3.6 * Math.max(1, t.d) + 0.7 : t.k === 2 ? 3.2 + Math.min(Math.min(t.b, t.c) * 0.22, 2.2) : t.d + Math.min(t.b, t.c) * 0.42 + 0.3;
       g.save(); g.translate(t.x, t.z); g.rotate(t.a); g.fillStyle = col(0, top, 255);
       if (t.k === 4) { g.beginPath(); g.arc(0, 0, 2.2, 0, 7); g.fill(); } else g.fillRect(-t.b - 0.3, -t.c - 0.3, 2 * t.b + 0.6, 2 * t.c + 0.6);
       if (t.k === 3) { g.fillStyle = col(3.1, 3.4, 255); g.fillRect(-t.b, t.c, 2 * t.b, 2.9); }
@@ -385,6 +391,7 @@ export function buildStage(data: Data, idx: number, atlas?: TexImageSource): Sta
       g.fillStyle = col(bot, h, sp >= 6 ? 210 : sp === 4 || sp === 5 ? 120 : 190); g.beginPath(); g.arc(t.x, t.z, r, 0, 7); g.fill();
     } else if (t.k === 10 || t.k === 11) { g.fillStyle = col(0, t.k === 10 ? t.b : 1.8, 150); g.beginPath(); g.arc(t.x, t.z, 0.9, 0, 7); g.fill(); }
     else if (t.k === 12) { g.fillStyle = col(0, 2.3, 255); g.beginPath(); g.arc(t.x, t.z, 1.6, 0, 7); g.fill(); }
+    else if (t.k === 19) { g.save(); g.translate(t.x, t.z); g.rotate(t.a); g.fillStyle = col(0, 1.5, 255); g.fillRect(-0.9, -2.3, 1.8, 4.6); g.restore(); }
   }
   g.globalCompositeOperation = 'source-over';
   const od = g.getImageData(0, 0, N, N).data;
@@ -396,7 +403,7 @@ export function buildStage(data: Data, idx: number, atlas?: TexImageSource): Sta
   const cells = Math.ceil(size / CELL), grid = new Float32Array(cells * cells * 8), fill = new Uint8Array(cells * cells);
   let dropped = 0;
   const put = (ci: number, cj: number, id1: number) => { if (ci < 0 || cj < 0 || ci >= cells || cj >= cells) return; const c = cj * cells + ci; if (fill[c] >= 8) { dropped++; return; } const slot = fill[c]++; const k = slot < 4 ? (cj * cells * 2 + ci * 2) * 4 + slot : (cj * cells * 2 + ci * 2 + 1) * 4 + slot - 4; grid[k] = id1; };
-  const bound = (t: Thing) => t.k <= 3 ? Math.hypot(t.b, t.c) + 1.2 : t.k === 4 ? 2.6 : t.k === 5 ? 1.4 : t.k === 6 ? Math.max(t.c, t.d === 4 ? 2.0 : 1.0) + 0.4 : t.k === 9 ? Math.max(t.b, 0.5) + 0.2 : t.k === 10 || t.k === 11 ? 1.4 : t.k === 13 ? t.b + 0.4 : t.k === 15 ? t.b + 0.6 : t.k === 14 ? 4.2 : 0.4;
+  const bound = (t: Thing) => t.k <= 3 ? Math.hypot(t.b, t.c) + 1.2 : t.k === 4 ? 2.6 : t.k === 5 ? 1.4 : t.k === 6 ? Math.max(t.c, t.d === 4 ? 2.0 : 1.0) + 0.4 : t.k === 9 ? Math.max(t.b, 0.5) + 0.2 : t.k === 10 || t.k === 11 ? 1.4 : t.k === 13 ? t.b + 0.4 : t.k === 15 ? t.b + 0.6 : t.k === 14 ? 4.2 : t.k === 19 ? 2.6 : 0.4;
   // the big things first, so a full cell drops a post rather than a house
   const order = things.map((t, i) => i).sort((a, b) => (things[b].k === 20 || things[b].k === 21 ? -1 : bound(things[b])) - (things[a].k === 20 || things[a].k === 21 ? -1 : bound(things[a])));
   for (const i of order) {

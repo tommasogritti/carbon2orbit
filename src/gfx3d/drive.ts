@@ -70,19 +70,23 @@ float gH(vec2 xz){
   if (abs(R.x) < 12.0) { vec4 P = profAt(R.y); if (bit(P.y, 16.0)) h += kerb(abs(R.x), P.x * 0.5); }
   return h;
 }
-/** What a ray meets of the ground (or the water over it): the earth curves away under a long view. */
+/** What a ray meets of the ground (or the water over it): the earth curves away under a long view. Near the camera the
+    steps follow the height above the ground; further out they grow with distance, so a ray skimming the sea still
+    reaches a headland 30 km off. A ray that runs out of steps comes down on the sea where the curve of the earth meets it. */
 float marchGround(vec3 ro, vec3 rd, float tMax, float jit){
   float t = 0.15 + 0.2 * jit, tp = t, hp = 1e3;
   float k = dot(rd.xz, rd.xz) / (2.0 * RE);
-  for (int i = 0; i < 160; i++) {
+  for (int i = 0; i < 200; i++) {
     vec3 p = ro + rd * t; float y = p.y + k * t * t;
-    if (rd.y > 0.0 && y > uHmax) break;                                   // above everything, and climbing
+    if (rd.y > 0.0 && y > uHmax) return 1e9;                              // above everything, and climbing
     float hh = y - max(gH(p.xz), uSea0);
     if (hh < 0.0012 * t) { return hh < 0.0 && hp < 1e2 ? mix(tp, t, hp / max(hp - hh, 1e-6)) : t; }
     tp = t; hp = hh;
-    t += max(hh * (t < 60.0 ? 0.5 : 0.7), 0.012 + t * 0.003);
+    t += t < 300.0 ? max(hh * 0.5, 0.012 + t * 0.003) : max(hh * 0.65, t * 0.016);
     if (t > tMax) break;
   }
+  float c = ro.y - uSea0, disc = rd.y * rd.y - 4.0 * k * c;               // k t^2 + rd.y t + c = 0
+  if (rd.y < 0.0 && disc >= 0.0) { float ts = (-rd.y - sqrt(disc)) / (2.0 * k); if (ts > t * 0.5 && ts < 6e4) return ts; }
   return 1e9;
 }
 vec4 occAt(vec2 xz){ return textureLod(uOccT, (xz - uBox.xy) * uBox.z, 0.0); }
@@ -140,7 +144,8 @@ vec2 objSD(vec3 p, vec4 a, vec4 b){
     float hx = b.y, hz = b.z, wall = 3.2;
     float body = sdBox(q - vec3(0.0, wall * 0.5, 0.0), vec3(hx, wall * 0.5, hz));
     bool alongX = hx > hz; vec3 rq = alongX ? q.zyx : q; float rw = (alongX ? hz : hx) + 0.25, rl = (alongX ? hx : hz) + 0.25;
-    float roof = max(sdPrismX(rq - vec3(0.0, wall, 0.0), rw, rw * 0.22, rl), -sdPrismX(rq - vec3(0.0, wall - 0.1, 0.0), rw - 0.08, rw * 0.22 - 0.03, rl + 1.0));
+    float rh = min(rw * 0.22, 2.2);                                 // a big works shed has a low roof, not a cathedral's
+    float roof = max(sdPrismX(rq - vec3(0.0, wall, 0.0), rw, rh, rl), -sdPrismX(rq - vec3(0.0, wall - 0.1, 0.0), rw - 0.08, rh - 0.03, rl + 1.0));
     vec2 r = vec2(body, 4.0); if (roof < r.x) r = vec2(roof, 2.0); return r;
   }
   if (k < 3.5) {                                                    // a shop or hall: two storeys, a parapet, a verandah over the footpath
@@ -197,7 +202,7 @@ vec2 objSD(vec3 p, vec4 a, vec4 b){
       cr2 = min(cr2, sdEll(w - vec3(0.0, hgt - 0.4, 0.0), vec3(0.5, 1.1, 0.5)) + (textureLod(uN3, w * 1.3 + seed, 0.0).r - 0.5) * 0.3);   // the leader
     } else if (sp < 3.5) {  // a broad dome: pōhutukawa, a fig, an oak, a gum: spreading limbs under clumped foliage
       trunk = min(sdCap(w, vec3(0.0), vec3(0.5, hgt * 0.42, 0.2), 0.32 * max(cr, 3.0) / 4.5), min(sdCap(w, vec3(0.3, hgt * 0.3, 0.1), vec3(-cr * 0.55, hgt * 0.55, -cr * 0.2), 0.18), sdCap(w, vec3(0.3, hgt * 0.32, 0.1), vec3(cr * 0.5, hgt * 0.6, cr * 0.35), 0.16)));
-      cr2 = crown(w - vec3(0.0, hgt * 0.6, 0.0), vec3(cr, hgt * 0.38, cr * 0.95), 0.75, seed, 7);
+      cr2 = crown(w - vec3(0.0, hgt * 0.53, 0.0), vec3(cr, hgt * 0.44, cr * 0.95), 0.75, seed, 7);
     } else if (sp < 4.5) {  // cabbage tree, tī kōuka: a slender trunk forking into arms, each with a ball of long sword leaves and a skirt of dead ones
       trunk = sdCap(w, vec3(0.0), vec3(0.0, hgt * 0.58, 0.0), 0.17);
       for (int j = 0; j < 3; j++) { float an = float(j) * 2.1 + seed; vec3 tip = vec3(cos(an) * 0.95, hgt * (0.86 + 0.07 * float(j == 1)), sin(an) * 0.95);
@@ -223,7 +228,7 @@ vec2 objSD(vec3 p, vec4 a, vec4 b){
     float post = sdBox(q - vec3(0.0, 0.55, 0.0), vec3(0.05, 0.55, 0.06));
     return vec2(post, 14.0 + b.y * 0.1);
   }
-  if (k < 8.5) return vec2(sdCap(q, vec3(0.0), vec3(0.0, 1.25, 0.0), 0.07), 15.0);                 // a fence post, round timber
+  if (k < 8.5) return vec2(sdCap(q, vec3(0.0), vec3(0.0, 1.2, 0.0), 0.06), 15.0);                  // a fence post, round timber
   if (k < 9.5) {                                                    // a sign: a board on a galvanised post
     float hx = b.y, hy = b.z, cy = 1.6 + hy;
     vec3 bq = q - vec3(0.0, cy, 0.0); if (b.w > 63.5) { bq.xy = rot(0.7853982) * bq.xy; hx *= 0.7071; hy *= 0.7071; }
@@ -236,13 +241,13 @@ vec2 objSD(vec3 p, vec4 a, vec4 b){
     float rr = length(w.xz), an = atan(w.z, w.x) + a.x, clump = 1e3;
     for (int L = 0; L < 2; L++) {
       float n = L == 0 ? 13.0 : 9.0, sec = TAU / n, off = float(L) * 0.5 * sec, ai = floor((an + off) / sec + 0.5), al = an + off - ai * sec;
-      float h1 = fract(sin(ai * 17.3 + float(L) * 5.1 + a.y) * 43758.5), el = L == 0 ? 0.9 + 0.35 * h1 : 1.25 + 0.25 * h1, len = 1.2 + 0.6 * h1;
+      float h1 = fract(sin(ai * 17.3 + float(L) * 5.1 + a.y) * 43758.5), el = L == 0 ? 0.9 + 0.35 * h1 : 1.25 + 0.25 * h1, len = 0.85 + 0.45 * h1;
       vec2 pl = vec2(cos(al), sin(al)) * rr; float u = pl.x;                                     // along the blade's line out from the centre, and across it
       float yc = u * tan(el) - 0.55 * u * u / max(len * 0.35, 0.2);                          // it rises steeply, then arches over
       float bl = max(max(abs(w.y - yc) * 0.5 - 0.02, abs(pl.y) - 0.035 * (1.0 - u / len) - 0.006), max(-u, u - len));
       clump = min(clump, bl);
     }
-    clump = min(clump, sdEll(w - vec3(0.0, 0.25, 0.0), vec3(0.32, 0.35, 0.32)));               // the dense base of the tussock
+    clump = min(clump, sdEll(w - vec3(0.0, 0.2, 0.0), vec3(0.26, 0.28, 0.26)));                 // the dense base of the tussock
     float plume = 1e3;
     for (int j = 0; j < 3; j++) { float aj = float(j) * 2.2 + a.y, hj = hgt - float(j) * 0.3; vec3 base = vec3(0.0, 0.4, 0.0), top = vec3(cos(aj) * 0.45, hj, sin(aj) * 0.45);
       plume = min(plume, sdCap(w, base, top, 0.011));
@@ -277,7 +282,18 @@ vec2 objSD(vec3 p, vec4 a, vec4 b){
     float hat = sdCone(q - vec3(0.0, 0.34, 0.0), 0.07, 0.056, 0.004), beard = sdEll(q - vec3(0.0, 0.21, 0.04), vec3(0.045, 0.06, 0.03));
     vec2 r = vec2(body, 28.0); if (head < r.x) r = vec2(head, 27.0); if (beard < r.x) r = vec2(beard, 27.0); if (hat < r.x) r = vec2(hat, 26.0); return r;
   }
-  return vec2(sdBox(q - vec3(0.0, 0.01, 0.0), vec3(0.42, 0.01, 0.3)) , 29.0);                        // a blueprint, blown off the deck
+  if (k < 18.5) return vec2(sdBox(q - vec3(0.0, 0.01, 0.0), vec3(0.42, 0.01, 0.3)) , 29.0);         // a blueprint, blown off the deck
+  if (k < 19.5) {                                                   // a parked car: a body, a glasshouse, four wheels
+    float body = sdRoundBox(q - vec3(0.0, 0.72, 0.0), vec3(0.86, 0.36, 2.2), 0.18);
+    float cab = max(sdRoundBox(q - vec3(0.0, 1.28, -0.15), vec3(0.78, 0.3, 1.15), 0.2), -(q.y - 1.0));
+    float wh = length(vec2(length(vec2(q.y - 0.33, abs(q.z) - 1.35)) - 0.0, 0.0)) - 0.33; wh = max(wh, abs(abs(q.x) - 0.78) - 0.11);
+    vec2 r = vec2(body, 47.0); if (cab < r.x) r = vec2(cab, 48.0); if (wh < r.x) r = vec2(wh, 34.0); return r;
+  }
+  // a fence between two posts: its battens (the wires are drawn as lines, in traceThings)
+  vec3 p1 = vec3(b.x, b.z, b.y), dv = p1 - vec3(a.x, a.z, a.y); float L = length(dv.xz); vec2 dr = dv.xz / max(L, 1e-3);
+  vec3 f = p - vec3(a.x, a.z, a.y); float u = dot(f.xz, dr), v = dot(f.xz, vec2(-dr.y, dr.x)), y = f.y - dv.y * clamp(u / max(L, 1e-3), 0.0, 1.0);
+  float bat = sdBox(vec3(mod(u, 1.25) - 0.625, y - 0.62, v), vec3(0.022, 0.55, 0.02));
+  return vec2(max(bat, max(0.35 - u, u - L + 0.35)), 15.2);
 }
 /** How big an object can be, for the march to skip it: a bounding sphere in its frame. */
 vec4 objBound(vec4 a, vec4 b){
@@ -289,6 +305,8 @@ vec4 objBound(vec4 a, vec4 b){
   if (k < 9.5) return vec4(a.x, a.z + 1.6, a.y, max(b.y, 1.8) + 1.8);
   if (k < 11.5) return vec4(a.x, a.z + 1.4, a.y, 2.4);
   if (k < 13.5) return vec4(a.x, a.z + 1.2, a.y, max(b.y, 1.6) + 0.6);
+  if (k < 19.5) return vec4(a.x, a.z + 0.8, a.y, 2.7);
+  if (k > 20.5) return vec4((a.x + b.x) * 0.5, (a.z + b.z) * 0.5 + 0.6, (a.y + b.y) * 0.5, length(vec2(b.x - a.x, b.y - a.y)) * 0.5 + 1.0);
   return vec4(a.x, a.z + 0.8, a.y, max(b.y, 2.4) + 2.0);
 }
 /** Closest approach of a ray to a wire, and where along the ray. */
@@ -319,10 +337,9 @@ Hit traceThings(vec3 ro, vec3 rd, float tMax, bool wires){
           float id = ids[j] - 1.0; if (id < 0.0) break;
           vec4 a = obj0(id), b = obj1(id);
           if (a.w > 19.5) {                                         // a wire, or a fence's wires
-            if (!wires) continue;
             vec3 p0 = vec3(a.x, a.z, a.y), p1 = vec3(b.x, b.z, b.y);
             int n = a.w < 20.5 ? 2 : 6;
-            for (int w = 0; w < 6; w++) {
+            if (wires) for (int w = 0; w < 6; w++) {
               if (w >= n) break;
               vec3 q0, q1, q2; float r;
               if (a.w < 20.5) { float side = float(w) - 0.5; vec3 off = normalize(cross(p1 - p0, vec3(0.0, 1.0, 0.0))) * side * 1.6; q0 = p0 + off; q2 = p1 + off; q1 = (q0 + q2) * 0.5 - vec3(0.0, b.w, 0.0); r = 0.008; }
@@ -330,7 +347,7 @@ Hit traceThings(vec3 ro, vec3 rd, float tMax, bool wires){
               vec2 d1 = wireDist(ro, rd, q0, q1), d2 = wireDist(ro, rd, q1, q2); vec2 dw = d1.x < d2.x ? d1 : d2;
               if (dw.y < min(h.t, tMax) && dw.y > 0.3) { float fw = foot * dw.y, cov = clamp(2.0 * r / fw, 0.0, 1.0) * (1.0 - smoothstep(r, r + fw, dw.x)); if (cov > wireA) { wireA = cov; wireT = dw.y; wireC = a.w < 20.5 ? vec3(0.03) : vec3(0.16, 0.16, 0.15); } }
             }
-            continue;
+            if (a.w < 20.5) continue;                                 // a power line is only wires; a fence also has battens, below
           }
           vec4 bs = objBound(a, b); vec2 sp = sphere(ro, rd, bs.xyz, bs.w);
           if (sp.y < 0.0 || sp.x > min(h.t, tMax)) continue;
@@ -403,7 +420,7 @@ vec2 truckSD(vec3 p){
   U(max(sdBox(vec3(l.x, l.y + 0.82, abs(l.z) - 1.6), vec3(0.98, 0.36, 0.2)), 0.98 - length(l.xy)), 37.0)
   U(max(abs(length(l.xy) - 1.07) - 0.012, abs(abs(l.z) - 1.05) - 0.03), 38.0)
   U(max(abs(length(l.xy) - 1.07) - 0.012, abs(abs(l.z) - 2.1) - 0.03), 38.0)
-  U(sdRoundBox(l - vec3(0.0, -0.2, -3.25), vec3(0.45, 0.4, 0.22), 0.04), 33.0)
+  U(sdRoundBox(l - vec3(0.0, -0.2, -3.25), vec3(0.45, 0.4, 0.22), 0.04), 46.0)                         // the valve box, painted
   U(sdCap(l, vec3(-0.3, 0.2, -3.2), vec3(-0.3, 0.9, -3.0), 0.04), 33.0)
   return r;
 }
@@ -475,7 +492,7 @@ float thingShadow(vec3 p, float far){ return sunVis(p, 0.25) * (far < 600.0 ? sh
 vec3 lit(vec3 alb, vec3 N, vec3 V, float rough, float spec, float sh, float ao){
   vec3 sc = sunCol(); float nl = max(dot(N, uSun), 0.0), nv = max(dot(N, V), 0.03);
   vec3 H = normalize(uSun + V); float nh = max(dot(N, H), 0.0);
-  vec3 col = alb / PI * (sc * nl * sh + skyAmb(N) * ao * 3.6 + vec3(0.07, 0.09, 0.04) * SUN * 0.09 * (1.0 - abs(N.y) * 0.7) * ao * gDay * max(uSun.y, 0.0));
+  vec3 col = alb / PI * (sc * nl * sh + skyAmb(N) * ao * 4.4 + vec3(0.07, 0.09, 0.04) * SUN * 0.09 * (1.0 - abs(N.y) * 0.7) * ao * gDay * max(uSun.y, 0.0));
   col += spec * (0.04 + 0.96 * pow(1.0 - max(dot(H, V), 0.0), 5.0)) * min(ggx(nh, max(rough, 0.15)), 12.0) * 0.25 / max(nv, 0.3) * nl * sh * sc;
   return col;
 }
@@ -494,10 +511,10 @@ vec3 roadAlb(vec3 p, Gnd g, float foot, inout vec3 N, out float rough, out float
   float track = 1.0 - smoothstep(0.25, 0.6, tr + (n3 - 0.5) * 0.3);
   vec3 col;
   if (gravel > 0.5) {
-    col = mix(vec3(0.42, 0.40, 0.35), vec3(0.55, 0.53, 0.47), n1) * (0.85 + 0.3 * n3);                 // pale papa and limestone gravel
-    col = mix(col, vec3(0.36, 0.34, 0.30), track * 0.6);                                                    // packed where the wheels go
+    col = mix(vec3(0.30, 0.28, 0.23), vec3(0.37, 0.34, 0.28), n1) * (0.85 + 0.3 * n3);                 // the station's gravel, papa and limestone
+    col = mix(col, vec3(0.25, 0.235, 0.2), track * 0.6);                                                    // packed where the wheels go
     float windrow = smoothstep(w2 - 0.9, w2 - 0.2, ad) * (1.0 - smoothstep(w2 + 0.3, w2 + 0.9, ad)) + exp(-sq(g.d / 0.35)) * 0.6;
-    col = mix(col, vec3(0.5, 0.48, 0.43) * (0.7 + 0.6 * nf), windrow * 0.7);                                // loose stones thrown to the edges and the crown
+    col = mix(col, vec3(0.36, 0.34, 0.29) * (0.7 + 0.6 * nf), windrow * 0.7);                               // loose stones thrown to the edges and the crown
     col *= mix(1.0, 0.55 + 0.9 * nf, fine * 0.9 + mid * 0.1);
     col = mix(col, vec3(0.2, 0.32, 0.1) * (0.7 + 0.5 * n3), exp(-sq(g.d / 0.3)) * smoothstep(0.55, 0.75, n2(p.xz / 3.0)) * 0.7);   // grass on the crown
     if (mid > 0.01) { vec2 tg = normalize(vec2(roadAt(p.xz + vec2(0.5, 0.0)).y - s, roadAt(p.xz + vec2(0.0, 0.5)).y - s) + 1e-6);   // corrugations across the wheel tracks
@@ -506,8 +523,8 @@ vec3 roadAlb(vec3 p, Gnd g, float foot, inout vec3 N, out float rough, out float
     col = mix(col, vec3(0.26, 0.24, 0.2), hole * 0.6); wetK = hole * smoothstep(0.73, 0.75, n2(p.xz / 5.1 + 0.7)) * 0.7;
     rough = 0.9; spec = 0.1;
   } else {
-    float tone = bit(g.kind, 64.0) ? 0.27 + 0.04 * n1 : 0.115 + 0.035 * n1 + 0.02 * (n2(p.xz / 31.0) - 0.5);
-    col = vec3(tone, tone * 1.005, tone * 1.02) * (0.93 + 0.14 * n3);                                     // chip seal, grey, laid in runs
+    float tone = bit(g.kind, 64.0) ? 0.27 + 0.04 * n1 : 0.13 + 0.035 * n1 + 0.02 * (n2(p.xz / 31.0) - 0.5);
+    col = (bit(g.kind, 64.0) ? vec3(tone) : vec3(tone, tone * 0.975, tone * 0.9)) * (0.93 + 0.14 * n3);                                     // chip seal, grey, laid in runs
     float chips = textureLod(uN2, p.xz / 0.035, log2(max(foot / 0.035 * 512.0, 1.0))).g;
     col *= mix(1.0, 0.6 + 0.85 * chips, fine) * mix(1.0, 0.85 + 0.3 * nf, mid * (1.0 - fine));             // the stones themselves, and the light between them
     col = mix(col, col * 0.78, track * 0.6);                                                                // darker and smoother in the wheel paths
@@ -539,28 +556,30 @@ vec3 landAlb(vec3 p, Gnd g, float foot, inout vec3 N, out float rough, out float
   float n1 = n2(p.xz / 57.0), nm = n2(p.xz / 13.0 + 0.4), n3 = n2(p.xz / 2.1), nf = textureLod(uN2, p.xz / 0.21, log2(max(foot / 0.21 * 512.0, 1.0))).g;
   float slope = 1.0 - N.y; rough = 0.9; spec = 0.08; wetK = 0.0;
   float paddock = textureLod(uN2, floor(p.xz / 160.0 + n1 * 0.6) / 97.0 + 0.11, 0.0).a;
-  // pasture in spring: ryegrass and clover, paddock by paddock a little different; drier on the sunny faces, lusher in the hollows
-  vec3 lush = vec3(0.058, 0.105, 0.028), dry = vec3(0.15, 0.15, 0.065), clov = vec3(0.045, 0.092, 0.035);
-  vec3 col = mix(lush, mix(lush * 1.3, dry, 0.45), smoothstep(0.25, 0.85, paddock * 0.55 + nm * 0.45));
-  col = mix(col, dry, smoothstep(0.55, 0.95, dot(N, uSun) * 0.6 + n1 * 0.6) * 0.35);
-  col = mix(col, clov, smoothstep(0.52, 0.68, n2(p.xz / 3.3 + 0.37)) * 0.55);
-  float spot = smoothstep(0.78, 0.84, n2(p.xz / 1.9 + 0.71)); col = mix(col, vec3(0.04, 0.09, 0.025), spot * 0.7);             // dung patches, greener and ranker
+  // pasture in spring: grazed ryegrass and clover, lusher in the hollows, paddock by paddock a little different; dry, rank grass
+  // along the seal and on the steep faces, where the stock do not graze it down
+  vec3 grazed = vec3(0.1, 0.136, 0.046), lush = vec3(0.066, 0.116, 0.036), dry = vec3(0.24, 0.205, 0.1), clov = vec3(0.056, 0.096, 0.042);
+  float f40 = n2(p.xz / 40.0 + 0.13) * 0.65 + n2(p.xz / 97.0 + 0.41) * 0.35, f6 = n2(p.xz / 6.0 + 0.77);
+  vec3 col = mix(lush, grazed, smoothstep(0.3, 0.72, f40 * 0.6 + paddock * 0.4));
+  col = mix(col, clov, smoothstep(0.55, 0.7, n2(p.xz / 3.3 + 0.37)) * 0.45);
+  float steep = smoothstep(0.1, 0.2, slope), nearSeal = g.edge > 0.0 ? 1.0 - smoothstep(2.0, 5.0, g.edge + (f6 - 0.5) * 1.5) : 0.0;
+  float dryF = 0.14 + 0.58 * nearSeal + 0.45 * steep + 0.12 * smoothstep(0.6, 0.9, dot(N, uSun));
+  col = mix(col, dry * (0.8 + 0.4 * f6), smoothstep(0.42, 0.7, dryF * (0.65 + 0.7 * f6)));
+  float spot = smoothstep(0.8, 0.85, n2(p.xz / 1.9 + 0.71)); col = mix(col, vec3(0.04, 0.09, 0.025), spot * 0.6 * (1.0 - nearSeal));   // dung patches, greener and ranker
   float rush = smoothstep(0.7, 0.8, n2(p.xz / 11.0 + 0.2)) * smoothstep(3.0, 0.5, g.base - g.h + 2.0);
   col = mix(col, vec3(0.07, 0.08, 0.035), rush * 0.6);                                                                     // rushes where it is wet
-  col *= 0.8 + 0.4 * n3 * (0.55 + 0.45 * nf);
-  grassH = 0.13 + 0.07 * nm;
-  // sheep tracks on the steep faces: narrow terraces along the contour, bare and a little darker
-  float terr = smoothstep(0.14, 0.3, slope) * (1.0 - smoothstep(0.4, 0.5, slope)) * smoothstep(0.3, 0.6, n2(p.xz / 31.0 + 0.5));
-  float ct = fract(p.y * 1.25 + (n2(p.xz / 14.0) - 0.5) * 0.55);
-  float stripe = smoothstep(0.0, 0.08, ct) * (1.0 - smoothstep(0.08, 0.2, ct));
-  col = mix(col, vec3(0.09, 0.075, 0.045), stripe * terr * 0.45); N = normalize(N + vec3(0.0, (stripe - 0.25) * terr * 0.22, 0.0));
+  col *= 0.82 + 0.36 * n3 * (0.55 + 0.45 * nf);
+  grassH = 0.12 + 0.08 * nm + 0.28 * nearSeal;
+  // sheep tracks on the grazed faces, well away from the road: short terraces along the contour, in patches, darker risers
+  float terr = smoothstep(0.03, 0.07, slope) * (1.0 - smoothstep(0.16, 0.24, slope)) * smoothstep(0.45, 0.7, n2(p.xz / 45.0 + 0.5)) * smoothstep(12.0, 25.0, g.edge);
+  float ct = fract(p.y / 1.5 + (n2(p.xz / 18.0) - 0.5) * 0.4), seg = smoothstep(0.35, 0.55, n2(p.xz / 4.0 + 0.3));
+  float stripe = smoothstep(0.0, 0.1, ct) * (1.0 - smoothstep(0.1, 0.24, ct)) * seg;
+  col = mix(col, vec3(0.085, 0.075, 0.045), stripe * terr * 0.4); N = normalize(N + vec3(0.0, (stripe - 0.25) * terr * 0.25, 0.0));
   // the verge: mown near the seal, long and seeding further out
-  float ad = abs(g.d), verge = g.edge > 0.0 ? 1.0 - smoothstep(4.0, 9.0, g.edge) : 0.0;
-  col = mix(col, mix(vec3(0.11, 0.17, 0.05), vec3(0.27, 0.25, 0.12), smoothstep(1.5, 4.0, g.edge) * nm) * (0.8 + 0.4 * n3), verge * 0.8);
-  grassH = mix(grassH, mix(0.08, 0.45, smoothstep(1.0, 3.5, g.edge)), verge);
-  float shoulder = 1.0 - smoothstep(0.1, 0.9, g.edge); col = mix(col, vec3(0.3, 0.28, 0.24) * (0.7 + 0.5 * nf), shoulder * 0.8 * (bit(g.kind, 16.0) ? 0.0 : 1.0));
+  float ad = abs(g.d);
+  float shoulder = 1.0 - smoothstep(0.32, 0.36, g.edge - 0.12 * (n2(p.xz / 0.9 + 0.2) - 0.5)); col = mix(col, vec3(0.25, 0.235, 0.2) * (0.7 + 0.5 * nf), shoulder * (bit(g.kind, 16.0) ? 0.0 : 1.0)); grassH *= 1.0 - shoulder;
   // a town's footpaths and lawns
-  if (bit(g.kind, 16.0) && g.edge > 0.0 && g.edge < 2.1) { col = vec3(0.42, 0.41, 0.38) * (0.85 + 0.25 * n3) * (0.8 + 0.4 * nf); grassH = 0.0; rough = 0.8; }
+  if (bit(g.kind, 16.0) && g.edge > 0.0 && g.edge < 4.4) { col = vec3(0.33, 0.325, 0.3) * (0.85 + 0.25 * n3) * (0.8 + 0.4 * nf) * (1.0 - 0.3 * step(0.97, fract(g.s / 1.5))); grassH = 0.0; rough = 0.8; }   // a town's concrete footpath, to the shopfronts
   col = mix(col, vec3(0.1, 0.19, 0.05) * (0.85 + 0.3 * n3), M2.r * (1.0 - shoulder) * 0.6);
   // scrub and bush on the ground under the trees, and bare banks
   col = mix(col, vec3(0.05, 0.07, 0.03) * (0.7 + 0.6 * n3), max(M.g, M.b * 0.8) * 0.85);
@@ -584,7 +603,7 @@ vec3 landAlb(vec3 p, Gnd g, float foot, inout vec3 N, out float rough, out float
   // the range's hard standing: compacted gravel, and concrete slabs round the launch mount
   if (uPadP.x < 1e5) { vec3 pq = padP(p); float ap = max(max(-pq.x - 96.0, pq.x - 48.0), max(-pq.z - 46.0, pq.z - 30.0));
     if (ap < 4.0) { float k = smoothstep(4.0, 0.0, ap); col = mix(col, mix(vec3(0.2, 0.19, 0.17), vec3(0.27, 0.25, 0.22), n2(pq.xz / 7.0)) * (0.65 + 0.55 * nf) * (0.85 + 0.3 * n3), k); grassH *= 1.0 - k;
-      float sl = max(abs(pq.x + 4.0) - 22.0, abs(pq.z) - 22.0); if (sl < 0.0) { vec2 jg = abs(fract(pq.xz / 6.0) - 0.5); col = vec3(0.26, 0.26, 0.25) * (0.85 + 0.2 * n3) * (0.9 + 0.2 * textureLod(uN2, (floor(pq.xz / 6.0) + 0.5) / 512.0, 0.0).a) * (1.0 - 0.5 * (1.0 - smoothstep(0.0, 0.02, min(jg.x, jg.y)))); } } }
+      float sl = max(abs(pq.x + 4.0) - 22.0, abs(pq.z) - 22.0); if (sl < 0.0) { vec2 jg = abs(fract(pq.xz / 6.0) - 0.5); col = vec3(0.31, 0.305, 0.285) * (0.85 + 0.2 * n3) * (0.9 + 0.2 * textureLod(uN2, (floor(pq.xz / 6.0) + 0.5) / 512.0, 0.0).a) * (1.0 - 0.5 * (1.0 - smoothstep(0.0, 0.02, min(jg.x, jg.y)))); } } }
   // the old railway: ballast, sleepers, two rusty rails 1067 mm apart
   if (M2.a > 0.003) {
     float rd = abs((M2.a * 255.0 - 1.0) / 254.0 * 2.0 - 1.0) * 8.0;                                     // metres from its centre line
@@ -639,7 +658,7 @@ vec4 dustVol(vec3 ro, vec3 rd, float tHit, float jit){
 /** The sea and the water inland: Hawke Bay's swell, its surf on the beaches and the rocks, the river's still water. */
 vec3 waterCol(vec3 p, vec3 rd, float t, Gnd g, float sh){
   vec3 up = vec3(0.0, 1.0, 0.0); float foot = t * 2.0 * uTan / uRes.y / max(-rd.y, 0.03);
-  float depth = max(-g.base, 0.0), calm = maskAt(p.xz).r > 0.5 && g.base > -2.5 ? 0.7 : 0.0;
+  float mr = maskAt(p.xz).r, depth = max(-g.base, 0.0), calm = mr > 0.3 && mr < 0.8 ? 1.0 : 0.0;   // rivers and lagoons are still
   float unres; vec2 gs = waveSlope(p.xz + uWave, foot, unres) * (1.0 - calm * 0.85);
   // the swell steepens and breaks as the bottom comes up: bands of white water running in to the beach
   float shoal = smoothstep(6.0, 0.4, depth) * (1.0 - calm);
@@ -656,9 +675,9 @@ vec3 waterCol(vec3 p, vec3 rd, float t, Gnd g, float sh){
   vec3 sc = sunCol();
   vec3 spec = sc * min(ggx(nh, max(rough, 0.05)), 140.0) * 0.25 / max(nv, 0.15) * (0.02 + 0.98 * pow(1.0 - max(dot(H, V), 0.0), 5.0)) * sh * max(uSun.y, 0.0);
   vec3 E = sc * max(uSun.y, 0.0) * sh + vec3(0.16, 0.27, 0.5) * SUN * 0.12 * gDay;
-  vec3 deep = mix(vec3(0.006, 0.03, 0.05), vec3(0.01, 0.045, 0.055), n2(p.xz / 3000.0));
-  vec3 shallow = calm > 0.0 ? vec3(0.04, 0.06, 0.04) : vec3(0.06, 0.13, 0.12);
-  vec3 wc = mix(deep, shallow, smoothstep(9.0, 0.5, depth)) + vec3(0.03, 0.025, 0.015) * shoal * 0.8;        // sand stirred up in the surf
+  vec3 deep = mix(vec3(0.006, 0.03, 0.066), vec3(0.008, 0.04, 0.07), n2(p.xz / 3000.0));
+  vec3 shallow = calm > 0.0 ? vec3(0.085, 0.07, 0.035) : vec3(0.06, 0.18, 0.17);                         // the river silty olive; the bay turquoise over sand
+  vec3 wc = calm > 0.0 ? shallow : mix(deep, shallow, smoothstep(9.0, 1.0, depth)) + vec3(0.03, 0.025, 0.015) * shoal * 0.8;        // sand stirred up in the surf
   vec3 col = wc * E / PI * 1.5 * (1.0 - F) + sky * F + spec;
   return mix(col, vec3(0.85, 0.87, 0.86) * E / PI, foam);
 }
@@ -768,7 +787,7 @@ void main(){
       else if (m < 12.5) { alb = vec3(0.17, 0.13, 0.1) * (0.7 + 0.5 * n); }                // bark
       else if (m < 13.9) {         // leaves
         float sp = fract(m) * 100.0 + 0.001; float ln = textureLod(uN3, q * 1.9 + seed * 7.0, 0.0).g, lf = textureLod(uN3, q * 6.3 + seed, 0.0).r;
-        vec3 base = sp < 0.5 ? vec3(0.022, 0.04, 0.026) : sp < 1.5 ? vec3(0.025, 0.045, 0.02) : sp < 2.5 ? vec3(0.03, 0.065, 0.032) : sp < 3.5 ? vec3(0.035, 0.06, 0.022) : sp < 4.5 ? vec3(0.13, 0.15, 0.07) : sp < 5.5 ? vec3(0.07, 0.11, 0.045) : sp < 6.5 ? vec3(0.06, 0.07, 0.04) : vec3(0.05, 0.075, 0.025);
+        vec3 base = sp < 0.5 ? vec3(0.03, 0.05, 0.03) : sp < 1.5 ? vec3(0.032, 0.055, 0.024) : sp < 2.5 ? vec3(0.036, 0.075, 0.034) : sp < 3.5 ? vec3(0.045, 0.08, 0.022) : sp < 4.5 ? vec3(0.13, 0.15, 0.07) : sp < 5.5 ? vec3(0.07, 0.11, 0.045) : sp < 6.5 ? vec3(0.06, 0.07, 0.04) : vec3(0.05, 0.075, 0.025);
         float outer = clamp(thingSD(p + N * 0.6, id).x / 0.6, 0.0, 1.0);
         alb = base * (0.55 + 0.9 * ln) * (0.8 + 0.4 * seed) * (0.85 + 0.35 * outer) * mix(vec3(1.0), vec3(1.25, 1.18, 0.75), lf * outer * 0.6);
         float fl = textureLod(uN3, q * 11.0 + seed * 3.0, 0.0).g;
@@ -781,7 +800,7 @@ void main(){
         if (!rightSide) { if (q.y > 0.72 && q.y < 0.86) alb = vec3(0.6, 0.04, 0.03); if (q.y > 0.9 && q.y < 1.06) { alb = vec3(0.95); spec = 0.45; rough = 0.35; } }
         else { if (q.y > 0.94 && q.y < 1.06) alb = vec3(0.6, 0.04, 0.03); if (q.y > 0.8 && q.y < 0.92) { alb = vec3(0.9, 0.7, 0.1); spec = 0.45; rough = 0.35; } }
       }
-      else if (m < 15.5) { alb = vec3(0.32, 0.3, 0.26) * (0.7 + 0.5 * textureLod(uN3, q * vec3(4.0, 0.3, 4.0), 0.0).g); }          // a weathered post
+      else if (m < 15.5) { alb = vec3(0.32, 0.3, 0.26) * (0.7 + 0.5 * textureLod(uN3, p * vec3(4.0, 0.3, 4.0), 0.0).g); }          // a weathered post, or a fence's battens
       else if (m < 16.5) {         // a sign's face, from the atlas, or its galvanised back (a flat board: its normal is the board's, not the field's)
         { vec2 nz = rot(-b.x) * vec2(0.0, 1.0); float side = sign(dot(vec3(nz.x, 0.0, nz.y), -rd)); N = vec3(nz.x, 0.0, nz.y) * side; NL = vec3(0.0, 0.0, side); }
         float cell = mod(b.w, 64.0); vec3 bq = q - vec3(0.0, 1.6 + b.z, 0.0); float hx2 = b.y, hy2 = b.z; if (b.w > 63.5) { bq.xy = rot(0.7853982) * bq.xy; hx2 *= 0.7071; hy2 *= 0.7071; }
@@ -801,10 +820,16 @@ void main(){
       else if (m < 26.5) { alb = vec3(0.6, 0.04, 0.03); spec = 0.6; rough = 0.3; }            // the gnome's hat
       else if (m < 27.5) { alb = vec3(0.85, 0.8, 0.72); }
       else if (m < 28.5) { alb = vec3(0.05, 0.12, 0.4); spec = 0.6; rough = 0.3; }
-      else { alb = mix(vec3(0.08, 0.22, 0.6), vec3(0.85), step(0.93, max(fract(q.x * 12.0), fract(q.z * 12.0)))); }   // blueprint paper
-      float ts = sunVis(p + N * 0.05, m > 12.5 && m < 13.9 ? max(b.z, 1.5) * 0.9 : 0.6) * shapeShadow(p); sh *= ts;
+      else if (m < 29.5) { alb = mix(vec3(0.08, 0.22, 0.6), vec3(0.85), step(0.93, max(fract(q.x * 12.0), fract(q.z * 12.0)))); }   // blueprint paper
+      else if (m < 47.5) {         // a car's paint: the colours of New Zealand's cars and utes, white and silver most of all
+        vec3 pal[6] = vec3[6](vec3(0.8), vec3(0.55, 0.56, 0.57), vec3(0.08), vec3(0.32, 0.03, 0.03), vec3(0.06, 0.12, 0.3), vec3(0.4, 0.38, 0.33));
+        alb = pal[int(fract(seed * 13.7) * 5.99)]; rough = 0.25; spec = 0.9; glass = 0.35; if (q.y < 0.5) alb = vec3(0.05);
+      }
+      else if (m < 48.5) { alb = vec3(0.01); glass = 1.0; rough = 0.04; }
+      float t0 = a.w < 3.5 ? length(vec2(b.y, b.z)) * 1.15 + 0.8 : a.w < 4.5 ? 3.0 : m > 12.5 && m < 13.9 ? max(b.z, 1.5) * 0.9 : 0.6;
+      float ts = sunVis(p + N * 0.05, t0) * shapeShadow(p); sh *= ts;
       float ao = clamp(0.4 + 0.6 * thingSD(p + N * 0.5, id).x / 0.5, 0.2, 1.0);
-      if (m > 12.5 && m < 13.9) ao *= clamp(0.35 + 0.65 * (q.y / max(b.y, 1.0)), 0.3, 1.0);               // deep in the crown it is dark
+      if (m > 12.5 && m < 13.9) ao = mix(0.45, 1.0, clamp(thingSD(p + N * 0.8, id).x / 0.8, 0.0, 1.0));    // dark only deep in the crown; the outside sees the sky
       col = lit(alb, N, V, rough, spec, sh, ao);
       col += alb * thru * sunCol() * max(dot(rd, uSun), 0.0) * 0.6 * sh / PI;                                   // the sun through the leaves
       if (glass > 0.5) col += skyAt(vec3(0.0, 1.0, 0.0), reflect(rd, N)) * (0.06 + 0.9 * pow(1.0 - max(dot(N, V), 0.0), 5.0));
@@ -827,20 +852,22 @@ void main(){
       else if (m < 31.5) { alb = vec3(0.025); rough = 0.55; spec = 0.3; if (q.z > 6.0 && q.y > 0.95) alb *= 0.6 + 0.4 * step(0.5, fract(q.y * 14.0)); }
       else if (m < 32.5) { alb = vec3(0.3, 0.3, 0.29) * (0.75 + 0.4 * textureLod(uN3, q * vec3(0.5, 2.0, 3.0), 0.0).g); rough = 0.55; metal = 0.6; }   // a steel chequer-plate floor
       else if (m < 33.5) { alb = vec3(0.45, 0.46, 0.47); metal = 1.0; rough = 0.42; }
-      else if (m < 34.5) { alb = vec3(0.018); rough = 0.82; spec = 0.15; float rr = length((q - vec3(0.0, 0.52, 0.0)).yz); }
+      else if (m < 34.5) { alb = vec3(0.042); rough = 0.85; spec = 0.15; float tr = atan(q.y - 0.52, q.z - (q.z > 2.5 ? 4.85 : q.z > 0.0 ? 0.7 : -0.7)) + uDrv.y; alb *= 0.85 + 0.15 * step(0.5, fract(tr * 18.0 / TAU)); }   // tyres, with their tread
       else if (m < 35.5) { alb = vec3(0.75, 0.76, 0.76); metal = 0.0; rough = 0.35; float a2 = atan(q.y - 0.52, q.z - (q.z > 2.5 ? 4.85 : q.z > 0.0 ? 0.7 : -0.7)) + uDrv.y; alb *= 0.55 + 0.45 * step(0.35, fract(a2 * 5.0 / TAU)); }
       else if (m < 36.5) { alb = vec3(0.86, 0.87, 0.87) * (0.96 + 0.06 * n); rough = 0.42; spec = 0.35; }            // the tank: white, satin
       else if (m < 37.5) { alb = vec3(0.05, 0.08, 0.16); rough = 0.5; }
       else if (m < 38.5) { alb = vec3(0.8, 0.45, 0.03); rough = 0.75; spec = 0.1; }
       else if (m < 40.6) { vec3 s = p; alb = vec3(0.6, 0.57, 0.5) * (0.8 + 0.3 * textureLod(uN3, s * 3.0, 0.0).r); rough = 0.95; spec = 0.05; N = normalize(N + (textureLod(uN3, s * 5.0, 0.0).rgb - 0.5) * 0.8); }   // wool, a bit grubby
       else if (m < 41.5) { alb = vec3(0.78, 0.75, 0.68); rough = 0.75; }                       // the face
+      else if (m > 45.5 && m < 46.5) { alb = vec3(0.32, 0.33, 0.34); rough = 0.45; spec = 0.5; }
       else if (m > 43.5 && m < 44.5) { alb = vec3(0.04, 0.035, 0.035); rough = 0.4; spec = 0.4; }
       else if (m > 44.5) { alb = vec3(0.42, 0.39, 0.34); rough = 0.8; if (dot(p - vec3(0.0), vec3(0.0, 1.0, 0.0)) - gH(p.xz) < 0.08) alb = vec3(0.05); }   // legs, and the hooves
       else if (m < 42.5) { if (q.z < 0.0) { alb = vec3(0.35, 0.01, 0.005); rough = 0.15; spec = 0.8; emit = vec3(0.7, 0.02, 0.01) * (0.04 + uDrv.z * 1.6); if (abs(abs(q.x) - 0.95) > 0.12) { alb = vec3(0.45, 0.25, 0.02); emit = vec3(0.0); } } else { alb = vec3(0.8); glass = 1.0; rough = 0.08; } }
       else { alb = vec3(0.85, 0.85, 0.8); rough = 0.4; if (abs(q.y - 0.78) < 0.035 && abs(q.x) < 0.2 && fract(q.x * 9.0) > 0.35) alb = vec3(0.04); }   // a plate, white with black characters
-      float ts = 1.0; { float t = 0.06; for (int i = 0; i < 24; i++) { float d = sceneSD(p + N * 0.02 + uSun * t).x; ts = min(ts, 10.0 * d / t); t += clamp(d, 0.03, 1.0); if (ts < 0.02 || t > 14.0) break; } }
+      float ts = 1.0; { float t = 0.16; for (int i = 0; i < 24; i++) { float d = sceneSD(p + N * 0.06 + uSun * t).x; ts = min(ts, 10.0 * d / t); t += clamp(d, 0.03, 1.0); if (ts < 0.02 || t > 14.0) break; } }
       sh *= clamp(ts, 0.0, 1.0) * sunVis(p + N * 0.05, 0.4);
       float ao = clamp(0.35 + 0.65 * sceneSD(p + N * 0.3).x / 0.3, 0.25, 1.0) * clamp(0.5 + 0.5 * (p.y - gH(p.xz)) / 1.0, 0.3, 1.0);
+      if (m < 39.5) alb = mix(alb, vec3(0.28, 0.25, 0.2), smoothstep(1.4, 0.2, q.y) * (0.22 + 0.3 * uLook.x) * (0.6 + 0.6 * n));   // road grime low down, more on gravel
       vec3 F0 = mix(vec3(0.04), alb, metal);
       col = lit(alb * (1.0 - metal), N, V, rough, spec, sh, ao);
       vec3 R = reflect(rd, N); float Fe = 0.04 + 0.96 * pow(1.0 - max(dot(N, V), 0.0), 5.0);
@@ -888,9 +915,12 @@ void main(){
   vec3 L, Tr; scatter(vec3(0.0), rd, tEnd, jit2, uAtmN, L, Tr);
   if (!(L.r + L.g + L.b < 1e6 && Tr.r + Tr.g + Tr.b < 4.0)) { L = vec3(0.0); Tr = vec3(1.0); }
   col = col * Tr + L;
-  { float tH = min(tEnd, 60.0), hz = 1.0 - exp(-tH / 38.0 * (0.6 + 0.4 * exp(-max(rd.y, 0.0) * 40.0)));
-    vec3 hc = skyAt(vec3(0.0, 1.0, 0.0), normalize(vec3(rd.x, max(rd.y, 0.0) * 0.2 + 0.02, rd.z))) * 0.95 + sunCol() * 0.012 * pow(max(dot(rd, uSun), 0.0), 6.0);
-    col = mix(col, hc, hz * 0.55); }
+  // marine haze, thinner with height: land 5 km off keeps about two thirds of its contrast and goes blue towards the horizon's colour
+  { float tH = min(tEnd, 80.0), yk = max(rd.y, 0.0004), hs = yk * tH / 1.1;
+    float od = tH / 11.5 * (hs > 1e-4 ? (1.0 - exp(-hs)) / hs : 1.0), hz = 1.0 - exp(-od);
+    vec3 hc = skyAt(vec3(0.0, 1.0, 0.0), normalize(vec3(rd.x, max(rd.y, 0.0) * 0.15 + 0.012, rd.z)));
+    hc = mix(hc, vec3(lumi(hc)), 0.22) * 1.04 + sunCol() * 0.018 * pow(max(dot(rd, uSun), 0.0), 8.0);
+    col = mix(col, hc, hz); }
   o = vec4(min(col, vec3(30000.0)), depth);
 }`;
 
