@@ -30,10 +30,10 @@ export class DriveScene extends Phaser.Scene {
   t = 0; clock = 0; started = false; strain = 0; shift = 0; ended = false; fade = 1; fadeDir = -1; cardT = 0; penalty = 0; crashes = 0; stops = 0;
   camMode = 0; camH = 0; camP: V3 = [0, 4, -11]; fresh = true; horn = 0; callText = ''; callT = 0; egg = false; secret = false; bump = 0; dust = 0;
   sheep: Sheep[] = []; said: Record<string, boolean> = {}; times: number[] = []; sun: V3 = SUN0; notes: Record<string, string> = {};
-  eng?: Engine; box?: HTMLDivElement; hudC?: HTMLCanvasElement; diesel?: Loop; tyres?: Loop; sea?: Loop; ready = false; idle = 0; fdt = 1 / 60; lastP = -1; atlas?: HTMLCanvasElement; settle = false;
+  eng?: Engine; box?: HTMLDivElement; hudC?: HTMLCanvasElement; diesel?: Loop; tyres?: Loop; sea?: Loop; airhorn?: Loop; botHorn = 0; ready = false; idle = 0; fdt = 1 / 60; lastP = -1; atlas?: HTMLCanvasElement; settle = false;
   constructor() { super('Drive'); }
   help(): { title: string; rows: [keys: string, does: string][]; note?: string } {
-    return { title: 'Drive to the pad', rows: [['↑', 'Accelerate (the truck is governed at 90 km/h)'], ['↓', 'Brake; held at a standstill, reverse'], ['← →', 'Steer. The wheel follows the road a little, as a driver’s hands would'], ['Space', 'The horn: sheep move off the road for it'], ['Enter', 'Change the camera: behind, low, or from the cab']], note: 'New Zealand drives on the left. Hard corners, bumps at speed and the verge all strain the load’s straps; the bar on the right shows how much. Slow right down for the cattle stop.' };
+    return { title: 'Drive to the pad', rows: [['↑', 'Accelerate (the truck is governed at 90 km/h)'], ['↓', 'Brake; held at a standstill, reverse'], ['← →', 'Steer. Let go and the truck keeps to the road’s bends and straightens up along it'], ['Space', 'The horn, for as long as you hold it: sheep move off the road for it'], ['Enter', 'Change the camera: behind, low, or from the cab']], note: 'New Zealand drives on the left. Hard corners, bumps at speed and a fast run along the verge strain the load’s straps; the bar on the right shows how much. The verge is rough but drivable; the fence line, the water and a real drop are not. Slow right down for the cattle stop.' };
   }
   init(d: { def: LevelDef }) {
     this.def = d.def; const p = d.def.params || {}; this.sun = p.sun ? norm(p.sun) : SUN0; this.notes = p.notes || {};
@@ -54,7 +54,7 @@ export class DriveScene extends Phaser.Scene {
       } catch (e) { console.error(e); if (fb) return void this.scene.start(fb, { def: fdef }); throw e; }
       if (!this.scene.isActive()) return;
       wait.destroy(); this.mount(); this.enter(0);
-      music.play('mahia'); this.diesel = loop('diesel'); this.tyres = loop('tyres'); this.sea = loop('sea');
+      music.play('mahia'); this.diesel = loop('diesel'); this.tyres = loop('tyres'); this.sea = loop('sea'); this.airhorn = loop('airhorn');
       this.ready = true;
     });
   }
@@ -108,16 +108,21 @@ export class DriveScene extends Phaser.Scene {
     if (AUTO) ({ thr, brk, str, horn: hornNow } = this.bot());
     if (this.fadeDir > 0) { thr = 0; brk = 0.5; }
     if (!this.started && (thr || str)) { this.started = true; }
-    if (hornNow && this.horn <= 0) { snd.horn(); this.horn = 0.7; for (const sh of this.sheep) if (sh.mode < 2 && Math.abs(sh.s - this.s) < 70) { sh.mode = 2; sh.t = 0; } }
-    this.horn -= dt;
+    // the horn sounds for as long as Space is held; each new blast sends any sheep near the road off it
+    if (AUTO && hornNow && this.botHorn <= 0) this.botHorn = 0.7;
+    this.botHorn -= dt;
+    const blowing = !this.ended && (held('a') || (AUTO && this.botHorn > 0));
+    if (blowing && this.horn <= 0) for (const sh of this.sheep) if (sh.mode < 2 && Math.abs(sh.s - this.s) < 70) { sh.mode = 2; sh.t = 0; }
+    this.horn = blowing ? 1 : 0; this.airhorn?.set(blowing ? 1 : 0);
     if (this.started && this.fadeDir <= 0) this.clock += dt;
     // ---- grip: what the tyres are on
     const ad = Math.abs(this.d), off = ad - w2, onVerge = off > (gravel ? 0.6 : 0.9);
     const mu = onVerge ? 0.38 : gravel ? 0.5 : 0.78;
     // ---- steering: keys turn the wheel at a rate; the curvature it asks for is limited by speed and grip
     const vv = Math.max(this.v, 0.5), cMax = Math.min(Math.tan(0.6) / WB, (mu * 1.12 * G) / (vv * vv));
-    const assist = tr.curv(this.s + this.v * 0.4) * 0.65;                    // the hands follow the road a little
-    const want = clamp(assist + str * cMax, -cMax, cMax);
+    // the hands follow the road: with no key held the truck keeps to its bends and straightens up along it; a key steers off that line
+    const assist = tr.curv(this.s + this.v * 0.4), align = (-2 * Math.sin(this.psi)) / Math.max(14, this.v * 1.6);
+    const want = clamp(str ? assist * 0.85 + str * cMax : assist + align, -cMax, cMax);
     this.curv += clamp(want - this.curv, -dt * (1.4 / WB), dt * (1.4 / WB)) * (str || Math.abs(want - this.curv) > 0.002 ? 1 : 0.5);
     let c = this.curv; const latWant = this.v * this.v * c, latMax = mu * G;
     let slide = 0; if (Math.abs(latWant) > latMax) { slide = Math.abs(latWant) / latMax - 1; c = (Math.sign(c) * latMax) / (this.v * this.v); }
@@ -127,7 +132,7 @@ export class DriveScene extends Phaser.Scene {
     let a = thr ? Math.min(2.1, 180000 / (14000 * Math.max(this.v, 3))) * (this.v < GOVERNOR ? 1 : 0) : 0;
     if (brk && !rev) a -= (gravel || onVerge ? 4.2 : 6.0) * Math.sign(this.v || 1);
     if (rev) a = -1.2;
-    a -= G * grade + (0.009 * G + (0.5 * 1.2 * 6.2 * this.v * Math.abs(this.v)) / 14000) * Math.sign(this.v) + (onVerge ? 1.6 * Math.sign(this.v) : 0);
+    a -= G * grade + (0.009 * G + (0.5 * 1.2 * 6.2 * this.v * Math.abs(this.v)) / 14000) * Math.sign(this.v) + (onVerge ? (0.8 + 0.5 * Math.min(off, 3)) * Math.sign(this.v) : 0);
     this.v = this.v + a * dt; if (!thr && !rev && Math.abs(this.v) < 0.25 && !brk) this.v *= 0.9; if (brk && !rev && this.v > 0 && this.v + a * dt < 0) this.v = 0;
     this.v = clamp(this.v, -4, GOVERNOR + 0.3); this.acc = a; this.brake = brk && this.v > 0.2 ? 1 : 0;
     // ---- the bicycle model in the road's own frame
@@ -139,7 +144,7 @@ export class DriveScene extends Phaser.Scene {
     const latG = Math.abs(this.lat) / G;
     let strainR = latG > 0.28 ? (latG - 0.28) * 1.6 : 0;
     if (gravel && this.v > 13) strainR += (this.v - 13) * 0.0025;
-    if (onVerge && this.v > 4) strainR += 0.035;
+    if (onVerge && this.v > 6) strainR += 0.012 * Math.min(off, 3);
     if (slide > 0) strainR += slide * 0.25;
     this.strain = Math.min(1, this.strain + strainR * dt);
     this.shift = lerp(this.shift, this.strain * 0.22 * Math.sign(this.lat || 1), dt * 0.6);
@@ -149,8 +154,11 @@ export class DriveScene extends Phaser.Scene {
     if (st.cattle !== undefined && this.s > st.cattle - 140 && this.s < st.cattle - 20) this.say('cattleAhead', 'Cattle stop ahead · slow to 25 km/h');
     for (const [cs, apex, adv] of st.curves) if (this.s > cs && this.s < apex + 10 && this.v * 3.6 > adv - 6) { this.say('adv' + cs, `${adv} km/h bend: a loaded truck takes it 10 under the sign`); break; }
     // ---- off the road: into the fence, the bank or over the edge
-    const [x, z] = tr.pos(this.s, this.d), gy = st.ground(x, z), ry = tr.height(this.s);
-    if (off > 3.0 || (off > 1.2 && Math.abs(gy - ry) > 1.4)) this.crash(off > 3.0 ? 'Off the road and into the fence line' : gy < ry ? 'Over the edge of the road' : 'Into the bank');
+    // a bridge has rails: scrape along them; elsewhere only the fence line, a real drop, a steep bank or the water stops the truck
+    const onBridge = this.onBridge(this.s);
+    if (onBridge && off > 1.3) { this.d = Math.sign(this.d) * (w2 + 1.3); this.psi *= 1 - Math.min(1, dt * 6); this.v *= 1 - Math.min(1, dt * 0.8); this.strain = Math.min(1, this.strain + dt * 0.02); this.bump = Math.max(this.bump, 0.3); this.say('rail' + Math.floor(this.s / 50), 'Scraping the bridge rail'); }
+    const [x, z] = tr.pos(this.s, this.d), gy = this.yAt(this.s, this.d), ry = tr.height(this.s), dy = gy - ry;
+    if (!onBridge && (off > 4.6 || (off > 1.6 && (dy < -2.2 || dy > 1.8)) || (gy < 0.3 && off > 0.8))) this.crash(off > 4.6 ? 'Off the road and through the fence line' : gy < 0.3 ? 'Into the water' : dy < 0 ? 'Over the edge of the road' : 'Up the bank');
     // ---- sheep: they wander, step out, and move off for the horn
     for (const sh of this.sheep) {
       sh.t += dt; const dS = sh.s - this.s;
@@ -179,11 +187,18 @@ export class DriveScene extends Phaser.Scene {
     this.diesel?.set(0.55 + 0.45 * (held('up') ? 1 : 0.4), rpm); this.tyres?.set(clamp(Math.abs(this.v) / 20, 0, 1), clamp(Math.abs(this.v) / 25, 0, 1) + (kind & 1 ? 1.01 : 0));
     const id = this.st!.raw.id; this.sea?.set(id === 'blowhole' || id === 'eastcoast' || id === 'mahia' ? 0.7 : id === 'onenui' ? 0.35 : 0.08);
   }
+  onBridge(s: number) { const tr = this.st!.track; return tr.bridge[0] < tr.bridge[1] && s > tr.bridge[0] - 2 && s < tr.bridge[1] + 2; }
+  /** The height of what the wheels stand on at distance s along the road and d across it. */
+  yAt(s: number, d: number) {
+    const tr = this.st!.track, w2 = tr.width(s) / 2;
+    if (this.onBridge(s) && Math.abs(d) < w2 + 1.8) return tr.height(s) + (Math.abs(d) > w2 ? 0.16 : 0.02);
+    const [x, z] = tr.pos(s, d); return this.st!.ground(x, z);
+  }
   crash(why: string) {
     if (this.fadeDir > 0) return;
-    this.crashes++; this.penalty += 8; this.clock += 8; this.strain = Math.min(1, this.strain + 0.18); snd.crash();
-    const tr = this.st!.track; this.s = Math.max(0, this.s - 15); this.d = tr.kind(this.s) & 1 ? 0 : -tr.width(this.s) / 4; this.psi = 0; this.v = 3; this.curv = tr.curv(this.s); this.fresh = true; this.eng?.cut();
-    this.callText = `${why}. Back on the road: 8 s lost`; this.callT = 0;
+    this.crashes++; this.penalty += 6; this.clock += 6; this.strain = Math.min(1, this.strain + 0.08); snd.crash();
+    const tr = this.st!.track; this.s = Math.max(tr.s0 + 8, this.s - 10); this.d = tr.kind(this.s) & 1 ? 0 : -tr.width(this.s) / 4; this.psi = 0; this.v = 3; this.curv = tr.curv(this.s); this.fresh = true; this.eng?.cut();
+    this.callText = `${why}. Back on the road: 6 s lost`; this.callT = 0;
   }
   /** The bot: speed from the bends ahead and the strain they would put on the load, steering after a point on the left lane. */
   bot() {
@@ -203,7 +218,7 @@ export class DriveScene extends Phaser.Scene {
     const L = Math.max(9, this.v * 1.1), sA = this.s + L, cA = tr.curv(sA);
     // pure pursuit on the road's frame: the lateral error at the lookahead point, and the heading error
     const err = tD - (this.d + Math.sin(this.psi) * L), want = cA + (2 * err) / (L * L);
-    const cMax = Math.min(Math.tan(0.6) / WB, (0.6 * G) / Math.max(this.v * this.v, 0.25)), assist = tr.curv(this.s + this.v * 0.4) * 0.65;
+    const cMax = Math.min(Math.tan(0.6) / WB, (0.6 * G) / Math.max(this.v * this.v, 0.25)), assist = tr.curv(this.s + this.v * 0.4) * 0.85;
     const str = clamp((want - assist) / cMax, -1, 1);
     const thr = this.v < vt - 0.4 ? 1 : 0, brk = this.v > vt + 0.6 ? 1 : 0;
     return { thr, brk, str: Math.abs(str) < 0.05 ? 0 : str, horn };
@@ -224,7 +239,8 @@ export class DriveScene extends Phaser.Scene {
   frame(): Frame {
     const st = this.st!, tr = st.track;
     const [x, z] = tr.pos(this.s, this.d), h0 = tr.head(this.s) + this.psi, fx = Math.cos(h0), fz = Math.sin(h0);
-    const yb = st.ground(x, z), yf = st.ground(x + fx * WB, z + fz * WB), rxv = -fz, rzv = fx, yl = st.ground(x - rxv * 1.0, z - rzv * 1.0), yr = st.ground(x + rxv * 1.0, z + rzv * 1.0);
+    const rxv = -fz, rzv = fx, cp = Math.cos(this.psi), sp = Math.sin(this.psi);
+    const yb = this.yAt(this.s, this.d), yf = this.yAt(this.s + WB * cp, this.d + WB * sp), yl = this.yAt(this.s, this.d - 1.0), yr = this.yAt(this.s, this.d + 1.0);
     const bodyRoll = clamp(-this.lat * 0.011, -0.06, 0.06), bodyPitch = clamp(-this.acc * 0.006, -0.03, 0.03) + this.bump * 0.03 * Math.sin(this.t * 40);
     let F = norm([fx, yf - yb, fz]); const pitchA = Math.atan2(yf - yb, WB) + bodyPitch; F = norm([fx * Math.cos(pitchA), Math.sin(pitchA), fz * Math.cos(pitchA)]);
     const rollA = Math.atan2(yr - yl, 2.0) + bodyRoll, Rt0: V3 = [-F[2], 0, F[0]], Rn = norm(Rt0);
@@ -240,7 +256,7 @@ export class DriveScene extends Phaser.Scene {
     if (this.camMode === 0) { camO = [-cx * 15.5, 5.4, -cz * 15.5]; look = [cx * 14, 1.2, cz * 14]; fov = 52 + Math.abs(this.v) * 0.22; }
     else if (this.camMode === 1) { camO = [-cx * 13 - cz * 3.2, 1.7, -cz * 13 + cx * 3.2]; look = [cx * 12, 2.0, cz * 12]; fov = 58 + Math.abs(this.v) * 0.25; }
     else { const off = [Rt[0] * 0.55 + Up[0] * 2.75 + F[0] * 6.2, Rt[1] * 0.55 + Up[1] * 2.75 + F[1] * 6.2, Rt[2] * 0.55 + Up[2] * 2.75 + F[2] * 6.2] as V3; /* the driver's seat: New Zealand trucks are right-hand drive */ camO = off; look = [off[0] + F[0] * 20, off[1] + F[1] * 20 - 0.6, off[2] + F[2] * 20]; fov = 58; }
-    if (this.camMode < 2) { const gy = st.ground(x + camO[0], z + camO[2]); camO[1] = Math.max(camO[1], gy - truck[1] + 1.1); }
+    if (this.camMode < 2) { const gy = this.onBridge(this.s) ? tr.height(this.s) : st.ground(x + camO[0], z + camO[2]); camO[1] = Math.max(camO[1], gy - truck[1] + 1.1); }
     // smooth the chase camera's position so a bump does not throw it about
     const k = this.fresh || this.settle ? 1 : 1 - Math.exp(-this.fdt * 7); this.camP = [lerp(this.camP[0], camO[0], k), lerp(this.camP[1], camO[1], k), lerp(this.camP[2], camO[2], k)]; if (this.camMode === 2) this.camP = camO;
     this.fresh = false;
