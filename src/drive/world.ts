@@ -123,7 +123,7 @@ function sampler(h: Float32Array, nx: number, nz: number, x0: number, z0: number
 }
 
 export interface Thing { k: number; x: number; z: number; y: number; a: number; b: number; c: number; d: number }
-export interface Stage { raw: any; track: Track; tex: DriveTex; ground: (x: number, z: number) => number; things: Thing[]; egg?: [number, number]; blueprint?: [number, number]; cattle?: number; pad?: [number, number, number, number]; curves: [sign: number, apex: number, advisory: number][] }
+export interface Stage { raw: any; track: Track; tex: DriveTex; ground: (x: number, z: number) => number; things: Thing[]; egg?: [number, number]; blueprint?: [number, number]; cattle?: number; pad?: [number, number, number, number]; curves: [sign: number, apex: number, advisory: number, signed: boolean][] }
 
 const N = 1024, CELL = 6;
 /** Lay one stage out: this takes a few hundred milliseconds, so the scene does it while the picture is faded out. */
@@ -344,10 +344,18 @@ export function buildStage(data: Data, idx: number, atlas?: TexImageSource): Sta
     s += tight ? 25 : 50;
   }
   // signs: bends ahead, the town limits, one-lane bridges, the station's gate
-  const curves: [number, number, number][] = [];
+  const curves: [number, number, number, boolean][] = [];
   for (let s = sStart + 60; s < sEnd - 20; s += 4) {
-    const k0 = track.curv(s), kind = track.kind(s); if (kind & 16) continue;
+    const k0 = track.curv(s), kind = track.kind(s);
     let peak = 0, at = s; for (let q = 0; q < 120; q += 4) { const kk = track.curv(s + q); if (Math.abs(kk) > Math.abs(peak)) { peak = kk; at = s + q; } }
+    // a town's tight corners have no sign: only the call-out, with 10 km/h over what the load takes at 0.3 g (the call-out takes the 10 off again)
+    if (kind & 16) {
+      if (Math.abs(peak) > 1 / 70 && Math.abs(k0) < 1 / 300) {
+        for (let q = 120; q < 200; q += 4) { const kk = track.curv(s + q); if (Math.abs(kk) > Math.abs(peak)) { peak = kk; at = s + q; } }   // the whole corner, not its first part
+        curves.push([s, at, Math.floor((Math.sqrt((0.3 * 9.81) / Math.abs(peak)) * 3.6) / 5) * 5 + 10, false]); s += 200;
+      }
+      continue;
+    }
     if (Math.abs(peak) < 1 / 160 || Math.abs(k0) > 1 / 400) continue;
     const adv = clamp(Math.round(Math.sqrt((0.22 * 9.81) / Math.abs(peak)) * 3.6 / 10) * 10 - 5, 25, 85), right = peak > 0;
     const w2 = track.width(s) / 2, [x, z] = track.pos(s, -(w2 + 1.6));
@@ -355,7 +363,7 @@ export function buildStage(data: Data, idx: number, atlas?: TexImageSource): Sta
     const [x2, z2] = track.pos(s + 0.3, -(w2 + 1.62)); add({ k: 9, x: x2, z: z2, y: ground(x2, z2) - 0.2 - 0.62, a: track.head(s) + Math.PI / 2, b: 0.3, c: 0.17, d: 8 + (adv - 25) / 10 });
     // chevron boards round the outside of the bend
     for (let q = -18; q <= 18; q += 18) { const ss = at + q, ww = track.width(ss) / 2, side = right ? -1 : 1, [cx, cz] = track.pos(ss, side * (ww + 1.9)); add({ k: 9, x: cx, z: cz, y: ground(cx, cz) - 0.6, a: track.head(ss) + Math.PI / 2, b: 0.6, c: 0.3, d: right ? 3 : 2 }); }
-    curves.push([s, at, adv]);
+    curves.push([s, at, adv, true]);
     s += 260;
   }
   for (let s = sStart + 4; s < sEnd; s += 4) if ((track.kind(s) & 32) && !(track.kind(s - 4) & 32) && !(track.kind(s) & 16)) { const [x, z] = track.pos(s, -(track.width(s) / 2 + 1.7)); add({ k: 9, x, z, y: ground(x, z) - 0.2, a: track.head(s) + Math.PI / 2, b: 0.32, c: 0.32, d: 4 }); }
